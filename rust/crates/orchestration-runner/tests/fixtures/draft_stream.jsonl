@@ -1,0 +1,4 @@
+{"type":"system","subtype":"init","session_id":"draft-session"}
+{"type":"assistant","message":{"content":[{"type":"text","text":"I will draft the workflow."}]}}
+{"type":"assistant","message":{"content":[{"type":"text","text":"{\"name\":\"release\",\"agents\":[{\"name\":\"plan\",\"task\":\"Plan the release\"},{\"name\":\"build\",\"task\":\"Build the app\"}],\"connections\":[{\"from\":\"plan\",\"to\":\"build\"}]}"}]}}
+{"type":"result","subtype":"success","is_error":false,"result":"done"}

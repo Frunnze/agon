@@ -1,0 +1,8 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 576531cf21d72cfc5466eebe6ebad29ca54aff84061b52b9e31d47721f0add7b # shrinks to changes = LeftoverChanges { tracked_file_changes: [Keep, Keep, Keep], created_files: {}, rules_markdown: "# Rules\n\n-  .\n", project_agents_file: Tracked }
+cc 6312a42672cac498c6c8a011473ddcc6696dc1e8df9b27171c0b526b8b44248e # shrinks to changes = LeftoverChanges { tracked_file_changes: [Keep, Keep, Keep], created_files: {}, rules_markdown: "# Rules\n\n- a.\n", project_agents_file: Tracked }

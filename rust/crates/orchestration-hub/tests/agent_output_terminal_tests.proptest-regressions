@@ -1,0 +1,8 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc ff7e13d55e9f376b73e4f53a5bffb6ac955456f75dcedb366c9b88b0c11f2fb7 # shrinks to agent = ClaudeCode, sequences = "\u{1b}[a"
+cc a5232d95d7b2ab63cc5f0947115f19628f46456d9417a9d4ece77eb8f558dc9d # shrinks to agent = ClaudeCode, text = ".", before = "\u{1b}[A", after = "\u{1b}[A"

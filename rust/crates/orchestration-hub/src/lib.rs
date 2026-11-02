@@ -1,0 +1,35 @@
+#![allow(clippy::missing_errors_doc)]
+
+pub mod agent_command;
+pub mod agent_event;
+pub mod agent_log;
+pub mod agent_output;
+pub mod branch_names;
+pub mod cached_clones;
+mod claude_stream;
+mod claude_tool_results;
+pub mod clone_locks;
+pub mod clone_source;
+pub mod command_specification;
+pub mod file_previews;
+pub mod image_dimensions;
+pub mod interactive_terminal;
+pub mod keep_awake;
+pub mod process_supervisor;
+pub mod repository_reading;
+pub mod run_activity;
+mod safe_paths;
+pub mod sandbox;
+pub mod slots;
+pub mod slugs;
+pub mod terminal_screen;
+mod terminal_sequences;
+mod terminal_text;
+mod text_shortening;
+mod tool_description;
+mod tree_records;
+pub mod utf8_chunks;
+pub mod workspace_mounts;
+mod worktree_commands;
+pub mod worktree_plan;
+pub mod worktrees;

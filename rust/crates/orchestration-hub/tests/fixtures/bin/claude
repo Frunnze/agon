@@ -1,0 +1,4 @@
+#!/bin/sh
+echo "Checking the workspace"
+cat "$(dirname "$0")/../claude_stream.jsonl"
+exit 0

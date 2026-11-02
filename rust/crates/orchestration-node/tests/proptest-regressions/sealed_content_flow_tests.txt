@@ -1,0 +1,7 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc f2ed6cebdb6e0c4434072777eb73bb9ae83ded2c6963959489f5b9316a126274 # shrinks to secrets = Secrets { task_details: "secretggghlywnmpqk", skill_instructions: "secretlzwjppusvjwuxtvgwwqiizh", rule_details: "secretoxszilrihhyuvqqtzho", agent_task: "secretttmhuuwkioiowvjorr", chat_text: "secretyyiqpkgkhwwrsuorwpvps" }

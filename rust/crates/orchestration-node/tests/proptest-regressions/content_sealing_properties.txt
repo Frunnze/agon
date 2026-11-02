@@ -1,0 +1,7 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 6859a2aa2812ae9862ba06c395f8d35a8e1c78c3bc8a877b1302f8361a8c5433 # shrinks to agent_tasks = ["secretgggggggggggg"]

@@ -1,0 +1,175 @@
+import 'package:agent_orchestration/data/gallery/gallery_chat.dart';
+import 'package:agent_orchestration/data/gallery/gallery_identifiers.dart';
+import 'package:agent_orchestration/data/gallery/gallery_moments.dart';
+import 'package:agent_orchestration/data/gallery/gallery_workflows.dart';
+import 'package:agent_orchestration/data/models/identifiers.dart';
+import 'package:agent_orchestration/data/models/run.dart';
+import 'package:agent_orchestration/data/models/runner.dart';
+
+const String gallerySessionId = '7c1e3f5a9b2d4e6f8a1c3e5b7d9fa90f';
+const String _buildStepName = 'build-ios';
+
+WorkflowAgentId _releaseAgentId(int index) => releaseAgents[index].id;
+
+LogLine _buildLogLine(DateTime at, String text) {
+  return LogLine(at: at, stepName: _buildStepName, text: text, isError: false);
+}
+
+LogLine _buildErrorLine(DateTime at, String text) {
+  return LogLine(at: at, stepName: _buildStepName, text: text, isError: true);
+}
+
+final Run galleryRunningRun = Run(
+  id: GalleryRunIds.release42,
+  taskId: GalleryTaskIds.shipRelease24,
+  number: 42,
+  status: RunStatus.running,
+  steps: <RunStep>[
+    RunStep(
+      name: 'plan',
+      agentId: _releaseAgentId(0),
+      runner: GalleryDeviceIds.officeServer,
+      status: StepStatus.done,
+      startedAt: galleryToday(14, 3, 30),
+      finishedAt: galleryToday(14, 5, 40),
+    ),
+    RunStep(
+      name: _buildStepName,
+      agentId: _releaseAgentId(1),
+      runner: GalleryDeviceIds.macStudio,
+      status: StepStatus.running,
+      startedAt: galleryToday(14, 5, 40),
+      finishedAt: null,
+    ),
+    RunStep(
+      name: 'train',
+      agentId: _releaseAgentId(2),
+      runner: null,
+      status: StepStatus.waiting,
+      startedAt: null,
+      finishedAt: null,
+    ),
+  ],
+  log: <LogLine>[
+    _buildLogLine(galleryToday(14, 2, 11), 'Cloned acme/app into /workspace'),
+    _buildLogLine(
+      galleryToday(14, 2, 19),
+      'Sandbox ready: new container, network allowlist on',
+    ),
+    _buildLogLine(
+      galleryToday(14, 2, 20),
+      'Agent started: claude, session 7c1e…a90f',
+    ),
+    _buildLogLine(
+      galleryToday(14, 3, 2),
+      'Ran xcodebuild -scheme App -configuration Release',
+    ),
+    _buildLogLine(galleryToday(14, 5, 40), 'Compiling 214 of 388 files'),
+  ],
+  chat: galleryRunChat,
+  failure: null,
+  link: RunnerLink.direct,
+  linkLostAt: null,
+  agentSession: gallerySessionId,
+  worktreeBranch: 'task/ship-release-2-4',
+  startedBy: GalleryDeviceIds.airLaptop,
+  startedAt: galleryToday(14, 5, 40),
+  finishedAt: null,
+);
+
+final Run galleryFailedRun = Run(
+  id: GalleryRunIds.release41,
+  taskId: GalleryTaskIds.shipRelease23,
+  number: 41,
+  status: RunStatus.failed,
+  steps: <RunStep>[
+    RunStep(
+      name: 'plan',
+      agentId: _releaseAgentId(0),
+      runner: GalleryDeviceIds.officeServer,
+      status: StepStatus.done,
+      startedAt: galleryYesterday(18, 20),
+      finishedAt: galleryYesterday(18, 22, 4),
+    ),
+    RunStep(
+      name: _buildStepName,
+      agentId: _releaseAgentId(1),
+      runner: GalleryDeviceIds.macStudio,
+      status: StepStatus.failed,
+      startedAt: galleryYesterday(18, 28, 2),
+      finishedAt: galleryYesterday(18, 31, 14),
+    ),
+    RunStep(
+      name: 'train',
+      agentId: _releaseAgentId(2),
+      runner: null,
+      status: StepStatus.skipped,
+      startedAt: null,
+      finishedAt: null,
+    ),
+  ],
+  log: <LogLine>[
+    _buildLogLine(
+      galleryYesterday(18, 28, 2),
+      'Ran xcodebuild -scheme App -configuration Release',
+    ),
+    _buildLogLine(galleryYesterday(18, 31, 10), 'Signing App.app for Release'),
+    _buildErrorLine(
+      galleryYesterday(18, 31, 14),
+      'error: No signing certificate "Apple Distribution" found',
+    ),
+    _buildErrorLine(
+      galleryYesterday(18, 31, 14),
+      '** ARCHIVE FAILED ** (exit code 65)',
+    ),
+  ],
+  chat: const <ChatMessage>[],
+  failure: const RunFailure(
+    stepName: _buildStepName,
+    runner: GalleryDeviceIds.macStudio,
+    reason:
+        'xcodebuild stopped with code 65: no "Apple Distribution" '
+        'signing certificate on this runner.',
+    retryRunsOnSameRunner: true,
+  ),
+  link: RunnerLink.direct,
+  linkLostAt: null,
+  agentSession: null,
+  worktreeBranch: 'task/ship-release-2-3',
+  startedBy: GalleryDeviceIds.airLaptop,
+  startedAt: galleryYesterday(18, 20),
+  finishedAt: galleryYesterday(18, 31, 14),
+);
+
+final Run galleryFinishedRun = Run(
+  id: GalleryRunIds.writeApiDocs1,
+  taskId: GalleryTaskIds.writeApiDocs,
+  number: 1,
+  status: RunStatus.done,
+  steps: <RunStep>[
+    RunStep(
+      name: 'agent',
+      agentId: null,
+      runner: GalleryDeviceIds.officeServer,
+      status: StepStatus.done,
+      startedAt: galleryYesterday(11, 40),
+      finishedAt: galleryYesterday(11, 58),
+    ),
+  ],
+  log: const <LogLine>[],
+  chat: const <ChatMessage>[],
+  failure: null,
+  link: RunnerLink.direct,
+  linkLostAt: null,
+  agentSession: null,
+  worktreeBranch: 'task/write-the-v2-api-docs',
+  startedBy: GalleryDeviceIds.airLaptop,
+  startedAt: galleryYesterday(11, 40),
+  finishedAt: galleryYesterday(11, 58),
+);
+
+final List<Run> galleryRuns = List<Run>.unmodifiable(<Run>[
+  galleryRunningRun,
+  galleryFailedRun,
+  galleryFinishedRun,
+]);

@@ -1,0 +1,7 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 73bd08213ebc39b33ec2f659e81fae843e6a116f97e75f6ea2e180555e994103 # shrinks to task_id = TaskId(00000000-0000-0000-0000-000000000000), lifetime = PerTask, device_id = DeviceId("a00000a0a0aaa0aa00a0aaa00aaa0000"), parents = "", name = "a--"

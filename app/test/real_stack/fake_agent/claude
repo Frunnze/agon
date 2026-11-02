@@ -1,0 +1,161 @@
+#!/bin/sh
+if [ -z "$AGENT_RECORDS" ]; then
+  echo "the fake agent runs only inside the real-stack tests"
+  exit 5
+fi
+test_folder=$(realpath "$(dirname "$AGENT_RECORDS")")
+case "$(pwd -P)/" in
+  "$test_folder"/*) ;;
+  *)
+    echo "the fake agent works only inside its test folder"
+    exit 5
+    ;;
+esac
+
+session=
+previous=
+for argument in "$@"; do
+  if [ "$previous" = "--resume" ]; then
+    session="$argument"
+  fi
+  previous="$argument"
+  prompt="$argument"
+done
+
+wait_for_file() {
+  waited=0
+  while [ ! -f "$AGENT_RECORDS/$1" ]; do
+    waited=$((waited + 1))
+    if [ "$waited" -gt 1200 ]; then
+      echo "the $1 file never appeared"
+      exit 4
+    fi
+    sleep 0.1
+  done
+}
+
+say() {
+  text_block="{\"type\":\"text\",\"text\":\"$1\"}"
+  printf '{"type":"assistant","message":{"content":[%s]}}\n' "$text_block"
+}
+
+finish() {
+  printf '{"type":"system","subtype":"init","session_id":"%s"}\n' "$1"
+  say "$2"
+  printf '{"type":"result","subtype":"success","is_error":false}\n'
+  exit 0
+}
+
+read_line_after() {
+  printf '%s\n' "$prompt" | sed -n "s/^$1//p" | head -n 1
+}
+
+read_chosen_name() {
+  printf '%s\n' "$prompt" | sed -n 's/.*Name it \([a-z0-9-]*\)\..*/\1/p' \
+    | head -n 1
+}
+
+read_workspace_id() {
+  printf '%s\n' "$prompt" | sed -n 's/^Workspace: .* (id \(.*\))$/\1/p' \
+    | head -n 1
+}
+
+escape_json() {
+  printf '%s' "$1" | sed 's/\\/\\\\/g; s/"/\\"/g'
+}
+
+if [ -n "$session" ]; then
+  printf '%s %s\n' "$session" "$prompt" >> "$AGENT_RECORDS/resumed.txt"
+  finish "$session" "answered the follow-up"
+fi
+
+case "$prompt" in
+  *"Draft a new "*)
+    ls -A . > "$AGENT_RECORDS/drafting-folder.txt"
+    ;;
+esac
+
+case "$prompt" in
+  *"Draft a new workflow."*)
+    : > "$AGENT_RECORDS/drafting-started"
+    case "$prompt" in
+      *"Wait for stop"*)
+        wait_for_file never-released
+        ;;
+      *"Wait for release"*)
+        wait_for_file release
+        ;;
+    esac
+    workflow_id=$(read_line_after "Workflow id: ")
+    workflow_name=$(read_chosen_name)
+    workspace_id=$(read_workspace_id)
+    availability="{\"kind\":\"only_workspaces\",\
+\"workspaces\":[\"$workspace_id\"]}"
+    agent="{\"id\":\"00000000-0000-0000-0000-000000000011\",\
+\"name\":\"plan\",\"kind\":\"claude_code\",\
+\"task\":\"Read the code and write a plan.\",\
+\"runs_on\":{\"kind\":\"any_free_runner\"},\"skills\":[],\
+\"uses_automatic_skills\":false,\"approval_policy\":\"never_ask\",\
+\"position\":{\"horizontal\":8.0,\"vertical\":16.0}}"
+    workflow="{\"id\":\"$workflow_id\",\"name\":\"$workflow_name\",\
+\"availability\":$availability,\"agents\":[$agent],\
+\"connections\":[],\"signature\":null}"
+    finish "draft-$$" "$(escape_json "$workflow")"
+    ;;
+  *"Draft a new task."*)
+    : > "$AGENT_RECORDS/item-drafting-started"
+    project_id=$(printf '%s\n' "$prompt" \
+      | sed -n '/^Projects:$/,/^Workflows:$/s/^- .* (id \([0-9a-f-]*\)).*/\1/p' \
+      | head -n 1)
+    title=$(printf '%s\n' "$prompt" \
+      | sed -n '/^What the person wants:$/{n;p;q;}')
+    changed_title=$(printf '%s\n' "$prompt" \
+      | sed -n '/^Requested change:$/{n;p;q;}')
+    if [ -n "$changed_title" ]; then
+      title="$changed_title"
+    fi
+    draft="{\"title\":\"$(escape_json "$title")\",\
+\"details\":\"Drafted by the fake agent.\",\
+\"project_id\":\"$project_id\",\
+\"doer\":{\"kind\":\"one_agent\",\"agent\":\"claude_code\"},\
+\"runs_on\":{\"kind\":\"any_free_runner\"},\"skills\":[],\
+\"uses_automatic_skills\":true,\
+\"approval_policy\":\"ask_before_risky_actions\",\"schedule\":null}"
+    finish "item-draft-$$" "$(escape_json "$draft")"
+    ;;
+  *"Draft a new project."*)
+    : > "$AGENT_RECORDS/item-drafting-started"
+    project_name=$(read_chosen_name)
+    draft="{\"name\":\"$project_name\",\
+\"repositories\":[{\"address\":\"github.com/acme/$project_name\",\
+\"default_branch\":\"main\"}],\"agent_access\":\"read_only\"}"
+    finish "item-draft-$$" "$(escape_json "$draft")"
+    ;;
+  *"Fail once"*)
+    if [ ! -f "$AGENT_RECORDS/failed-once" ]; then
+      : > "$AGENT_RECORDS/failed-once"
+      echo "the agent broke"
+      exit 3
+    fi
+    ;;
+  *"Wait for release"*)
+    : > "$AGENT_RECORDS/started"
+    wait_for_file release
+    ;;
+  *"Show a readable log"*)
+    tool_use='{"type":"tool_use","id":"toolu_1","name":"Bash",'
+    tool_use="$tool_use"'"input":{"command":"npm test"}}'
+    printf '{"type":"assistant","message":{"content":[%s]}}\n' "$tool_use"
+    tool_error='{"type":"tool_result","tool_use_id":"toolu_1",'
+    tool_error="$tool_error"'"content":"npm ERR! missing script: test",'
+    tool_error="$tool_error"'"is_error":true}'
+    printf '{"type":"user","message":{"content":[%s]}}\n' "$tool_error"
+    ;;
+esac
+
+for repository in */; do
+  if [ -d "$repository" ]; then
+    printf 'changed by the fake agent\n' > "$repository/CHANGES.md"
+  fi
+done
+finish "session-$$" "finished the work"

@@ -1,0 +1,58 @@
+#!/bin/sh
+session=none
+previous=
+for argument in "$@"; do
+  if [ "$previous" = "--resume" ]; then
+    session="$argument"
+  fi
+  previous="$argument"
+  prompt="$argument"
+done
+name=$(printf '%s\n' "$prompt" | head -n 1 | tr -cd 'a-z0-9-')
+printf '%s %s\n' "$name" "$session" >> "$AGENT_RECORDS/calls.txt"
+pwd -P >> "$AGENT_RECORDS/folders.txt"
+printf '%s' "$prompt" > "$AGENT_RECORDS/prompt-$name.txt"
+fixtures="$(dirname "$0")/.."
+case "$prompt" in
+  *please-edit*)
+    for repository in */; do
+      printf 'edited by %s\n' "$name" >> "$repository/README.md"
+      printf 'made by %s\n' "$name" > "$repository/NOTES.md"
+    done
+    ;;
+esac
+case "$prompt" in
+  *please-wait*)
+    echo "started"
+    sleep 30
+    ;;
+  *please-fail*)
+    echo "the agent broke"
+    exit 3
+    ;;
+  *please-replay*)
+    cat "$fixtures/claude_stream.jsonl"
+    exit 0
+    ;;
+  *please-draft*)
+    cat "$fixtures/draft_stream.jsonl"
+    exit 0
+    ;;
+  *please-commit*)
+    for repository in */; do
+      git -C "$repository" -c user.name=Agent -c user.email=agent@example.com \
+        -c commit.gpgsign=false -c core.hooksPath=/dev/null \
+        commit --quiet --allow-empty --message "Change by $name"
+    done
+    ;;
+  *please-lock*)
+    for repository in */; do
+      : > "$(git -C "$repository" rev-parse --absolute-git-dir)/index.lock"
+    done
+    ;;
+esac
+printf '{"type":"system","subtype":"init","session_id":"session-%s"}\n' \
+  "$name"
+printf '{"type":"assistant","message":{"content":[%s]}}\n' \
+  "{\"type\":\"text\",\"text\":\"finished $name\"}"
+printf '{"type":"result","subtype":"success","is_error":false}\n'

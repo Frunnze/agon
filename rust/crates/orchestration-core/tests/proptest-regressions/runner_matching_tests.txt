@@ -1,0 +1,7 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc eaef0faeee1391c3d27fa01a49382c1d9ef8d26881cf89f8397891cbe9ab5477 # shrinks to target = AnyFreeRunner, runners = [Runner { device_id: DeviceId("a"), labels: [], slots_total: 3, slots_busy: 0, link: Direct, online: true, accepting_new_runs: true, sandbox: Container, allowed_hosts: [] }, Runner { device_id: DeviceId("b"), labels: [], slots_total: 3, slots_busy: 0, link: Direct, online: true, accepting_new_runs: true, sandbox: Container, allowed_hosts: [] }]

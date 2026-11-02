@@ -1,0 +1,5 @@
+PRODUCT_NAME = Agon
+
+PRODUCT_BUNDLE_IDENTIFIER = dev.orchestration.agentOrchestration
+
+PRODUCT_COPYRIGHT = Copyright © 2026 dev.orchestration. All rights reserved.

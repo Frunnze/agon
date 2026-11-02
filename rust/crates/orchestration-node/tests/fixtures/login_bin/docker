@@ -1,0 +1,30 @@
+#!/bin/sh
+case "$1" in
+  info | image) exit 0 ;;
+  run) shift ;;
+  *) exit 7 ;;
+esac
+
+printf -- '--- run\n' >> "$AGENT_RECORDS/container-environment"
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --env)
+      case "$2" in
+        *=*) ;;
+        *)
+          eval "value=\${$2-}"
+          printf '%s=%s\n' "$2" "$value" \
+            >> "$AGENT_RECORDS/container-environment"
+          ;;
+      esac
+      shift 2
+      ;;
+    --mount | --workdir) shift 2 ;;
+    --rm) shift ;;
+    *) break ;;
+  esac
+done
+
+printf '{"type":"system","subtype":"init","session_id":"container-1"}\n'
+printf '{"type":"result","subtype":"success","is_error":false}\n'
+exit 0

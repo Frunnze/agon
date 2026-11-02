@@ -1,0 +1,42 @@
+[workspace]
+resolver = "3"
+members = [
+  "crates/orchestration-core",
+  "crates/orchestration-api",
+  "crates/orchestration-security",
+  "crates/orchestration-p2p",
+  "crates/orchestration-hub",
+  "crates/orchestration-server",
+  "crates/orchestration-node",
+  "crates/orchestration-ffi",
+  "crates/orchestration-runner",
+]
+
+[workspace.package]
+edition = "2024"
+version = "0.1.0"
+license = "MIT"
+publish = false
+
+[profile.dev]
+debug = false
+incremental = false
+
+[profile.dev.package."*"]
+debug = false
+
+[profile.dev.package.argon2]
+opt-level = 3
+
+[profile.dev.package.blake2]
+opt-level = 3
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+missing_debug_implementations = "warn"
+
+[workspace.lints.clippy]
+pedantic = { level = "warn", priority = -1 }
+unwrap_used = "warn"
+expect_used = "warn"
+module_name_repetitions = "allow"

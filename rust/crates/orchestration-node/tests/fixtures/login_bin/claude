@@ -1,0 +1,38 @@
+#!/bin/sh
+if [ -z "$AGENT_RECORDS" ]; then
+  echo "the fake claude runs only inside the node tests"
+  exit 5
+fi
+
+case "$1 $2" in
+  "auth status")
+    if [ -f "$AGENT_RECORDS/logged-in" ]; then
+      printf '{"loggedIn": true, "authMethod": "claude.ai"}\n'
+      exit 0
+    fi
+    printf '{"loggedIn": false, "authMethod": "none"}\n'
+    exit 1
+    ;;
+  "auth login")
+    printf '\033[?25lOpening your browser to sign in...\n'
+    printf 'Paste code here if prompted > '
+    read -r code
+    printf '%s\n' "$code" > "$AGENT_RECORDS/login-code"
+    : > "$AGENT_RECORDS/logged-in"
+    printf '\033[2K\033[1A\033[2K\033[GLogin successful.\033[?25h\n'
+    exit 0
+    ;;
+  "setup-token ")
+    printf '\033[?25l\033[1mOpening your browser to sign in...\033[0m\n'
+    printf 'Paste code here if prompted > '
+    read -r code
+    printf '\033[2K\033[1A\033[2K\033[G'
+    printf '\033[32m✓\033[0m Long-lived authentication token created.\n\n'
+    printf 'Your OAuth token (valid for 1 year):\n\n'
+    printf '\033[1msk-ant-oat01-%s\033[0m\n\n' "$code"
+    printf 'Store this token securely.\033[?25h\n'
+    exit 0
+    ;;
+esac
+echo "the fake claude does not know $*"
+exit 9

@@ -1,0 +1,9 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc d29e99a9b91f7534ccc33e45341e2afeda368d26d93c313c5c1c1950fe0ae3cc # shrinks to rules = [Rule { id: RuleId(00000000-0000-0000-0000-000000000000), title: "A", details: "", scope: Scope { workspaces: AllWorkspaces, projects: AllProjects }, enabled: false, added_at: 1970-01-01T00:00:00Z }], workspace_id = WorkspaceId(00000000-0000-0000-0000-000000000000), project_id = ProjectId(00000000-0000-0000-0000-000000000000)
+cc d88d20c6c9702e169c7b7e6b344d2af3c80e471144bc0bd921d975d78cbcea47 # shrinks to rules = [Rule { id: RuleId(00000000-0000-0000-0000-000000000000), title: "A", details: "", scope: Scope { workspaces: AllWorkspaces, projects: AllProjects }, enabled: false, added_at: 1970-01-01T00:00:00Z }], workspace_id = WorkspaceId(00000000-0000-0000-0000-000000000000), project_id = ProjectId(00000000-0000-0000-0000-000000000000)
+cc 0477a211925f997a36490f103fae22957857540ea8a7e355935d8bfdc151cbf0 # shrinks to rules = [Rule { id: RuleId(00000000-0000-0000-0000-000000000000), title: "", details: "", scope: Scope { workspaces: AllWorkspaces, projects: AllProjects }, enabled: false, added_at: 1970-01-01T00:00:00Z }], workspace_id = WorkspaceId(00000000-0000-0000-0000-000000000000), project_id = ProjectId(00000000-0000-0000-0000-000000000000)

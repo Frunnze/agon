@@ -1,0 +1,25 @@
+[package]
+name = "orchestration-runner"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[dependencies]
+orchestration-core = { version = "0.1.0", path = "../orchestration-core" }
+orchestration-api = { version = "0.1.0", path = "../orchestration-api" }
+orchestration-hub = { version = "0.1.0", path = "../orchestration-hub" }
+chrono = "0.4.45"
+thiserror = "2.0.21"
+tracing = "0.1.44"
+tokio = { version = "1.54.1", features = ["rt", "macros", "time", "process", "sync"] }
+
+[dev-dependencies]
+proptest = "1.12.0"
+serde_json = "1.0.154"
+tempfile = "3.27.0"
+tokio = { version = "1.54.1", features = ["rt-multi-thread", "macros", "time", "test-util"] }
+uuid = { version = "1.29.0", features = ["v4", "serde"] }

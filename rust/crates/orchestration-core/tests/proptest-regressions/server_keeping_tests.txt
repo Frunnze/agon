@@ -1,0 +1,8 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 3fff5ffda5f674d18770cdd9719e01c264f5c24b6ca2b50cbb23982156ef7ea2 # shrinks to own_number = 1, own_owner = "c", own_name = "a", standing = Active, probes = [], silence_seconds = 0
+cc c2dd41156c3125af634db5481031020c53bd2cb23e38fcbdaaa5c5fd4512101c # shrinks to own_number = 1, own_owner = "a", own_name = "a", standing = Backup, probes = [ProbeAnswer { server_id: DeviceId("a"), term: Some(ServerTerm { number: 1, server_id: DeviceId("b"), claimed_by: DeviceId("b"), signature: [] }), standing: Active }], silence_seconds = 30

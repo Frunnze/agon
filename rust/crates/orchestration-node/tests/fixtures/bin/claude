@@ -1,0 +1,82 @@
+#!/bin/sh
+session=
+previous=
+for argument in "$@"; do
+  if [ "$previous" = "--resume" ]; then
+    session="$argument"
+  fi
+  previous="$argument"
+  prompt="$argument"
+done
+
+wait_for_file() {
+  waited=0
+  while [ ! -f "$AGENT_RECORDS/$1" ]; do
+    waited=$((waited + 1))
+    if [ "$waited" -gt 900 ]; then
+      echo "the $1 file never appeared"
+      exit 4
+    fi
+    sleep 0.1
+  done
+}
+
+say() {
+  text_block="{\"type\":\"text\",\"text\":\"$1\"}"
+  printf '{"type":"assistant","message":{"content":[%s]}}\n' "$text_block"
+}
+
+case "$prompt" in
+  *"Fail once"*)
+    if [ ! -f "$AGENT_RECORDS/failed-folder" ]; then
+      pwd > "$AGENT_RECORDS/failed-folder"
+      echo "the agent broke"
+      exit 3
+    fi
+    pwd > "$AGENT_RECORDS/retried-folder"
+    ;;
+esac
+
+case "$prompt" in
+  *"Watch the change"*)
+    kind=watch
+    ;;
+  *"Build the change"*)
+    kind=build
+    ;;
+  *)
+    kind=plan
+    ;;
+esac
+
+if [ -n "$session" ]; then
+  printf '%s %s\n' "$session" "$prompt" >> "$AGENT_RECORDS/resumed.txt"
+  reply="answered the follow-up"
+elif [ "$kind" = "watch" ]; then
+  session="watch-$$"
+  : > "$AGENT_RECORDS/watch-started"
+  wait_for_file release
+  printf '{"type":"system","subtype":"init","session_id":"%s"}\n' "$session"
+  say "first live message"
+  wait_for_file release-2
+  reply="final live message"
+elif [ "$kind" = "plan" ]; then
+  session="plan-$$"
+  printf '%s' "$prompt" > "$AGENT_RECORDS/plan-prompt.txt"
+  reply="the plan is to touch the readme"
+else
+  session="session-$$"
+  printf '%s' "$prompt" > "$AGENT_RECORDS/build-prompt.txt"
+  cat ./*/AGENTS.md > "$AGENT_RECORDS/agents.md"
+  : > "$AGENT_RECORDS/started"
+  wait_for_file release
+  for repository in */; do
+    git -C "$repository" -c user.name=Agent -c user.email=agent@example.com \
+      -c commit.gpgsign=false -c core.hooksPath=/dev/null \
+      commit --quiet --allow-empty --message "Change by the fake agent"
+  done
+  reply="finished the first turn"
+fi
+printf '{"type":"system","subtype":"init","session_id":"%s"}\n' "$session"
+say "$reply"
+printf '{"type":"result","subtype":"success","is_error":false}\n'

@@ -1,0 +1,7 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc e6d0e6e48b4b5bbb1ec0e20e23add1579df38f8a2d874566c3abd81354d987be # shrinks to workflow = Workflow { id: WorkflowId(ffffffff-ffff-ffff-ffff-ffffffffffff), name: "release", availability: AllWorkspaces, agents: [WorkflowAgent { id: WorkflowAgentId(00000000-0000-0000-0000-000000000000), name: "agent-0", kind: None, task: "", runs_on: AnyFreeRunner, skills: [], uses_automatic_skills: false, asks_for_approval: false, position: CanvasPosition { horizontal: 0.0, vertical: 0.0 } }, WorkflowAgent { id: WorkflowAgentId(00000000-0000-0000-0000-000000000001), name: "agent-1", kind: None, task: "", runs_on: AnyFreeRunner, skills: [], uses_automatic_skills: false, asks_for_approval: false, position: CanvasPosition { horizontal: 0.0, vertical: 0.0 } }], connections: [AgentConnection { from: WorkflowAgentId(00000000-0000-0000-0000-000000000000), to: WorkflowAgentId(00000000-0000-0000-0000-000000000001) }, AgentConnection { from: WorkflowAgentId(00000000-0000-0000-0000-000000000001), to: WorkflowAgentId(00000000-0000-0000-0000-000000000000) }], signature: None }

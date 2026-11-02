@@ -1,0 +1,70 @@
+[package]
+name = "orchestration-node"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[lints]
+workspace = true
+
+[features]
+default = ["runner", "app-server"]
+runner = ["dep:orchestration-hub", "dep:orchestration-runner"]
+app-server = [
+  "dep:orchestration-server",
+  "dep:axum",
+  "hyper/server",
+  "hyper-util/service",
+  "tokio/net",
+]
+
+[[test]]
+name = "node"
+path = "tests/node/main.rs"
+required-features = ["runner", "app-server"]
+
+[dependencies]
+axum = { version = "0.8.9", optional = true }
+chrono = { version = "0.4.45", features = ["serde"] }
+hex = "0.4.3"
+http-body-util = "0.1.5"
+hyper = { version = "1.12.0", features = ["client", "http1"] }
+hyper-util = { version = "0.1.21", features = ["tokio"] }
+keyring-core = "1.0.1"
+mdns-sd = { version = "0.21.6", default-features = false, features = ["async"] }
+orchestration-api = { version = "0.1.0", path = "../orchestration-api" }
+orchestration-core = { version = "0.1.0", path = "../orchestration-core" }
+orchestration-hub = { version = "0.1.0", path = "../orchestration-hub", optional = true }
+orchestration-p2p = { version = "0.1.0", path = "../orchestration-p2p" }
+orchestration-runner = { version = "0.1.0", path = "../orchestration-runner", optional = true }
+orchestration-security = { version = "0.1.0", path = "../orchestration-security" }
+orchestration-server = { version = "0.1.0", path = "../orchestration-server", optional = true }
+reqwest = { version = "0.13.5", default-features = false, features = ["rustls-no-provider"] }
+rustls = { version = "0.23.46", default-features = false, features = ["ring", "std", "tls12"] }
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.154"
+thiserror = "2.0.21"
+tokio = { version = "1.54.1", features = ["rt-multi-thread", "sync", "time"] }
+url = "2.5.8"
+uuid = { version = "1.29.0", features = ["v4", "serde"] }
+zeroize = "1.9.1"
+
+[target.'cfg(target_os = "macos")'.dependencies]
+apple-native-keyring-store = { version = "1.0.2", features = ["keychain"] }
+
+[target.'cfg(target_os = "ios")'.dependencies]
+apple-native-keyring-store = { version = "1.0.2", features = ["protected"] }
+
+[target.'cfg(target_os = "windows")'.dependencies]
+windows-native-keyring-store = "1.1.0"
+
+[target.'cfg(target_os = "linux")'.dependencies]
+zbus-secret-service-keyring-store = { version = "1.0.1", features = ["crypto-rust"] }
+
+[dev-dependencies]
+axum = "0.8.9"
+orchestration-server = { path = "../orchestration-server" }
+proptest = "1.12.0"
+tempfile = "3.27.0"
+tokio = { version = "1.54.1", features = ["rt-multi-thread", "macros", "net", "time", "test-util"] }
