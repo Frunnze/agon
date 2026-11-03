@@ -77,7 +77,7 @@ final List<AuditEntry> galleryAuditEntries = List<AuditEntry>.unmodifiable(
       at: galleryDaysAgo(2),
       deviceId: GalleryDeviceIds.airLaptop,
       event: 'Paired gpu-box as a runner',
-      detail: 'Approved with Touch ID',
+      detail: 'Approved',
       hash: '2a9f5e1c8b4d7a0f3e6c9b2d5a8fb3c6',
       previousHash: 'f81c3a5e7b9d2f4a6c8e0b1d3f5a7c9e',
     ),

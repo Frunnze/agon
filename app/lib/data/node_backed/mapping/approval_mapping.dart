@@ -29,6 +29,10 @@ ApprovalAction mapApprovalActionFromNode(node.ApprovalAction action) {
       what: action.what,
     ),
     node.SignWorkflow() => SignWorkflowAction(workflowId: action.workflowId),
+    node.RunCommand() => RunCommandAction(
+      tool: action.tool,
+      command: action.command,
+    ),
   };
 }
 

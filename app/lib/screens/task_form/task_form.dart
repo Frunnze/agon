@@ -6,21 +6,20 @@ import 'package:agent_orchestration/data/models/approval.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/runner.dart';
 import 'package:agent_orchestration/data/models/task.dart';
+import 'package:agent_orchestration/screens/shared/approval_policy_field.dart';
+import 'package:agent_orchestration/screens/task_form/agent_place_field.dart';
 import 'package:agent_orchestration/screens/task_form/folder_runner_notice.dart';
 import 'package:agent_orchestration/screens/task_form/schedule_fields.dart';
 import 'package:agent_orchestration/screens/task_form/task_form_action.dart';
 import 'package:agent_orchestration/screens/task_form/task_form_options.dart';
 import 'package:agent_orchestration/screens/task_form/task_form_values.dart';
 import 'package:agent_orchestration/theme/app_spacing.dart';
-import 'package:agent_orchestration/theme/app_typography.dart';
 import 'package:agent_orchestration/theme/field_padding.dart';
 import 'package:agent_orchestration/widgets/app_button.dart';
 import 'package:agent_orchestration/widgets/forms/check_field.dart';
 import 'package:agent_orchestration/widgets/forms/form_field_block.dart';
 import 'package:agent_orchestration/widgets/forms/select_field.dart';
-import 'package:agent_orchestration/widgets/forms/switch_field.dart';
 import 'package:agent_orchestration/widgets/forms/tag_input_field.dart';
-import 'package:agent_orchestration/widgets/gaps.dart';
 
 const int _detailsMinimumLines = 3;
 const int _detailsMaximumLines = 8;
@@ -148,6 +147,11 @@ class _TaskFormState extends State<TaskForm> {
             ),
           ],
         ),
+        AgentPlaceField(
+          place: _values.agentPlace,
+          onChanged: (AgentPlace place) =>
+              _updateValues(_readValues().copyWith(agentPlace: place)),
+        ),
         _buildSkillsField(),
         _buildApprovalField(),
         ScheduleFields(
@@ -209,32 +213,11 @@ class _TaskFormState extends State<TaskForm> {
   }
 
   Widget _buildApprovalField() {
-    final bool asksForApproval =
-        _values.approvalPolicy == ApprovalPolicy.askBeforeRiskyActions;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: spaceVertically(<Widget>[
-        SwitchField(
-          label: 'Ask for approval',
-          value: asksForApproval,
-          onChanged: _changeApprovalPolicy,
-        ),
-        const Text(
-          'On: it stops and asks you before it pushes, deploys or deletes. '
-          'Off: it never asks.',
-          style: AppTextStyles.smallMuted,
-        ),
-      ], AppSpacing.space2),
+    return ApprovalPolicyField(
+      selected: _values.approvalPolicy,
+      onChanged: (ApprovalPolicy policy) =>
+          _updateValues(_readValues().copyWith(approvalPolicy: policy)),
     );
-  }
-
-  void _changeApprovalPolicy(bool asksForApproval) {
-    final ApprovalPolicy policy = asksForApproval
-        ? ApprovalPolicy.askBeforeRiskyActions
-        : ApprovalPolicy.neverAsk;
-
-    _updateValues(_readValues().copyWith(approvalPolicy: policy));
   }
 
   void _addSkill(String skillName) {

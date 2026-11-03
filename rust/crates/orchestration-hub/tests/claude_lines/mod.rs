@@ -1,8 +1,9 @@
 use orchestration_core::workflow::AgentKind;
 use orchestration_hub::agent_event::AgentEvent;
-use orchestration_hub::agent_output::parse_agent_line;
 use proptest::prelude::*;
 use serde_json::{Value, json};
+
+use crate::agent_reading::parse_agent_line;
 
 pub fn any_detail() -> impl Strategy<Value = String> {
     "[a-zA-Z0-9_./=-][a-zA-Z0-9 _./=-]{0,58}[a-zA-Z0-9_./=-]"

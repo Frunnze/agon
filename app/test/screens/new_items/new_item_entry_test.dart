@@ -30,7 +30,7 @@ void main() {
       buildNewItemDependencies(ScriptedItemDraftRepository()),
       runnerRepository: FakeRunnerRepository(
         runners: const <Runner>[],
-        thisAgentPlace: null,
+        thisDeviceOffers: null,
         thisRunnerProblem: null,
       ),
     );

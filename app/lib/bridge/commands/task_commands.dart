@@ -6,6 +6,7 @@ import 'package:agent_orchestration/bridge/codecs/schedule_values.dart';
 import 'package:agent_orchestration/bridge/codecs/task_values.dart';
 import 'package:agent_orchestration/bridge/codecs/task_views.dart';
 import 'package:agent_orchestration/bridge/commands/node_command.dart';
+import 'package:agent_orchestration/bridge/node/runner_settings.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 
 final class TaskArguments implements JsonEncodable {
@@ -16,6 +17,7 @@ final class TaskArguments implements JsonEncodable {
     required this.details,
     required this.doer,
     required this.runsOn,
+    required this.agentPlace,
     required List<SkillId> skills,
     required this.usesAutomaticSkills,
     required this.approvalPolicy,
@@ -27,6 +29,7 @@ final class TaskArguments implements JsonEncodable {
   final String details;
   final TaskDoer doer;
   final RunnerTarget runsOn;
+  final AgentPlace agentPlace;
   final List<SkillId> skills;
   final bool usesAutomaticSkills;
   final ApprovalPolicy approvalPolicy;
@@ -40,6 +43,7 @@ final class TaskArguments implements JsonEncodable {
       'details': details,
       'doer': doer.toJson(),
       'runs_on': runsOn.toJson(),
+      'agent_place': agentPlace.wireName,
       'skills': skills,
       'uses_automatic_skills': usesAutomaticSkills,
       'approval_policy': approvalPolicy.wireName,

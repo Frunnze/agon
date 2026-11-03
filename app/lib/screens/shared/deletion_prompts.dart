@@ -100,7 +100,8 @@ DeletionPrompt describeWorkspaceDeletion({
   return DeletionPrompt(
     title: 'Delete ${doomed.name}?',
     explanation:
-        'Its projects go with it, with their tasks, jobs and runs. Your '
+        'Its projects go with it, with their tasks, jobs and runs, and so '
+        'do the skills, rules and workflows only it can use. Your '
         'devices stay paired. You switch to ${next.name}. The last '
         "workspace can't be deleted, nor one with a running task.",
     keepLabel: 'Keep workspace',

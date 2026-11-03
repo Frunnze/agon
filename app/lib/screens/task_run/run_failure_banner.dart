@@ -4,6 +4,7 @@ import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/run.dart';
 import 'package:agent_orchestration/icons/app_icon_kind.dart';
 import 'package:agent_orchestration/presentation/device_names.dart';
+import 'package:agent_orchestration/screens/shared/agent_login_pointer.dart';
 import 'package:agent_orchestration/theme/app_colors.dart';
 import 'package:agent_orchestration/widgets/notice_banner.dart';
 
@@ -11,11 +12,13 @@ class RunFailureBanner extends StatelessWidget {
   const RunFailureBanner({
     required this.failure,
     required this.deviceNames,
+    required this.loginPointer,
     super.key,
   });
 
   final RunFailure failure;
   final DeviceNames deviceNames;
+  final AgentLoginPointer? loginPointer;
 
   @override
   Widget build(BuildContext context) {
@@ -35,7 +38,9 @@ class RunFailureBanner extends StatelessWidget {
       body: <Widget>[
         Text(failure.reason),
         Text(retryNote, style: const TextStyle(color: AppColors.inkMuted)),
+        ...describeAgentLoginPointer(loginPointer),
       ],
+      actions: offerAgentLoginConnection(loginPointer),
     );
   }
 }

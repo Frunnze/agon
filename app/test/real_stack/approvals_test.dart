@@ -20,7 +20,7 @@ const String _approvedTitle = 'Publish the changes file';
 const String _deniedTitle = 'Publish the release notes';
 const String _pushDialogTitle = 'Approve push to local.test?';
 const String _pushRowTitle = 'Push 1 commit to acme/app';
-const String _approveLabel = 'Approve with $confirmationMethodName';
+const String _approveLabel = 'Approve';
 const String _deniedNote = 'was denied, so nothing was pushed.';
 
 Future<node.ApprovalsView> _listNodeApprovals(
@@ -166,7 +166,7 @@ void main() {
         pageTitle: 'Approvals',
       );
       await waitUntilShown(tester, find.text(_pushRowTitle));
-      expect(find.text('1 waiting. It needs your passkey.'), findsOneWidget);
+      expect(find.text('1 waiting. It needs your approval.'), findsOneWidget);
       await tapAndWait(
         tester,
         find.text(_pushRowTitle),

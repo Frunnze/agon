@@ -15,13 +15,16 @@ use crate::error::ServerError;
 use crate::events::append_notification;
 use crate::extractors::PathValue;
 use crate::memberships::{require_workspace_member, withdraw_workspace};
-use crate::scope_cleanup::forget_workspace_in_scopes;
+use crate::scope_cleanup::{
+    forget_workspace_in_scopes, remove_library_seen_in_no_workspace,
+};
 use crate::server::SharedServer;
 use crate::stored_state::StoredState;
 use crate::work_removal::{
     announce_removed_work, has_unfinished_run, list_project_tasks,
     remove_projects_with_work, remove_tasks_with_runs,
 };
+use crate::workflow_deletion::remove_workflows_seen_in_no_workspace;
 
 const LAST_WORKSPACE_COUNT: usize = 1;
 
@@ -72,8 +75,11 @@ fn drop_workspace(
         withdraw_workspace(state, device_id, workspace_id);
     }
     state.workspaces.remove(&workspace_id);
+    remove_library_seen_in_no_workspace(state);
+    remove_workflows_seen_in_no_workspace(state);
 
     append_notification(state, ChangeTopic::Projects);
+    append_notification(state, ChangeTopic::Workflows);
     announce_removed_work(state);
     let event_text = format!("Deleted workspace {}", workspace.name);
     Ok(Change::recorded((), ChangeTopic::Workspaces, event_text))

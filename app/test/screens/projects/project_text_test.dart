@@ -159,7 +159,7 @@ void main() {
       final StatusLabel label = buildAgentAccessLabel(access);
       final bool canPush = access == AgentAccess.pushAfterApproval;
 
-      expect(label.icon, canPush ? AppIconKind.fingerprint : AppIconKind.lock);
+      expect(label.icon, canPush ? AppIconKind.approval : AppIconKind.lock);
       expect(label.text, describeAgentAccess(access));
     }
     expect(

@@ -16,6 +16,7 @@ import 'package:agent_orchestration/bridge/codecs/task_values.dart';
 import 'package:agent_orchestration/bridge/codecs/workflow_values.dart';
 import 'package:agent_orchestration/bridge/codecs/workflow_views.dart';
 import 'package:agent_orchestration/bridge/codecs/workspace_values.dart';
+import 'package:agent_orchestration/bridge/node/runner_settings.dart';
 
 import '../../support/random_inputs.dart';
 import '../support/node_wire_names.dart';
@@ -31,7 +32,7 @@ const List<_WireNameFamily> _families = <_WireNameFamily>[
   _WireNameFamily(DeviceRole.values, nodeDeviceRoles),
   _WireNameFamily(HardwareKeyKind.values, nodeHardwareKeyKinds),
   _WireNameFamily(RunnerLink.values, nodeRunnerLinks),
-  _WireNameFamily(SandboxKind.values, nodeSandboxKinds),
+  _WireNameFamily(AgentPlace.values, nodeAgentPlaces),
   _WireNameFamily(AgentAccess.values, nodeAgentAccesses),
   _WireNameFamily(SkillUsage.values, nodeSkillUsages),
   _WireNameFamily(SkillSource.values, nodeSkillSources),

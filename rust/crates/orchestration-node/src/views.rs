@@ -8,7 +8,9 @@ pub use app_servers::{
     AppServerView, AppServersView, ThisDeviceStanding, describe_app_servers,
 };
 pub use approval_description::describe_approval_action;
-pub use repository_holders::{RepositoryHolder, find_repository_holders};
+pub use repository_holders::{
+    RepositoryHolder, find_repository_holders, order_file_sources,
+};
 pub use run_progress::{
     CurrentStep, RunProgress, describe_run_progress, find_latest_run,
 };

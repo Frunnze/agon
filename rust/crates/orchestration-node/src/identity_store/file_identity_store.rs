@@ -19,7 +19,6 @@ const AGENT_CREDENTIAL_FILE_NAME: &str = "agent-credential.key";
 pub struct FileIdentityStore {
     identity_path: PathBuf,
     peer_secret_path: PathBuf,
-    agent_credential_path: PathBuf,
 }
 
 impl FileIdentityStore {
@@ -27,13 +26,15 @@ impl FileIdentityStore {
     pub fn new(identity_path: PathBuf) -> Self {
         let peer_secret_path =
             identity_path.with_file_name(PEER_SECRET_FILE_NAME);
-        let agent_credential_path =
-            identity_path.with_file_name(AGENT_CREDENTIAL_FILE_NAME);
         Self {
             identity_path,
             peer_secret_path,
-            agent_credential_path,
         }
+    }
+
+    fn find_agent_credential_path(&self) -> PathBuf {
+        self.identity_path
+            .with_file_name(AGENT_CREDENTIAL_FILE_NAME)
     }
 }
 
@@ -83,7 +84,7 @@ impl IdentityStore for FileIdentityStore {
     fn load_agent_credential(
         &self,
     ) -> Result<Option<Zeroizing<Vec<u8>>>, IdentityStoreError> {
-        let stored = read_secret_file(&self.agent_credential_path)?;
+        let stored = read_secret_file(&self.find_agent_credential_path())?;
         Ok(stored.map(Zeroizing::new))
     }
 
@@ -91,10 +92,10 @@ impl IdentityStore for FileIdentityStore {
         &self,
         encoded: &[u8],
     ) -> Result<(), IdentityStoreError> {
-        write_secret_file(&self.agent_credential_path, encoded)
+        write_secret_file(&self.find_agent_credential_path(), encoded)
     }
 
     fn forget_agent_credential(&self) -> Result<(), IdentityStoreError> {
-        remove_secret_file(&self.agent_credential_path)
+        remove_secret_file(&self.find_agent_credential_path())
     }
 }

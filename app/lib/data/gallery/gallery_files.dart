@@ -2,6 +2,7 @@ import 'package:agent_orchestration/data/fakes/fake_file_repository.dart';
 import 'package:agent_orchestration/data/gallery/gallery_file_texts.dart';
 import 'package:agent_orchestration/data/gallery/gallery_identifiers.dart';
 import 'package:agent_orchestration/data/gallery/gallery_moments.dart';
+import 'package:agent_orchestration/data/gallery/gallery_runs.dart';
 import 'package:agent_orchestration/data/models/repository_files.dart';
 
 const String galleryAppRepositoryAddress = 'github.com/acme/app';
@@ -22,6 +23,7 @@ final Map<String, RepositoryFileSource> galleryFileSources =
             'task/fix-login-redirect-a41c',
             'task/ship-release-2-4-9e07',
             'task/ship-release-2-3-5c18',
+            galleryKeptBranch,
           ],
         ),
         galleryApiRepositoryAddress: FilesWithoutRunner(

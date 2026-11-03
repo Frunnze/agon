@@ -9,6 +9,7 @@ use crate::command_reply::encode_reply;
 use crate::node::Node;
 use crate::node_error::NodeError;
 use crate::peer_side::trusted_peer_address;
+use crate::place_offers::PlaceOffer;
 use crate::runner_settings::RunnerSettings;
 use crate::views::{
     RunnerSummary, describe_runner_summary, summarize_runners,
@@ -41,6 +42,7 @@ struct RunnersView {
     runners: Vec<RunnerView>,
     this_device_problem: Option<String>,
     this_device_settings: Option<RunnerSettings>,
+    this_device_offers: Option<Vec<PlaceOffer>>,
 }
 
 pub(super) async fn handle_runner_command(
@@ -55,9 +57,12 @@ pub(super) async fn handle_runner_command(
             let devices = client.list_devices().await?;
             let mut view =
                 build_runners_view(&runners, &devices, workspace_id);
-            view.this_device_problem = node.runner_state().problem();
-            view.this_device_settings =
-                node.runner_state().settings_in_effect();
+            let runner_state = node.runner_state();
+            view.this_device_problem = runner_state.problem();
+            view.this_device_settings = runner_state.settings_in_effect();
+            if view.this_device_settings.is_some() {
+                view.this_device_offers = Some(runner_state.checked_offers());
+            }
             encode_reply(&view)
         }
         RunnerCommand::PauseRunner { device_id } => {
@@ -110,5 +115,6 @@ fn build_runners_view(
         runners: runner_views,
         this_device_problem: None,
         this_device_settings: None,
+        this_device_offers: None,
     }
 }

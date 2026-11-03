@@ -33,6 +33,7 @@ final class FakeFileRepository implements FileRepository {
   Future<RepositoryFileSource> openRepository({
     required ProjectId projectId,
     required String repositoryAddress,
+    required DeviceId? preferredRunnerId,
   }) async {
     final RepositoryFileSource? source = _sources[repositoryAddress];
     if (source == null) {

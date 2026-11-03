@@ -30,11 +30,45 @@ class ListRowMain extends StatelessWidget {
         ? AppTextStyles.bodyBold.merge(AppTextStyles.monospace)
         : AppTextStyles.bodyBold;
 
+    return _RowMainColumn(
+      title: Text(title, style: titleStyle),
+      subtitle: subtitle,
+    );
+  }
+}
+
+class MixedListRowMain extends StatelessWidget {
+  const MixedListRowMain({
+    required this.title,
+    super.key,
+    this.subtitle = const <TextSegment>[],
+  });
+
+  final List<TextSegment> title;
+  final List<TextSegment> subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    return _RowMainColumn(
+      title: MixedText(title, style: AppTextStyles.bodyBold),
+      subtitle: subtitle,
+    );
+  }
+}
+
+class _RowMainColumn extends StatelessWidget {
+  const _RowMainColumn({required this.title, required this.subtitle});
+
+  final Widget title;
+  final List<TextSegment> subtitle;
+
+  @override
+  Widget build(BuildContext context) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        Text(title, style: titleStyle),
+        title,
         if (subtitle.isNotEmpty) const SizedBox(height: AppSpacing.space1),
         if (subtitle.isNotEmpty)
           MixedText(subtitle, style: AppTextStyles.smallMuted),

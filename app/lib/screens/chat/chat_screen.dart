@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import 'package:agent_orchestration/data/biometric_confirmation.dart';
 import 'package:agent_orchestration/data/clock.dart';
 import 'package:agent_orchestration/data/models/approval.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
@@ -32,7 +31,6 @@ class ChatScreen extends StatefulWidget {
     required this.approvalRepository,
     required this.runnerRepository,
     required this.deviceRepository,
-    required this.biometricConfirmation,
     required this.clock,
     required this.navigation,
     super.key,
@@ -45,7 +43,6 @@ class ChatScreen extends StatefulWidget {
   final ApprovalRepository approvalRepository;
   final RunnerRepository runnerRepository;
   final DeviceRepository deviceRepository;
-  final BiometricConfirmation biometricConfirmation;
   final Clock clock;
   final AppNavigation navigation;
 
@@ -157,7 +154,6 @@ class _ChatScreenState extends State<ChatScreen> {
       approvalRepository: widget.approvalRepository,
       workflowRepository: widget.workflowRepository,
       deviceRepository: widget.deviceRepository,
-      biometricConfirmation: widget.biometricConfirmation,
       clock: widget.clock,
     );
     final ApprovalDecision? decision = await review.askForDecision(
@@ -170,6 +166,6 @@ class _ChatScreenState extends State<ChatScreen> {
       return;
     }
 
-    await review.decideWithConfirmation(request: request, decision: decision);
+    await widget.approvalRepository.decideApproval(request.id, decision);
   }
 }

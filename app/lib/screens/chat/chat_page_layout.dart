@@ -114,7 +114,11 @@ class ChatPageLayout extends StatelessWidget {
             TextSegment.monospace(shortenIdentifier(session)),
         ],
       ),
-      if (stepRunner != null) ...buildRunnerFacts(stepRunner),
+      if (stepRunner != null)
+        ...buildRunnerFacts(
+          runner: stepRunner,
+          place: runContext.task.agentPlace,
+        ),
     ];
   }
 }

@@ -110,6 +110,8 @@ pub enum NodeError {
     DraftNotItem { kind: &'static str, problem: String },
     #[error("this device cannot run tasks")]
     RunnerUnavailable,
+    #[error("a runner offers at least one place for agents to run")]
+    NoAgentOffers,
     #[error("the token or API key cannot have spaces or line breaks")]
     InvalidAgentSecret,
     #[error("a Claude Code login is already open")]

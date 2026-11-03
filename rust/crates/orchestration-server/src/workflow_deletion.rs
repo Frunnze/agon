@@ -1,3 +1,5 @@
+use std::collections::BTreeSet;
+
 use axum::extract::State;
 use axum::http::StatusCode;
 use orchestration_api::updates::ChangeTopic;
@@ -11,6 +13,7 @@ use crate::change::Change;
 use crate::error::ServerError;
 use crate::events::append_notification;
 use crate::extractors::PathValue;
+use crate::scope_cleanup::is_seen_in_no_workspace;
 use crate::server::SharedServer;
 use crate::stored_state::StoredState;
 
@@ -38,11 +41,7 @@ fn drop_workflow(
         .current
         .name
         .clone();
-    let is_used = state
-        .tasks
-        .values()
-        .any(|task| uses_workflow(task, workflow_id));
-    if is_used {
+    if is_used_by_any_task(state, workflow_id) {
         return Err(ServerError::Conflict(format!(
             "workflow {workflow_name} is still used by a task or job"
         )));
@@ -55,6 +54,36 @@ fn drop_workflow(
     append_notification(state, ChangeTopic::Approvals);
     let event_text = format!("Deleted workflow {workflow_name}");
     Ok(Change::recorded((), ChangeTopic::Workflows, event_text))
+}
+
+pub fn remove_workflows_seen_in_no_workspace(state: &mut StoredState) {
+    let unseen_workflow_ids: BTreeSet<WorkflowId> = state
+        .workflows
+        .values()
+        .map(|record| &record.current)
+        .filter(|workflow| {
+            is_seen_in_no_workspace(state, &workflow.availability)
+        })
+        .filter(|workflow| !is_used_by_any_task(state, workflow.id))
+        .map(|workflow| workflow.id)
+        .collect();
+
+    state
+        .workflows
+        .retain(|workflow_id, _| !unseen_workflow_ids.contains(workflow_id));
+    state.approvals.retain(|_, approval| {
+        let is_signing_unseen = unseen_workflow_ids
+            .iter()
+            .any(|workflow_id| asks_to_sign(approval, *workflow_id));
+        !is_signing_unseen
+    });
+}
+
+fn is_used_by_any_task(state: &StoredState, workflow_id: WorkflowId) -> bool {
+    state
+        .tasks
+        .values()
+        .any(|task| uses_workflow(task, workflow_id))
 }
 
 fn uses_workflow(task: &Task, workflow_id: WorkflowId) -> bool {

@@ -21,6 +21,10 @@ pub enum ApprovalAction {
     SignWorkflow {
         workflow_id: WorkflowId,
     },
+    RunCommand {
+        tool: String,
+        command: String,
+    },
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]

@@ -80,4 +80,7 @@ abstract final class GalleryApprovalIds {
   static const ApprovalId pushBillingRename = ApprovalId(
     'approval-push-billing-rename',
   );
+  static const ApprovalId runReleaseTests = ApprovalId(
+    'approval-run-release-tests',
+  );
 }

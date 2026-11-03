@@ -14,8 +14,9 @@ use crate::support::hosting_steps::{
 };
 use crate::support::server_backups::{
     SYNC_LIMIT, TAKEOVER_SECONDS, list_task_titles, pair_client_at,
-    read_app_servers, read_hosted_state, start_backup_device,
-    start_server_backup, wait_until_copied, wait_until_standing,
+    read_app_servers, read_hosted_state, start_backup_ready_to_take_over,
+    start_server_backup, start_steady_backup_device, wait_until_copied,
+    wait_until_standing,
 };
 use crate::support::test_device::{RELAY_DISABLED, TestDevice, read_text};
 
@@ -57,7 +58,7 @@ fn test_start_server_backup_property_the_backup_keeps_a_verified_copy() {
     let workspace_id =
         read_text(&hosting.account, "/workspaces/0/id").unwrap_or_default();
     let address = read_hosted_address(&hosting.device).unwrap_or_default();
-    let Ok(backup) = start_backup_device() else {
+    let Ok(backup) = start_steady_backup_device() else {
         panic!("the backup device starts");
     };
     let paired = pair_client_at(
@@ -115,7 +116,7 @@ fn test_stop_server_backup_property_the_device_leaves_the_group() {
     let workspace_id =
         read_text(&hosting.account, "/workspaces/0/id").unwrap_or_default();
     let address = read_hosted_address(&hosting.device).unwrap_or_default();
-    let Ok(backup) = start_backup_device() else {
+    let Ok(backup) = start_steady_backup_device() else {
         panic!("the backup device starts");
     };
     let paired = pair_client_at(
@@ -158,7 +159,7 @@ fn test_start_server_backup_property_takes_over_and_the_old_server_catches_up()
     };
     let address =
         read_hosted_address(&nodes.hosting.device).unwrap_or_default();
-    let Ok(backup) = start_backup_device() else {
+    let Ok(backup) = start_backup_ready_to_take_over() else {
         panic!("the backup device starts");
     };
     let Ok(client) = TestDevice::start() else {

@@ -1,3 +1,4 @@
+use orchestration_core::agent_place::AgentPlace;
 use orchestration_core::identifiers::{
     DeviceId, ProjectId, SkillId, WorkflowId, WorkspaceId,
 };
@@ -36,6 +37,7 @@ pub struct DraftingRunner {
     pub device: DraftingDevice,
     pub is_online: bool,
     pub labels: Vec<String>,
+    pub offers: Vec<AgentPlace>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

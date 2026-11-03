@@ -16,23 +16,9 @@ import 'package:agent_orchestration/shell/app_route.dart';
 import '../support/app_harness.dart';
 import '../support/form_finders.dart';
 import '../support/random_inputs.dart';
+import '../support/sample_runners.dart';
 
 const DeviceId _thisDeviceId = GalleryDeviceIds.airLaptop;
-
-Runner _runnerOnThisDevice() {
-  final Runner base = galleryRunners.first;
-  return Runner(
-    deviceId: _thisDeviceId,
-    labels: base.labels,
-    slotsTotal: base.slotsTotal,
-    slotsBusy: 0,
-    link: RunnerLink.direct,
-    online: true,
-    acceptingNewRuns: true,
-    sandbox: base.sandbox,
-    allowedHosts: base.allowedHosts,
-  );
-}
 
 AgentLoginStatus _randomStatus(Random random) {
   return AgentLoginStatus(
@@ -65,8 +51,13 @@ Future<FakeAgentLoginRepository> _openRunnerPage(
         peerAddressProblem: null,
       ),
       runnerRepository: FakeRunnerRepository(
-        runners: <Runner>[...galleryRunners, _runnerOnThisDevice()],
-        thisAgentPlace: place,
+        runners: <Runner>[
+          ...galleryRunners,
+          buildOnlineRunnerOn(_thisDeviceId),
+        ],
+        thisDeviceOffers: <PlaceOffer>[
+          PlaceOffer(place: place, problem: null),
+        ],
         thisRunnerProblem: null,
       ),
       agentLoginRepository: logins,
@@ -100,7 +91,7 @@ void main() {
         place: place,
         status: status,
       );
-      expect(find.text(agentLoginTitle), findsOneWidget);
+      expect(find.text(describeAgentLoginTitle(place)), findsOneWidget);
       expect(find.text(description.statusText), findsOneWidget);
       expect(find.text(description.detail), findsOneWidget);
       final List<AgentLoginAction> actions = chooseAgentLoginActions(
@@ -122,16 +113,17 @@ void main() {
     final Random random = seededRandom(9402);
     for (int i = 0; i < widgetPropertyIterations; i += 1) {
       final bool isThisDevice = random.nextBool();
+      final AgentPlace place = pickOne(random, AgentPlace.values);
 
       await _openRunnerPage(
         tester,
         runnerId: isThisDevice ? _thisDeviceId : galleryRunners.first.deviceId,
-        place: pickOne(random, AgentPlace.values),
+        place: place,
         status: _randomStatus(random),
       );
 
       final Matcher shown = isThisDevice ? findsOneWidget : findsNothing;
-      expect(find.text(agentLoginTitle), shown);
+      expect(find.text(describeAgentLoginTitle(place)), shown);
     }
   });
 
@@ -152,13 +144,13 @@ void main() {
       );
 
       await _tapLabel(tester, logInLabel);
-      expect(find.text('claude auth login'), findsOneWidget);
+      expect(find.textContaining('claude auth login'), findsOneWidget);
       await tester.enterText(find.byType(TextField), code);
       await _tapLabel(tester, sendLabel);
 
       expect(find.textContaining(code), findsOneWidget);
       await _tapLabel(tester, closeLabel);
-      expect(find.text('claude auth login'), findsNothing);
+      expect(find.textContaining('claude auth login'), findsNothing);
       expect(find.text(logInLabel), findsOneWidget);
     }
   });
@@ -182,11 +174,11 @@ void main() {
       );
 
       await _tapLabel(tester, connectClaudeCodeLabel);
-      expect(find.text('claude setup-token'), findsOneWidget);
+      expect(find.textContaining('claude setup-token'), findsOneWidget);
       logins.endTerminal(problem: null);
       await pumpFrames(tester);
 
-      expect(find.text('claude setup-token'), findsNothing);
+      expect(find.textContaining('claude setup-token'), findsNothing);
       expect(find.text(connectedText), findsOneWidget);
       expect(find.text(disconnectLabel), findsOneWidget);
     }

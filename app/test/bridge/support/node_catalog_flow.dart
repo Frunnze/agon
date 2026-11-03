@@ -17,6 +17,7 @@ import 'package:agent_orchestration/bridge/commands/project_commands.dart';
 import 'package:agent_orchestration/bridge/commands/runner_commands.dart';
 import 'package:agent_orchestration/bridge/commands/task_commands.dart';
 import 'package:agent_orchestration/bridge/node/node_command_channel.dart';
+import 'package:agent_orchestration/bridge/node/runner_settings.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 
 const Scope _everywhere = Scope(
@@ -163,6 +164,7 @@ TaskArguments _buildTaskArguments(
     details: 'Keep it small.',
     doer: const OneAgent(agent: AgentKind.claudeCode),
     runsOn: const AnyFreeRunner(),
+    agentPlace: AgentPlace.localProcess,
     skills: const <SkillId>[],
     usesAutomaticSkills: false,
     approvalPolicy: ApprovalPolicy.askBeforeRiskyActions,

@@ -11,11 +11,24 @@ const String _thisDeviceLabel = 'This device';
 const String _workspaceSeparator = ', ';
 const int _countdownFieldWidth = 2;
 
+const String _presentText = 'Now';
+
 String describeLastSeen(DateTime lastSeen, DateTime now) {
   if (now.difference(lastSeen) < _presentWithin) {
-    return 'Now';
+    return _presentText;
   }
   return describeTimeSince(lastSeen, now);
+}
+
+String describeDeviceLastSeen({
+  required Device device,
+  required DeviceId thisDeviceId,
+  required DateTime now,
+}) {
+  if (device.id == thisDeviceId) {
+    return _presentText;
+  }
+  return describeLastSeen(device.lastSeen, now);
 }
 
 String describeRoleWithArticle(DeviceRole role) {

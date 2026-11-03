@@ -4,8 +4,8 @@ use std::sync::Mutex;
 
 use chrono::DateTime;
 use orchestration_api::work::{
-    ClaimResponse, CreateApprovalRequest, HeartbeatRequest, RunAssignment,
-    RunEvent, RunEventsRequest,
+    ClaimResponse, CreateApprovalRequest, ForgottenWork, HeartbeatRequest,
+    RunAssignment, RunEvent, RunEventsRequest,
 };
 use orchestration_core::approval::ApprovalDecision;
 use orchestration_core::identifiers::RunId;
@@ -40,6 +40,7 @@ pub struct FakeServer {
     approval_answer: ApprovalAnswer,
     cancellation_rule: CancellationRule,
     user_messages: Vec<ChatMessage>,
+    forgotten_work: ForgottenWork,
     state: Mutex<RecordedState>,
 }
 
@@ -55,6 +56,7 @@ impl FakeServer {
             ),
             cancellation_rule: CancellationRule::Never,
             user_messages: Vec::new(),
+            forgotten_work: ForgottenWork::default(),
             state: Mutex::new(state),
         }
     }
@@ -86,6 +88,13 @@ impl FakeServer {
         }
         Self {
             user_messages,
+            ..self
+        }
+    }
+
+    pub fn forgetting(self, forgotten_work: ForgottenWork) -> Self {
+        Self {
+            forgotten_work,
             ..self
         }
     }
@@ -140,9 +149,9 @@ impl RunnerServer for FakeServer {
     fn send_heartbeat(
         &self,
         heartbeat: &HeartbeatRequest,
-    ) -> impl Future<Output = Result<(), ServerError>> + Send {
+    ) -> impl Future<Output = Result<ForgottenWork, ServerError>> + Send {
         hold(&self.state).heartbeats.push(heartbeat.clone());
-        ready(Ok(()))
+        ready(Ok(self.forgotten_work.clone()))
     }
 
     fn claim_next_run(

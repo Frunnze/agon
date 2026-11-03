@@ -152,6 +152,7 @@ void main() {
     final RepositoryFileSource unknown = await repository.openRepository(
       projectId: const ProjectId('project'),
       repositoryAddress: 'github.com/acme/unknown',
+      preferredRunnerId: null,
     );
 
     expect(unknown, isA<FilesWithoutRunner>());

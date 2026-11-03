@@ -157,7 +157,7 @@ fn command_names_are_unique_and_cover_the_contract() {
         "revoke_device",
         "remove_device_from_workspace",
         "pause_runner",
-        "choose_agent_place",
+        "choose_agent_offers",
         "retry_server",
         "poll_events",
         "forget_this_device",

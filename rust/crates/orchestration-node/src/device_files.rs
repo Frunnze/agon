@@ -3,6 +3,7 @@ use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
 
 use orchestration_api::accounts::AccountView;
+use orchestration_core::agent_place::AgentPlace;
 use orchestration_core::server_group::ServerGroup;
 use orchestration_security::pairing::PairingPublicKeys;
 use serde::de::DeserializeOwned;
@@ -11,7 +12,7 @@ use uuid::Uuid;
 
 use crate::file_removal::remove_file_if_present;
 use crate::node_error::NodeError;
-use crate::runner_settings::AgentPlace;
+use crate::place_offers::StoredOffers;
 
 const ACCOUNT_FILE_NAME: &str = "account.json";
 const PENDING_JOIN_FILE_NAME: &str = "pending-join.json";
@@ -177,16 +178,20 @@ impl DeviceFiles {
         Ok(())
     }
 
-    pub fn load_agent_place(&self) -> Result<Option<AgentPlace>, NodeError> {
-        read_json_file(&self.data_directory.join(AGENT_PLACE_FILE_NAME))
+    pub fn load_agent_offers(
+        &self,
+    ) -> Result<Option<Vec<AgentPlace>>, NodeError> {
+        let path = self.data_directory.join(AGENT_PLACE_FILE_NAME);
+        let stored: Option<StoredOffers> = read_json_file(&path)?;
+        Ok(stored.map(StoredOffers::into_offers))
     }
 
-    pub fn save_agent_place(
+    pub fn save_agent_offers(
         &self,
-        place: AgentPlace,
+        offers: &[AgentPlace],
     ) -> Result<(), NodeError> {
         let path = self.data_directory.join(AGENT_PLACE_FILE_NAME);
-        write_json_file(&path, &place)
+        write_json_file(&path, &offers)
     }
 
     pub fn remove_device_records(&self) -> Result<(), NodeError> {

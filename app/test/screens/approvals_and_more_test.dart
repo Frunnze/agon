@@ -11,7 +11,10 @@ import 'package:agent_orchestration/shell/app_section.dart';
 import '../support/app_harness.dart';
 
 void expectGalleryApprovals() {
-  expect(find.text('2 waiting. Each one needs your passkey.'), findsOneWidget);
+  expect(
+    find.text('2 waiting. Each one needs your approval.'),
+    findsOneWidget,
+  );
   expect(find.text('Push 3 commits to acme/app'), findsOneWidget);
   expect(find.text('release #42 · branch release'), findsOneWidget);
   expect(find.text('Just now'), findsOneWidget);

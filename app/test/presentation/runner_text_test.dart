@@ -6,6 +6,7 @@ import 'package:agent_orchestration/data/gallery/gallery_identifiers.dart';
 import 'package:agent_orchestration/data/gallery/gallery_runners.dart';
 import 'package:agent_orchestration/data/models/runner.dart';
 import 'package:agent_orchestration/data/models/workspace.dart';
+import 'package:agent_orchestration/presentation/agent_place_text.dart';
 import 'package:agent_orchestration/presentation/runner_text.dart';
 import 'package:agent_orchestration/presentation/time_phrases.dart';
 
@@ -110,29 +111,30 @@ void main() {
     );
   });
 
-  test('test_describe_sandbox_property_every_kind_has_distinct_text', () {
-    final Set<String> sandboxTexts = <String>{
-      for (final SandboxKind kind in SandboxKind.values) describeSandbox(kind),
-    };
-    final Set<String> fileTexts = <String>{
-      for (final SandboxKind kind in SandboxKind.values)
-        describeFileAccess(kind),
-    };
+  test('test_describe_runner_offers_property_every_offer_set_is_distinct', () {
+    final Random random = seededRandom(9410);
+    final Set<String> allTexts = <String>{};
+    for (int i = 0; i < propertyIterations; i += 1) {
+      final List<AgentPlace> offers = <AgentPlace>[
+        for (final AgentPlace place in AgentPlace.values)
+          if (random.nextBool()) place,
+      ];
+      final List<AgentPlace> reversed = offers.reversed.toList();
 
-    expect(sandboxTexts.length, SandboxKind.values.length);
-    expect(fileTexts, isNotEmpty);
-    expect(
-      describeSandbox(SandboxKind.container),
-      'In Docker, a new container per run, deleted when the run ends',
-    );
-    expect(
-      describeSandbox(SandboxKind.localProcess),
-      'On the computer itself, as local processes',
-    );
-    expect(
-      describeFileAccess(SandboxKind.container),
-      "Only the run's own workspace",
-    );
+      final String described = describeRunnerOffers(offers);
+
+      expect(describeRunnerOffers(reversed), described);
+      expect(
+        described.contains('Docker'),
+        offers.contains(AgentPlace.container),
+      );
+      expect(
+        described.contains('computer'),
+        offers.contains(AgentPlace.localProcess),
+      );
+      allTexts.add(described);
+    }
+    expect(allTexts.length, 4);
   });
 
   test('test_describe_runner_summary_property_reach_leads_the_summary', () {

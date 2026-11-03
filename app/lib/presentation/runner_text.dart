@@ -77,28 +77,6 @@ String describeRunnerLink(RunnerLink link, AppServerState serverState) {
   }
 }
 
-String describeSandbox(SandboxKind sandbox) {
-  switch (sandbox) {
-    case SandboxKind.container:
-      return 'In Docker, a new container per run, deleted when the run ends';
-    case SandboxKind.microVirtualMachine:
-      return 'In a new micro virtual machine per run, deleted when the run '
-          'ends';
-    case SandboxKind.localProcess:
-      return 'On the computer itself, as local processes';
-  }
-}
-
-String describeFileAccess(SandboxKind sandbox) {
-  switch (sandbox) {
-    case SandboxKind.container:
-    case SandboxKind.microVirtualMachine:
-      return "Only the run's own workspace";
-    case SandboxKind.localProcess:
-      return 'Every file the signed-in user can open';
-  }
-}
-
 String describeRunnerSummary({
   required Runner runner,
   required RunnerReach reach,

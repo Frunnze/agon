@@ -1,7 +1,8 @@
 use std::collections::BTreeMap;
 
+use orchestration_core::agent_place::AgentPlace;
 use orchestration_core::approval::ApprovalAction;
-use orchestration_core::device::{Runner, RunnerLink, SandboxKind};
+use orchestration_core::device::{Runner, RunnerLink};
 use orchestration_core::identifiers::{DeviceId, RunId, TaskId, WorkflowId};
 use orchestration_core::run::{RunStep, StepStatus};
 use orchestration_node::views::{
@@ -44,7 +45,7 @@ fn build_runner(parts: (u32, u32, bool, String)) -> Runner {
         link: RunnerLink::Direct,
         online,
         accepting_new_runs: true,
-        sandbox: SandboxKind::Container,
+        offers: vec![AgentPlace::Container],
         allowed_hosts: Vec::new(),
         cached_repositories: Vec::new(),
     }
@@ -165,6 +166,21 @@ proptest! {
         let description = describe_approval_action(&action, &names);
 
         prop_assert_eq!(description, format!("Sign workflow {workflow_name}"));
+    }
+
+    #[test]
+    fn test_describe_approval_action_property_names_the_tool_and_command(
+        tool in "[A-Za-z]{1,12}",
+        command in "[a-z ./-]{1,40}",
+    ) {
+        let action = ApprovalAction::RunCommand {
+            tool: tool.clone(),
+            command: command.clone(),
+        };
+
+        let description = describe_approval_action(&action, &BTreeMap::new());
+
+        prop_assert_eq!(description, format!("Use {tool}: {command}"));
     }
 
     #[test]

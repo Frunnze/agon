@@ -55,24 +55,35 @@ NodeBackedFileRepository _buildRepository(_RecordingNode recordingNode) {
 }
 
 void main() {
-  test('test_open_repository_property_sends_project_and_address', () async {
-    final Random random = seededRandom(9701);
-    for (int i = 0; i < propertyIterations; i += 1) {
-      final JsonObject reply = randomRepositoryBranchesJson(random);
-      final _RecordingNode recordingNode = _RecordingNode(reply: reply);
-      final ProjectId projectId = randomProjectId(random);
-      final String address = randomText(random);
+  test(
+    'test_open_repository_property_sends_project_address_and_preference',
+    () async {
+      final Random random = seededRandom(9701);
+      for (int i = 0; i < propertyIterations; i += 1) {
+        final JsonObject reply = randomRepositoryBranchesJson(random);
+        final _RecordingNode recordingNode = _RecordingNode(reply: reply);
+        final ProjectId projectId = randomProjectId(random);
+        final String address = randomText(random);
+        final DeviceId? preferred = random.nextBool()
+            ? randomDeviceId(random)
+            : null;
 
-      final RepositoryFileSource source = await _buildRepository(recordingNode)
-          .openRepository(projectId: projectId, repositoryAddress: address);
+        final RepositoryFileSource source =
+            await _buildRepository(recordingNode).openRepository(
+              projectId: projectId,
+              repositoryAddress: address,
+              preferredRunnerId: preferred,
+            );
 
-      final JsonObject command = recordingNode.commands.single;
-      expect(command['command'], 'list_repository_branches');
-      expect(command['project_id'], projectId.value);
-      expect(command['repository_address'], address);
-      expect(source is FilesFromRunner, reply['kind'] == 'available');
-    }
-  });
+        final JsonObject command = recordingNode.commands.single;
+        expect(command['command'], 'list_repository_branches');
+        expect(command['project_id'], projectId.value);
+        expect(command['repository_address'], address);
+        expect(command['preferred_runner_id'], preferred?.value);
+        expect(source is FilesFromRunner, reply['kind'] == 'available');
+      }
+    },
+  );
 
   test('test_list_folder_property_sends_location_and_folder', () async {
     final Random random = seededRandom(9702);
@@ -149,6 +160,7 @@ void main() {
       repository.openRepository(
         projectId: const ProjectId('42'),
         repositoryAddress: 'github.com/acme/app',
+        preferredRunnerId: null,
       ),
       throwsA(isA<RecordNotFound>()),
     );

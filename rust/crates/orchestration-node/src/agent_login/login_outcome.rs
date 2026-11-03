@@ -1,7 +1,7 @@
+use orchestration_core::agent_place::AgentPlace;
 use orchestration_hub::process_supervisor::ProcessExit;
 
 use crate::agent_credentials::{AgentCredential, AgentCredentialKind};
-use crate::runner_settings::AgentPlace;
 
 const NO_TOKEN_PROBLEM: &str = "Claude Code finished without a token";
 const STOPPED_PROBLEM: &str = "the login was stopped";
@@ -21,13 +21,10 @@ pub fn decide_login_outcome(
 ) -> LoginOutcome {
     match (place, seen_token) {
         (AgentPlace::Container, Some(token)) => connect_with(token),
-        (AgentPlace::Container, None) => {
-            LoginOutcome::Failed(describe_tokenless_exit(exit))
-        }
         (AgentPlace::LocalProcess, _) if *exit == ProcessExit::Succeeded => {
             LoginOutcome::LoggedIn
         }
-        (AgentPlace::LocalProcess, _) => {
+        (AgentPlace::Container, None) | (AgentPlace::LocalProcess, _) => {
             LoginOutcome::Failed(describe_tokenless_exit(exit))
         }
     }

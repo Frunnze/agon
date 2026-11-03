@@ -12,6 +12,7 @@ const ENGINE_FILE_NAME: &str = "docker";
 const EXECUTABLE_MODE: u32 = 0o755;
 const HEARTBEAT_PATH: &str = "/runners/heartbeat";
 const CLAIM_PATH: &str = "/runners/claim";
+const OLDER_PLACE_FILE_NAME: &str = "agent-place.json";
 pub const DEFAULT_IMAGE: &str = "agents-orchestration-runner:latest";
 
 #[derive(Clone, Copy, Debug)]
@@ -27,7 +28,7 @@ pub struct EngineRunner {
     configuration: Value,
     environment: Vec<EnvironmentVariable>,
     _engine_folder: TempDir,
-    _data: TempDir,
+    data: TempDir,
 }
 
 #[must_use]
@@ -106,7 +107,7 @@ impl EngineRunner {
             configuration,
             environment,
             _engine_folder: engine_folder,
-            _data: data,
+            data,
         })
     }
 
@@ -117,7 +118,7 @@ impl EngineRunner {
             configuration,
             environment,
             _engine_folder: engine_folder,
-            _data: data,
+            data,
         } = self;
         runner.stop()?;
         let fresh_runner = NodeProcess::start(&ProcessSetup {
@@ -130,7 +131,7 @@ impl EngineRunner {
             configuration,
             environment,
             _engine_folder: engine_folder,
-            _data: data,
+            data,
         })
     }
 
@@ -159,10 +160,26 @@ impl EngineRunner {
         }))
     }
 
-    pub fn choose_place(&self, place: &str) -> Result<Value, String> {
+    pub fn choose_offers(&self, offers: &Value) -> Result<Value, String> {
         self.runner.run(&json!({
-            "command": "choose_agent_place",
-            "place": place,
+            "command": "choose_agent_offers",
+            "offers": offers,
         }))
+    }
+
+    pub fn write_older_place_choice(&self, place: &str) -> Result<(), String> {
+        let older_file = self.data.path().join(OLDER_PLACE_FILE_NAME);
+        fs::write(older_file, json!(place).to_string()).map_err(describe)
+    }
+
+    #[must_use]
+    pub fn read_last_heartbeat_offers(&self) -> Option<Value> {
+        let heartbeat = self
+            .server
+            .recorded_requests()
+            .into_iter()
+            .rfind(|request| request.path == HEARTBEAT_PATH)?;
+        let body: Value = serde_json::from_slice(&heartbeat.body).ok()?;
+        Some(body["offers"].clone())
     }
 }

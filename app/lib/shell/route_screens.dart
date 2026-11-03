@@ -79,6 +79,8 @@ Widget buildRouteScreen({
         workflowRepository: dependencies.workflowRepository,
         projectRepository: dependencies.projectRepository,
         deviceRepository: dependencies.deviceRepository,
+        approvalRepository: dependencies.approvalRepository,
+        runnerRepository: dependencies.runnerRepository,
         clock: dependencies.clock,
         navigation: navigation,
       );
@@ -91,7 +93,6 @@ Widget buildRouteScreen({
         approvalRepository: dependencies.approvalRepository,
         runnerRepository: dependencies.runnerRepository,
         deviceRepository: dependencies.deviceRepository,
-        biometricConfirmation: dependencies.biometricConfirmation,
         clock: dependencies.clock,
         navigation: navigation,
       );

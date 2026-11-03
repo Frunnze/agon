@@ -4,9 +4,26 @@ import 'package:agent_orchestration/data/models/identifiers.dart';
 
 enum RunnerLink { direct, relay, localNetwork, unreachable }
 
-enum SandboxKind { container, microVirtualMachine, localProcess }
-
 enum AgentPlace { container, localProcess }
+
+const AgentPlace defaultAgentPlace = AgentPlace.localProcess;
+
+final class PlaceOffer {
+  const PlaceOffer({required this.place, required this.problem});
+
+  final AgentPlace place;
+  final String? problem;
+
+  @override
+  bool operator ==(Object other) {
+    return other is PlaceOffer &&
+        other.place == place &&
+        other.problem == problem;
+  }
+
+  @override
+  int get hashCode => Object.hash(place, problem);
+}
 
 final class Runner {
   Runner({
@@ -17,9 +34,10 @@ final class Runner {
     required this.link,
     required this.online,
     required this.acceptingNewRuns,
-    required this.sandbox,
+    required List<AgentPlace> offers,
     required List<String> allowedHosts,
   }) : labels = List<String>.unmodifiable(labels),
+       offers = List<AgentPlace>.unmodifiable(offers),
        allowedHosts = List<String>.unmodifiable(allowedHosts);
 
   final DeviceId deviceId;
@@ -29,7 +47,7 @@ final class Runner {
   final RunnerLink link;
   final bool online;
   final bool acceptingNewRuns;
-  final SandboxKind sandbox;
+  final List<AgentPlace> offers;
   final List<String> allowedHosts;
 
   Runner asPaused() {
@@ -41,7 +59,7 @@ final class Runner {
       link: link,
       online: online,
       acceptingNewRuns: false,
-      sandbox: sandbox,
+      offers: offers,
       allowedHosts: allowedHosts,
     );
   }
@@ -55,7 +73,7 @@ final class Runner {
       link: link,
       online: online,
       acceptingNewRuns: true,
-      sandbox: sandbox,
+      offers: offers,
       allowedHosts: allowedHosts,
     );
   }

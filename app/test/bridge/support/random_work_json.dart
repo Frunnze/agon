@@ -131,6 +131,7 @@ Map<String, Object?> randomTaskJson(Random random) {
     'project_id': randomUuidText(random),
     'doer': randomTaskDoerJson(random),
     'runs_on': randomRunnerTargetJson(random),
+    'agent_place': pickOne(random, nodeAgentPlaces),
     'skills': randomUuidTexts(random),
     'uses_automatic_skills': random.nextBool(),
     'approval_policy': pickOne(random, nodeApprovalPolicies),

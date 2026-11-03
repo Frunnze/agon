@@ -36,13 +36,14 @@ Future<node.AccountSummary?> createHostedClientAccount(
   NodeCommandChannel channel,
   LocalOrchestrationServer server,
 ) {
-  return channel.execute(
-    const node.CreateHostedAccountCommand(
-      workspaceName: homeWorkspaceName,
-      deviceName: appDeviceName,
-      role: node.DeviceRole.client,
-    ),
-  );
+  return _createHostedAccount(channel, role: node.DeviceRole.client);
+}
+
+Future<node.AccountSummary?> createHostedClientAndRunnerAccount(
+  NodeCommandChannel channel,
+  LocalOrchestrationServer server,
+) {
+  return _createHostedAccount(channel, role: node.DeviceRole.clientAndRunner);
 }
 
 Future<node.AccountSummary?> leaveWithoutAccount(
@@ -64,6 +65,19 @@ Future<node.AccountSummary?> _createAccount(
       deviceName: appDeviceName,
       role: role,
       workspaceName: homeWorkspaceName,
+    ),
+  );
+}
+
+Future<node.AccountSummary?> _createHostedAccount(
+  NodeCommandChannel channel, {
+  required node.DeviceRole role,
+}) {
+  return channel.execute(
+    node.CreateHostedAccountCommand(
+      workspaceName: homeWorkspaceName,
+      deviceName: appDeviceName,
+      role: role,
     ),
   );
 }

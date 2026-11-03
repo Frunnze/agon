@@ -1,3 +1,4 @@
+use orchestration_core::agent_place::AgentPlace;
 use orchestration_core::identifiers::{DeviceId, SkillId, WorkflowId};
 use orchestration_core::library::SkillUsage;
 use orchestration_core::workspace::{AgentAccess, Repository};
@@ -55,6 +56,7 @@ fn sample_listed_context() -> DraftingContext {
             },
             is_online: true,
             labels: vec!["mac".to_owned(), "arm".to_owned()],
+            offers: vec![AgentPlace::LocalProcess, AgentPlace::Container],
         },
         DraftingRunner {
             device: DraftingDevice {
@@ -63,6 +65,7 @@ fn sample_listed_context() -> DraftingContext {
             },
             is_online: false,
             labels: Vec::new(),
+            offers: Vec::new(),
         },
     ];
     context
@@ -98,8 +101,9 @@ fn a_prompt_lists_the_context_in_the_agreed_line_format() {
         - ios (id 00000000-0000-0000-0000-000000000006), when chosen: \
         Build the app\n\
         Runners:\n\
-        - air-laptop (id a1b2c3), online, labels: mac, arm\n\
-        - studio (id d4e5f6), offline\n\
+        - air-laptop (id a1b2c3), online, labels: mac, arm, offers: \
+        local_process, container\n\
+        - studio (id d4e5f6), offline, offers: nothing\n\
         Started from: the billing page\n\
         What the person wants:\n\
         Ship it\n\

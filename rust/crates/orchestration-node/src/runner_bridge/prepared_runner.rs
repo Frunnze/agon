@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 use orchestration_core::identifiers::DeviceId;
 use orchestration_runner::runner_configuration::RunnerConfiguration;
 
-use super::agent_placing::place_agents;
+use super::agent_placing::{find_settings_place, offer_sandboxes};
 use super::configuration_building::build_runner_configuration;
 use super::credential_passing::pass_agent_credential;
 use super::host_detection::{detect_container_sandbox, read_host_facts};
@@ -15,7 +15,7 @@ use crate::runner_state::RunnerState;
 
 #[derive(Debug)]
 pub(super) struct PreparedRunner {
-    starting_settings: RunnerSettings,
+    pub(super) starting_settings: RunnerSettings,
     detected_container: SandboxSettings,
     data_directory: PathBuf,
     process_environment: BTreeMap<String, String>,
@@ -30,6 +30,7 @@ impl PreparedRunner {
             std::env::vars().collect();
         build_runner_configuration(
             &starting_settings,
+            std::slice::from_ref(&starting_settings.sandbox),
             data_directory,
             &process_environment,
         )?;
@@ -41,33 +42,43 @@ impl PreparedRunner {
         })
     }
 
-    pub(super) fn choose_settings(
+    pub(super) fn choose_offered_sandboxes(
         &self,
         runner_state: &RunnerState,
-    ) -> RunnerSettings {
-        let Some(place) = runner_state.chosen_place() else {
-            return self.starting_settings.clone();
-        };
-        place_agents(&self.starting_settings, place, &self.detected_container)
+    ) -> Vec<SandboxSettings> {
+        let starting_place =
+            find_settings_place(&self.starting_settings.sandbox);
+        let offers = runner_state
+            .chosen_offers()
+            .unwrap_or_else(|| vec![starting_place]);
+        offer_sandboxes(
+            &self.starting_settings,
+            &offers,
+            &self.detected_container,
+        )
     }
 
     pub(super) fn configure_for_device(
         &self,
-        settings: &RunnerSettings,
+        working_sandboxes: &[SandboxSettings],
         container_credential: Option<&AgentCredential>,
         device_id: DeviceId,
     ) -> Result<RunnerConfiguration, NodeError> {
         let built = build_runner_configuration(
-            settings,
+            &self.starting_settings,
+            working_sandboxes,
             &self.data_directory,
             &self.process_environment,
         )?;
         let clone_source = built.clone_source.on_device(device_id);
-        let sandbox =
-            pass_agent_credential(&built.sandbox, container_credential);
+        let mut sandboxes = Vec::new();
+        for sandbox in &built.sandboxes {
+            sandboxes
+                .push(pass_agent_credential(sandbox, container_credential));
+        }
         Ok(RunnerConfiguration {
             clone_source,
-            sandbox,
+            sandboxes,
             ..built
         })
     }

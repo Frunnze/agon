@@ -1,3 +1,4 @@
+mod agent_reading;
 mod claude_lines;
 
 use claude_lines::{any_detail, assistant_line, parse_claude};
@@ -68,6 +69,15 @@ fn used_tool(description: &str) -> Vec<AgentEvent> {
     vec![AgentEvent::UsedTool(description.to_string())]
 }
 
+fn read_single_description(
+    events: &[AgentEvent],
+) -> Result<String, TestCaseError> {
+    match events {
+        [AgentEvent::UsedTool(description)] => Ok(description.clone()),
+        _ => Err(TestCaseError::fail("expected one tool event")),
+    }
+}
+
 proptest! {
     #[test]
     fn test_parse_agent_line_property_known_tools_are_described(
@@ -134,18 +144,15 @@ proptest! {
     }
 
     #[test]
-    fn test_parse_agent_line_property_long_details_are_shortened(
-        (tool, field, verb) in any_known_tool(),
+    fn test_parse_agent_line_property_long_text_details_keep_their_start(
+        (tool, field, verb) in any_text_tool(),
         detail in "[a-z][a-z /]{120,300}[a-z]",
     ) {
         let line = tool_use_line(tool, &json!({ field: detail }));
 
         let events = parse_claude(&line);
 
-        let description = match events.as_slice() {
-            [AgentEvent::UsedTool(description)] => description.clone(),
-            _ => return Err(TestCaseError::fail("expected one tool event")),
-        };
+        let description = read_single_description(&events)?;
         let prefix = format!("{verb} ");
         let shortened = description
             .strip_prefix(&prefix)
@@ -155,6 +162,24 @@ proptest! {
         prop_assert!(!shortened.is_empty());
         prop_assert!(shortened_length <= MAXIMUM_DETAIL_CHARACTERS);
         prop_assert!(detail.starts_with(shortened));
+    }
+
+    #[test]
+    fn test_parse_agent_line_property_long_paths_keep_their_end(
+        (tool, field, verb) in any_file_tool(),
+        path in "[a-z][a-z /]{120,300}[a-z]",
+    ) {
+        let line = tool_use_line(tool, &json!({ field: path }));
+
+        let events = parse_claude(&line);
+
+        let description = read_single_description(&events)?;
+        let prefix = format!("{verb} …");
+        let shortened = description.strip_prefix(&prefix).unwrap_or_default();
+        let shortened_length = shortened.chars().count();
+        prop_assert!(!shortened.is_empty());
+        prop_assert!(shortened_length <= MAXIMUM_DETAIL_CHARACTERS);
+        prop_assert!(path.ends_with(shortened));
     }
 
     #[test]

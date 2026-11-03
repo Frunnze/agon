@@ -36,6 +36,7 @@ pub struct LoginRunner {
     pub workspace_id: String,
     pub records: TempDir,
     pub data: TempDir,
+    agent_place: Value,
     project_id: Option<String>,
     _origin_root: TempDir,
 }
@@ -112,6 +113,7 @@ impl LoginRunner {
             workspace_id,
             records,
             data,
+            agent_place: sandbox["kind"].clone(),
             project_id: None,
             _origin_root: origin_root,
         })
@@ -166,6 +168,7 @@ impl LoginRunner {
                 "details": "Look around the repository.",
                 "doer": { "kind": "one_agent", "agent": "claude_code" },
                 "runs_on": { "kind": "any_free_runner" },
+                "agent_place": self.agent_place,
                 "skills": [],
                 "uses_automatic_skills": false,
                 "approval_policy": "ask_before_risky_actions",
@@ -194,7 +197,7 @@ impl LoginRunner {
         let recorded = fs::read_to_string(path).map_err(describe)?;
         let runs = recorded
             .split(RUN_SEPARATOR)
-            .filter(|run| !run.is_empty())
+            .skip(1)
             .map(str::to_owned)
             .collect();
         Ok(runs)

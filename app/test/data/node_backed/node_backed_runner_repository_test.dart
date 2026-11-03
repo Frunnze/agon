@@ -20,6 +20,7 @@ import 'support/simulated_node_replies.dart' show simulatedOutageMessage;
 const int _sequenceIterations = 25;
 const int _stepsPerSequence = 10;
 const String _localPlaceWireName = 'local_process';
+const String _containerPlaceWireName = 'container';
 
 typedef _Fixture = ({
   SimulatedDeviceNode node,
@@ -64,73 +65,112 @@ void _expectMirrorsNode(_Fixture fixture) {
   }
 }
 
-AgentPlace _placeOfSettings(Map<String, Object?> settings) {
-  final Map<String, Object?> sandbox =
-      settings['sandbox']! as Map<String, Object?>;
-  if (sandbox['kind'] == _localPlaceWireName) {
+List<Map<String, Object?>>? _randomOffersJson(Random random) {
+  if (random.nextBool()) {
+    return null;
+  }
+  return <Map<String, Object?>>[
+    for (int index = 0; index < 1 + random.nextInt(2); index += 1)
+      <String, Object?>{
+        'place': pickOne(random, AgentPlace.values) == AgentPlace.container
+            ? _containerPlaceWireName
+            : _localPlaceWireName,
+        'problem': random.nextBool() ? null : 'blocked ${randomText(random)}',
+      },
+  ];
+}
+
+AgentPlace _placeOfWireName(Object? wireName) {
+  if (wireName == _localPlaceWireName) {
     return AgentPlace.localProcess;
   }
   return AgentPlace.container;
 }
 
+List<AgentPlace> _randomChosenPlaces(Random random) {
+  final List<AgentPlace> places = <AgentPlace>[
+    for (final AgentPlace place in AgentPlace.values)
+      if (random.nextBool()) place,
+  ];
+  if (places.isEmpty) {
+    return <AgentPlace>[pickOne(random, AgentPlace.values)];
+  }
+  return places;
+}
+
 void main() {
-  test('test_load_property_reads_where_this_device_runs_agents', () async {
+  test('test_load_property_reads_what_this_device_offers', () async {
     final Random random = seededRandom(9955);
     for (int i = 0; i < propertyIterations; i += 1) {
       final _Fixture fixture = _buildFixture();
-      final Map<String, Object?>? settings = random.nextBool()
-          ? randomRunnerSettingsJson(random)
-          : null;
+      final List<Map<String, Object?>>? offers = _randomOffersJson(random);
       final String? problem = random.nextBool()
           ? 'blocked ${randomText(random)}'
           : null;
-      fixture.node.runnerSettings = settings;
+      fixture.node.runnerSettings = offers == null
+          ? null
+          : randomRunnerSettingsJson(random);
+      fixture.node.runnerOffers = offers;
       fixture.node.runnerProblem = problem;
 
       await fixture.repository.load();
 
       expect(fixture.repository.findThisRunnerProblem(), problem);
-      final AgentPlace? expectedPlace = settings == null
+      final List<PlaceOffer>? expectedOffers = offers == null
           ? null
-          : _placeOfSettings(settings);
-      expect(fixture.repository.findThisAgentPlace(), expectedPlace);
+          : <PlaceOffer>[
+              for (final Map<String, Object?> offer in offers)
+                PlaceOffer(
+                  place: _placeOfWireName(offer['place']),
+                  problem: offer['problem'] as String?,
+                ),
+            ];
+      expect(fixture.repository.findThisDeviceOffers(), expectedOffers);
     }
   });
 
-  test('test_choose_agent_place_property_shows_the_chosen_place', () async {
+  test('test_choose_agent_offers_property_shows_the_chosen_offers', () async {
     final Random random = seededRandom(9956);
     for (int i = 0; i < propertyIterations; i += 1) {
       final _Fixture fixture = _buildFixture();
       fixture.node.runnerSettings = randomRunnerSettingsJson(random);
+      fixture.node.runnerOffers = _randomOffersJson(random);
       fixture.node.runnerProblem = 'blocked ${randomText(random)}';
       await fixture.repository.load();
       int notifications = 0;
       fixture.repository.addListener(() => notifications += 1);
-      final AgentPlace place = pickOne(random, AgentPlace.values);
+      final List<AgentPlace> chosen = _randomChosenPlaces(random);
 
-      await fixture.repository.chooseAgentPlace(place);
+      await fixture.repository.chooseAgentOffers(chosen);
 
-      expect(fixture.repository.findThisAgentPlace(), place);
-      expect(fixture.node.receivedCommands, contains('choose_agent_place'));
+      final List<PlaceOffer>? shown = fixture.repository
+          .findThisDeviceOffers();
+      expect(<AgentPlace>[
+        for (final PlaceOffer offer in shown!) offer.place,
+      ], chosen);
+      expect(fixture.node.receivedCommands, contains('choose_agent_offers'));
       expect(notifications, greaterThan(0));
-      if (place == AgentPlace.localProcess) {
+      if (chosen.contains(AgentPlace.localProcess)) {
         expect(fixture.repository.findThisRunnerProblem(), isNull);
       }
     }
   });
 
-  test('test_choose_agent_place_property_a_device_without_agents_refuses', () {
-    final Random random = seededRandom(9957);
-    for (int i = 0; i < _sequenceIterations; i += 1) {
-      final _Fixture fixture = _buildFixture();
-      final AgentPlace place = pickOne(random, AgentPlace.values);
+  test(
+    'test_choose_agent_offers_property_a_device_without_agents_refuses',
+    () {
+      final Random random = seededRandom(9957);
+      for (int i = 0; i < _sequenceIterations; i += 1) {
+        final _Fixture fixture = _buildFixture();
+        final List<AgentPlace> chosen = _randomChosenPlaces(random);
 
-      expect(
-        fixture.repository.chooseAgentPlace(place),
-        throwsA(isA<StateError>()),
-      );
-    }
-  });
+        expect(
+          fixture.repository.chooseAgentOffers(chosen),
+          throwsA(isA<StateError>()),
+        );
+      }
+    },
+  );
 
   test('test_apply_change_property_runners_mirror_the_node', () async {
     final Random random = seededRandom(9951);

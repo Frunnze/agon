@@ -30,11 +30,7 @@ class BuilderHeader extends StatelessWidget {
       backLink: BackLink(label: 'Workflows', onPressed: onBack),
       actions: <Widget>[
         AppButton.secondary(label: 'Cancel', onPressed: onCancel),
-        AppButton.primary(
-          label: 'Sign and save',
-          icon: AppIconKind.fingerprint,
-          onPressed: onSigned,
-        ),
+        AppButton.primary(label: 'Sign and save', onPressed: onSigned),
       ],
     );
   }

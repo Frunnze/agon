@@ -1,0 +1,34 @@
+#!/bin/sh
+if [ -z "$AGENT_RECORDS" ]; then
+  echo "the fake docker runs only inside the real-stack tests"
+  exit 5
+fi
+
+case "$1" in
+  info | image) exit 0 ;;
+  run) shift ;;
+  *) exit 7 ;;
+esac
+
+workspace=
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --mount)
+      case "$2" in
+        *,target=/workspace)
+          workspace=$(printf '%s' "$2" \
+            | sed 's/^type=bind,source=\(.*\),target=\/workspace$/\1/')
+          ;;
+      esac
+      shift 2
+      ;;
+    --workdir | --env) shift 2 ;;
+    --rm | --interactive) shift ;;
+    *) break ;;
+  esac
+done
+shift
+
+: > "$AGENT_RECORDS/ran-in-docker"
+cd "$workspace" || exit 6
+exec "$@"

@@ -25,10 +25,7 @@ void main() {
       await waitUntilShown(tester, find.text(runnerDeviceName));
       await tapWhenShown(tester, find.text('Revoke'));
       await waitUntilShown(tester, find.text('Revoke $runnerDeviceName?'));
-      await tapWhenShown(
-        tester,
-        find.text('Revoke with $confirmationMethodName'),
-      );
+      await tapWhenShown(tester, find.text('Revoke device'));
       await waitUntilGone(tester, find.text('Revoke $runnerDeviceName?'));
       await waitUntilGone(tester, find.text(runnerDeviceName));
 

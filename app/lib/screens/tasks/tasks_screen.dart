@@ -3,10 +3,12 @@ import 'package:flutter/widgets.dart';
 import 'package:agent_orchestration/data/clock.dart';
 import 'package:agent_orchestration/data/models/run.dart';
 import 'package:agent_orchestration/data/models/task.dart';
+import 'package:agent_orchestration/data/repository/approval_repository.dart';
 import 'package:agent_orchestration/data/repository/device_repository.dart';
 import 'package:agent_orchestration/data/repository/project_repository.dart';
 import 'package:agent_orchestration/data/repository/task_repository.dart';
 import 'package:agent_orchestration/data/repository/workflow_repository.dart';
+import 'package:agent_orchestration/data/rules/kept_branches.dart';
 import 'package:agent_orchestration/data/rules/task_summary.dart';
 import 'package:agent_orchestration/icons/app_icon_kind.dart';
 import 'package:agent_orchestration/presentation/device_names.dart';
@@ -36,6 +38,7 @@ class TasksScreen extends StatelessWidget {
     required this.workflowRepository,
     required this.projectRepository,
     required this.deviceRepository,
+    required this.approvalRepository,
     required this.clock,
     required this.navigation,
     super.key,
@@ -45,6 +48,7 @@ class TasksScreen extends StatelessWidget {
   final WorkflowRepository workflowRepository;
   final ProjectRepository projectRepository;
   final DeviceRepository deviceRepository;
+  final ApprovalRepository approvalRepository;
   final Clock clock;
   final AppNavigation navigation;
 
@@ -56,6 +60,7 @@ class TasksScreen extends StatelessWidget {
         workflowRepository,
         projectRepository,
         deviceRepository,
+        approvalRepository,
       ]),
       builder: _buildPage,
     );
@@ -111,9 +116,20 @@ class TasksScreen extends StatelessWidget {
       latestRun: latestRun,
       projectName: projectRepository.findProject(task.projectId).name,
       doerLabel: describeDoer(task.doer, workflowRepository.listWorkflows()),
+      keptBranches: _findKeptBranches(latestRun),
       deviceNames: DeviceNames(deviceRepository.listDevices()),
       now: clock.now(),
       onTap: () => _openTask(task, latestRun),
+    );
+  }
+
+  List<KeptBranch> _findKeptBranches(Run? latestRun) {
+    if (latestRun == null) {
+      return const <KeptBranch>[];
+    }
+    return findKeptBranches(
+      run: latestRun,
+      approvals: approvalRepository.listApprovals(),
     );
   }
 

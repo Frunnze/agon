@@ -122,6 +122,7 @@ class _RepositoryFileScreenState extends State<RepositoryFileScreen> {
         projectId: widget.route.filesRoute.projectId,
         repositoryAddress: widget.route.filesRoute.repositoryAddress,
         branch: branch,
+        preferredRunnerId: widget.route.source.runnerId,
       ),
     );
   }

@@ -3,7 +3,6 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:agent_orchestration/app.dart';
 import 'package:agent_orchestration/data/app_dependencies.dart';
-import 'package:agent_orchestration/data/biometric_confirmation.dart';
 import 'package:agent_orchestration/data/clock.dart';
 import 'package:agent_orchestration/data/fakes.dart';
 import 'package:agent_orchestration/data/folder_picker.dart';
@@ -14,6 +13,7 @@ import 'package:agent_orchestration/data/models/conversation.dart';
 import 'package:agent_orchestration/data/models/run.dart';
 import 'package:agent_orchestration/data/models/task.dart';
 import 'package:agent_orchestration/data/qr_code_scanner.dart';
+import 'package:agent_orchestration/data/repository/agent_login_repository.dart';
 import 'package:agent_orchestration/data/repository/approval_repository.dart';
 import 'package:agent_orchestration/data/repository/audit_repository.dart';
 import 'package:agent_orchestration/data/repository/chat_repository.dart';
@@ -54,8 +54,8 @@ AppDependencies replaceRepositories(
   FileRepository? fileRepository,
   DeviceRepository? deviceRepository,
   RunnerRepository? runnerRepository,
+  AgentLoginRepository? agentLoginRepository,
   ItemDraftRepository? itemDraftRepository,
-  BiometricConfirmation? biometricConfirmation,
   QrCodeScanner? qrCodeScanner,
   FolderPicker? folderPicker,
 }) {
@@ -71,12 +71,12 @@ AppDependencies replaceRepositories(
     skillRepository: skillRepository ?? base.skillRepository,
     ruleRepository: ruleRepository ?? base.ruleRepository,
     runnerRepository: runnerRepository ?? base.runnerRepository,
+    agentLoginRepository: agentLoginRepository ?? base.agentLoginRepository,
     deviceRepository: deviceRepository ?? base.deviceRepository,
     pairingRepository: pairingRepository ?? base.pairingRepository,
     auditRepository: auditRepository ?? base.auditRepository,
     fileRepository: fileRepository ?? base.fileRepository,
     itemDraftRepository: itemDraftRepository ?? base.itemDraftRepository,
-    biometricConfirmation: biometricConfirmation ?? base.biometricConfirmation,
     qrCodeScanner: qrCodeScanner ?? base.qrCodeScanner,
     folderPicker: folderPicker ?? base.folderPicker,
   );

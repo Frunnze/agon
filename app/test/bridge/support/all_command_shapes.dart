@@ -85,7 +85,7 @@ const List<String> nodeCommandNames = <String>[
   'list_runners',
   'pause_runner',
   'resume_runner',
-  'choose_agent_place',
+  'choose_agent_offers',
   'update_task',
   'update_job',
   'remove_repository',

@@ -66,6 +66,7 @@ impl LaptopWithFolder {
                 "details": format!("{title} in the folder"),
                 "doer": { "kind": "one_agent", "agent": "claude_code" },
                 "runs_on": { "kind": "any_free_runner" },
+                "agent_place": "local_process",
                 "skills": [],
                 "uses_automatic_skills": false,
                 "approval_policy": "never_ask",

@@ -60,6 +60,7 @@ TaskDraft randomTaskDraft(Random random) {
     projectId: pickOne(random, sampleProjectIds),
     doer: randomTaskDoer(random),
     runsOn: randomRunnerTarget(random),
+    agentPlace: pickOne(random, AgentPlace.values),
     skills: skills,
     usesAutomaticSkills: random.nextBool(),
     approvalPolicy: pickOne(random, ApprovalPolicy.values),

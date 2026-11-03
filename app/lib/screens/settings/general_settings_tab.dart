@@ -137,7 +137,8 @@ class GeneralSettingsTab extends StatelessWidget {
   }
 
   ListRowData _buildMemberRow(Device device, WorkspaceId workspaceId) {
-    final bool isThisDevice = device.id == deviceRepository.currentDevice().id;
+    final DeviceId thisDeviceId = deviceRepository.currentDevice().id;
+    final bool isThisDevice = device.id == thisDeviceId;
 
     return ListRowData(
       key: ValueKey<DeviceId>(device.id),
@@ -149,7 +150,13 @@ class GeneralSettingsTab extends StatelessWidget {
       ),
       meta: <Widget>[
         Text(device.role.label),
-        Text(describeLastSeen(device.lastSeen, clock.now())),
+        Text(
+          describeDeviceLastSeen(
+            device: device,
+            thisDeviceId: thisDeviceId,
+            now: clock.now(),
+          ),
+        ),
       ],
       end: isThisDevice
           ? null

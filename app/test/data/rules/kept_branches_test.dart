@@ -18,7 +18,7 @@ const List<String> _repositories = <String>[
   'local:9c7a5e3b:/Users/someone/hello-counter',
 ];
 const List<String> _branches = <String>[
-  'task/rename-the-billing-module',
+  'task/rename-the-billing-module-7b3e',
   'task/ship-release-2-4',
   'task/write-tests-run-3',
 ];
@@ -169,8 +169,7 @@ void main() {
 
       for (final String repository in _repositories) {
         final bool isDenied =
-            _lastDecisionFor(approvals, repository) ==
-            ApprovalDecision.denied;
+            _lastDecisionFor(approvals, repository) == ApprovalDecision.denied;
         expect(kept.contains(repository), isDenied, reason: repository);
       }
       expect(kept.toSet().length, kept.length);
@@ -203,15 +202,15 @@ void main() {
     }
   });
 
-  test('test_find_kept_branches_property_unfinished_runs_keep_nothing', () {
+  test('test_find_kept_branches_property_only_done_runs_keep_branches', () {
     final Random random = seededRandom(94);
-    final List<RunStatus> unfinished = <RunStatus>[
+    final List<RunStatus> notDone = <RunStatus>[
       for (final RunStatus status in RunStatus.values)
         if (status != RunStatus.done) status,
     ];
 
     for (int i = 0; i < propertyIterations; i += 1) {
-      final Run run = _runWithStatus(pickOne(random, unfinished));
+      final Run run = _runWithStatus(pickOne(random, notDone));
       final List<ApprovalRequest> approvals = _randomPushes(random, run.id);
 
       expect(findKeptBranches(run: run, approvals: approvals), isEmpty);
@@ -225,7 +224,7 @@ void main() {
     );
 
     expect(keptBranches.single.repositoryAddress, 'github.com/acme/app');
-    expect(keptBranches.single.branch, 'task/rename-the-billing-module');
+    expect(keptBranches.single.branch, 'task/rename-the-billing-module-7b3e');
     expect(keptBranches.single.runner, GalleryDeviceIds.officeServer);
   });
 }

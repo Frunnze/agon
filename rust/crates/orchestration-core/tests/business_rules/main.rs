@@ -1,4 +1,5 @@
 mod agent_kind_label_tests;
+mod agent_place_tests;
 mod agents_markdown_tests;
 mod approval_policy_tests;
 mod create_run_tests;

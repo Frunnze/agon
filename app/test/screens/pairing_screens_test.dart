@@ -100,7 +100,7 @@ void main() {
         '3. Choose where it works',
         'acme',
         'Reject',
-        'Approve with Touch ID',
+        'Approve',
       ]) {
         expect(find.text(text), findsWidgets, reason: text);
       }
@@ -149,14 +149,14 @@ void main() {
 
     await tapVisible(tester, find.bySemanticsLabel('Remove acme'));
     await pumpFrames(tester);
-    await tapVisible(tester, find.text('Approve with Touch ID'));
+    await tapVisible(tester, find.text('Approve'));
     await pumpFrames(tester);
     expect(find.text('Choose at least one workspace'), findsOneWidget);
     expect(dependencies.pairingRepository.findPendingRequest(), isNotNull);
 
     await addFieldTag(tester, label: 'Workspaces', tag: 'personal');
     await pumpFrames(tester);
-    await tapVisible(tester, find.text('Approve with Touch ID'));
+    await tapVisible(tester, find.text('Approve'));
     await pumpFrames(tester);
 
     expect(dependencies.pairingRepository.findPendingRequest(), isNull);

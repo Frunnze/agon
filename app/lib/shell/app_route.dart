@@ -104,15 +104,19 @@ final class ProjectFilesRoute extends AppRoute {
     required this.projectId,
     required this.repositoryAddress,
     this.branch,
+    this.preferredRunnerId,
   }) : super(AppSection.projects);
 
   final ProjectId projectId;
   final String repositoryAddress;
   final String? branch;
+  final DeviceId? preferredRunnerId;
 
   @override
   String get identity {
-    return '${projectId.value} $repositoryAddress ${branch ?? ''}';
+    final String branchText = branch ?? '';
+    final String runnerText = preferredRunnerId?.value ?? '';
+    return '${projectId.value} $repositoryAddress $branchText $runnerText';
   }
 }
 

@@ -1,5 +1,6 @@
-use orchestration_api::work::HeartbeatRequest;
-use orchestration_core::device::{RunnerLink, SandboxKind};
+use orchestration_api::work::{ForgottenWork, HeartbeatRequest};
+use orchestration_core::agent_place::AgentPlace;
+use orchestration_core::device::RunnerLink;
 use serde_json::{Value, json};
 
 use crate::support::command_builders::{
@@ -189,16 +190,19 @@ fn a_paused_runner_stops_accepting_new_runs() {
     assert_eq!(runners["runners"][0]["runner"]["accepting_new_runs"], false);
 }
 
-fn send_heartbeat(prepared: &PreparedWorkspace) -> Result<(), String> {
+fn send_heartbeat(
+    prepared: &PreparedWorkspace,
+) -> Result<ForgottenWork, String> {
     let identity = prepared.device.load_identity()?;
     let heartbeat = HeartbeatRequest {
         labels: vec!["mac".to_owned()],
         slots_total: 4,
         slots_busy: 1,
         link: RunnerLink::Direct,
-        sandbox: SandboxKind::Container,
+        offers: vec![AgentPlace::Container],
         allowed_hosts: Vec::new(),
         cached_repositories: Vec::new(),
+        held_tasks: Vec::new(),
     };
     use_server_at(&prepared.server.address, async |server| {
         server.signed(&identity).send_heartbeat(&heartbeat).await

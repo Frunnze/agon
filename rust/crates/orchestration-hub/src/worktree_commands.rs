@@ -1,6 +1,7 @@
 use std::collections::BTreeMap;
 use std::path::Path;
 
+use crate::branch_names::TASK_BRANCH_PREFIX;
 use crate::command_specification::CommandSpecification;
 
 const GIT_PROGRAM: &str = "git";
@@ -53,6 +54,28 @@ pub(crate) fn delete_branch_command(
     branch: &str,
 ) -> CommandSpecification {
     git_command(Some(cached_clone), &["branch", "-D", branch])
+}
+
+pub(crate) fn list_task_branches_command(
+    cached_clone: &Path,
+) -> CommandSpecification {
+    let pattern = format!("refs/heads/{TASK_BRANCH_PREFIX}");
+    git_command(
+        Some(cached_clone),
+        &["for-each-ref", "--format=%(refname:lstrip=2)", &pattern],
+    )
+}
+
+pub(crate) fn list_worktrees_command(
+    cached_clone: &Path,
+) -> CommandSpecification {
+    git_command(Some(cached_clone), &["worktree", "list", "--porcelain"])
+}
+
+pub(crate) fn prune_worktrees_command(
+    cached_clone: &Path,
+) -> CommandSpecification {
+    git_command(Some(cached_clone), &["worktree", "prune"])
 }
 
 fn git_command(

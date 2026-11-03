@@ -113,18 +113,25 @@ class RunnersSettingsTab extends StatelessWidget {
   }
 
   Widget _buildThisRunnerProblem(String problem) {
+    final List<PlaceOffer>? offers = runnerRepository.findThisDeviceOffers();
+    final bool canAddLocal =
+        offers != null &&
+        !offers.any(
+          (PlaceOffer offer) => offer.place == AgentPlace.localProcess,
+        );
+
     return RunnerProblemBanner(
       problem: problem,
-      place: runnerRepository.findThisAgentPlace(),
-      onRunLocally: _runAgentsLocally,
+      onRunLocally: canAddLocal ? () => _runAgentsLocally(offers) : null,
     );
   }
 
-  void _runAgentsLocally() {
-    final Future<void> choosing = runnerRepository.chooseAgentPlace(
+  void _runAgentsLocally(List<PlaceOffer> offers) {
+    final List<AgentPlace> nextOffers = <AgentPlace>[
+      for (final PlaceOffer offer in offers) offer.place,
       AgentPlace.localProcess,
-    );
-    unawaited(choosing);
+    ];
+    unawaited(runnerRepository.chooseAgentOffers(nextOffers));
   }
 
   Widget _buildServerDownBanner(List<Runner> runners, AppServerStatus server) {

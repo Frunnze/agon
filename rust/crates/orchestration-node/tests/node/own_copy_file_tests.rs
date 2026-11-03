@@ -45,24 +45,20 @@ fn wait_for_finished_run(
     })
 }
 
-fn wait_for_own_source(
+fn ask_own_source_at_once(
     nodes: &LaptopWithFolder,
     project_id: &str,
     address: &str,
 ) -> Result<Value, String> {
-    let request = json!({
+    let reply = nodes.laptop.send(&json!({
         "command": "list_repository_branches",
         "project_id": project_id,
         "repository_address": address,
-    });
-    wait_for(FILES_LIMIT, "this computer to offer its own copy", || {
-        let reply = nodes.laptop.send(&request)?;
-        if let Some(problem) = reply["error"].as_str() {
-            return Err(problem.to_owned());
-        }
-        let is_available = reply["ok"]["kind"] == "available";
-        Ok(is_available.then(|| reply["ok"].clone()))
-    })
+    }))?;
+    if reply["ok"]["kind"] != "available" {
+        return Err(format!("the copy is not offered yet: {reply}"));
+    }
+    Ok(reply["ok"].clone())
 }
 
 fn prepare_own_copy() -> Result<OwnCopy, String> {
@@ -72,7 +68,7 @@ fn prepare_own_copy() -> Result<OwnCopy, String> {
     let address = read_text(&project, "/repositories/0/address")?;
     let run_id = nodes.start_folder_task(&project_id, TASK_TITLE)?;
     wait_for_finished_run(&nodes, &run_id)?;
-    let source = wait_for_own_source(&nodes, &project_id, &address)?;
+    let source = ask_own_source_at_once(&nodes, &project_id, &address)?;
     Ok(OwnCopy {
         nodes,
         project_id,
@@ -128,7 +124,7 @@ fn entry_names(reply: &Value) -> Vec<String> {
 }
 
 #[test]
-fn a_client_and_runner_computer_reads_its_own_copy_without_the_peer_link() {
+fn a_client_and_runner_computer_reads_its_own_copy_right_after_the_run() {
     let own = match prepare_own_copy() {
         Ok(own) => own,
         Err(problem) => panic!("this computer offers its own copy: {problem}"),

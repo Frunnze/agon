@@ -12,7 +12,7 @@ final List<Runner> galleryRunners = List<Runner>.unmodifiable(<Runner>[
     link: RunnerLink.direct,
     online: true,
     acceptingNewRuns: true,
-    sandbox: SandboxKind.container,
+    offers: const <AgentPlace>[AgentPlace.container],
     allowedHosts: _allowedHosts,
   ),
   Runner(
@@ -23,7 +23,7 @@ final List<Runner> galleryRunners = List<Runner>.unmodifiable(<Runner>[
     link: RunnerLink.direct,
     online: true,
     acceptingNewRuns: true,
-    sandbox: SandboxKind.container,
+    offers: const <AgentPlace>[AgentPlace.container],
     allowedHosts: _allowedHosts,
   ),
   Runner(
@@ -34,7 +34,7 @@ final List<Runner> galleryRunners = List<Runner>.unmodifiable(<Runner>[
     link: RunnerLink.relay,
     online: true,
     acceptingNewRuns: true,
-    sandbox: SandboxKind.container,
+    offers: const <AgentPlace>[AgentPlace.container],
     allowedHosts: _allowedHosts,
   ),
   Runner(
@@ -45,7 +45,7 @@ final List<Runner> galleryRunners = List<Runner>.unmodifiable(<Runner>[
     link: RunnerLink.unreachable,
     online: false,
     acceptingNewRuns: true,
-    sandbox: SandboxKind.localProcess,
+    offers: const <AgentPlace>[AgentPlace.localProcess],
     allowedHosts: _allowedHosts,
   ),
 ]);

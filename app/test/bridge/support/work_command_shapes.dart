@@ -128,9 +128,9 @@ const List<CommandShape> workCommandShapes = <CommandShape>[
     encodeReply: encodeNoReply,
   ),
   CommandShape(
-    commandName: 'choose_agent_place',
-    argumentFields: <String>{'place'},
-    buildCommand: _buildChooseAgentPlace,
+    commandName: 'choose_agent_offers',
+    argumentFields: <String>{'offers'},
+    buildCommand: _buildChooseAgentOffers,
     buildReplyJson: buildNoReply,
     encodeReply: encodeNoReply,
   ),
@@ -220,8 +220,13 @@ NodeCommand<Object?> _buildPauseRunner(Random random) {
   return PauseRunnerCommand(deviceId: randomDeviceId(random));
 }
 
-NodeCommand<Object?> _buildChooseAgentPlace(Random random) {
-  return ChooseAgentPlaceCommand(place: pickOne(random, AgentPlace.values));
+NodeCommand<Object?> _buildChooseAgentOffers(Random random) {
+  return ChooseAgentOffersCommand(
+    offers: <AgentPlace>[
+      for (final AgentPlace place in AgentPlace.values)
+        if (random.nextBool()) place,
+    ],
+  );
 }
 
 NodeCommand<Object?> _buildResumeRunner(Random random) {

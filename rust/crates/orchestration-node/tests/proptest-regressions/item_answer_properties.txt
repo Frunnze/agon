@@ -1,0 +1,7 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 276ab78d4a52d803b6e94396774820ee5cadb624cad414a6251f78f170cb8215 # shrinks to context = DraftingContext { workspace: DraftingWorkspace { id: WorkspaceId(00000000-0000-0000-0000-000000000010), name: "acme" }, this_device: DraftingDevice { id: DeviceId("a1b2c3"), name: "air-laptop" }, projects: [Project { id: ProjectId(00000000-0000-0000-0000-000000000100), workspace_id: WorkspaceId(00000000-0000-0000-0000-000000000010), name: "aaa-0", repositories: [Repository { address: "github.com/aaa/repo-0", default_branch: "main", agent_access: PushAfterApproval }] }], workflows: [], skills: [], runners: [] }, is_job = false, words = "a", wrong_place = Null, is_missing = false

@@ -1,16 +1,20 @@
 use std::future::{pending, ready};
+use std::path::Path;
 
 use orchestration_api::work::RunEvent;
 use orchestration_core::identifiers::RunId;
 use orchestration_core::workflow::AgentKind;
+use orchestration_hub::agent_output::AgentOutputReader;
+use orchestration_hub::workspace_mounts::CONTAINER_WORKSPACE_DIRECTORY;
 use orchestration_runner::output_relay::{RelayEnding, relay_agent_output};
 use proptest::collection::vec;
 use proptest::prelude::*;
+use serde_json::json;
 use tokio::runtime::Runtime;
 use tokio::sync::mpsc::unbounded_channel;
 use uuid::Uuid;
 
-use crate::event_queries::log_texts;
+use crate::event_queries::{chat_texts, log_texts};
 use crate::fake_agent_lines::{
     FakeAgentLine, any_fake_agent_line, reads_as_json, render_line,
 };
@@ -109,7 +113,28 @@ fn any_output_line() -> impl Strategy<Value = String> {
     ]
 }
 
+fn read_in_container(agent: AgentKind) -> AgentOutputReader {
+    AgentOutputReader::new(agent, Path::new(CONTAINER_WORKSPACE_DIRECTORY))
+}
+
+fn gemini_speech_line(part: &str) -> String {
+    json!({
+        "type": "message",
+        "role": "assistant",
+        "content": part,
+        "delta": true,
+    })
+    .to_string()
+}
+
 fn relay_lines(lines: &[String]) -> TestResult<(RelayEnding, Vec<RunEvent>)> {
+    relay_agent_lines(AgentKind::ClaudeCode, lines)
+}
+
+fn relay_agent_lines(
+    agent: AgentKind,
+    lines: &[String],
+) -> TestResult<(RelayEnding, Vec<RunEvent>)> {
     let runtime = Runtime::new()?;
     let server = FakeServer::with_queue(Vec::new());
     let run_id = RunId(Uuid::from_u128(RUN_NUMBER));
@@ -123,7 +148,7 @@ fn relay_lines(lines: &[String]) -> TestResult<(RelayEnding, Vec<RunEvent>)> {
         &server,
         run_id,
         STEP_NAME,
-        AgentKind::ClaudeCode,
+        read_in_container(agent),
         &mut receiver,
         pending(),
     ))?;
@@ -141,7 +166,7 @@ async fn stops_relaying_as_soon_as_the_run_is_cancelled() -> TestResult<()> {
         &server,
         run_id,
         STEP_NAME,
-        AgentKind::ClaudeCode,
+        read_in_container(AgentKind::ClaudeCode),
         &mut receiver,
         ready(()),
     )
@@ -186,5 +211,24 @@ proptest! {
             prop_assert!(!reads_as_json(&log_text));
             prop_assert!(!log_text.trim().is_empty());
         }
+    }
+
+    #[test]
+    fn test_relay_agent_output_property_gemini_speech_is_one_message(
+        parts in vec("[a-zA-Z0-9,.']{1,8}( [a-zA-Z0-9,.']{1,8})?", 1..6),
+    ) {
+        let mut lines: Vec<String> =
+            parts.iter().map(|part| gemini_speech_line(part)).collect();
+        lines.push(json!({"type": "result", "status": "success"}).to_string());
+
+        let (ending, events) = relay_agent_lines(AgentKind::GeminiCli, &lines)
+            .map_err(to_case_error)?;
+
+        let speech = parts.concat();
+        let RelayEnding::OutputEnded(transcript) = ending else {
+            return Err(TestCaseError::fail("the relay was cancelled"));
+        };
+        prop_assert_eq!(chat_texts(&events), vec![speech.clone()]);
+        prop_assert_eq!(transcript.final_message, Some(speech));
     }
 }

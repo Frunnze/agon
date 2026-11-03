@@ -6,6 +6,7 @@ import 'package:agent_orchestration/data/clock.dart';
 import 'package:agent_orchestration/data/models/device.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/runner.dart';
+import 'package:agent_orchestration/data/repository/agent_login_repository.dart';
 import 'package:agent_orchestration/data/repository/device_repository.dart';
 import 'package:agent_orchestration/data/repository/runner_repository.dart';
 import 'package:agent_orchestration/data/repository/task_repository.dart';
@@ -39,6 +40,7 @@ class RunnerDetailScreen extends StatelessWidget {
   const RunnerDetailScreen({
     required this.deviceId,
     required this.runnerRepository,
+    required this.agentLoginRepository,
     required this.deviceRepository,
     required this.workspaceRepository,
     required this.taskRepository,
@@ -50,6 +52,7 @@ class RunnerDetailScreen extends StatelessWidget {
 
   final DeviceId deviceId;
   final RunnerRepository runnerRepository;
+  final AgentLoginRepository agentLoginRepository;
   final DeviceRepository deviceRepository;
   final WorkspaceRepository workspaceRepository;
   final TaskRepository taskRepository;
@@ -80,8 +83,9 @@ class RunnerDetailScreen extends StatelessWidget {
     final String lastSeen = describeLastSeen(device.lastSeen, clock.now());
     final Device thisDevice = deviceRepository.currentDevice();
     final bool isThisDevice = device.id == thisDevice.id;
-    final AgentPlace? thisAgentPlace = runnerRepository.findThisAgentPlace();
-    final String? thisRunnerProblem = runnerRepository.findThisRunnerProblem();
+    final List<PlaceOffer>? thisDeviceOffers = isThisDevice
+        ? runnerRepository.findThisDeviceOffers()
+        : null;
 
     return AppPage(
       children: <Widget>[
@@ -102,12 +106,6 @@ class RunnerDetailScreen extends StatelessWidget {
           ],
           actions: <Widget>[_buildPauseButton(runner)],
         ),
-        if (isThisDevice && thisRunnerProblem != null)
-          RunnerProblemBanner(
-            problem: thisRunnerProblem,
-            place: thisAgentPlace,
-            onRunLocally: () => _chooseAgentPlace(AgentPlace.localProcess),
-          ),
         if (!isThisDevice)
           buildRunnerLinkRoute(
             startName: thisDevice.name,
@@ -124,11 +122,18 @@ class RunnerDetailScreen extends StatelessWidget {
             children: <Widget>[_buildRunningSteps()],
           ),
         ),
-        if (isThisDevice && thisAgentPlace != null)
-          AgentPlaceSection(
-            place: thisAgentPlace,
-            onChanged: _chooseAgentPlace,
+        if (thisDeviceOffers != null)
+          AgentOffersSection(
+            offers: thisDeviceOffers,
+            onChanged: _chooseAgentOffers,
           ),
+        if (thisDeviceOffers != null)
+          for (final PlaceOffer offer in thisDeviceOffers)
+            AgentLoginSection(
+              key: ValueKey<AgentPlace>(offer.place),
+              place: offer.place,
+              repository: agentLoginRepository,
+            ),
       ],
     );
   }
@@ -147,8 +152,8 @@ class RunnerDetailScreen extends StatelessWidget {
     );
   }
 
-  void _chooseAgentPlace(AgentPlace place) {
-    unawaited(runnerRepository.chooseAgentPlace(place));
+  void _chooseAgentOffers(List<AgentPlace> offers) {
+    unawaited(runnerRepository.chooseAgentOffers(offers));
   }
 
   Widget _buildFacts(Runner runner, Device device) {
@@ -161,22 +166,14 @@ class RunnerDetailScreen extends StatelessWidget {
           Fact(
             term: agentPlaceTitle,
             description: <TextSegment>[
-              TextSegment(describeSandbox(runner.sandbox)),
+              TextSegment(describeRunnerOffers(runner.offers)),
             ],
           ),
-        Fact(
-          term: 'Files',
-          description: <TextSegment>[
-            TextSegment(describeFileAccess(runner.sandbox)),
-          ],
-        ),
-        Fact(
-          term: 'Network',
-          description: describeNetworkAccess(
-            sandbox: runner.sandbox,
-            allowedHosts: runner.allowedHosts,
+        if (runner.offers.contains(AgentPlace.container))
+          Fact(
+            term: containerNetworkTitle,
+            description: describeContainerNetwork(runner.allowedHosts),
           ),
-        ),
         Fact(
           term: 'Device key',
           description: <TextSegment>[TextSegment(device.keyKind.label)],

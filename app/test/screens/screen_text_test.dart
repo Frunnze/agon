@@ -15,6 +15,7 @@ import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/run.dart';
 import 'package:agent_orchestration/data/models/runner.dart';
 import 'package:agent_orchestration/data/models/task.dart';
+import 'package:agent_orchestration/data/rules/kept_branches.dart';
 import 'package:agent_orchestration/icons/app_icon_kind.dart';
 import 'package:agent_orchestration/presentation/device_names.dart';
 import 'package:agent_orchestration/screens/approvals/approval_dialog.dart';
@@ -83,6 +84,7 @@ void main() {
         latestRun: random.nextBool() ? pickOne(random, galleryRuns) : null,
         projectName: 'acme-app',
         doerLabel: 'Codex',
+        keptBranches: const <KeptBranch>[],
         deviceNames: _deviceNames,
         now: galleryNow,
         onTap: () {},
@@ -159,6 +161,7 @@ void main() {
       final String text = describeWaitingApprovals(count);
 
       expect(text, startsWith('$count waiting.'));
+      expect(text, endsWith('needs your approval.'));
     }
   });
 
@@ -262,18 +265,52 @@ void main() {
 
   test('test_build_runner_facts_property_sandbox_and_hosts', () {
     for (final Runner runner in galleryRunners) {
-      final List<Fact> facts = buildRunnerFacts(runner);
-      expect(facts.map((Fact fact) => fact.term), <String>[
-        'Sandbox',
-        'Can reach',
-      ]);
-      expect(
-        joinSegments(facts.first.description),
-        describeSandbox(runner.sandbox),
-      );
+      for (final AgentPlace place in AgentPlace.values) {
+        final List<Fact> facts = buildRunnerFacts(
+          runner: runner,
+          place: place,
+        );
+        final bool isLimitedToHosts =
+            place == AgentPlace.container && runner.allowedHosts.isNotEmpty;
+        final List<String> expectedTerms = isLimitedToHosts
+            ? <String>['Sandbox', 'Can reach']
+            : <String>['Sandbox'];
+        expect(facts.map((Fact fact) => fact.term), expectedTerms);
+        expect(
+          joinSegments(facts.first.description),
+          describeRunSandbox(place),
+        );
+        expect(describeRunSandbox(place), endsWith('.'));
+      }
     }
-    for (final SandboxKind sandbox in SandboxKind.values) {
-      expect(describeSandbox(sandbox), endsWith('.'));
+  });
+
+  test('test_build_runner_facts_property_no_fact_is_ever_empty', () {
+    final Random random = Random(7);
+    for (int i = 0; i < 200; i = i + 1) {
+      final int hostCount = random.nextInt(3);
+      final List<String> hosts = <String>[
+        for (int j = 0; j < hostCount; j = j + 1) 'host$j.example.com',
+      ];
+      final Runner runner = Runner(
+        deviceId: galleryRunners.first.deviceId,
+        labels: const <String>[],
+        slotsTotal: 1,
+        slotsBusy: 0,
+        link: RunnerLink.direct,
+        online: true,
+        acceptingNewRuns: true,
+        offers: AgentPlace.values,
+        allowedHosts: hosts,
+      );
+      final AgentPlace place =
+          AgentPlace.values[random.nextInt(AgentPlace.values.length)];
+
+      final List<Fact> facts = buildRunnerFacts(runner: runner, place: place);
+
+      for (final Fact fact in facts) {
+        expect(joinSegments(fact.description), isNotEmpty);
+      }
     }
   });
 }

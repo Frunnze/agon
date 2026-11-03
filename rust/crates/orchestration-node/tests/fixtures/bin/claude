@@ -1,13 +1,25 @@
 #!/bin/sh
 session=
 previous=
+reads_input=
 for argument in "$@"; do
   if [ "$previous" = "--resume" ]; then
     session="$argument"
   fi
+  if [ "$previous" = "--input-format" ]; then
+    reads_input=yes
+  fi
   previous="$argument"
   prompt="$argument"
 done
+if [ -n "$reads_input" ]; then
+  IFS= read -r prompt_line
+  prompt=$(printf '%s' "$prompt_line" | perl -MJSON::PP -e '
+    binmode STDOUT, ":utf8";
+    print decode_json(<STDIN>)->{message}{content};
+  '; printf x)
+  prompt=${prompt%x}
+fi
 
 wait_for_file() {
   waited=0

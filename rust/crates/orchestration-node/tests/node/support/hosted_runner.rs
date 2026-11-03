@@ -120,6 +120,7 @@ pub fn run_a_task_from(
             "details": PLAN_DETAILS,
             "doer": { "kind": "one_agent", "agent": "claude_code" },
             "runs_on": { "kind": "any_free_runner" },
+            "agent_place": "local_process",
             "skills": [],
             "uses_automatic_skills": false,
             "approval_policy": "ask_before_risky_actions",

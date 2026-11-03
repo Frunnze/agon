@@ -17,6 +17,7 @@ use crate::support::test_device::fail;
 
 const ANSWER_CASES: u32 = 48;
 const NO_JSON_OBJECT: &str = "the answer holds no JSON object";
+const PLACE_FIELD: &str = "agent_place";
 
 fn sample_draft(
     kind: DraftKind,
@@ -103,6 +104,36 @@ fn a_skill_answer_with_a_wrong_usage_is_refused() {
 
 proptest! {
     #![proptest_config(ProptestConfig::with_cases(ANSWER_CASES))]
+
+    #[test]
+    fn test_parse_item_answer_property_work_must_say_where_agents_run(
+        context in context_strategy(),
+        is_job in any::<bool>(),
+        words in "[a-z]{1,12}",
+        wrong_place in prop_oneof![
+            Just(Value::Null),
+            Just(json!("anywhere")),
+            Just(json!(1)),
+        ],
+        is_missing in any::<bool>(),
+    ) {
+        let kind = if is_job { DraftKind::Job } else { DraftKind::Task };
+        let drafted = sample_draft(kind, &context, &words);
+        let mut answer = answer_json(&drafted).map_err(fail)?;
+        let fields = answer
+            .as_object_mut()
+            .ok_or_else(|| TestCaseError::fail("the answer is no object"))?;
+        if is_missing {
+            fields.remove(PLACE_FIELD);
+        } else {
+            fields.insert(PLACE_FIELD.to_owned(), wrong_place);
+        }
+
+        let parsed = parse_item_answer(kind, &answer.to_string());
+
+        let is_refused = matches!(parsed, Err(NodeError::DraftNotItem { .. }));
+        prop_assert!(is_refused, "{:?}", parsed);
+    }
 
     #[test]
     fn test_parse_item_answer_property_any_text_gets_a_defined_reply(

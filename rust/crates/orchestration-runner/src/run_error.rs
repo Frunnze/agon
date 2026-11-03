@@ -36,4 +36,8 @@ pub(crate) enum RunError {
     },
     #[error("a background task stopped unexpectedly: {0}")]
     BackgroundTask(#[from] JoinError),
+    #[error("this runner does not offer where the task's agents run")]
+    PlaceNotOffered,
+    #[error("the agent stopped reading what the runner sends it")]
+    AgentInputClosed,
 }

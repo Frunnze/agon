@@ -44,6 +44,12 @@ pub enum WorktreeError {
         #[source]
         source: io::Error,
     },
+    #[error("could not read the folder {path:?}: {source}")]
+    ReadFolder {
+        path: PathBuf,
+        #[source]
+        source: io::Error,
+    },
     #[error("the folder {0:?} is taken by a file or a link, not a folder")]
     BlockedFolder(PathBuf),
     #[error("could not start git: {0}")]
@@ -169,7 +175,16 @@ fn resolve_folder(folder: &Path) -> Result<PathBuf, WorktreeError> {
         })
 }
 
-fn run_git(command: &CommandSpecification) -> Result<(), WorktreeError> {
+pub(crate) fn run_git(
+    command: &CommandSpecification,
+) -> Result<(), WorktreeError> {
+    read_git_output(command)?;
+    Ok(())
+}
+
+pub(crate) fn read_git_output(
+    command: &CommandSpecification,
+) -> Result<String, WorktreeError> {
     let mut git = Command::new(&command.program);
     git.args(&command.arguments).envs(&command.environment);
     if let Some(directory) = &command.working_directory {
@@ -178,7 +193,7 @@ fn run_git(command: &CommandSpecification) -> Result<(), WorktreeError> {
 
     let output = git.output().map_err(WorktreeError::StartGit)?;
     if output.status.success() {
-        return Ok(());
+        return Ok(String::from_utf8_lossy(&output.stdout).into_owned());
     }
     Err(WorktreeError::GitFailed {
         arguments: command.arguments.join(ARGUMENT_SEPARATOR),

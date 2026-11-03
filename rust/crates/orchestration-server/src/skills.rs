@@ -1,6 +1,5 @@
 use axum::Json;
 use axum::extract::State;
-use axum::http::StatusCode;
 use orchestration_api::catalog::SaveSkillRequest;
 use orchestration_api::updates::ChangeTopic;
 use orchestration_core::identifiers::SkillId;
@@ -50,19 +49,6 @@ pub async fn update_skill(
     Ok(Json(skill))
 }
 
-pub async fn delete_skill(
-    State(server): State<SharedServer>,
-    PathValue(skill_uuid): PathValue<Uuid>,
-    request: SignedRequest,
-) -> Result<StatusCode, ServerError> {
-    request.caller.require_client()?;
-    let skill_id = SkillId(skill_uuid);
-    server.apply(&request.caller.device_id, |state, _now| {
-        remove_skill(state, skill_id)
-    })?;
-    Ok(StatusCode::NO_CONTENT)
-}
-
 fn store_skill(
     state: &mut StoredState,
     skill: &Skill,
@@ -100,16 +86,4 @@ fn replace_skill(
     state.skills.insert(skill_id, replaced.clone());
     let event_text = format!("Changed skill {}", replaced.name);
     Ok(Change::recorded(replaced, ChangeTopic::Skills, event_text))
-}
-
-fn remove_skill(
-    state: &mut StoredState,
-    skill_id: SkillId,
-) -> Result<Change<()>, ServerError> {
-    let removed = state
-        .skills
-        .remove(&skill_id)
-        .ok_or(ServerError::NotFound("the skill"))?;
-    let event_text = format!("Deleted skill {}", removed.name);
-    Ok(Change::recorded((), ChangeTopic::Skills, event_text))
 }

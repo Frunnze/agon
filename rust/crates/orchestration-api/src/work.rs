@@ -1,6 +1,7 @@
+use orchestration_core::agent_place::AgentPlace;
 use orchestration_core::approval::{ApprovalAction, SignedDecision};
-use orchestration_core::device::{RunnerLink, SandboxKind};
-use orchestration_core::identifiers::{RunId, WorkspaceId};
+use orchestration_core::device::{Runner, RunnerLink};
+use orchestration_core::identifiers::{RunId, TaskId, WorkspaceId};
 use orchestration_core::library::{Rule, Skill};
 use orchestration_core::run::{
     ChatMessage, LogLine, Run, RunFailure, StepStatus,
@@ -76,10 +77,28 @@ pub struct HeartbeatRequest {
     pub slots_total: u32,
     pub slots_busy: u32,
     pub link: RunnerLink,
-    pub sandbox: SandboxKind,
+    pub offers: Vec<AgentPlace>,
     pub allowed_hosts: Vec<String>,
     #[serde(default)]
     pub cached_repositories: Vec<String>,
+    #[serde(default)]
+    pub held_tasks: Vec<TaskId>,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ForgottenWork {
+    #[serde(default)]
+    pub forgotten_tasks: Vec<TaskId>,
+    #[serde(default)]
+    pub unused_repositories: Vec<String>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct HeartbeatAnswer {
+    #[serde(flatten)]
+    pub runner: Runner,
+    #[serde(flatten)]
+    pub forgotten_work: ForgottenWork,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

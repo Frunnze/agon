@@ -30,8 +30,22 @@ Map<String, Object?> randomRunnerJson(Random random) {
     'link': pickOne(random, nodeRunnerLinks),
     'online': random.nextBool(),
     'accepting_new_runs': random.nextBool(),
-    'sandbox': pickOne(random, nodeSandboxKinds),
+    'offers': randomAgentPlaces(random),
     'allowed_hosts': randomTexts(random),
+  };
+}
+
+List<String> randomAgentPlaces(Random random) {
+  return <String>[
+    for (final String place in nodeAgentPlaces)
+      if (random.nextBool()) place,
+  ];
+}
+
+Map<String, Object?> randomPlaceOfferJson(Random random) {
+  return <String, Object?>{
+    'place': pickOne(random, nodeAgentPlaces),
+    'problem': randomOptional(random, randomText),
   };
 }
 
@@ -180,5 +194,9 @@ Map<String, Object?> randomRunnersViewJson(Random random) {
     'runners': randomListOf(random, randomRunnerViewJson),
     'this_device_problem': randomOptional(random, randomText),
     'this_device_settings': randomOptional(random, randomRunnerSettingsJson),
+    'this_device_offers': randomOptional(
+      random,
+      (Random random) => randomListOf(random, randomPlaceOfferJson),
+    ),
   };
 }

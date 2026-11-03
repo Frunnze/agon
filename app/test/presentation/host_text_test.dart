@@ -2,7 +2,6 @@ import 'dart:math';
 
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:agent_orchestration/data/models/runner.dart';
 import 'package:agent_orchestration/presentation/host_text.dart';
 import 'package:agent_orchestration/widgets/mixed_text.dart';
 
@@ -59,7 +58,7 @@ void main() {
     );
   });
 
-  test('test_describe_network_access_property_local_runs_are_not_limited', () {
+  test('test_describe_container_network_property_names_hosts_then_stops', () {
     final Random random = seededRandom(4103);
     const List<String> hosts = <String>['api.anthropic.com', 'github.com'];
 
@@ -68,20 +67,14 @@ void main() {
         for (final String host in hosts)
           if (random.nextBool()) host,
       ];
-      final SandboxKind sandbox = pickOne(random, SandboxKind.values);
-
-      final String described = describeNetworkAccess(
-        sandbox: sandbox,
-        allowedHosts: chosen,
-      ).map((TextSegment s) => s.text).join();
+      final String described = describeContainerNetwork(chosen)
+          .map((TextSegment s) => s.text)
+          .join();
 
       final String reachable = describeReachableHosts(chosen)
           .map((TextSegment s) => s.text)
           .join();
-      final String expected = sandbox == SandboxKind.localProcess
-          ? 'Not limited'
-          : '$reachable. Nothing else.';
-      expect(described, expected);
+      expect(described, '$reachable. Nothing else.');
     }
   });
 }

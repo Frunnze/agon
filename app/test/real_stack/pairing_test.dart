@@ -95,10 +95,7 @@ void main() {
       );
       expect(_readShownWords(tester), joinWords);
       expect(joinWords, hasLength(4));
-      await tapWhenShown(
-        tester,
-        find.text('Approve with $confirmationMethodName'),
-      );
+      await tapWhenShown(tester, find.text('Approve'));
       await waitUntilGone(tester, findPageTitle('Approve $runnerDeviceName?'));
       await waitUntilShown(tester, find.text(runnerDeviceName));
       await waitUntilNodeAgrees(

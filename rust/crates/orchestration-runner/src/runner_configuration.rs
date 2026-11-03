@@ -3,6 +3,7 @@ use std::time::Duration;
 
 use orchestration_core::device::RunnerLink;
 use orchestration_hub::clone_source::CloneSource;
+pub use orchestration_hub::worktree_roots::WorktreeRoots;
 use thiserror::Error;
 
 use crate::agent_sandbox::AgentSandbox;
@@ -22,17 +23,11 @@ pub struct RunnerIntervals {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct WorktreeRoots {
-    pub cache_root: PathBuf,
-    pub worktrees_root: PathBuf,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RunnerConfiguration {
     pub labels: Vec<String>,
     pub slot_capacity: u32,
     pub link: RunnerLink,
-    pub sandbox: AgentSandbox,
+    pub sandboxes: Vec<AgentSandbox>,
     pub worktree_roots: WorktreeRoots,
     pub clone_source: CloneSource,
     pub intervals: RunnerIntervals,
@@ -42,6 +37,8 @@ pub struct RunnerConfiguration {
 pub enum ConfigurationProblem {
     #[error("the runner needs at least one slot")]
     NoSlots,
+    #[error("the runner offers no place for agents to run")]
+    NoSandbox,
     #[error("the {0} interval must be longer than zero")]
     ZeroInterval(&'static str),
     #[error("the folder {0:?} is not an absolute path")]
@@ -64,6 +61,9 @@ pub fn validate_configuration(
 ) -> Result<(), ConfigurationProblem> {
     if configuration.slot_capacity == 0 {
         return Err(ConfigurationProblem::NoSlots);
+    }
+    if configuration.sandboxes.is_empty() {
+        return Err(ConfigurationProblem::NoSandbox);
     }
     validate_intervals(&configuration.intervals)?;
 

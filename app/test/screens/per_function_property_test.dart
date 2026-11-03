@@ -51,14 +51,14 @@ void main() {
     }
   });
 
-  test('test_describe_sandbox_property_every_kind_described', () {
+  test('test_describe_run_sandbox_property_every_place_described', () {
     final Set<String> descriptions = <String>{
-      for (final SandboxKind sandbox in SandboxKind.values)
-        describeSandbox(sandbox),
+      for (final AgentPlace place in AgentPlace.values)
+        describeRunSandbox(place),
     };
-    expect(descriptions.length, SandboxKind.values.length);
+    expect(descriptions.length, AgentPlace.values.length);
     expect(
-      describeSandbox(SandboxKind.container),
+      describeRunSandbox(AgentPlace.container),
       'New container for this run. Sees only its workspace.',
     );
   });

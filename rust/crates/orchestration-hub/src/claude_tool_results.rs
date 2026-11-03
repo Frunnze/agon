@@ -1,6 +1,7 @@
 use serde_json::Value;
 
 use crate::agent_event::AgentEvent;
+use crate::failure_texts::{UNKNOWN_TOOL_FAILURE, choose_given_text};
 
 const CONTENT_FIELD: &str = "content";
 const TYPE_FIELD: &str = "type";
@@ -8,7 +9,6 @@ const IS_ERROR_FIELD: &str = "is_error";
 const TEXT_FIELD: &str = "text";
 const TOOL_RESULT_TYPE: &str = "tool_result";
 const TEXT_BLOCK_SEPARATOR: &str = "\n";
-const UNKNOWN_TOOL_FAILURE: &str = "the tool failed";
 
 pub(crate) fn describe_tool_failures(message: &Value) -> Vec<AgentEvent> {
     let content = message.get(CONTENT_FIELD).and_then(Value::as_array);
@@ -39,11 +39,7 @@ fn read_error_text(content: Option<&Value>) -> String {
         _ => String::new(),
     };
 
-    let error_text = given_text.trim();
-    if error_text.is_empty() {
-        return UNKNOWN_TOOL_FAILURE.to_string();
-    }
-    error_text.to_string()
+    choose_given_text(&[&given_text], UNKNOWN_TOOL_FAILURE)
 }
 
 fn join_text_blocks(blocks: &[Value]) -> String {

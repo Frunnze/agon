@@ -50,6 +50,10 @@ sealed class ApprovalAction implements JsonEncodable {
       SignWorkflow.kind => SignWorkflow(
         workflowId: readField(fields, 'workflow_id', decodeWorkflowId),
       ),
+      RunCommand.kind => RunCommand(
+        tool: readField(fields, 'tool', decodeText),
+        command: readField(fields, 'command', decodeText),
+      ),
       _ => throw FormatException('unknown approval action $kind'),
     };
   }
@@ -118,6 +122,20 @@ final class SignWorkflow extends ApprovalAction {
   @override
   JsonObject toJson() {
     return <String, Object?>{'kind': kind, 'workflow_id': workflowId.value};
+  }
+}
+
+final class RunCommand extends ApprovalAction {
+  const RunCommand({required this.tool, required this.command});
+
+  static const String kind = 'run_command';
+
+  final String tool;
+  final String command;
+
+  @override
+  JsonObject toJson() {
+    return <String, Object?>{'kind': kind, 'tool': tool, 'command': command};
   }
 }
 

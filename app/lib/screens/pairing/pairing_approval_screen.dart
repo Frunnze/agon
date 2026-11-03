@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import 'package:agent_orchestration/data/biometric_confirmation.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/pairing.dart';
 import 'package:agent_orchestration/data/models/project.dart';
@@ -10,7 +9,6 @@ import 'package:agent_orchestration/data/models/workspace.dart';
 import 'package:agent_orchestration/data/repository/device_repository.dart';
 import 'package:agent_orchestration/data/repository/pairing_repository.dart';
 import 'package:agent_orchestration/data/repository/workspace_repository.dart';
-import 'package:agent_orchestration/icons/app_icon_kind.dart';
 import 'package:agent_orchestration/presentation/device_text.dart';
 import 'package:agent_orchestration/presentation/scope_catalog.dart';
 import 'package:agent_orchestration/screens/pairing.dart';
@@ -35,7 +33,6 @@ class PairingApprovalScreen extends StatefulWidget {
     required this.pairingRepository,
     required this.deviceRepository,
     required this.workspaceRepository,
-    required this.biometricConfirmation,
     required this.navigation,
     super.key,
   });
@@ -43,7 +40,6 @@ class PairingApprovalScreen extends StatefulWidget {
   final PairingRepository pairingRepository;
   final DeviceRepository deviceRepository;
   final WorkspaceRepository workspaceRepository;
-  final BiometricConfirmation biometricConfirmation;
   final AppNavigation navigation;
 
   @override
@@ -125,10 +121,7 @@ class _PairingApprovalScreenState extends State<PairingApprovalScreen> {
                   onPressed: _isDeciding ? null : () => unawaited(_reject()),
                 ),
                 AppButton.primary(
-                  label:
-                      'Approve with '
-                      '${widget.biometricConfirmation.methodName}',
-                  icon: AppIconKind.fingerprint,
+                  label: 'Approve',
                   onPressed: _isDeciding ? null : () => unawaited(_approve()),
                 ),
               ],
@@ -241,22 +234,11 @@ class _PairingApprovalScreenState extends State<PairingApprovalScreen> {
 
     setState(() => _isDeciding = true);
     try {
-      await _confirmAndApprove();
+      await widget.pairingRepository.approvePairing(_workspaceIds);
+      _returnToDevices();
     } finally {
       _stopDeciding();
     }
-  }
-
-  Future<void> _confirmAndApprove() async {
-    final bool isConfirmed = await widget.biometricConfirmation.confirm(
-      reason: 'Approve a new device',
-    );
-    if (!isConfirmed) {
-      return;
-    }
-
-    await widget.pairingRepository.approvePairing(_workspaceIds);
-    _returnToDevices();
   }
 
   void _stopDeciding() {

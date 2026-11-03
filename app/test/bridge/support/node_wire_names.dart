@@ -18,11 +18,7 @@ const List<String> nodeRunnerLinks = <String>[
   'unreachable',
 ];
 
-const List<String> nodeSandboxKinds = <String>[
-  'container',
-  'micro_virtual_machine',
-  'local_process',
-];
+const List<String> nodeAgentPlaces = <String>['container', 'local_process'];
 
 const List<String> nodeAgentAccesses = <String>[
   'read_only',

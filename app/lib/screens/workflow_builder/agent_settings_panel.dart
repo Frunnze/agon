@@ -7,6 +7,7 @@ import 'package:agent_orchestration/data/models/runner.dart';
 import 'package:agent_orchestration/data/models/workflow.dart';
 import 'package:agent_orchestration/icons/app_icon_kind.dart';
 import 'package:agent_orchestration/presentation/skill_names.dart';
+import 'package:agent_orchestration/screens/shared/approval_policy_field.dart';
 import 'package:agent_orchestration/screens/workflow_builder.dart';
 import 'package:agent_orchestration/theme/app_spacing.dart';
 import 'package:agent_orchestration/theme/field_padding.dart';
@@ -16,7 +17,6 @@ import 'package:agent_orchestration/widgets/forms/check_field.dart';
 import 'package:agent_orchestration/widgets/forms/form_field_block.dart';
 import 'package:agent_orchestration/widgets/forms/select_entry.dart';
 import 'package:agent_orchestration/widgets/forms/select_field.dart';
-import 'package:agent_orchestration/widgets/forms/switch_field.dart';
 import 'package:agent_orchestration/widgets/forms/tag_input_field.dart';
 import 'package:agent_orchestration/widgets/gaps.dart';
 
@@ -196,29 +196,10 @@ class _AgentSettingsPanelState extends State<AgentSettingsPanel> {
   }
 
   Widget _buildApprovalField(WorkflowAgent agent) {
-    final bool asksForApproval =
-        agent.approvalPolicy == ApprovalPolicy.askBeforeRiskyActions;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: spaceVertically(<Widget>[
-        SwitchField(
-          label: 'Ask for approval',
-          value: asksForApproval,
-          onChanged: (bool asks) => widget.onAgentChanged(
-            agent.copyWith(
-              approvalPolicy: asks
-                  ? ApprovalPolicy.askBeforeRiskyActions
-                  : ApprovalPolicy.neverAsk,
-            ),
-          ),
-        ),
-        const Text(
-          'On: it stops and asks you before it pushes, deploys or deletes. '
-          'Off: it never asks.',
-          style: AppTextStyles.smallMuted,
-        ),
-      ], AppSpacing.space2),
+    return ApprovalPolicyField(
+      selected: agent.approvalPolicy,
+      onChanged: (ApprovalPolicy policy) =>
+          widget.onAgentChanged(agent.copyWith(approvalPolicy: policy)),
     );
   }
 

@@ -29,7 +29,7 @@ Widget buildRandomIndicators(Random random) {
         icon: AppIconKind.play,
       ),
       AppButton.secondary(label: phrase, onPressed: null),
-      AppButton.danger(label: 'Revoke with Touch ID', onPressed: () {}),
+      AppButton.danger(label: 'Revoke device', onPressed: () {}),
       StatusLabel(
         text: randomText(random),
         tone: pickOne(random, StatusTone.values),

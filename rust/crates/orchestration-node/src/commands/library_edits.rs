@@ -7,6 +7,7 @@ use orchestration_core::scope::Scope;
 use serde::Deserialize;
 use serde_json::Value;
 
+use super::workflow_skill_removal::remove_skill_from_workflows;
 use crate::command_reply::encode_reply;
 use crate::content_sealing::{open_rule, open_skill, seal_rule, seal_skill};
 use crate::node::{DeviceSession, Node};
@@ -74,6 +75,7 @@ pub(super) async fn handle_library_edit_command(
         }
         LibraryEditCommand::DeleteSkill { skill_id } => {
             client.delete_skill(skill_id).await?;
+            remove_skill_from_workflows(&session, &client, skill_id).await?;
             Ok(Value::Null)
         }
         LibraryEditCommand::UpdateRule {

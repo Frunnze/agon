@@ -12,6 +12,7 @@ import 'package:agent_orchestration/bridge/codecs/workspace_values.dart'
     as node;
 import 'package:agent_orchestration/bridge/commands/task_commands.dart'
     as node;
+import 'package:agent_orchestration/bridge/node/runner_settings.dart' as node;
 import 'package:agent_orchestration/data/models/identifiers.dart';
 
 import '../support/form_finders.dart';
@@ -43,6 +44,7 @@ Future<node.Task> _createTaskForLater(
       details: '',
       doer: const node.OneAgent(agent: node.AgentKind.claudeCode),
       runsOn: const node.AnyFreeRunner(),
+      agentPlace: node.AgentPlace.localProcess,
       skills: const <SkillId>[],
       usesAutomaticSkills: true,
       approvalPolicy: node.ApprovalPolicy.askBeforeRiskyActions,

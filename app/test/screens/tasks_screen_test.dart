@@ -21,20 +21,23 @@ void expectGalleryTaskRows() {
     findsNWidgets(2),
   );
   expect(find.text('Clean up old feature branches'), findsOneWidget);
-  expect(find.text('acme-app · Claude Code'), findsOneWidget);
+  expect(find.text('acme-app · Claude Code'), findsNWidgets(2));
   expect(find.text('Write the v2 API docs'), findsOneWidget);
   expect(find.text('docs · Gemini CLI'), findsOneWidget);
+  expect(find.text('Rename the billing module'), findsOneWidget);
   expect(find.text('mac-studio'), findsNWidgets(2));
-  expect(find.text('office-server'), findsOneWidget);
+  expect(find.text('office-server'), findsNWidgets(2));
   expect(find.text('Any runner'), findsOneWidget);
   expect(find.text('4 min ago'), findsOneWidget);
   expect(find.text('Not yet'), findsOneWidget);
   expect(find.text('Yesterday 18:20'), findsOneWidget);
   expect(find.text('Yesterday 11:40'), findsOneWidget);
+  expect(find.text('2 days ago'), findsOneWidget);
   expect(find.text('Running'), findsOneWidget);
   expect(find.text('To do'), findsOneWidget);
   expect(find.text('Failed'), findsOneWidget);
   expect(find.text('Done'), findsOneWidget);
+  expect(find.text('Not pushed'), findsOneWidget);
   expect(find.text('New task'), findsOneWidget);
 }
 

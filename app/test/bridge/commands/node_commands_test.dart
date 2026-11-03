@@ -23,6 +23,7 @@ const Set<String> _nodeTaskArgumentFields = <String>{
   'details',
   'doer',
   'runs_on',
+  'agent_place',
   'skills',
   'uses_automatic_skills',
   'approval_policy',

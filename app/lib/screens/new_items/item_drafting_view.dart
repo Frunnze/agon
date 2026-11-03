@@ -1,10 +1,13 @@
 import 'package:flutter/widgets.dart';
 
 import 'package:agent_orchestration/data/models/item_draft.dart';
+import 'package:agent_orchestration/data/repository/device_repository.dart';
 import 'package:agent_orchestration/icons/app_icon_kind.dart';
 import 'package:agent_orchestration/presentation/device_names.dart';
 import 'package:agent_orchestration/screens/new_items/new_item_texts.dart';
+import 'package:agent_orchestration/screens/shared/agent_login_pointer.dart';
 import 'package:agent_orchestration/screens/workflows/workflow_drafting_screen.dart';
+import 'package:agent_orchestration/shell/app_navigation.dart';
 import 'package:agent_orchestration/theme/app_typography.dart';
 import 'package:agent_orchestration/widgets/app_button.dart';
 import 'package:agent_orchestration/widgets/app_page.dart';
@@ -32,12 +35,40 @@ final class DraftingState {
     required this.draftProblem,
     required this.stopProblem,
     required this.returnLabel,
+    required this.loginPointer,
   });
 
   final String drafterText;
   final String? draftProblem;
   final String? stopProblem;
   final String returnLabel;
+  final AgentLoginPointer? loginPointer;
+}
+
+DraftingState describeDraftingState({
+  required DraftRunning? running,
+  required String? draftProblem,
+  required String? stopProblem,
+  required String returnLabel,
+  required DeviceRepository deviceRepository,
+  required AppNavigation navigation,
+}) {
+  final DeviceNames deviceNames = DeviceNames(deviceRepository.listDevices());
+  return DraftingState(
+    drafterText: describeItemDrafter(
+      running: running,
+      deviceNames: deviceNames,
+    ),
+    draftProblem: draftProblem,
+    stopProblem: stopProblem,
+    returnLabel: returnLabel,
+    loginPointer: pointToAgentLogin(
+      reason: draftProblem,
+      runner: running?.drafterDeviceId,
+      deviceRepository: deviceRepository,
+      navigation: navigation,
+    ),
+  );
 }
 
 class ItemDraftingView extends StatelessWidget {
@@ -89,8 +120,12 @@ class ItemDraftingView extends StatelessWidget {
             tone: BannerTone.danger,
             icon: AppIconKind.alert,
             title: draftFailedTitle,
-            body: <Widget>[Text(draftProblem)],
+            body: <Widget>[
+              Text(draftProblem),
+              ...describeAgentLoginPointer(state.loginPointer),
+            ],
             actions: <Widget>[
+              ...offerAgentLoginConnection(state.loginPointer),
               AppButton.secondary(
                 label: fillInFormLabel,
                 onPressed: onFillForm,

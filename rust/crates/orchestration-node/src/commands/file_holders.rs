@@ -5,6 +5,8 @@ use crate::node::{DeviceSession, Node};
 use crate::node_error::NodeError;
 use crate::peer_side::ask_runner_for_files;
 #[cfg(feature = "runner")]
+pub(super) use crate::runner_bridge::holds_own_copy;
+#[cfg(feature = "runner")]
 use crate::runner_bridge::read_own_copy;
 
 pub(super) async fn ask_holder_for_files(
@@ -18,6 +20,15 @@ pub(super) async fn ask_holder_for_files(
         return read_own_copy(session, &cache_root, request).await;
     }
     ask_runner_for_files(node.peer_side()?, holder, request).await
+}
+
+#[cfg(not(feature = "runner"))]
+#[allow(clippy::unnecessary_wraps)]
+pub(super) fn holds_own_copy(
+    _cache_root: &std::path::Path,
+    _address: &str,
+) -> Result<bool, NodeError> {
+    Ok(false)
 }
 
 #[cfg(not(feature = "runner"))]

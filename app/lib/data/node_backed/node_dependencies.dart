@@ -1,6 +1,5 @@
 import 'package:agent_orchestration/bridge/node/node_command_channel.dart';
 import 'package:agent_orchestration/data/app_dependencies.dart';
-import 'package:agent_orchestration/data/biometric_confirmation.dart';
 import 'package:agent_orchestration/data/clock.dart';
 import 'package:agent_orchestration/data/folder_picker.dart';
 import 'package:agent_orchestration/data/node_backed.dart';
@@ -11,6 +10,7 @@ const Duration _serverRetryInterval = Duration(seconds: 30);
 const Duration _pairingPollInterval = Duration(seconds: 2);
 const Duration _draftPollInterval = Duration(seconds: 1);
 const Duration _livePollInterval = Duration(seconds: 1);
+const Duration _loginTerminalPollInterval = Duration(milliseconds: 300);
 const List<String> _labelsOfAClientOnlyNode = <String>[];
 
 final class NodeDependencies {
@@ -23,7 +23,6 @@ final class NodeDependencies {
 NodeDependencies buildNodeDependencies({
   required NodeCommandChannel channel,
   required Clock clock,
-  required BiometricConfirmation biometricConfirmation,
   required QrCodeScanner qrCodeScanner,
   required FolderPicker folderPicker,
   required WorkspaceChoiceStore workspaceChoiceStore,
@@ -94,6 +93,10 @@ NodeDependencies buildNodeDependencies({
     skillRepository: skillRepository,
     ruleRepository: ruleRepository,
     runnerRepository: runnerRepository,
+    agentLoginRepository: NodeBackedAgentLoginRepository(
+      channel: channel,
+      pollInterval: _loginTerminalPollInterval,
+    ),
     deviceRepository: deviceRepository,
     pairingRepository: NodeBackedPairingRepository(
       channel: channel,
@@ -108,7 +111,6 @@ NodeDependencies buildNodeDependencies({
       workspaceRepository: workspaceRepository,
       pollInterval: _draftPollInterval,
     ),
-    biometricConfirmation: biometricConfirmation,
     qrCodeScanner: qrCodeScanner,
     folderPicker: folderPicker,
   );

@@ -11,6 +11,7 @@ import 'package:agent_orchestration/screens/projects/project_text.dart';
 import 'package:agent_orchestration/widgets/mixed_text.dart';
 
 const String _contextSeparator = ' · ';
+const String _commandToolName = 'Bash';
 
 String describeApprovalRepository(String address, DeviceNames deviceNames) {
   if (parseLocalFolderAddress(address) == null) {
@@ -53,6 +54,37 @@ String describeActionRequest({required String? runLabel}) {
   return '${_describeAskingAgent(runLabel)} asks before it does this.';
 }
 
+String describeToolUse(String tool) {
+  if (tool == _commandToolName) {
+    return 'Run a command';
+  }
+  return 'Use $tool';
+}
+
+String describeToolUseRequest({
+  required String? runLabel,
+  required String tool,
+}) {
+  final String askingAgent = _describeAskingAgent(runLabel);
+  if (tool == _commandToolName) {
+    return '$askingAgent wants to run a command.';
+  }
+  return '$askingAgent wants to use $tool.';
+}
+
+List<TextSegment> describeApprovalTitleSegments(
+  ApprovalAction action,
+  List<Workflow> workflows,
+) {
+  if (action is RunCommandAction) {
+    return <TextSegment>[
+      TextSegment('${describeToolUse(action.tool)}: '),
+      TextSegment.monospace(action.command),
+    ];
+  }
+  return <TextSegment>[TextSegment(describeApprovalTitle(action, workflows))];
+}
+
 String describeApprovalTitle(ApprovalAction action, List<Workflow> workflows) {
   switch (action) {
     case PushCommitsAction(:final List<String> commits):
@@ -65,19 +97,9 @@ String describeApprovalTitle(ApprovalAction action, List<Workflow> workflows) {
       return 'Delete $what in ${describeRepositoryPath(action.repository)}';
     case SignWorkflowAction(:final WorkflowId workflowId):
       return 'Sign workflow ${_findWorkflowName(workflowId, workflows)}';
+    case RunCommandAction(:final String tool, :final String command):
+      return '${describeToolUse(tool)}: $command';
   }
-}
-
-String describeDecisionReason({
-  required ApprovalDecision decision,
-  required ApprovalAction action,
-  required List<Workflow> workflows,
-}) {
-  final String verb = switch (decision) {
-    ApprovalDecision.approved => 'Approve',
-    ApprovalDecision.denied => 'Deny',
-  };
-  return '$verb: ${describeApprovalTitle(action, workflows)}';
 }
 
 List<TextSegment> describeApprovalContext({
@@ -95,6 +117,7 @@ List<TextSegment> describeApprovalContext({
       parts.add('branch $branch');
     case DeployAction():
     case DeleteBranchOrFilesAction():
+    case RunCommandAction():
       break;
     case SignWorkflowAction():
       if (change == null) {
@@ -111,7 +134,7 @@ String describeWaitingApprovals(int count) {
     throw ArgumentError.value(count, 'count', 'Nothing is waiting');
   }
   if (count == 1) {
-    return '1 waiting. It needs your passkey.';
+    return '1 waiting. It needs your approval.';
   }
-  return '$count waiting. Each one needs your passkey.';
+  return '$count waiting. Each one needs your approval.';
 }

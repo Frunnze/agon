@@ -1,6 +1,5 @@
 import 'package:flutter/widgets.dart';
 
-import 'package:agent_orchestration/data/biometric_confirmation.dart';
 import 'package:agent_orchestration/data/clock.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/workflow.dart';
@@ -30,7 +29,6 @@ class WorkflowChangeScreen extends StatelessWidget {
     required this.workflowId,
     required this.workflowRepository,
     required this.deviceRepository,
-    required this.biometricConfirmation,
     required this.clock,
     required this.navigation,
     super.key,
@@ -39,7 +37,6 @@ class WorkflowChangeScreen extends StatelessWidget {
   final WorkflowId workflowId;
   final WorkflowRepository workflowRepository;
   final DeviceRepository deviceRepository;
-  final BiometricConfirmation biometricConfirmation;
   final Clock clock;
   final AppNavigation navigation;
 
@@ -89,11 +86,7 @@ class WorkflowChangeScreen extends StatelessWidget {
               label: 'Discard change',
               onPressed: _discardChange,
             ),
-            AppButton.primary(
-              label: 'Sign with ${biometricConfirmation.methodName}',
-              icon: AppIconKind.fingerprint,
-              onPressed: () => _signChange(workflow),
-            ),
+            AppButton.primary(label: 'Sign change', onPressed: _signChange),
           ],
         ),
         NoticeBanner(
@@ -143,14 +136,7 @@ class WorkflowChangeScreen extends StatelessWidget {
     navigation.returnTo(_workflowsRoute);
   }
 
-  Future<void> _signChange(Workflow workflow) async {
-    final bool isConfirmed = await biometricConfirmation.confirm(
-      reason: 'Sign the new version of ${workflow.name}',
-    );
-    if (!isConfirmed) {
-      return;
-    }
-
+  Future<void> _signChange() async {
     await workflowRepository.signWorkflow(workflowId);
     navigation.returnTo(_workflowsRoute);
   }

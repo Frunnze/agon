@@ -1,3 +1,4 @@
+use orchestration_core::agent_place::AgentPlace;
 use serde::Deserialize;
 use serde_json::Value;
 
@@ -9,7 +10,6 @@ use crate::agent_credentials::{AgentCredential, AgentCredentialKind};
 use crate::command_reply::encode_reply;
 use crate::node::Node;
 use crate::node_error::NodeError;
-use crate::runner_settings::AgentPlace;
 
 pub(super) const AGENT_LOGIN_COMMAND_NAMES: [&str; 7] = [
     "agent_login_status",

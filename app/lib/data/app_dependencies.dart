@@ -1,7 +1,7 @@
-import 'package:agent_orchestration/data/biometric_confirmation.dart';
 import 'package:agent_orchestration/data/clock.dart';
 import 'package:agent_orchestration/data/folder_picker.dart';
 import 'package:agent_orchestration/data/qr_code_scanner.dart';
+import 'package:agent_orchestration/data/repository/agent_login_repository.dart';
 import 'package:agent_orchestration/data/repository/approval_repository.dart';
 import 'package:agent_orchestration/data/repository/audit_repository.dart';
 import 'package:agent_orchestration/data/repository/chat_repository.dart';
@@ -31,12 +31,12 @@ final class AppDependencies {
     required this.skillRepository,
     required this.ruleRepository,
     required this.runnerRepository,
+    required this.agentLoginRepository,
     required this.deviceRepository,
     required this.pairingRepository,
     required this.auditRepository,
     required this.fileRepository,
     required this.itemDraftRepository,
-    required this.biometricConfirmation,
     required this.qrCodeScanner,
     required this.folderPicker,
   });
@@ -52,12 +52,12 @@ final class AppDependencies {
   final SkillRepository skillRepository;
   final RuleRepository ruleRepository;
   final RunnerRepository runnerRepository;
+  final AgentLoginRepository agentLoginRepository;
   final DeviceRepository deviceRepository;
   final PairingRepository pairingRepository;
   final AuditRepository auditRepository;
   final FileRepository fileRepository;
   final ItemDraftRepository itemDraftRepository;
-  final BiometricConfirmation biometricConfirmation;
   final QrCodeScanner qrCodeScanner;
   final FolderPicker folderPicker;
 }

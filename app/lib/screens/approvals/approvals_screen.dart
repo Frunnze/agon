@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/widgets.dart';
 
-import 'package:agent_orchestration/data/biometric_confirmation.dart';
 import 'package:agent_orchestration/data/clock.dart';
 import 'package:agent_orchestration/data/models/approval.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
@@ -13,6 +12,7 @@ import 'package:agent_orchestration/data/repository/approval_repository.dart';
 import 'package:agent_orchestration/data/repository/device_repository.dart';
 import 'package:agent_orchestration/data/repository/task_repository.dart';
 import 'package:agent_orchestration/data/repository/workflow_repository.dart';
+import 'package:agent_orchestration/data/repository/record_not_found.dart';
 import 'package:agent_orchestration/presentation/device_names.dart';
 import 'package:agent_orchestration/presentation/doer_text.dart';
 import 'package:agent_orchestration/presentation/run_text.dart';
@@ -38,7 +38,6 @@ class ApprovalsScreen extends StatelessWidget {
     required this.taskRepository,
     required this.workflowRepository,
     required this.deviceRepository,
-    required this.biometricConfirmation,
     required this.clock,
     required this.navigation,
     super.key,
@@ -48,7 +47,6 @@ class ApprovalsScreen extends StatelessWidget {
   final TaskRepository taskRepository;
   final WorkflowRepository workflowRepository;
   final DeviceRepository deviceRepository;
-  final BiometricConfirmation biometricConfirmation;
   final Clock clock;
   final AppNavigation navigation;
 
@@ -75,7 +73,7 @@ class ApprovalsScreen extends StatelessWidget {
           EmptyState(
             title: 'No approvals waiting',
             message:
-                'When an agent asks to do something that needs your passkey, '
+                'When an agent asks to do something that needs your approval, '
                 'the request waits here.',
             action: null,
           ),
@@ -119,8 +117,8 @@ class ApprovalsScreen extends StatelessWidget {
 
     return ListRowData(
       key: ValueKey<ApprovalId>(request.id),
-      main: ListRowMain(
-        title: describeApprovalTitle(action, workflows),
+      main: MixedListRowMain(
+        title: describeApprovalTitleSegments(action, workflows),
         subtitle: describeApprovalContext(
           action: action,
           runLabel: _describeRunLabel(request.runId, workflows),
@@ -143,8 +141,15 @@ class ApprovalsScreen extends StatelessWidget {
       return null;
     }
 
-    final Run run = taskRepository.findRun(runId);
-    final Task task = taskRepository.findTask(run.taskId);
+    final Run run;
+    final Task task;
+    try {
+      run = taskRepository.findRun(runId);
+      task = taskRepository.findTask(run.taskId);
+    } on RecordNotFound {
+      return null;
+    }
+
     return describeRunLabel(
       task: task,
       workflow: findWorkflowForDoer(task.doer, workflows),
@@ -173,7 +178,6 @@ class ApprovalsScreen extends StatelessWidget {
       approvalRepository: approvalRepository,
       workflowRepository: workflowRepository,
       deviceRepository: deviceRepository,
-      biometricConfirmation: biometricConfirmation,
       clock: clock,
     );
     return review.review(context: context, request: request, runLabel: null);

@@ -1,5 +1,6 @@
 use orchestration_api::work::{
-    ClaimResponse, CreateApprovalRequest, HeartbeatRequest, RunEventsRequest,
+    ClaimResponse, CreateApprovalRequest, ForgottenWork, HeartbeatRequest,
+    RunEventsRequest,
 };
 use orchestration_core::approval::ApprovalDecision;
 use orchestration_core::identifiers::RunId;
@@ -16,7 +17,7 @@ pub trait RunnerServer: Send + Sync + 'static {
     fn send_heartbeat(
         &self,
         heartbeat: &HeartbeatRequest,
-    ) -> impl Future<Output = Result<(), ServerError>> + Send;
+    ) -> impl Future<Output = Result<ForgottenWork, ServerError>> + Send;
 
     fn claim_next_run(
         &self,

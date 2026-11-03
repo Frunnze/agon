@@ -53,7 +53,6 @@ class ProjectScreen extends StatelessWidget {
     required this.taskRepository,
     required this.ruleRepository,
     required this.deviceRepository,
-    required this.confirmationMethodName,
     required this.navigation,
     super.key,
   });
@@ -64,7 +63,6 @@ class ProjectScreen extends StatelessWidget {
   final TaskRepository taskRepository;
   final RuleRepository ruleRepository;
   final DeviceRepository deviceRepository;
-  final String confirmationMethodName;
   final AppNavigation navigation;
 
   @override
@@ -121,7 +119,6 @@ class ProjectScreen extends StatelessWidget {
                 context: context,
                 project: project,
                 projectRepository: projectRepository,
-                confirmationMethodName: confirmationMethodName,
               ),
             ),
           ],

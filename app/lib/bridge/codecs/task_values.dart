@@ -4,6 +4,7 @@ import 'package:agent_orchestration/bridge/codecs/identifier_codecs.dart';
 import 'package:agent_orchestration/bridge/codecs/json_values.dart';
 import 'package:agent_orchestration/bridge/codecs/schedule_values.dart';
 import 'package:agent_orchestration/bridge/codecs/workflow_values.dart';
+import 'package:agent_orchestration/bridge/node/runner_settings.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 
 enum TaskStatus implements WireNamed {
@@ -83,6 +84,7 @@ final class Task implements JsonEncodable {
     required this.projectId,
     required this.doer,
     required this.runsOn,
+    required this.agentPlace,
     required List<SkillId> skills,
     required this.usesAutomaticSkills,
     required this.approvalPolicy,
@@ -100,6 +102,7 @@ final class Task implements JsonEncodable {
       projectId: readField(fields, 'project_id', decodeProjectId),
       doer: readField(fields, 'doer', TaskDoer.fromJson),
       runsOn: readField(fields, 'runs_on', RunnerTarget.fromJson),
+      agentPlace: readField(fields, 'agent_place', AgentPlace.decode),
       skills: readListField(fields, 'skills', decodeSkillId),
       usesAutomaticSkills: readField(
         fields,
@@ -123,6 +126,7 @@ final class Task implements JsonEncodable {
   final ProjectId projectId;
   final TaskDoer doer;
   final RunnerTarget runsOn;
+  final AgentPlace agentPlace;
   final List<SkillId> skills;
   final bool usesAutomaticSkills;
   final ApprovalPolicy approvalPolicy;
@@ -139,6 +143,7 @@ final class Task implements JsonEncodable {
       'project_id': projectId.value,
       'doer': doer.toJson(),
       'runs_on': runsOn.toJson(),
+      'agent_place': agentPlace.wireName,
       'skills': skills,
       'uses_automatic_skills': usesAutomaticSkills,
       'approval_policy': approvalPolicy.wireName,

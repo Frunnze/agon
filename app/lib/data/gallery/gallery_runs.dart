@@ -8,6 +8,8 @@ import 'package:agent_orchestration/data/models/runner.dart';
 
 const String gallerySessionId = '7c1e3f5a9b2d4e6f8a1c3e5b7d9fa90f';
 const String _buildStepName = 'build-ios';
+const String _oneAgentStepName = 'claude-code';
+const String galleryKeptBranch = 'task/rename-the-billing-module-7b3e';
 
 WorkflowAgentId _releaseAgentId(int index) => releaseAgents[index].id;
 
@@ -17,6 +19,15 @@ LogLine _buildLogLine(DateTime at, String text) {
 
 LogLine _buildErrorLine(DateTime at, String text) {
   return LogLine(at: at, stepName: _buildStepName, text: text, isError: true);
+}
+
+LogLine _buildAgentLine(DateTime at, String text) {
+  return LogLine(
+    at: at,
+    stepName: _oneAgentStepName,
+    text: text,
+    isError: false,
+  );
 }
 
 final Run galleryRunningRun = Run(
@@ -168,8 +179,49 @@ final Run galleryFinishedRun = Run(
   finishedAt: galleryYesterday(11, 58),
 );
 
+final Run galleryNotPushedRun = Run(
+  id: GalleryRunIds.renameBillingModule1,
+  taskId: GalleryTaskIds.renameBillingModule,
+  number: 1,
+  status: RunStatus.done,
+  steps: <RunStep>[
+    RunStep(
+      name: _oneAgentStepName,
+      agentId: null,
+      runner: GalleryDeviceIds.officeServer,
+      status: StepStatus.done,
+      startedAt: galleryTwoDaysAgo(14, 9, 40),
+      finishedAt: galleryTwoDaysAgo(14, 25, 10),
+    ),
+  ],
+  log: <LogLine>[
+    _buildAgentLine(
+      galleryTwoDaysAgo(14, 9, 52),
+      'Agent started: claude, session 3b9d…c1e2',
+    ),
+    _buildAgentLine(
+      galleryTwoDaysAgo(14, 20, 31),
+      'Renamed billing to payments in 14 files',
+    ),
+    _buildAgentLine(
+      galleryTwoDaysAgo(14, 21, 58),
+      'Committed the rename on $galleryKeptBranch',
+    ),
+  ],
+  chat: const <ChatMessage>[],
+  failure: null,
+  link: RunnerLink.direct,
+  linkLostAt: null,
+  agentSession: null,
+  worktreeBranch: galleryKeptBranch,
+  startedBy: GalleryDeviceIds.airLaptop,
+  startedAt: galleryTwoDaysAgo(14, 9, 40),
+  finishedAt: galleryTwoDaysAgo(14, 25, 10),
+);
+
 final List<Run> galleryRuns = List<Run>.unmodifiable(<Run>[
   galleryRunningRun,
   galleryFailedRun,
   galleryFinishedRun,
+  galleryNotPushedRun,
 ]);

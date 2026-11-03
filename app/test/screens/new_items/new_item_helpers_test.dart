@@ -12,6 +12,7 @@ import 'package:agent_orchestration/data/models/schedule.dart';
 import 'package:agent_orchestration/data/models/task.dart';
 import 'package:agent_orchestration/data/models/workflow.dart';
 import 'package:agent_orchestration/data/rules/local_folder_address.dart';
+import 'package:agent_orchestration/presentation/approval_policy_text.dart';
 import 'package:agent_orchestration/presentation/device_names.dart';
 import 'package:agent_orchestration/screens/new_items/item_drafting_view.dart';
 import 'package:agent_orchestration/screens/new_items/new_item_texts.dart';
@@ -31,6 +32,7 @@ DraftedWork _workFor(ProjectId? projectId, String title) {
     projectId: projectId,
     doer: const OneAgentDoer(AgentKind.geminiCli),
     runsOn: const AnyFreeRunner(),
+    agentPlace: AgentPlace.localProcess,
     skills: const <SkillId>[],
     usesAutomaticSkills: false,
     approvalPolicy: ApprovalPolicy.neverAsk,
@@ -83,12 +85,18 @@ void main() {
     );
   });
 
-  test('test_describe_approval_policy_property_on_asks_off_never_asks', () {
+  test('test_describe_approval_policy_property_names_choice_and_detail', () {
+    for (final ApprovalPolicy policy in ApprovalPolicy.values) {
+      expect(
+        describeApprovalPolicy(policy),
+        '${describeApprovalPolicyTitle(policy)}. '
+        '${describeApprovalPolicyDetail(policy)}',
+      );
+    }
     expect(
-      describeApprovalPolicy(ApprovalPolicy.askBeforeRiskyActions),
-      startsWith('On'),
+      describeApprovalPolicy(ApprovalPolicy.neverAsk),
+      startsWith('Auto. '),
     );
-    expect(describeApprovalPolicy(ApprovalPolicy.neverAsk), startsWith('Off'));
   });
 
   test('test_describe_repeating_task_property_says_it_becomes_a_job', () {

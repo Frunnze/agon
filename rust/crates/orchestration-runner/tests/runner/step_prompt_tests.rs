@@ -33,12 +33,16 @@ fn composes_every_part_under_its_heading() {
     let prompt = compose_step_prompt(
         "Build the app",
         "Fix the signing error.",
+        &["ios-app".to_string()],
         &[&skill],
         &[upstream],
     );
 
     let expected = "Build the app\n\n\
         ## Task details\nFix the signing error.\n\n\
+        ## Where the code is\nYour working folder holds one folder per \
+        repository. Change files only inside these folders; anything \
+        outside them is lost when the run ends.\n- ios-app/\n\n\
         ## Skill: release-ios\nUse fastlane.\n\n\
         ## Result from plan\nShip version 2.";
     assert_eq!(prompt, expected);
@@ -68,6 +72,7 @@ proptest! {
         let prompt = compose_step_prompt(
             &instruction,
             &details,
+            &[],
             &skill_references,
             &upstream_results,
         );
@@ -100,12 +105,32 @@ proptest! {
             final_message: final_message.clone(),
         };
 
-        let prompt =
-            compose_step_prompt(&instruction, &details, &[], &[upstream]);
+        let prompt = compose_step_prompt(
+            &instruction,
+            &details,
+            &[],
+            &[],
+            &[upstream],
+        );
 
         prop_assert!(prompt.ends_with(&final_message));
         if !instruction.trim().is_empty() {
             prop_assert!(prompt.starts_with(&instruction));
+        }
+    }
+
+    #[test]
+    fn test_compose_step_prompt_property_names_every_repository_folder(
+        details in any_part(),
+        folders in vec("[a-z][a-z0-9-]{0,20}", 0..4),
+    ) {
+        let prompt = compose_step_prompt("", &details, &folders, &[], &[]);
+
+        let has_section = prompt.contains("## Where the code is");
+        prop_assert_eq!(has_section, !folders.is_empty());
+        for folder in &folders {
+            let listed_folder = format!("\n- {folder}/");
+            prop_assert!(prompt.contains(&listed_folder));
         }
     }
 }

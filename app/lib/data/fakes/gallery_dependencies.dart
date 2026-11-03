@@ -16,6 +16,8 @@ import 'package:agent_orchestration/data/gallery/gallery_runs.dart';
 import 'package:agent_orchestration/data/gallery/gallery_tasks.dart';
 import 'package:agent_orchestration/data/gallery/gallery_workflows.dart';
 import 'package:agent_orchestration/data/gallery/gallery_workspaces.dart';
+import 'package:agent_orchestration/data/models/agent_login.dart';
+import 'package:agent_orchestration/data/models/approval.dart';
 import 'package:agent_orchestration/data/models/audit.dart';
 import 'package:agent_orchestration/data/models/conversation.dart';
 import 'package:agent_orchestration/data/models/task.dart';
@@ -23,7 +25,6 @@ import 'package:agent_orchestration/folders/platform_folder_picker.dart';
 import 'package:agent_orchestration/scanning/camera_qr_code_scanner.dart';
 
 const int _featurePipelineIndex = 2;
-const String _galleryConfirmationMethod = 'Touch ID';
 const Duration _galleryDraftStepDelay = Duration(milliseconds: 700);
 
 AppDependencies buildGalleryDependencies() {
@@ -64,7 +65,10 @@ AppDependencies buildGalleryDependencies() {
       clock: clock,
     ),
     approvalRepository: FakeApprovalRepository(
-      approvals: galleryApprovals,
+      approvals: <ApprovalRequest>[
+        ...galleryApprovals,
+        galleryDeniedPushApproval,
+      ],
       clock: clock,
       currentDeviceId: GalleryDeviceIds.airLaptop,
     ),
@@ -82,8 +86,14 @@ AppDependencies buildGalleryDependencies() {
     ruleRepository: FakeRuleRepository(rules: galleryRules, clock: clock),
     runnerRepository: FakeRunnerRepository(
       runners: galleryRunners,
-      thisAgentPlace: null,
+      thisDeviceOffers: null,
       thisRunnerProblem: null,
+    ),
+    agentLoginRepository: FakeAgentLoginRepository(
+      status: const AgentLoginStatus(
+        claudeLogin: ClaudeLogin.loggedIn,
+        containerCredential: null,
+      ),
     ),
     deviceRepository: deviceRepository,
     pairingRepository: FakePairingRepository(
@@ -108,9 +118,6 @@ AppDependencies buildGalleryDependencies() {
       drafts: buildGalleryItemDrafts(),
       drafterDeviceId: GalleryDeviceIds.officeServer,
       stepDelay: _galleryDraftStepDelay,
-    ),
-    biometricConfirmation: const ApprovingBiometricConfirmation(
-      methodName: _galleryConfirmationMethod,
     ),
     qrCodeScanner: const CameraQrCodeScanner(),
     folderPicker: const PlatformFolderPicker(),

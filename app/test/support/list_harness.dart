@@ -132,7 +132,7 @@ AppDependencies buildDependenciesWithRunners(List<Runner> runners) {
     buildGalleryDependencies(),
     runnerRepository: FakeRunnerRepository(
       runners: runners,
-      thisAgentPlace: null,
+      thisDeviceOffers: null,
       thisRunnerProblem: null,
     ),
   );

@@ -70,12 +70,12 @@ pub fn local_configuration(
         labels: vec![RUNNER_LABEL.to_string()],
         slot_capacity,
         link: RunnerLink::Direct,
-        sandbox: AgentSandbox {
+        sandboxes: vec![AgentSandbox {
             kind: SandboxKind::LocalProcess,
             container: test_container(),
             allowed_hosts: vec![ALLOWED_HOST.to_string()],
             environment,
-        },
+        }],
         worktree_roots: WorktreeRoots {
             cache_root: folders.cache_root.clone(),
             worktrees_root: folders.worktrees_root.clone(),

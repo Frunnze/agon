@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import 'package:agent_orchestration/data/models/device.dart';
-import 'package:agent_orchestration/icons/app_icon_kind.dart';
 import 'package:agent_orchestration/widgets/app_button.dart';
 import 'package:agent_orchestration/widgets/app_dialog.dart';
 import 'package:agent_orchestration/widgets/fact_list.dart';
@@ -15,7 +14,6 @@ class RevokeDeviceDialog extends StatelessWidget {
     required this.workspaceNames,
     required this.lastSeen,
     required this.pairing,
-    required this.confirmationMethod,
     super.key,
   });
 
@@ -23,7 +21,6 @@ class RevokeDeviceDialog extends StatelessWidget {
   final String workspaceNames;
   final String lastSeen;
   final String pairing;
-  final String confirmationMethod;
 
   @override
   Widget build(BuildContext context) {
@@ -56,10 +53,6 @@ class RevokeDeviceDialog extends StatelessWidget {
             ),
           ],
         ),
-        const DialogNote(
-          "Revoking needs your passkey, so a stolen device can't remove "
-          'your other devices.',
-        ),
       ],
       actions: <Widget>[
         AppButton.secondary(
@@ -67,8 +60,7 @@ class RevokeDeviceDialog extends StatelessWidget {
           onPressed: () => navigator.pop(RevokeChoice.keep),
         ),
         AppButton.danger(
-          label: 'Revoke with $confirmationMethod',
-          icon: AppIconKind.fingerprint,
+          label: 'Revoke device',
           onPressed: () => navigator.pop(RevokeChoice.revoke),
         ),
       ],

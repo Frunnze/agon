@@ -7,16 +7,19 @@ const String _projectIdField = 'project_id';
 const String _repositoryAddressField = 'repository_address';
 const String _runnerIdField = 'runner_id';
 const String _branchField = 'branch';
+const String _preferredRunnerIdField = 'preferred_runner_id';
 
 final class ListRepositoryBranchesCommand
     implements NodeCommand<RepositoryBranchesView> {
   const ListRepositoryBranchesCommand({
     required this.projectId,
     required this.repositoryAddress,
+    required this.preferredRunnerId,
   });
 
   final ProjectId projectId;
   final String repositoryAddress;
+  final DeviceId? preferredRunnerId;
 
   @override
   String get name => 'list_repository_branches';
@@ -26,6 +29,7 @@ final class ListRepositoryBranchesCommand
     return <String, Object?>{
       _projectIdField: projectId.value,
       _repositoryAddressField: repositoryAddress,
+      _preferredRunnerIdField: preferredRunnerId?.value,
     };
   }
 

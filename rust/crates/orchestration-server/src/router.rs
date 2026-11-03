@@ -25,8 +25,8 @@ use crate::{
     accounts, approvals, audit_log, claims, devices, events, pairing_endings,
     pairing_exchange, pairing_joins, pairing_sessions, peer_addresses,
     project_deletion, projects, rules, run_events, runners, runs,
-    server_group_routes, skills, task_deletion, tasks, workflow_deletion,
-    workflows, workspace_deletion, workspaces,
+    server_group_routes, skill_deletion, skills, task_deletion, tasks,
+    workflow_deletion, workflows, workspace_deletion, workspaces,
 };
 
 pub fn build_router(server: SharedServer) -> Router {
@@ -126,7 +126,7 @@ fn catalog_routes() -> Router<SharedServer> {
         .route(SKILLS, get(skills::list_skills).post(skills::save_skill))
         .route(
             SKILL,
-            put(skills::update_skill).delete(skills::delete_skill),
+            put(skills::update_skill).delete(skill_deletion::delete_skill),
         )
         .route(RULES, get(rules::list_rules).post(rules::save_rule))
         .route(RULE, put(rules::update_rule).delete(rules::delete_rule))

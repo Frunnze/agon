@@ -20,6 +20,7 @@ final class DraftedWork extends DraftedItem {
     required this.projectId,
     required this.doer,
     required this.runsOn,
+    required this.agentPlace,
     required List<SkillId> skills,
     required this.usesAutomaticSkills,
     required this.approvalPolicy,
@@ -31,6 +32,7 @@ final class DraftedWork extends DraftedItem {
   final ProjectId? projectId;
   final TaskDoer doer;
   final RunnerTarget runsOn;
+  final AgentPlace agentPlace;
   final List<SkillId> skills;
   final bool usesAutomaticSkills;
   final ApprovalPolicy approvalPolicy;
@@ -48,6 +50,7 @@ final class DraftedWork extends DraftedItem {
       projectId: chosenProjectId,
       doer: doer,
       runsOn: runsOn,
+      agentPlace: agentPlace,
       skills: skills,
       usesAutomaticSkills: usesAutomaticSkills,
       approvalPolicy: approvalPolicy,

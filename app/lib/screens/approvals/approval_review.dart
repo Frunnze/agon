@@ -1,6 +1,5 @@
 import 'package:flutter/widgets.dart';
 
-import 'package:agent_orchestration/data/biometric_confirmation.dart';
 import 'package:agent_orchestration/data/clock.dart';
 import 'package:agent_orchestration/data/models/approval.dart';
 import 'package:agent_orchestration/data/repository/approval_repository.dart';
@@ -9,7 +8,6 @@ import 'package:agent_orchestration/data/repository/workflow_repository.dart';
 import 'package:agent_orchestration/presentation/device_names.dart';
 import 'package:agent_orchestration/presentation/time_phrases.dart';
 import 'package:agent_orchestration/screens/approvals/approval_dialog.dart';
-import 'package:agent_orchestration/screens/approvals/approval_text.dart';
 import 'package:agent_orchestration/widgets/app_dialog.dart';
 
 final class ApprovalReview {
@@ -17,14 +15,12 @@ final class ApprovalReview {
     required this.approvalRepository,
     required this.workflowRepository,
     required this.deviceRepository,
-    required this.biometricConfirmation,
     required this.clock,
   });
 
   final ApprovalRepository approvalRepository;
   final WorkflowRepository workflowRepository;
   final DeviceRepository deviceRepository;
-  final BiometricConfirmation biometricConfirmation;
   final Clock clock;
 
   Future<void> review({
@@ -41,7 +37,7 @@ final class ApprovalReview {
       return;
     }
 
-    await decideWithConfirmation(request: request, decision: decision);
+    await approvalRepository.decideApproval(request.id, decision);
   }
 
   Future<ApprovalDecision?> askForDecision({
@@ -65,25 +61,8 @@ final class ApprovalReview {
         runLabel: runLabel,
         askedBy: 'Agent on $requesterName, $askedAt',
         workflows: workflowRepository.listWorkflows(),
-        confirmationMethod: biometricConfirmation.methodName,
         deviceNames: deviceNames,
       ),
     );
-  }
-
-  Future<void> decideWithConfirmation({
-    required ApprovalRequest request,
-    required ApprovalDecision decision,
-  }) async {
-    final bool isConfirmed = await biometricConfirmation.confirm(
-      reason: describeDecisionReason(
-        decision: decision,
-        action: request.action,
-        workflows: workflowRepository.listWorkflows(),
-      ),
-    );
-    if (isConfirmed) {
-      await approvalRepository.decideApproval(request.id, decision);
-    }
   }
 }

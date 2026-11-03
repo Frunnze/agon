@@ -1,5 +1,6 @@
 use chrono::DateTime;
 use orchestration_api::work::RunAssignment;
+use orchestration_core::agent_place::AgentPlace;
 use orchestration_core::approval::ApprovalPolicy;
 use orchestration_core::device::RunnerTarget;
 use orchestration_core::identifiers::{
@@ -31,6 +32,7 @@ pub fn task_for(number: u128, title: &str, doer: TaskDoer) -> Task {
         },
         doer,
         runs_on: RunnerTarget::AnyFreeRunner,
+        agent_place: Some(AgentPlace::LocalProcess),
         skills: Vec::new(),
         uses_automatic_skills: false,
         approval_policy: ApprovalPolicy::AskBeforeRiskyActions,

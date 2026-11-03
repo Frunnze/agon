@@ -102,7 +102,7 @@ StatusLabel buildAgentAccessLabel(AgentAccess access) {
       return StatusLabel(
         text: describeAgentAccess(access),
         tone: StatusTone.normal,
-        icon: AppIconKind.fingerprint,
+        icon: AppIconKind.approval,
       );
   }
 }

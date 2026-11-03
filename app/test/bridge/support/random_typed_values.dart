@@ -4,6 +4,7 @@ import 'package:agent_orchestration/bridge/codecs/approval_values.dart';
 import 'package:agent_orchestration/bridge/codecs/device_values.dart';
 import 'package:agent_orchestration/bridge/codecs/task_values.dart';
 import 'package:agent_orchestration/bridge/commands/task_commands.dart';
+import 'package:agent_orchestration/bridge/node/runner_settings.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 
 import '../../support/random_inputs.dart';
@@ -57,6 +58,7 @@ TaskArguments randomTaskArguments(Random random) {
     details: randomText(random),
     doer: TaskDoer.fromJson(randomTaskDoerJson(random)),
     runsOn: RunnerTarget.fromJson(randomRunnerTargetJson(random)),
+    agentPlace: pickOne(random, AgentPlace.values),
     skills: randomSkillIds(random),
     usesAutomaticSkills: random.nextBool(),
     approvalPolicy: pickOne(random, ApprovalPolicy.values),

@@ -10,6 +10,7 @@ import 'package:agent_orchestration/data/repository/workflow_repository.dart';
 import 'package:agent_orchestration/icons/app_icon_kind.dart';
 import 'package:agent_orchestration/presentation/device_names.dart';
 import 'package:agent_orchestration/presentation/problem_text.dart';
+import 'package:agent_orchestration/screens/shared/agent_login_pointer.dart';
 import 'package:agent_orchestration/screens/workflow_builder.dart';
 import 'package:agent_orchestration/screens/workflows.dart';
 import 'package:agent_orchestration/shell/app_navigation.dart';
@@ -128,6 +129,12 @@ class _WorkflowDraftingScreenState extends State<WorkflowDraftingScreen> {
     final DeviceNames deviceNames = DeviceNames(
       widget.deviceRepository.listDevices(),
     );
+    final AgentLoginPointer? loginPointer = pointToAgentLogin(
+      reason: problem,
+      runner: progress?.drafterDeviceId,
+      deviceRepository: widget.deviceRepository,
+      navigation: widget.navigation,
+    );
 
     return BuilderPageLayout(
       top: <Widget>[
@@ -169,7 +176,11 @@ class _WorkflowDraftingScreenState extends State<WorkflowDraftingScreen> {
             tone: BannerTone.danger,
             icon: AppIconKind.alert,
             title: draftFailedTitle,
-            body: <Widget>[Text(problem)],
+            body: <Widget>[
+              Text(problem),
+              ...describeAgentLoginPointer(loginPointer),
+            ],
+            actions: offerAgentLoginConnection(loginPointer),
           ),
         if (problem == null && stoppingProblem != null)
           NoticeBanner(

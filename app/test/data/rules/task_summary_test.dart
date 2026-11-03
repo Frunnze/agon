@@ -23,6 +23,7 @@ Task buildTaskWithStatus(int index, TaskStatus status) {
     projectId: const ProjectId('project'),
     doer: const OneAgentDoer(AgentKind.codex),
     runsOn: const AnyFreeRunner(),
+    agentPlace: AgentPlace.localProcess,
     skills: const <SkillId>[],
     usesAutomaticSkills: true,
     approvalPolicy: ApprovalPolicy.askBeforeRiskyActions,

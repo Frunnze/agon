@@ -6,6 +6,7 @@ use crate::branch_pusher::BranchPusher;
 use crate::run_context::RunContext;
 use crate::run_executor::RunOutcome;
 use crate::run_reports::report_step_failure;
+use crate::run_workspace::RunWorkspace;
 use crate::runner_server::RunnerServer;
 use crate::skill_selection::select_step_skills;
 use crate::step_execution::execute_step;
@@ -17,7 +18,8 @@ pub(crate) async fn run_assigned_step<S: RunnerServer, P: BranchPusher>(
     assignment: &RunAssignment,
     step: &StepPlan,
 ) -> RunOutcome {
-    let prompt = prompt_for_step(step, assignment);
+    let repository_folders = name_repository_folders(&context.workspace);
+    let prompt = prompt_for_step(step, assignment, &repository_folders);
     let answered_messages = count_user_messages(&assignment.run);
     let progress =
         execute_step(context, step, &prompt, answered_messages).await;
@@ -41,7 +43,21 @@ fn count_user_messages(run: &Run) -> usize {
         .count()
 }
 
-fn prompt_for_step(step: &StepPlan, assignment: &RunAssignment) -> String {
+fn name_repository_folders(workspace: &RunWorkspace) -> Vec<String> {
+    let mut folders = Vec::new();
+    for checkout in &workspace.checkouts {
+        if let Some(folder) = checkout.worktree.file_name() {
+            folders.push(folder.to_string_lossy().into_owned());
+        }
+    }
+    folders
+}
+
+fn prompt_for_step(
+    step: &StepPlan,
+    assignment: &RunAssignment,
+    repository_folders: &[String],
+) -> String {
     let skills = match &assignment.project {
         Some(project) => select_step_skills(
             step,
@@ -55,6 +71,7 @@ fn prompt_for_step(step: &StepPlan, assignment: &RunAssignment) -> String {
     compose_step_prompt(
         &step.instruction,
         &assignment.task.details,
+        repository_folders,
         &skills,
         &upstream_results,
     )

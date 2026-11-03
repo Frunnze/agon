@@ -40,6 +40,7 @@ TaskDraft _buildTask(ProjectId projectId, String title) {
     projectId: projectId,
     doer: const OneAgentDoer(AgentKind.claudeCode),
     runsOn: const AnyFreeRunner(),
+    agentPlace: AgentPlace.localProcess,
     skills: const <SkillId>[],
     usesAutomaticSkills: false,
     approvalPolicy: ApprovalPolicy.askBeforeRiskyActions,

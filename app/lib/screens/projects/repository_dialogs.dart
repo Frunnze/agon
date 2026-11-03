@@ -16,14 +16,12 @@ Future<void> showAddRepositoryDialog({
   required BuildContext context,
   required Project project,
   required ProjectRepository projectRepository,
-  required String confirmationMethodName,
 }) {
   return showAppDialog<void>(
     context: context,
     builder: (BuildContext _) => AddRepositoryDialog(
       project: project,
       projectRepository: projectRepository,
-      confirmationMethodName: confirmationMethodName,
     ),
   );
 }
@@ -88,13 +86,11 @@ class AddRepositoryDialog extends StatefulWidget {
   const AddRepositoryDialog({
     required this.project,
     required this.projectRepository,
-    required this.confirmationMethodName,
     super.key,
   });
 
   final Project project;
   final ProjectRepository projectRepository;
-  final String confirmationMethodName;
 
   @override
   State<AddRepositoryDialog> createState() => _AddRepositoryDialogState();
@@ -132,9 +128,7 @@ class _AddRepositoryDialogState extends State<AddRepositoryDialog> {
           label: 'What agents can do',
           children: <Widget>[
             ChoiceListField<AgentAccess>(
-              options: buildAgentAccessChoices(
-                confirmationMethodName: widget.confirmationMethodName,
-              ),
+              options: buildAgentAccessChoices(),
               selected: _access,
               onChanged: (AgentAccess access) =>
                   setState(() => _access = access),

@@ -57,6 +57,7 @@ Map<String, Object?> _randomWorkDraftJson(Random random, String kind) {
     'project_id': randomOptional(random, randomUuidText),
     'doer': randomTaskDoerJson(random),
     'runs_on': randomRunnerTargetJson(random),
+    'agent_place': pickOne(random, nodeAgentPlaces),
     'skills': randomUuidTexts(random),
     'uses_automatic_skills': random.nextBool(),
     'approval_policy': pickOne(random, nodeApprovalPolicies),

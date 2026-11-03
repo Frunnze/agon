@@ -3,6 +3,7 @@ import 'package:flutter/widgets.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/run.dart';
 import 'package:agent_orchestration/data/models/task.dart';
+import 'package:agent_orchestration/data/rules/kept_branches.dart';
 import 'package:agent_orchestration/presentation/device_names.dart';
 import 'package:agent_orchestration/presentation/run_text.dart';
 import 'package:agent_orchestration/presentation/runner_target_text.dart';
@@ -51,6 +52,7 @@ ListRowData buildTaskRow({
   required Run? latestRun,
   required String projectName,
   required String doerLabel,
+  required List<KeptBranch> keptBranches,
   required DeviceNames deviceNames,
   required DateTime now,
   required VoidCallback onTap,
@@ -83,7 +85,10 @@ ListRowData buildTaskRow({
       ),
       Text(started),
     ],
-    end: buildTaskStatusLabel(task.status),
+    end: buildTaskOutcomeLabel(
+      status: task.status,
+      keptBranches: keptBranches,
+    ),
     onTap: onTap,
   );
 }

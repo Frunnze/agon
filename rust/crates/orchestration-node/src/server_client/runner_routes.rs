@@ -2,7 +2,8 @@ use orchestration_api::routes::{
     RUN_EVENTS, RUNNER_ACCEPTING, RUNNER_CLAIM, RUNNER_HEARTBEAT, RUNNERS,
 };
 use orchestration_api::work::{
-    ClaimResponse, HeartbeatRequest, RunEventsRequest, SetAcceptingRunsRequest,
+    ClaimResponse, ForgottenWork, HeartbeatRequest, RunEventsRequest,
+    SetAcceptingRunsRequest,
 };
 use orchestration_core::device::Runner;
 use orchestration_core::identifiers::{DeviceId, RunId};
@@ -24,8 +25,8 @@ impl SignedServerClient<'_> {
     pub async fn send_heartbeat(
         &self,
         request: &HeartbeatRequest,
-    ) -> Result<(), NodeError> {
-        self.submit(Method::POST, RUNNER_HEARTBEAT, request).await
+    ) -> Result<ForgottenWork, NodeError> {
+        self.exchange(Method::POST, RUNNER_HEARTBEAT, request).await
     }
 
     pub async fn claim_run(&self) -> Result<ClaimResponse, NodeError> {

@@ -1,3 +1,4 @@
+use orchestration_core::agent_place::AgentPlace;
 use orchestration_hub::process_supervisor::ProcessExit;
 use orchestration_node::agent_credentials::{
     AgentCredential, AgentCredentialKind,
@@ -6,7 +7,6 @@ use orchestration_node::agent_login::{
     ClaudeLogin, LoginOutcome, decide_login_outcome, find_long_lived_token,
     hide_long_lived_tokens, interpret_login_answer,
 };
-use orchestration_node::runner_settings::AgentPlace;
 use proptest::prelude::*;
 use serde_json::{Value, json};
 

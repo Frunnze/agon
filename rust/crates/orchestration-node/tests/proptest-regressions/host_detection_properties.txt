@@ -1,0 +1,7 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 0726beb13571c4e51236f369b453bca64dab601ea17b0b0f2a9ad9edd8abfa2b # shrinks to facts = HostFacts { operating_system: "macos", architecture: "aarch64", processor_count: 0, programs_found: {"podman"} }

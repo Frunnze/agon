@@ -1,5 +1,7 @@
+mod agent_reading;
+
+use agent_reading::parse_agent_line;
 use orchestration_core::workflow::AgentKind;
-use orchestration_hub::agent_output::parse_agent_line;
 use proptest::prelude::*;
 
 const SHOW_CURSOR: &str = "\u{1b}[?25h";

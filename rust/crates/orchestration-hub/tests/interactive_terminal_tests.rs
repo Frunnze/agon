@@ -162,7 +162,8 @@ proptest! {
     fn test_start_interactive_terminal_property_printed_text_arrives_whole(
         text in "[ -~é✓]{1,200}",
     ) {
-        let command = shell_command("printf '%s' \"$1\"", &[text.clone()]);
+        let arguments = std::slice::from_ref(&text);
+        let command = shell_command("printf '%s' \"$1\"", arguments);
         let started = start_interactive_terminal(&command, TERMINAL_SIZE);
         let Ok(mut terminal) = started else {
             return Err(TestCaseError::fail(format!("{started:?}")));

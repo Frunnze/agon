@@ -33,6 +33,7 @@ mod workflow_agent_commands;
 mod workflow_agent_prompts;
 mod workflow_commands;
 mod workflow_drafts;
+mod workflow_skill_removal;
 mod workflow_view;
 
 use serde::de::DeserializeOwned;
@@ -226,7 +227,7 @@ async fn run_command(
         }
         CommandArea::AgentPlace => {
             let parsed = parse_command(&name, command)?;
-            agent_place_commands::handle_agent_place_command(node, parsed)
+            agent_place_commands::handle_agent_place_command(node, &parsed)
         }
         CommandArea::AgentLogin => {
             let parsed = parse_command(&name, command)?;

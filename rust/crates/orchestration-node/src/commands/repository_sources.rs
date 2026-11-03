@@ -3,13 +3,15 @@ use orchestration_core::identifiers::DeviceId;
 use orchestration_core::workspace::Project;
 use serde::Serialize;
 
-use super::file_holders::ask_holder_for_files;
+use super::file_holders::{ask_holder_for_files, holds_own_copy};
 use crate::live_link_messages::{
     FileAnswer, FileRequest, RepositoryReference,
 };
 use crate::node::{DeviceSession, Node};
 use crate::node_error::NodeError;
-use crate::views::{RepositoryHolder, find_repository_holders};
+use crate::views::{
+    RepositoryHolder, find_repository_holders, order_file_sources,
+};
 
 const UNEXPECTED_ANSWER: &str = "the runner answered another question";
 
@@ -18,6 +20,7 @@ pub(super) struct SourceSearch<'search> {
     pub(super) session: &'search DeviceSession,
     pub(super) runners: &'search [Runner],
     pub(super) devices: &'search [Device],
+    pub(super) preferred_runner_id: Option<&'search DeviceId>,
 }
 
 #[derive(Debug, Serialize)]
@@ -66,11 +69,17 @@ pub(super) async fn open_repository_source(
     repository: &RepositoryReference,
 ) -> Result<RepositorySourceView, NodeError> {
     let devices = search.devices;
-    let holders =
-        find_repository_holders(search.runners, devices, &repository.address);
+    let address = &repository.address;
+    let holders = find_repository_holders(search.runners, devices, address);
+    let own_copy = find_own_copy(search, address)?;
+    let sources = order_file_sources(
+        &holders,
+        own_copy.as_ref(),
+        search.preferred_runner_id,
+    );
     let mut last_problem = None;
-    for holder in holders.iter().filter(|holder| holder.online) {
-        let runner = find_runner_device(devices, &holder.device_id)?;
+    for source in &sources {
+        let runner = find_runner_device(devices, &source.device_id)?;
         let request = FileRequest::ListBranches {
             repository: repository.clone(),
         };
@@ -88,8 +97,8 @@ pub(super) async fn open_repository_source(
         };
         return Ok(RepositorySourceView::Available {
             runner: SourceRunner {
-                device_id: holder.device_id.clone(),
-                name: holder.name.clone(),
+                device_id: source.device_id.clone(),
+                name: source.name.clone(),
             },
             branches: branches.branches,
             task_branches: branches.task_branches,
@@ -99,6 +108,25 @@ pub(super) async fn open_repository_source(
         Some(problem) => Err(problem),
         None => Ok(RepositorySourceView::Unavailable { holders }),
     }
+}
+
+fn find_own_copy(
+    search: &SourceSearch<'_>,
+    address: &str,
+) -> Result<Option<RepositoryHolder>, NodeError> {
+    let device_files = search.node.device_files();
+    let cache_root = device_files.repository_cache_directory();
+    if !holds_own_copy(&cache_root, address)? {
+        return Ok(None);
+    }
+    let this_device_id = &search.session.account.device.id;
+    let this_device = find_runner_device(search.devices, this_device_id)?;
+    Ok(Some(RepositoryHolder {
+        device_id: this_device.id.clone(),
+        name: this_device.name.clone(),
+        last_seen: this_device.last_seen,
+        online: true,
+    }))
 }
 
 pub(super) fn find_runner_device<'devices>(

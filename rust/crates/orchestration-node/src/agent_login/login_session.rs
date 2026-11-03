@@ -2,6 +2,7 @@ use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 use std::thread;
 
+use orchestration_core::agent_place::AgentPlace;
 use orchestration_hub::agent_command::CLAUDE_PROGRAM;
 use orchestration_hub::command_specification::CommandSpecification;
 use orchestration_hub::interactive_terminal::{
@@ -19,7 +20,6 @@ use super::long_lived_tokens::{
 };
 use crate::agent_credentials::AgentCredentials;
 use crate::node_error::NodeError;
-use crate::runner_settings::AgentPlace;
 
 const LOGIN_TERMINAL_SIZE: TerminalSize = TerminalSize {
     columns: 512,

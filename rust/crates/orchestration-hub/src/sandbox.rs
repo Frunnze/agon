@@ -12,6 +12,8 @@ use crate::workspace_mounts::{
 const DOCKER_PROGRAM: &str = "docker";
 const PODMAN_PROGRAM: &str = "podman";
 const RUN_OPTIONS: [&str; 2] = ["run", "--rm"];
+const KEEP_INPUT_OPEN_OPTIONS: &[&str] = &["--interactive"];
+const CLOSED_INPUT_OPTIONS: &[&str] = &[];
 const MOUNT_OPTION: &str = "--mount";
 const WORKING_DIRECTORY_OPTION: &str = "--workdir";
 const ENVIRONMENT_OPTION: &str = "--env";
@@ -56,6 +58,43 @@ pub fn wrap_in_sandbox(
     mounts: &WorkspaceMounts,
     allowed_hosts: &[String],
 ) -> Result<CommandSpecification, SandboxError> {
+    let input_options = CLOSED_INPUT_OPTIONS;
+    wrap_with_input_options(
+        kind,
+        container,
+        command,
+        mounts,
+        allowed_hosts,
+        input_options,
+    )
+}
+
+pub fn wrap_in_sandbox_keeping_input_open(
+    kind: SandboxKind,
+    container: &ContainerSettings,
+    command: &CommandSpecification,
+    mounts: &WorkspaceMounts,
+    allowed_hosts: &[String],
+) -> Result<CommandSpecification, SandboxError> {
+    let input_options = KEEP_INPUT_OPEN_OPTIONS;
+    wrap_with_input_options(
+        kind,
+        container,
+        command,
+        mounts,
+        allowed_hosts,
+        input_options,
+    )
+}
+
+fn wrap_with_input_options(
+    kind: SandboxKind,
+    container: &ContainerSettings,
+    command: &CommandSpecification,
+    mounts: &WorkspaceMounts,
+    allowed_hosts: &[String],
+    input_options: &[&str],
+) -> Result<CommandSpecification, SandboxError> {
     if !is_plain_absolute_path(&mounts.task_folder) {
         let task_folder = mounts.task_folder.clone();
         return Err(SandboxError::UnsafeWorkspaceDirectory(task_folder));
@@ -66,9 +105,13 @@ pub fn wrap_in_sandbox(
             working_directory: Some(mounts.task_folder.clone()),
             ..command.clone()
         }),
-        SandboxKind::Container => {
-            wrap_in_container(container, command, mounts, allowed_hosts)
-        }
+        SandboxKind::Container => wrap_in_container(
+            container,
+            command,
+            mounts,
+            allowed_hosts,
+            input_options,
+        ),
         SandboxKind::MicroVirtualMachine => {
             Err(SandboxError::MicroVirtualMachineNotSupported)
         }
@@ -80,6 +123,7 @@ fn wrap_in_container(
     command: &CommandSpecification,
     mounts: &WorkspaceMounts,
     allowed_hosts: &[String],
+    input_options: &[&str],
 ) -> Result<CommandSpecification, SandboxError> {
     ensure_mountable_task_folder(&mounts.task_folder)?;
     ensure_mountable_git_directories(&mounts.git_directories)?;
@@ -108,6 +152,7 @@ fn wrap_in_container(
         arguments.push(ENVIRONMENT_OPTION.to_string());
         arguments.push(name.clone());
     }
+    arguments.extend(input_options.iter().map(ToString::to_string));
     arguments.push(container.image.clone());
     arguments.push(command.program.clone());
     arguments.extend(command.arguments.iter().cloned());

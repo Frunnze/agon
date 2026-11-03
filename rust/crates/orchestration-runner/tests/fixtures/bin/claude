@@ -1,13 +1,25 @@
 #!/bin/sh
 session=none
 previous=
+reads_input=
 for argument in "$@"; do
   if [ "$previous" = "--resume" ]; then
     session="$argument"
   fi
+  if [ "$previous" = "--input-format" ]; then
+    reads_input=yes
+  fi
   previous="$argument"
   prompt="$argument"
 done
+if [ -n "$reads_input" ]; then
+  IFS= read -r prompt_line
+  prompt=$(printf '%s' "$prompt_line" | perl -MJSON::PP -e '
+    binmode STDOUT, ":utf8";
+    print decode_json(<STDIN>)->{message}{content};
+  '; printf x)
+  prompt=${prompt%x}
+fi
 name=$(printf '%s\n' "$prompt" | head -n 1 | tr -cd 'a-z0-9-')
 printf '%s %s\n' "$name" "$session" >> "$AGENT_RECORDS/calls.txt"
 pwd -P >> "$AGENT_RECORDS/folders.txt"
@@ -22,6 +34,16 @@ case "$prompt" in
     ;;
 esac
 case "$prompt" in
+  *please-ask*)
+    if [ -n "$reads_input" ]; then
+      request='{"subtype":"can_use_tool","tool_name":"Bash",'
+      request="$request"'"input":{"command":"npm test"}}'
+      printf '{"type":"control_request","request_id":"ask-%s",%s}\n' \
+        "$name" "\"request\":$request"
+      IFS= read -r answer
+      printf '%s\n' "$answer" > "$AGENT_RECORDS/answer-$name.txt"
+    fi
+    ;;
   *please-wait*)
     echo "started"
     sleep 30
@@ -31,7 +53,7 @@ case "$prompt" in
     exit 3
     ;;
   *please-replay*)
-    cat "$fixtures/claude_stream.jsonl"
+    sed "s|/workspace|$(pwd -P)|g" "$fixtures/claude_stream.jsonl"
     exit 0
     ;;
   *please-draft*)

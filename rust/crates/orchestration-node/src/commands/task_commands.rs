@@ -1,5 +1,6 @@
 use chrono::Utc;
 use orchestration_api::work::{SaveTaskRequest, TaskStart, UpdateTaskRequest};
+use orchestration_core::agent_place::AgentPlace;
 use orchestration_core::approval::ApprovalPolicy;
 use orchestration_core::device::RunnerTarget;
 use orchestration_core::identifiers::{
@@ -39,6 +40,7 @@ pub(super) struct TaskArguments {
     details: String,
     doer: TaskDoer,
     runs_on: RunnerTarget,
+    agent_place: AgentPlace,
     skills: Vec<SkillId>,
     uses_automatic_skills: bool,
     approval_policy: ApprovalPolicy,
@@ -188,6 +190,7 @@ fn build_task(arguments: TaskArguments, schedule: Option<Schedule>) -> Task {
         },
         doer: arguments.doer,
         runs_on: arguments.runs_on,
+        agent_place: Some(arguments.agent_place),
         skills: arguments.skills,
         uses_automatic_skills: arguments.uses_automatic_skills,
         approval_policy: arguments.approval_policy,

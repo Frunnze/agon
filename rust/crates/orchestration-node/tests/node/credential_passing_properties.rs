@@ -50,51 +50,56 @@ fn any_environment() -> impl Strategy<Value = BTreeMap<String, String>> {
     )
 }
 
-fn any_agent_sandbox() -> impl Strategy<Value = AgentSandbox> {
-    (
-        prop_oneof![
-            Just(SandboxKind::Container),
-            Just(SandboxKind::LocalProcess),
-        ],
-        any_environment(),
-    )
-        .prop_map(|(kind, environment)| AgentSandbox {
-            kind,
-            container: ContainerSettings {
-                engine: ContainerEngine::Docker,
-                image: "agents-orchestration-runner:latest".to_owned(),
-            },
-            allowed_hosts: Vec::new(),
-            environment,
-        })
+fn any_sandbox_settings() -> impl Strategy<Value = SandboxSettings> {
+    prop_oneof![
+        Just(SandboxSettings::LocalProcess),
+        any_container_settings()
+    ]
+}
+
+fn agent_sandbox_of(kind: SandboxKind) -> impl Strategy<Value = AgentSandbox> {
+    any_environment().prop_map(move |environment| AgentSandbox {
+        kind,
+        container: ContainerSettings {
+            engine: ContainerEngine::Docker,
+            image: "agents-orchestration-runner:latest".to_owned(),
+        },
+        allowed_hosts: Vec::new(),
+        environment,
+    })
 }
 
 proptest! {
     #[test]
-    fn test_choose_container_credential_property_containers_keep_it(
-        sandbox in any_container_settings(),
+    fn test_choose_container_credential_property_a_container_keeps_it(
+        container in any_container_settings(),
+        others in proptest::collection::vec(any_sandbox_settings(), 0..3),
         credential in proptest::option::of(any_credential()),
     ) {
-        let chosen = choose_container_credential(&sandbox, credential.clone());
+        let mut sandboxes = others;
+        sandboxes.push(container);
+
+        let chosen =
+            choose_container_credential(&sandboxes, credential.clone());
 
         prop_assert_eq!(chosen, credential);
     }
 
     #[test]
     fn test_choose_container_credential_property_local_runs_never_get_it(
+        local_count in 0_usize..3,
         credential in proptest::option::of(any_credential()),
     ) {
-        let chosen = choose_container_credential(
-            &SandboxSettings::LocalProcess,
-            credential,
-        );
+        let sandboxes = vec![SandboxSettings::LocalProcess; local_count];
+
+        let chosen = choose_container_credential(&sandboxes, credential);
 
         prop_assert_eq!(chosen, None);
     }
 
     #[test]
     fn test_pass_agent_credential_property_adds_only_the_named_variable(
-        sandbox in any_agent_sandbox(),
+        sandbox in agent_sandbox_of(SandboxKind::Container),
         credential in any_credential(),
     ) {
         let passed = pass_agent_credential(&sandbox, Some(&credential));
@@ -110,8 +115,18 @@ proptest! {
     }
 
     #[test]
+    fn test_pass_agent_credential_property_a_local_run_never_gets_it(
+        sandbox in agent_sandbox_of(SandboxKind::LocalProcess),
+        credential in proptest::option::of(any_credential()),
+    ) {
+        let passed = pass_agent_credential(&sandbox, credential.as_ref());
+
+        prop_assert_eq!(passed, sandbox);
+    }
+
+    #[test]
     fn test_pass_agent_credential_property_nothing_to_pass_changes_nothing(
-        sandbox in any_agent_sandbox(),
+        sandbox in agent_sandbox_of(SandboxKind::Container),
     ) {
         prop_assert_eq!(pass_agent_credential(&sandbox, None), sandbox);
     }

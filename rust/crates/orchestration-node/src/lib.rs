@@ -22,6 +22,7 @@ pub mod node_configuration;
 pub mod node_error;
 pub mod node_runtime;
 mod peer_side;
+pub mod place_offers;
 #[cfg(feature = "runner")]
 pub mod runner_bridge;
 pub mod runner_settings;

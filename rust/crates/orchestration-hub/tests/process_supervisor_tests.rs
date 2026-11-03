@@ -1,12 +1,14 @@
+mod agent_reading;
+
 use std::collections::BTreeMap;
 use std::error::Error;
 use std::time::{Duration, Instant};
 
+use agent_reading::parse_agent_line;
 use orchestration_core::device::SandboxKind;
 use orchestration_core::workflow::AgentKind;
 use orchestration_hub::agent_command::build_agent_command;
 use orchestration_hub::agent_event::AgentEvent;
-use orchestration_hub::agent_output::parse_agent_line;
 use orchestration_hub::command_specification::CommandSpecification;
 use orchestration_hub::process_supervisor::{
     ProcessExit, RunningProcess, SupervisorError, start_process,

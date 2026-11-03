@@ -6,9 +6,11 @@ import 'package:agent_orchestration/data/repository/agent_login_repository.dart'
 
 const String _openLoginProblem = 'a Claude Code login is already open';
 const String _noLoginProblem = 'no Claude Code login is open';
-const String _blankKeyProblem = 'the Claude Code token or API key cannot be '
+const String _blankKeyProblem =
+    'the Claude Code token or API key cannot be '
     'empty';
-const String _brokenKeyProblem = 'the token or API key cannot have spaces or '
+const String _brokenKeyProblem =
+    'the token or API key cannot have spaces or '
     'line breaks';
 const String _loginPrompt = 'Paste code here if prompted >';
 const String _enterKey = '\r';

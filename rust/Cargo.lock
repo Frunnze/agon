@@ -2833,6 +2833,7 @@ dependencies = [
  "base64 0.22.1",
  "chrono",
  "keepawake",
+ "nix",
  "orchestration-core",
  "portable-pty",
  "proptest",
@@ -2841,6 +2842,7 @@ dependencies = [
  "tempfile",
  "thiserror 2.0.21",
  "tokio",
+ "uuid",
 ]
 
 [[package]]

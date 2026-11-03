@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:agent_orchestration/data/app_dependencies.dart';
 import 'package:agent_orchestration/data/fakes.dart';
 import 'package:agent_orchestration/data/gallery/gallery_identifiers.dart';
+import 'package:agent_orchestration/data/gallery/gallery_tasks.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/task.dart';
 import 'package:agent_orchestration/data/repository/task_repository.dart';
@@ -65,7 +66,9 @@ void expectGalleryTaskForm() {
     find.text('Also let the agent pick automatic skills'),
     findsOneWidget,
   );
+  expect(find.text('Commands'), findsOneWidget);
   expect(find.text('Ask for approval'), findsOneWidget);
+  expect(find.text('Auto'), findsOneWidget);
   expect(find.text("Don't repeat"), findsOneWidget);
   expect(find.text('A task that repeats becomes a job.'), findsOneWidget);
   expect(find.text('Save for later'), findsOneWidget);
@@ -166,7 +169,10 @@ void main() {
     await tester.ensureVisible(find.text('Write what should be done.'));
 
     expect(find.text('Write what should be done.'), findsOneWidget);
-    expect(dependencies.taskRepository.listTasks().length, 4);
+    expect(
+      dependencies.taskRepository.listTasks().length,
+      galleryTasks.length,
+    );
   });
 
   testWidgets('test_task_form_property_repeating_edit_makes_that_task_a_job', (

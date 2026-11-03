@@ -1,5 +1,8 @@
+mod agent_reading;
+
 mod claude_tool_results;
 
+use agent_reading::parse_agent_line;
 use claude_tool_results::{
     ToolOutcome, ToolResultContent, any_tool_result_content,
     read_tool_result_text, render_tool_result_content, tool_result_line,
@@ -7,7 +10,6 @@ use claude_tool_results::{
 };
 use orchestration_core::workflow::AgentKind;
 use orchestration_hub::agent_event::AgentEvent;
-use orchestration_hub::agent_output::parse_agent_line;
 use proptest::prelude::*;
 use serde_json::{Value, json};
 

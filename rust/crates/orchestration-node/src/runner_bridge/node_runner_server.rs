@@ -2,8 +2,8 @@ use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 
 use orchestration_api::work::{
-    ClaimResponse, CreateApprovalRequest, HeartbeatRequest, RunEvent,
-    RunEventsRequest,
+    ClaimResponse, CreateApprovalRequest, ForgottenWork, HeartbeatRequest,
+    RunEvent, RunEventsRequest,
 };
 use orchestration_core::approval::ApprovalDecision;
 use orchestration_core::identifiers::{RunId, WorkspaceId};
@@ -91,11 +91,12 @@ impl NodeRunnerServer {
     async fn announce(
         &self,
         heartbeat: &HeartbeatRequest,
-    ) -> Result<(), NodeError> {
+    ) -> Result<ForgottenWork, NodeError> {
         let session = self.node.open_session()?;
-        session.client().send_heartbeat(heartbeat).await?;
+        let forgotten_work =
+            session.client().send_heartbeat(heartbeat).await?;
         self.node.refresh_server_group(&session).await?;
-        Ok(())
+        Ok(forgotten_work)
     }
 
     async fn claim(&self) -> Result<ClaimResponse, NodeError> {
@@ -189,7 +190,7 @@ impl RunnerServer for NodeRunnerServer {
     async fn send_heartbeat(
         &self,
         heartbeat: &HeartbeatRequest,
-    ) -> Result<(), ServerError> {
+    ) -> Result<ForgottenWork, ServerError> {
         self.announce(heartbeat).await.map_err(ServerError::from)
     }
 

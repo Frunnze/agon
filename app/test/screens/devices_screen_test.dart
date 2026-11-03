@@ -13,14 +13,10 @@ import 'package:agent_orchestration/shell/app_section.dart';
 
 import '../support/app_harness.dart';
 import '../support/form_finders.dart';
-import '../support/refusing_biometric_confirmation.dart';
 
 const String _revokeWarning =
     'Its key stops working in every workspace at once. To come back, it has '
     'to be paired again.';
-const String _revokeNote =
-    "Revoking needs your passkey, so a stolen device can't remove your other "
-    'devices.';
 
 Future<void> openRevokeDialog(WidgetTester tester, int rowIndex) async {
   await tapVisible(tester, find.text('Revoke').at(rowIndex));
@@ -57,7 +53,7 @@ void main() {
     });
   }
 
-  testWidgets('revoking a device needs the dialog and the passkey', (
+  testWidgets('revoking a device takes one tap in the dialog', (
     WidgetTester tester,
   ) async {
     final AppDependencies dependencies = buildGalleryDependencies();
@@ -74,10 +70,10 @@ void main() {
       _revokeWarning,
       'Used in',
       '12 March 2026, approved by air-laptop',
-      _revokeNote,
     ]) {
       expect(find.text(text), findsWidgets, reason: text);
     }
+    expect(find.textContaining('passkey'), findsNothing);
 
     await tester.tap(find.text('Keep device'));
     await pumpFrames(tester);
@@ -89,7 +85,7 @@ void main() {
     );
 
     await openRevokeDialog(tester, 4);
-    await tester.tap(find.text('Revoke with Touch ID'));
+    await tester.tap(find.text('Revoke device'));
     await pumpFrames(tester);
 
     expect(
@@ -100,32 +96,6 @@ void main() {
     );
     expect(find.text('old-macbook'), findsNothing);
     expect(find.text('Revoke'), findsNWidgets(5));
-  });
-
-  testWidgets('a refused passkey keeps the device', (
-    WidgetTester tester,
-  ) async {
-    final AppDependencies dependencies = replaceRepositories(
-      buildGalleryDependencies(),
-      biometricConfirmation: const RefusingBiometricConfirmation(),
-    );
-    await pumpApp(
-      tester,
-      size: desktopSize,
-      route: const SectionRoute(AppSection.devices),
-      dependencies: dependencies,
-    );
-
-    await openRevokeDialog(tester, 0);
-    await tester.tap(find.text('Revoke with Touch ID'));
-    await pumpFrames(tester);
-
-    expect(
-      dependencies.deviceRepository
-          .findDevice(GalleryDeviceIds.macStudio)
-          .revoked,
-      isFalse,
-    );
   });
 
   testWidgets('add device leads to the code and then the approval', (

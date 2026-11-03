@@ -5,7 +5,7 @@ use super::draft_kind::DraftKind;
 const REPLY_OPENING: &str = "Reply with one JSON object and nothing else.";
 const FIELDS_HEADING: &str = "Its fields:";
 const LISTED_IDS_ONLY: &str = "Use only the ids listed above.";
-const WORK_FIELD_LINES: [&str; 8] = [
+const WORK_FIELD_LINES: [&str; 9] = [
     "- title: what should be done, in a few words.",
     "- details: everything the agent needs to know to do it.",
     "- project_id: the id of the project to work in.",
@@ -15,6 +15,9 @@ const WORK_FIELD_LINES: [&str; 8] = [
     "- runs_on: {\"kind\": \"any_free_runner\"}, {\"kind\": \
      \"specific_runner\", \"device_id\": \"<id>\"} or {\"kind\": \
      \"runner_with_labels\", \"labels\": [\"<label>\"]}.",
+    "- agent_place: where its agents run, local_process (on the runner's \
+     computer) or container (in Docker, a new container per run). Pick a \
+     place the runners above offer; local_process when unsure.",
     "- skills: a list of the ids of skills the agent should use.",
     "- uses_automatic_skills: true or false, whether automatic skills \
      apply too.",

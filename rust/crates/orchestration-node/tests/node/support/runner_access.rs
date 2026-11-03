@@ -1,7 +1,8 @@
 use std::sync::Arc;
 
 use orchestration_api::work::{HeartbeatRequest, RunAssignment};
-use orchestration_core::device::{RunnerLink, SandboxKind};
+use orchestration_core::agent_place::AgentPlace;
+use orchestration_core::device::RunnerLink;
 use orchestration_node::runner_bridge::NodeRunnerServer;
 use orchestration_runner::runner_server::RunnerServer;
 use serde_json::{Value, json};
@@ -35,9 +36,10 @@ pub fn sample_heartbeat() -> HeartbeatRequest {
         slots_total: SAMPLE_SLOT_COUNT,
         slots_busy: 0,
         link: RunnerLink::Direct,
-        sandbox: SandboxKind::LocalProcess,
+        offers: vec![AgentPlace::LocalProcess],
         allowed_hosts: Vec::new(),
         cached_repositories: Vec::new(),
+        held_tasks: Vec::new(),
     }
 }
 

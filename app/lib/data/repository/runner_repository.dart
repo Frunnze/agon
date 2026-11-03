@@ -12,9 +12,9 @@ abstract interface class RunnerRepository implements Listenable {
 
   Future<Runner> resumeRunner(DeviceId deviceId);
 
-  AgentPlace? findThisAgentPlace();
+  List<PlaceOffer>? findThisDeviceOffers();
 
   String? findThisRunnerProblem();
 
-  Future<void> chooseAgentPlace(AgentPlace place);
+  Future<void> chooseAgentOffers(List<AgentPlace> offers);
 }

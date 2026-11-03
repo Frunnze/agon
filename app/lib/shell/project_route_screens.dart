@@ -33,7 +33,6 @@ Widget buildNewProjectScreen({
     folderPicker: canChooseFolders(defaultTargetPlatform)
         ? dependencies.folderPicker
         : null,
-    confirmationMethodName: dependencies.biometricConfirmation.methodName,
     navigation: navigation,
   );
 }
@@ -50,7 +49,6 @@ Widget buildProjectScreen({
     taskRepository: dependencies.taskRepository,
     ruleRepository: dependencies.ruleRepository,
     deviceRepository: dependencies.deviceRepository,
-    confirmationMethodName: dependencies.biometricConfirmation.methodName,
     navigation: navigation,
   );
 }

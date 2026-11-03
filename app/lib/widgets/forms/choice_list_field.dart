@@ -2,11 +2,10 @@ import 'package:flutter/material.dart';
 
 import 'package:agent_orchestration/theme/app_colors.dart';
 import 'package:agent_orchestration/theme/app_spacing.dart';
-import 'package:agent_orchestration/theme/app_typography.dart';
+import 'package:agent_orchestration/widgets/forms/choice_tile_frame.dart';
 import 'package:agent_orchestration/widgets/gaps.dart';
 
 const double _radioDotExtent = AppSizes.icon / 2;
-const double _tilePadding = AppSpacing.space4 + AppBorders.thin;
 
 final class ChoiceOption<T> {
   const ChoiceOption({
@@ -64,46 +63,17 @@ class _ChoiceTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final BorderRadius corners = BorderRadius.circular(AppRadii.panel);
-
     return Semantics(
       container: true,
       inMutuallyExclusiveGroup: true,
       checked: isSelected,
-      child: Material(
-        color: isSelected ? AppColors.actionTint : AppColors.transparent,
-        shape: RoundedRectangleBorder(
-          borderRadius: corners,
-          side: BorderSide(
-            color: isSelected ? AppColors.action : AppColors.lineStrong,
-            width: isSelected ? AppBorders.selected : AppBorders.thin,
-          ),
-        ),
-        child: InkWell(
-          onTap: onPressed,
-          borderRadius: corners,
-          hoverColor: AppColors.sunken,
-          child: Padding(
-            padding: const EdgeInsets.all(_tilePadding),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                _RadioMark(isSelected: isSelected),
-                const SizedBox(width: AppSpacing.space3),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text(title, style: AppTextStyles.bodyBold),
-                      const SizedBox(height: AppSpacing.space1),
-                      Text(detail, style: AppTextStyles.smallMuted),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
+      child: ChoiceTileFrame(
+        title: title,
+        detail: detail,
+        mark: _RadioMark(isSelected: isSelected),
+        isSelected: isSelected,
+        onPressed: onPressed,
+        below: const <Widget>[],
       ),
     );
   }

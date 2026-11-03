@@ -30,6 +30,8 @@ pub(super) enum FileCommand {
     ListRepositoryBranches {
         project_id: ProjectId,
         repository_address: String,
+        #[serde(default)]
+        preferred_runner_id: Option<DeviceId>,
     },
     ListRepositoryFiles {
         project_id: ProjectId,
@@ -60,12 +62,14 @@ pub(super) async fn handle_file_command(
         FileCommand::ListRepositoryBranches {
             project_id,
             repository_address,
+            preferred_runner_id,
         } => {
             let repository = RepositoryReference {
                 project_id,
                 address: repository_address,
             };
-            list_repository_branches(node, &repository).await
+            let preferred = preferred_runner_id.as_ref();
+            list_repository_branches(node, &repository, preferred).await
         }
         FileCommand::ListRepositoryFiles {
             project_id,
@@ -115,6 +119,7 @@ pub(super) async fn handle_file_command(
 async fn list_repository_branches(
     node: &Node,
     repository: &RepositoryReference,
+    preferred_runner_id: Option<&DeviceId>,
 ) -> Result<Value, NodeError> {
     let session = node.open_session()?;
     let client = session.client();
@@ -127,6 +132,7 @@ async fn list_repository_branches(
         session: &session,
         runners: &runners,
         devices: &devices,
+        preferred_runner_id,
     };
     let source = open_repository_source(&search, repository).await?;
     encode_reply(&source)

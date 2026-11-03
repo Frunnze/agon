@@ -1,0 +1,15 @@
+{"type":"init","timestamp":"2026-10-30T09:12:01.512Z","session_id":"c2a9e3f1-4b7d-4e2a-9f61-8d3b5a7c1e04","model":"gemini-2.5-pro"}
+{"type":"message","timestamp":"2026-10-30T09:12:01.514Z","role":"user","content":"Make the counter count up"}
+{"type":"message","timestamp":"2026-10-30T09:12:03.120Z","role":"assistant","content":"I'll read the","delta":true}
+{"type":"message","timestamp":"2026-10-30T09:12:03.180Z","role":"assistant","content":" counter first.","delta":true}
+{"type":"tool_use","timestamp":"2026-10-30T09:12:03.402Z","tool_name":"read_file","tool_id":"read_file-1761815523402-0","parameters":{"file_path":"/workspace/hello-counter/src/count.ts"}}
+{"type":"tool_result","timestamp":"2026-10-30T09:12:03.410Z","tool_id":"read_file-1761815523402-0","status":"error","output":"File not found.","error":{"type":"file_not_found","message":"File not found: hello-counter/src/count.ts"}}
+{"type":"tool_use","timestamp":"2026-10-30T09:12:04.015Z","tool_name":"read_file","tool_id":"read_file-1761815524015-1","parameters":{"file_path":"/workspace/hello-counter/src/counter.ts"}}
+{"type":"tool_result","timestamp":"2026-10-30T09:12:04.021Z","tool_id":"read_file-1761815524015-1","status":"success","output":""}
+{"type":"tool_use","timestamp":"2026-10-30T09:12:05.733Z","tool_name":"replace","tool_id":"replace-1761815525733-2","parameters":{"file_path":"/workspace/hello-counter/src/counter.ts","instruction":"Count up instead of down","old_string":"count - 1","new_string":"count + 1"}}
+{"type":"tool_result","timestamp":"2026-10-30T09:12:05.902Z","tool_id":"replace-1761815525733-2","status":"success","output":"Successfully modified file: /workspace/hello-counter/src/counter.ts (1 replacements)."}
+{"type":"tool_use","timestamp":"2026-10-30T09:12:06.311Z","tool_name":"run_shell_command","tool_id":"run_shell_command-1761815526311-3","parameters":{"command":"npm test","description":"Run the tests"}}
+{"type":"tool_result","timestamp":"2026-10-30T09:12:09.874Z","tool_id":"run_shell_command-1761815526311-3","status":"success","output":"PASS src/counter.test.ts"}
+{"type":"message","timestamp":"2026-10-30T09:12:10.502Z","role":"assistant","content":"The counter counts","delta":true}
+{"type":"message","timestamp":"2026-10-30T09:12:10.560Z","role":"assistant","content":" up now.\n","delta":true}
+{"type":"result","timestamp":"2026-10-30T09:12:10.611Z","status":"success","stats":{"total_tokens":8123,"input_tokens":7901,"output_tokens":222,"cached":0,"input":7901,"duration_ms":9099,"tool_calls":4}}

@@ -145,13 +145,14 @@ proptest! {
         words in proptest::collection::vec("[a-z]{1,10}", 1..8),
         link in "https://[a-z.]{1,20}",
     ) {
-        let mut styled = String::new();
+        let mut pieces = Vec::new();
         for word in &words {
-            styled.push_str(&format!(
+            pieces.push(format!(
                 "\u{1b}[1;32m\u{1b}]8;;{link}\u{7}{word}\u{1b}]8;;\u{1b}\\\
                  \u{1b}[0m "
             ));
         }
+        let styled = pieces.concat();
 
         let shown = show(&styled);
 
@@ -180,11 +181,12 @@ proptest! {
         extra_lines in 1_usize..50,
     ) {
         let line_count = MAXIMUM_KEPT_LINES + extra_lines;
-        let mut output = String::new();
+        let mut lines = Vec::new();
         for index in 0..line_count {
-            output.push_str(&format!("line {index}{LINE_BREAK}"));
+            lines.push(format!("line {index}"));
         }
-        output.push_str("last");
+        lines.push("last".to_owned());
+        let output = lines.join(LINE_BREAK);
 
         let shown = show(&output);
 

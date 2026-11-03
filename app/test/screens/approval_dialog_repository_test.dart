@@ -46,7 +46,6 @@ void main() {
             runLabel: null,
             askedBy: 'Agent on ${device.name}',
             workflows: const [],
-            confirmationMethod: 'Touch ID',
             deviceNames: DeviceNames(galleryDevices),
           ),
         ),

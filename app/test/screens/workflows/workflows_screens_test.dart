@@ -19,7 +19,6 @@ import 'package:agent_orchestration/shell/app_section.dart';
 import '../../support/app_harness.dart';
 import '../../support/form_finders.dart';
 import '../../support/random_inputs.dart';
-import '../../support/refusing_biometric_confirmation.dart';
 import '../../support/widget_harness.dart';
 
 const SectionRoute _workflowsRoute = SectionRoute(AppSection.workflows);
@@ -65,7 +64,7 @@ const List<String> _changeTexts = <String>[
   'train-ranker',
   'Changed 1 h ago on air-laptop',
   'Discard change',
-  'Sign with Touch ID',
+  'Sign change',
   "This version won't run until you sign it",
   'Until then, runners keep using the version signed 2 days ago.',
   'What changes',
@@ -190,40 +189,21 @@ void main() {
     expect(findFieldText('Who does it', 'release'), findsOneWidget);
   });
 
-  testWidgets('signing a change needs Touch ID and clears it', (
+  testWidgets('signing a change takes one tap and clears it', (
     WidgetTester tester,
   ) async {
-    final AppDependencies refusing = replaceRepositories(
-      buildGalleryDependencies(),
-      biometricConfirmation: const RefusingBiometricConfirmation(),
-    );
-    await pumpApp(
-      tester,
-      size: desktopSize,
-      route: const WorkflowChangeRoute(GalleryWorkflowIds.trainRanker),
-      dependencies: refusing,
-    );
-    await tester.tap(find.text('Sign with Touch ID'));
-    await pumpFrames(tester);
-    expect(
-      refusing.workflowRepository.findPendingChange(
-        GalleryWorkflowIds.trainRanker,
-      ),
-      isNotNull,
-    );
-
-    final AppDependencies approving = buildGalleryDependencies();
+    final AppDependencies dependencies = buildGalleryDependencies();
     final AppNavigation navigation = await pumpApp(
       tester,
       size: desktopSize,
       route: const WorkflowChangeRoute(GalleryWorkflowIds.trainRanker),
-      dependencies: approving,
+      dependencies: dependencies,
     );
-    await tester.tap(find.text('Sign with Touch ID'));
+    await tester.tap(find.text('Sign change'));
     await pumpFrames(tester);
 
     expect(
-      approving.workflowRepository.findPendingChange(
+      dependencies.workflowRepository.findPendingChange(
         GalleryWorkflowIds.trainRanker,
       ),
       isNull,

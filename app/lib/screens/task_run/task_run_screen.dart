@@ -7,18 +7,25 @@ import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/run.dart';
 import 'package:agent_orchestration/data/models/task.dart';
 import 'package:agent_orchestration/data/models/workflow.dart';
+import 'package:agent_orchestration/data/repository/approval_repository.dart';
 import 'package:agent_orchestration/data/repository/device_repository.dart';
 import 'package:agent_orchestration/data/repository/project_repository.dart';
+import 'package:agent_orchestration/data/repository/runner_repository.dart';
 import 'package:agent_orchestration/data/repository/task_repository.dart';
 import 'package:agent_orchestration/data/repository/workflow_repository.dart';
+import 'package:agent_orchestration/data/rules/kept_branches.dart';
+import 'package:agent_orchestration/data/rules/place_offers.dart';
 import 'package:agent_orchestration/data/rules/run_lifecycle.dart';
 import 'package:agent_orchestration/icons/app_icon_kind.dart';
 import 'package:agent_orchestration/presentation/device_names.dart';
 import 'package:agent_orchestration/presentation/doer_text.dart';
 import 'package:agent_orchestration/presentation/run_text.dart';
+import 'package:agent_orchestration/screens/shared/agent_login_pointer.dart';
 import 'package:agent_orchestration/screens/shared/deletion_prompts.dart';
 import 'package:agent_orchestration/screens/shared/deletion_review.dart';
 import 'package:agent_orchestration/screens/shared/live_run_watch.dart';
+import 'package:agent_orchestration/screens/task_run/no_place_banner.dart';
+import 'package:agent_orchestration/screens/task_run/not_pushed_banner.dart';
 import 'package:agent_orchestration/screens/task_run/run_failure_banner.dart';
 import 'package:agent_orchestration/screens/task_run/run_log_section.dart';
 import 'package:agent_orchestration/screens/task_run/run_steps_section.dart';
@@ -40,6 +47,8 @@ class TaskRunScreen extends StatelessWidget {
     required this.workflowRepository,
     required this.projectRepository,
     required this.deviceRepository,
+    required this.approvalRepository,
+    required this.runnerRepository,
     required this.clock,
     required this.navigation,
     super.key,
@@ -50,6 +59,8 @@ class TaskRunScreen extends StatelessWidget {
   final WorkflowRepository workflowRepository;
   final ProjectRepository projectRepository;
   final DeviceRepository deviceRepository;
+  final ApprovalRepository approvalRepository;
+  final RunnerRepository runnerRepository;
   final Clock clock;
   final AppNavigation navigation;
 
@@ -64,6 +75,8 @@ class TaskRunScreen extends StatelessWidget {
           workflowRepository,
           projectRepository,
           deviceRepository,
+          approvalRepository,
+          runnerRepository,
         ]),
         builder: _buildPage,
       ),
@@ -82,6 +95,10 @@ class TaskRunScreen extends StatelessWidget {
     );
     final DateTime now = clock.now();
     final RunFailure? failure = run.failure;
+    final List<KeptBranch> keptBranches = findKeptBranches(
+      run: run,
+      approvals: approvalRepository.listApprovals(),
+    );
 
     return AppPage(
       children: <Widget>[
@@ -91,8 +108,29 @@ class TaskRunScreen extends StatelessWidget {
           backLink: BackLink(label: 'Tasks', onPressed: _returnToTasks),
           actions: _buildActions(context, run, task),
         ),
+        if (isWaitingForPlace(
+          run: run,
+          place: task.agentPlace,
+          runners: runnerRepository.listRunners(),
+        ))
+          NoPlaceBanner(place: task.agentPlace),
         if (failure != null)
-          RunFailureBanner(failure: failure, deviceNames: deviceNames),
+          RunFailureBanner(
+            failure: failure,
+            deviceNames: deviceNames,
+            loginPointer: pointToAgentLogin(
+              reason: failure.reason,
+              runner: failure.runner,
+              deviceRepository: deviceRepository,
+              navigation: navigation,
+            ),
+          ),
+        if (keptBranches.isNotEmpty)
+          NotPushedBanner(
+            keptBranches: keptBranches,
+            deviceNames: deviceNames,
+            onBrowse: (KeptBranch kept) => _browseKeptBranch(task, kept),
+          ),
         SplitLayout(
           start: RunStepsSection(
             run: run,
@@ -172,6 +210,17 @@ class TaskRunScreen extends StatelessWidget {
       prompt: prompt,
       leavePage: _returnToTasks,
       deleteRecord: () => taskRepository.deleteTask(task.id),
+    );
+  }
+
+  void _browseKeptBranch(Task task, KeptBranch kept) {
+    navigation.openRoute(
+      ProjectFilesRoute(
+        projectId: task.projectId,
+        repositoryAddress: kept.repositoryAddress,
+        branch: kept.branch,
+        preferredRunnerId: kept.runner,
+      ),
     );
   }
 

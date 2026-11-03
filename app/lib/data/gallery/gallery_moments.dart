@@ -25,3 +25,14 @@ DateTime galleryYesterday(int hour, int minute, [int second = 0]) {
 DateTime galleryDaysAgo(int days) {
   return galleryNow.subtract(Duration(days: days));
 }
+
+DateTime galleryTwoDaysAgo(int hour, int minute, [int second = 0]) {
+  return DateTime(
+    galleryNow.year,
+    galleryNow.month,
+    galleryNow.day - 2,
+    hour,
+    minute,
+    second,
+  );
+}

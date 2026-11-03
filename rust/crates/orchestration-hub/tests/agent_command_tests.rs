@@ -64,8 +64,10 @@ proptest! {
                 "--output-format",
                 "stream-json",
                 "--verbose",
+                "--disallowedTools",
+                "AskUserQuestion",
                 "--permission-mode",
-                "acceptEdits",
+                "auto",
             ],
         );
         if let Some(session) = &session {
@@ -86,20 +88,19 @@ proptest! {
     #[test]
     fn test_build_agent_command_property_codex_arguments_are_exact(
         prompt in any_prompt(),
+        session in proptest::option::of(any_session()),
     ) {
-        let arguments = to_strings(&[
-            "exec",
-            "--json",
-            "--sandbox",
-            "workspace-write",
-            "--",
-            &prompt,
-        ]);
+        let mut arguments =
+            to_strings(&["exec", "--json", "--sandbox", "workspace-write"]);
+        if let Some(session) = &session {
+            arguments.extend(to_strings(&["resume", session]));
+        }
+        arguments.extend(to_strings(&["--", &prompt]));
 
         let command = build_agent_command(
             AgentKind::Codex,
             &prompt,
-            None,
+            session.as_deref(),
             SandboxKind::LocalProcess,
         );
 
@@ -109,17 +110,23 @@ proptest! {
     #[test]
     fn test_build_agent_command_property_gemini_arguments_are_exact(
         prompt in any_prompt(),
+        session in proptest::option::of(any_session()),
     ) {
-        let arguments = vec![
-            "--approval-mode".to_string(),
-            "auto_edit".to_string(),
-            format!("--prompt={prompt}"),
-        ];
+        let mut arguments = to_strings(&[
+            "--output-format",
+            "stream-json",
+            "--approval-mode",
+            "auto_edit",
+        ]);
+        if let Some(session) = &session {
+            arguments.push(format!("--resume={session}"));
+        }
+        arguments.push(format!("--prompt={prompt}"));
 
         let command = build_agent_command(
             AgentKind::GeminiCli,
             &prompt,
-            None,
+            session.as_deref(),
             SandboxKind::LocalProcess,
         );
 
@@ -157,34 +164,13 @@ proptest! {
     }
 
     #[test]
-    fn test_build_agent_command_property_only_claude_resumes_sessions(
-        prompt in any_prompt(),
-        session in any_session(),
-        agent in prop_oneof![
-            Just(AgentKind::Codex),
-            Just(AgentKind::GeminiCli),
-        ],
-    ) {
-        let command = build_agent_command(
-            agent,
-            &prompt,
-            Some(&session),
-            SandboxKind::LocalProcess,
-        );
-
-        prop_assert_eq!(
-            command,
-            Err(AgentCommandError::ResumeNotSupported(agent)),
-        );
-    }
-
-    #[test]
     fn test_build_agent_command_property_invalid_session_is_rejected(
+        agent in any_agent(),
         prompt in any_prompt(),
         session in any_invalid_session(),
     ) {
         let command = build_agent_command(
-            AgentKind::ClaudeCode,
+            agent,
             &prompt,
             Some(&session),
             SandboxKind::LocalProcess,

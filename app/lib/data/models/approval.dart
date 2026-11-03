@@ -38,6 +38,13 @@ final class SignWorkflowAction extends ApprovalAction {
   final WorkflowId workflowId;
 }
 
+final class RunCommandAction extends ApprovalAction {
+  const RunCommandAction({required this.tool, required this.command});
+
+  final String tool;
+  final String command;
+}
+
 enum ApprovalPolicy { askBeforeRiskyActions, neverAsk }
 
 enum ApprovalDecision { approved, denied }

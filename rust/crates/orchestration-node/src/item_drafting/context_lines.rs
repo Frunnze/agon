@@ -1,3 +1,4 @@
+use orchestration_core::agent_place::AgentPlace;
 use orchestration_core::library::SkillUsage;
 use orchestration_core::workspace::Project;
 
@@ -7,6 +8,9 @@ use super::drafting_context::{
 
 const LIST_SEPARATOR: &str = ", ";
 const EMPTY_SECTION_LINE: &str = "- none";
+const LOCAL_OFFER_NAME: &str = "local_process";
+const CONTAINER_OFFER_NAME: &str = "container";
+const NO_OFFERS_TEXT: &str = "nothing";
 
 pub(super) fn render_section(heading: &str, entries: &[String]) -> String {
     let mut lines = vec![format!("{heading}:")];
@@ -61,12 +65,29 @@ pub(super) fn describe_runner(runner: &DraftingRunner) -> String {
     } else {
         "offline"
     };
-    let named = format!(
-        "{} (id {}), {presence}",
-        runner.device.name, runner.device.id.0
-    );
-    if runner.labels.is_empty() {
-        return named;
+    let mut parts = vec![
+        format!("{} (id {})", runner.device.name, runner.device.id.0),
+        presence.to_owned(),
+    ];
+    if !runner.labels.is_empty() {
+        let labels = runner.labels.join(LIST_SEPARATOR);
+        parts.push(format!("labels: {labels}"));
     }
-    format!("{named}, labels: {}", runner.labels.join(LIST_SEPARATOR))
+    parts.push(format!("offers: {}", describe_offers(runner)));
+    parts.join(LIST_SEPARATOR)
+}
+
+fn describe_offers(runner: &DraftingRunner) -> String {
+    let mut offer_names = Vec::new();
+    for offer in &runner.offers {
+        let offer_name = match offer {
+            AgentPlace::LocalProcess => LOCAL_OFFER_NAME,
+            AgentPlace::Container => CONTAINER_OFFER_NAME,
+        };
+        offer_names.push(offer_name);
+    }
+    if offer_names.is_empty() {
+        return NO_OFFERS_TEXT.to_owned();
+    }
+    offer_names.join(LIST_SEPARATOR)
 }

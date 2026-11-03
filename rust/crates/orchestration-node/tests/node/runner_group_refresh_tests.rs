@@ -19,8 +19,9 @@ use crate::support::runner_access::{
     open_runner, sample_heartbeat, test_runtime,
 };
 use crate::support::server_backups::{
-    TAKEOVER_SECONDS, pair_client_at, read_app_servers, start_backup_device,
-    start_server_backup, wait_until_copied, wait_until_standing,
+    TAKEOVER_SECONDS, pair_client_at, read_app_servers,
+    start_backup_ready_to_take_over, start_server_backup, wait_until_copied,
+    wait_until_standing,
 };
 use crate::support::test_device::{
     RELAY_DISABLED, TestDevice, describe, fail,
@@ -101,7 +102,7 @@ fn test_send_heartbeat_property_a_runner_learns_a_backup_and_fails_over() {
     };
     let address =
         read_hosted_address(&nodes.hosting.device).unwrap_or_default();
-    let Ok(backup) = start_backup_device() else {
+    let Ok(backup) = start_backup_ready_to_take_over() else {
         panic!("the backup device starts");
     };
     let Ok(client) = TestDevice::start() else {

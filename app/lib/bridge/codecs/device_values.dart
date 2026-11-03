@@ -1,5 +1,6 @@
 import 'package:agent_orchestration/bridge/codecs/identifier_codecs.dart';
 import 'package:agent_orchestration/bridge/codecs/json_values.dart';
+import 'package:agent_orchestration/bridge/node/runner_settings.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 
 enum DeviceRole implements WireNamed {
@@ -43,19 +44,6 @@ enum RunnerLink implements WireNamed {
   final String wireName;
 
   static RunnerLink decode(Object? json) => decodeWireName(values, json);
-}
-
-enum SandboxKind implements WireNamed {
-  container('container'),
-  microVirtualMachine('micro_virtual_machine'),
-  localProcess('local_process');
-
-  const SandboxKind(this.wireName);
-
-  @override
-  final String wireName;
-
-  static SandboxKind decode(Object? json) => decodeWireName(values, json);
 }
 
 final class Device implements JsonEncodable {
@@ -139,9 +127,10 @@ final class Runner implements JsonEncodable {
     required this.link,
     required this.online,
     required this.acceptingNewRuns,
-    required this.sandbox,
+    required List<AgentPlace> offers,
     required List<String> allowedHosts,
   }) : labels = List<String>.unmodifiable(labels),
+       offers = List<AgentPlace>.unmodifiable(offers),
        allowedHosts = List<String>.unmodifiable(allowedHosts);
 
   factory Runner.fromJson(Object? json) {
@@ -154,7 +143,7 @@ final class Runner implements JsonEncodable {
       link: readField(fields, 'link', RunnerLink.decode),
       online: readField(fields, 'online', decodeFlag),
       acceptingNewRuns: readField(fields, 'accepting_new_runs', decodeFlag),
-      sandbox: readField(fields, 'sandbox', SandboxKind.decode),
+      offers: readListField(fields, 'offers', AgentPlace.decode),
       allowedHosts: readListField(fields, 'allowed_hosts', decodeText),
     );
   }
@@ -166,7 +155,7 @@ final class Runner implements JsonEncodable {
   final RunnerLink link;
   final bool online;
   final bool acceptingNewRuns;
-  final SandboxKind sandbox;
+  final List<AgentPlace> offers;
   final List<String> allowedHosts;
 
   @override
@@ -179,7 +168,9 @@ final class Runner implements JsonEncodable {
       'link': link.wireName,
       'online': online,
       'accepting_new_runs': acceptingNewRuns,
-      'sandbox': sandbox.wireName,
+      'offers': <String>[
+        for (final AgentPlace offer in offers) offer.wireName,
+      ],
       'allowed_hosts': allowedHosts,
     };
   }

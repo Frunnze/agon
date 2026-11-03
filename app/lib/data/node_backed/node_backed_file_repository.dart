@@ -18,12 +18,14 @@ final class NodeBackedFileRepository implements FileRepository {
   Future<RepositoryFileSource> openRepository({
     required ProjectId projectId,
     required String repositoryAddress,
+    required DeviceId? preferredRunnerId,
   }) async {
     final node.RepositoryBranchesView view = await executeNodeCommand(
       channel,
       node.ListRepositoryBranchesCommand(
         projectId: projectId,
         repositoryAddress: repositoryAddress,
+        preferredRunnerId: preferredRunnerId,
       ),
     );
     return mapRepositoryFileSourceFromNode(view);

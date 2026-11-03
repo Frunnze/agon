@@ -6,6 +6,7 @@ import 'package:agent_orchestration/bridge/codecs/library_values.dart';
 import 'package:agent_orchestration/bridge/codecs/schedule_values.dart';
 import 'package:agent_orchestration/bridge/codecs/task_values.dart';
 import 'package:agent_orchestration/bridge/codecs/workspace_values.dart';
+import 'package:agent_orchestration/bridge/node/runner_settings.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 
 enum DraftKind implements WireNamed {
@@ -49,6 +50,7 @@ final class WorkItemDraft extends ItemDraft {
     required this.projectId,
     required this.doer,
     required this.runsOn,
+    required this.agentPlace,
     required List<SkillId> skills,
     required this.usesAutomaticSkills,
     required this.approvalPolicy,
@@ -63,6 +65,7 @@ final class WorkItemDraft extends ItemDraft {
       projectId: readOptionalField(fields, 'project_id', decodeProjectId),
       doer: readField(fields, 'doer', TaskDoer.fromJson),
       runsOn: readField(fields, 'runs_on', RunnerTarget.fromJson),
+      agentPlace: readField(fields, 'agent_place', AgentPlace.decode),
       skills: readListField(fields, 'skills', decodeSkillId),
       usesAutomaticSkills: readField(
         fields,
@@ -84,6 +87,7 @@ final class WorkItemDraft extends ItemDraft {
   final ProjectId? projectId;
   final TaskDoer doer;
   final RunnerTarget runsOn;
+  final AgentPlace agentPlace;
   final List<SkillId> skills;
   final bool usesAutomaticSkills;
   final ApprovalPolicy approvalPolicy;
@@ -98,6 +102,7 @@ final class WorkItemDraft extends ItemDraft {
       'project_id': projectId?.value,
       'doer': doer.toJson(),
       'runs_on': runsOn.toJson(),
+      'agent_place': agentPlace.wireName,
       'skills': <String>[for (final SkillId skill in skills) skill.value],
       'uses_automatic_skills': usesAutomaticSkills,
       'approval_policy': approvalPolicy.wireName,

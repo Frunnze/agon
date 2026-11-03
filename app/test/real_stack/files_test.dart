@@ -8,14 +8,12 @@ import 'package:agent_orchestration/bridge/codecs/repository_file_values.dart'
 import 'package:agent_orchestration/bridge/codecs/run_values.dart' as node;
 import 'package:agent_orchestration/bridge/codecs/workspace_values.dart'
     as node;
-import 'package:agent_orchestration/bridge/commands/file_commands.dart'
-    as node;
-import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/screens/files/path_breadcrumb.dart';
 
 import '../support/form_finders.dart';
 import 'support/real_stack.dart';
 import 'support/runner_device.dart';
+import 'support/stack_files.dart';
 import 'support/stack_navigation.dart';
 import 'support/stack_waiting.dart';
 import 'support/task_steps.dart';
@@ -75,33 +73,22 @@ Future<void> _addFilesToBrowse(Directory origin) async {
   await _runGit(work, <String>['push', '--quiet', 'origin', _defaultBranch]);
 }
 
-Future<String?> _readTaskBranch(RealStack stack, ProjectId projectId) async {
-  final node.RepositoryBranchesView view = await stack.channel.execute(
-    node.ListRepositoryBranchesCommand(
-      projectId: projectId,
-      repositoryAddress: localRepositoryAddress,
-    ),
-  );
-  if (view is! node.AvailableRepositoryBranches) {
+Future<String?> _readTaskBranch(RealStack stack) async {
+  final node.AvailableRepositoryBranches? source =
+      await findLocalRepositorySource(stack);
+  if (source == null || source.taskBranches.isEmpty) {
     return null;
   }
-  if (view.taskBranches.isEmpty) {
-    return null;
-  }
-  return view.taskBranches.first;
+  return source.taskBranches.first;
 }
 
-Future<String> _waitForTaskBranch(
-  WidgetTester tester,
-  RealStack stack,
-  ProjectId projectId,
-) async {
+Future<String> _waitForTaskBranch(WidgetTester tester, RealStack stack) async {
   final List<String> found = <String>[];
   await waitUntilNodeAgrees(
     tester,
     description: 'the runner offering its task branch',
     check: () async {
-      final String? taskBranch = await _readTaskBranch(stack, projectId);
+      final String? taskBranch = await _readTaskBranch(stack);
       if (taskBranch != null) {
         found.add(taskBranch);
       }
@@ -156,15 +143,7 @@ void main() {
         title: _taskTitle,
         status: node.RunStatus.done,
       );
-      final ProjectId projectId = stack.dependencies.projectRepository
-          .listProjects(stack.homeWorkspaceId)
-          .single
-          .id;
-      final String taskBranch = await _waitForTaskBranch(
-        tester,
-        stack,
-        projectId,
-      );
+      final String taskBranch = await _waitForTaskBranch(tester, stack);
 
       await openRailSection(tester, label: 'Projects', pageTitle: 'Projects');
       await tapAndWait(

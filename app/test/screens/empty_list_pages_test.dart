@@ -24,7 +24,7 @@ import '../support/list_harness.dart';
 import '../support/random_inputs.dart';
 
 const String _approvalsMessage =
-    'When an agent asks to do something that needs your passkey, the '
+    'When an agent asks to do something that needs your approval, the '
     'request waits here.';
 const String _jobsMessage =
     'A job is a task that repeats on a schedule, like nightly tests or a '

@@ -1,13 +1,14 @@
 use orchestration_core::workflow::AgentKind;
 use orchestration_hub::agent_log::{AgentLogLine, describe_agent_log_lines};
-use orchestration_hub::agent_output::parse_agent_line;
 use proptest::prelude::*;
 use serde_json::{Value, json};
 
+use crate::agent_reading::parse_agent_line;
 use crate::claude_lines::{any_detail, assistant_line, parse_claude};
 use crate::claude_tool_results::{
     ToolOutcome, any_tool_result_content, tool_result_line,
 };
+use crate::json_texts::join_words;
 
 const MAXIMUM_LOG_TEXT_CHARACTERS: usize = 120;
 const SHORTENED_MARKER: char = '…';
@@ -24,10 +25,6 @@ pub fn any_agent() -> impl Strategy<Value = AgentKind> {
         Just(AgentKind::Codex),
         Just(AgentKind::GeminiCli),
     ]
-}
-
-pub fn any_unparsed_agent() -> impl Strategy<Value = AgentKind> {
-    prop_oneof![Just(AgentKind::Codex), Just(AgentKind::GeminiCli)]
 }
 
 pub fn any_ending() -> impl Strategy<Value = Ending> {
@@ -63,16 +60,6 @@ pub fn error_line(text: &str) -> AgentLogLine {
         text: text.to_string(),
         is_error: true,
     }
-}
-
-pub fn join_words(text: &str) -> String {
-    let words: Vec<&str> = text.split_whitespace().collect();
-    words.join(" ")
-}
-
-pub fn reads_as_json(text: &str) -> bool {
-    serde_json::from_str::<Value>(&join_words(text))
-        .is_ok_and(|value| value.is_object() || value.is_array())
 }
 
 pub fn is_shortened_from(shown: &str, original: &str) -> bool {

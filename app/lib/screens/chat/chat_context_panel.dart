@@ -10,24 +10,32 @@ import 'package:agent_orchestration/widgets/fact_list.dart';
 import 'package:agent_orchestration/widgets/gaps.dart';
 import 'package:agent_orchestration/widgets/mixed_text.dart';
 
-String describeSandbox(SandboxKind sandbox) {
-  switch (sandbox) {
-    case SandboxKind.container:
+String describeRunSandbox(AgentPlace place) {
+  switch (place) {
+    case AgentPlace.container:
       return 'New container for this run. Sees only its workspace.';
-    case SandboxKind.microVirtualMachine:
-      return 'New micro virtual machine for this run. Sees only its '
-          'workspace.';
-    case SandboxKind.localProcess:
+    case AgentPlace.localProcess:
       return 'Runs on the runner itself, inside its workspace folder.';
   }
 }
 
-List<Fact> buildRunnerFacts(Runner runner) {
+List<Fact> buildRunnerFacts({
+  required Runner runner,
+  required AgentPlace place,
+}) {
+  final Fact sandboxFact = Fact(
+    term: 'Sandbox',
+    description: <TextSegment>[TextSegment(describeRunSandbox(place))],
+  );
+
+  final bool isLimitedToHosts =
+      place == AgentPlace.container && runner.allowedHosts.isNotEmpty;
+  if (!isLimitedToHosts) {
+    return <Fact>[sandboxFact];
+  }
+
   return <Fact>[
-    Fact(
-      term: 'Sandbox',
-      description: <TextSegment>[TextSegment(describeSandbox(runner.sandbox))],
-    ),
+    sandboxFact,
     Fact(
       term: 'Can reach',
       description: describeReachableHosts(runner.allowedHosts),

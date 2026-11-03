@@ -1,20 +1,20 @@
 use std::sync::Arc;
 
-use orchestration_hub::cached_clones::list_cached_repositories;
 use orchestration_hub::run_activity::{RunActivity, SleepPrevention};
 use orchestration_hub::slots::{SlotCounter, SlotError};
 use thiserror::Error;
 use tokio::task::{JoinError, JoinSet};
 
-use crate::heartbeat::describe_heartbeat;
+use crate::heartbeat::send_heartbeat;
+use crate::leftover_cleanup::send_heartbeat_removing_leftovers;
 use crate::run_executor::{RunExecutor, RunOutcome};
 use crate::run_reports::report_step_failure;
 use crate::runner_configuration::{
     ConfigurationProblem, RunnerConfiguration, validate_configuration,
 };
 use crate::runner_log::{
-    log_cache_listing_failure, log_claim_failure, log_heartbeat_failure,
-    log_run_task_failure, log_sleep_prevention_unavailable,
+    log_claim_failure, log_heartbeat_failure, log_run_task_failure,
+    log_sleep_prevention_unavailable,
 };
 use crate::runner_server::RunnerServer;
 use crate::steady_interval::steady_interval;
@@ -69,7 +69,17 @@ pub async fn run_runner_loop<S: RunnerServer, E: RunExecutor>(
             LoopWake::ShutdownRequested => is_shutting_down = true,
             LoopWake::HeartbeatDue => {
                 let slots = activity.slots();
-                send_heartbeat(server.as_ref(), configuration, slots).await;
+                let server = server.as_ref();
+                if active_runs.is_empty() {
+                    send_heartbeat_removing_leftovers(
+                        server,
+                        configuration,
+                        slots,
+                    )
+                    .await;
+                } else {
+                    send_busy_heartbeat(server, configuration, slots).await;
+                }
             }
             LoopWake::ClaimDue => {
                 let server = server.as_ref();
@@ -82,22 +92,13 @@ pub async fn run_runner_loop<S: RunnerServer, E: RunExecutor>(
     }
 }
 
-async fn send_heartbeat<S: RunnerServer>(
+async fn send_busy_heartbeat<S: RunnerServer>(
     server: &S,
     configuration: &RunnerConfiguration,
     slots: SlotCounter,
 ) {
-    let cache_root = &configuration.worktree_roots.cache_root;
-    let cached_repositories = match list_cached_repositories(cache_root) {
-        Ok(addresses) => addresses,
-        Err(problem) => {
-            log_cache_listing_failure(&problem);
-            Vec::new()
-        }
-    };
-    let heartbeat =
-        describe_heartbeat(configuration, slots, cached_repositories);
-    if let Err(problem) = server.send_heartbeat(&heartbeat).await {
+    let sending = send_heartbeat(server, configuration, slots, Vec::new());
+    if let Err(problem) = sending.await {
         log_heartbeat_failure(&problem);
     }
 }

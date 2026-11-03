@@ -44,3 +44,28 @@ pub fn find_repository_holders(
     });
     holders
 }
+
+#[must_use]
+pub fn order_file_sources(
+    holders: &[RepositoryHolder],
+    own_copy: Option<&RepositoryHolder>,
+    preferred_runner_id: Option<&DeviceId>,
+) -> Vec<RepositoryHolder> {
+    let mut reachable = Vec::new();
+    if let Some(own_copy) = own_copy {
+        reachable.push(own_copy.clone());
+    }
+    for holder in holders {
+        let is_own_copy =
+            own_copy.is_some_and(|own| own.device_id == holder.device_id);
+        if holder.online && !is_own_copy {
+            reachable.push(holder.clone());
+        }
+    }
+
+    let (mut preferred_first, others): (Vec<_>, Vec<_>) = reachable
+        .into_iter()
+        .partition(|source| Some(&source.device_id) == preferred_runner_id);
+    preferred_first.extend(others);
+    preferred_first
+}

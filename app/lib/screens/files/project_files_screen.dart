@@ -70,6 +70,7 @@ class _ProjectFilesScreenState extends State<ProjectFilesScreen> {
       () => widget.fileRepository.openRepository(
         projectId: route.projectId,
         repositoryAddress: route.repositoryAddress,
+        preferredRunnerId: route.preferredRunnerId,
       ),
     );
     if (!mounted || source == null) {
@@ -183,12 +184,13 @@ class _ProjectFilesScreenState extends State<ProjectFilesScreen> {
     );
   }
 
-  void _chooseBranch(String branch) {
+  void _chooseBranch(FilesFromRunner source, String branch) {
     widget.navigation.replaceRoute(
       ProjectFilesRoute(
         projectId: widget.route.projectId,
         repositoryAddress: widget.route.repositoryAddress,
         branch: branch,
+        preferredRunnerId: source.runnerId,
       ),
     );
   }
@@ -263,7 +265,7 @@ class _ProjectFilesScreenState extends State<ProjectFilesScreen> {
           : BranchPicker(
               entries: buildBranchEntries(source),
               chosenBranch: branch,
-              onChosen: _chooseBranch,
+              onChosen: (String chosen) => _chooseBranch(source, chosen),
             ),
       runnerName: source.runnerName,
       treeView: tree == null

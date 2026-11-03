@@ -3,6 +3,7 @@ use axum::extract::State;
 use chrono::{DateTime, Utc};
 use orchestration_api::updates::ChangeTopic;
 use orchestration_api::work::{ClaimResponse, RunAssignment};
+use orchestration_core::agent_place::can_take_place;
 use orchestration_core::device::{Runner, RunnerTarget};
 use orchestration_core::identifiers::{
     DeviceId, RunId, WorkflowAgentId, WorkspaceId,
@@ -103,7 +104,7 @@ fn find_claimable_step(
     };
     let workflow = run_workflow(state, task);
     let eligible_runners =
-        eligible_runners(state, runners, workspace_id, repositories);
+        eligible_runners(state, runners, task, workspace_id, repositories);
 
     for step in &record.run.steps {
         if !is_step_ready(&record.run, step, workflow) {
@@ -121,6 +122,7 @@ fn find_claimable_step(
 fn eligible_runners(
     state: &StoredState,
     runners: &[Runner],
+    task: &Task,
     workspace_id: WorkspaceId,
     repositories: &[Repository],
 ) -> Vec<Runner> {
@@ -134,7 +136,8 @@ fn eligible_runners(
         let holds_folders = folder_device
             .as_ref()
             .is_none_or(|folder_device_id| folder_device_id == runner_id);
-        if is_member && holds_folders {
+        let offers_place = can_take_place(&runner.offers, task.agent_place);
+        if is_member && holds_folders && offers_place {
             eligible.push(runner.clone());
         }
     }

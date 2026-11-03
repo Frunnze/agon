@@ -92,6 +92,9 @@ fn action_strategy() -> impl Strategy<Value = ApprovalAction> {
         any::<u128>().prop_map(|number| ApprovalAction::SignWorkflow {
             workflow_id: WorkflowId(Uuid::from_u128(number)),
         }),
+        (short_text_strategy(), short_text_strategy()).prop_map(
+            |(tool, command)| ApprovalAction::RunCommand { tool, command }
+        ),
     ]
 }
 

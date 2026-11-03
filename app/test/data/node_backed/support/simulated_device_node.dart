@@ -25,6 +25,7 @@ final class SimulatedDeviceNode {
   String? peerProblem;
   String? runnerProblem;
   WireRecord? runnerSettings;
+  List<WireRecord>? runnerOffers;
 
   String answer(String inputJson) {
     final WireRecord command = jsonDecode(inputJson) as WireRecord;
@@ -41,7 +42,7 @@ final class SimulatedDeviceNode {
       'list_runners' => encodeSuccessReply(_listRunners()),
       'pause_runner' => _setAccepting(command, isAccepting: false),
       'resume_runner' => _setAccepting(command, isAccepting: true),
-      'choose_agent_place' => _chooseAgentPlace(command),
+      'choose_agent_offers' => _chooseAgentOffers(command),
       'list_audit' => encodeSuccessReply(_listAudit()),
       'status' => encodeSuccessReply(_readStatus()),
       _ => encodeErrorReply('unknown command: $name'),
@@ -132,24 +133,20 @@ final class SimulatedDeviceNode {
       'runners': views,
       'this_device_problem': runnerProblem,
       'this_device_settings': runnerSettings,
+      'this_device_offers': runnerOffers,
     };
   }
 
-  String _chooseAgentPlace(WireRecord command) {
-    final WireRecord? settings = runnerSettings;
-    if (settings == null) {
+  String _chooseAgentOffers(WireRecord command) {
+    if (runnerSettings == null) {
       return encodeErrorReply(simulatedNotARunnerMessage);
     }
-    final bool isLocal = command['place'] == _localPlace;
-    settings['sandbox'] = isLocal
-        ? <String, Object?>{'kind': _localPlace}
-        : <String, Object?>{
-            'kind': 'container',
-            'engine': 'docker',
-            'image': 'agents-orchestration-runner:latest',
-            'allowed_hosts': <Object?>[],
-          };
-    if (isLocal) {
+    final List<Object?> places = command['offers']! as List<Object?>;
+    runnerOffers = <WireRecord>[
+      for (final Object? place in places)
+        <String, Object?>{'place': place, 'problem': null},
+    ];
+    if (places.contains(_localPlace)) {
       runnerProblem = null;
     }
     return encodeSuccessReply(null);

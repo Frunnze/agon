@@ -11,7 +11,11 @@ import 'random_typed_values.dart';
 const List<CommandShape> fileCommandShapes = <CommandShape>[
   CommandShape(
     commandName: 'list_repository_branches',
-    argumentFields: <String>{'project_id', 'repository_address'},
+    argumentFields: <String>{
+      'project_id',
+      'repository_address',
+      'preferred_runner_id',
+    },
     buildCommand: _buildListRepositoryBranches,
     buildReplyJson: randomRepositoryBranchesJson,
     encodeReply: encodeValueReply,
@@ -48,6 +52,7 @@ NodeCommand<Object?> _buildListRepositoryBranches(Random random) {
   return ListRepositoryBranchesCommand(
     projectId: randomProjectId(random),
     repositoryAddress: randomText(random),
+    preferredRunnerId: random.nextBool() ? randomDeviceId(random) : null,
   );
 }
 

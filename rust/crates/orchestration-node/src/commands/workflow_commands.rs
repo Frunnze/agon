@@ -142,7 +142,7 @@ pub(super) fn prepare_workflow_upload(
     })
 }
 
-async fn sign_workflow(
+pub(super) async fn sign_workflow(
     session: &DeviceSession,
     client: &SignedServerClient<'_>,
     workflow_id: WorkflowId,

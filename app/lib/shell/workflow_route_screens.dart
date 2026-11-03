@@ -49,7 +49,6 @@ Widget buildWorkflowChangeScreen({
     workflowId: route.workflowId,
     workflowRepository: dependencies.workflowRepository,
     deviceRepository: dependencies.deviceRepository,
-    biometricConfirmation: dependencies.biometricConfirmation,
     clock: dependencies.clock,
     navigation: navigation,
   );
@@ -82,7 +81,6 @@ Widget buildWorkflowBuilderScreen({
     deviceRepository: dependencies.deviceRepository,
     runnerRepository: dependencies.runnerRepository,
     skillRepository: dependencies.skillRepository,
-    biometricConfirmation: dependencies.biometricConfirmation,
     navigation: navigation,
   );
 }

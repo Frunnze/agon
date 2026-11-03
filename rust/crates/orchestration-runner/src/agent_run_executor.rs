@@ -13,19 +13,22 @@ use crate::run_error::RunError;
 use crate::run_events::post_run_events;
 use crate::run_executor::{RunExecutor, RunOutcome};
 use crate::run_reports::report_step_failure;
-use crate::run_workspace::prepare_run_workspace;
+use crate::run_workspace::{
+    prepare_run_workspace, remove_workspace_task_folder,
+};
 use crate::runner_configuration::{
     ConfigurationProblem, RunnerConfiguration, WorktreeRoots,
     validate_configuration,
 };
 use crate::runner_server::RunnerServer;
+use crate::sandbox_choice::choose_sandbox;
 use crate::step_plan::{StepPlan, plan_assigned_step};
 
 #[derive(Debug)]
 pub struct AgentRunExecutor<S, P> {
     server: Arc<S>,
     pusher: Arc<P>,
-    sandbox: AgentSandbox,
+    sandboxes: Vec<AgentSandbox>,
     worktree_roots: WorktreeRoots,
     clone_source: CloneSource,
     cancellation_check_interval: Duration,
@@ -47,7 +50,7 @@ impl<S: RunnerServer, P: BranchPusher> AgentRunExecutor<S, P> {
         Ok(Self {
             server,
             pusher: Arc::new(pusher),
-            sandbox: configuration.sandbox.clone(),
+            sandboxes: configuration.sandboxes.clone(),
             worktree_roots: configuration.worktree_roots.clone(),
             clone_source: configuration.clone_source.clone(),
             cancellation_check_interval: configuration
@@ -61,6 +64,10 @@ impl<S: RunnerServer, P: BranchPusher> AgentRunExecutor<S, P> {
         &self,
         assignment: &RunAssignment,
     ) -> Result<PreparedRun<S, P>, RunError> {
+        let wanted_place = assignment.task.agent_place;
+        let sandbox = choose_sandbox(&self.sandboxes, wanted_place)
+            .ok_or(RunError::PlaceNotOffered)?
+            .clone();
         let step = plan_assigned_step(assignment)?;
         let clone_locks = Arc::clone(&self.clone_locks);
         let workspace = prepare_run_workspace(
@@ -81,7 +88,7 @@ impl<S: RunnerServer, P: BranchPusher> AgentRunExecutor<S, P> {
             server: Arc::clone(&self.server),
             pusher: Arc::clone(&self.pusher),
             run_id,
-            sandbox: self.sandbox.clone(),
+            sandbox,
             workspace,
             cancellation_check_interval: self.cancellation_check_interval,
         };
@@ -94,7 +101,11 @@ impl<S: RunnerServer, P: BranchPusher> RunExecutor for AgentRunExecutor<S, P> {
         match self.prepare_run(&assignment).await {
             Ok(prepared) => {
                 let step = &prepared.step;
-                run_assigned_step(&prepared.context, &assignment, step).await
+                let context = &prepared.context;
+                let outcome =
+                    run_assigned_step(context, &assignment, step).await;
+                remove_workspace_task_folder(&assignment, &context.workspace);
+                outcome
             }
             Err(problem) => {
                 let reason = problem.to_string();

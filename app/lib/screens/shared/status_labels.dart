@@ -1,5 +1,6 @@
 import 'package:agent_orchestration/data/models/run.dart';
 import 'package:agent_orchestration/data/models/task.dart';
+import 'package:agent_orchestration/data/rules/kept_branches.dart';
 import 'package:agent_orchestration/icons/app_icon_kind.dart';
 import 'package:agent_orchestration/widgets/status_label.dart';
 
@@ -36,6 +37,20 @@ StatusLabel buildTaskStatusLabel(TaskStatus status) {
         icon: AppIconKind.check,
       );
   }
+}
+
+StatusLabel buildTaskOutcomeLabel({
+  required TaskStatus status,
+  required List<KeptBranch> keptBranches,
+}) {
+  if (keptBranches.isEmpty) {
+    return buildTaskStatusLabel(status);
+  }
+  return const StatusLabel(
+    text: 'Not pushed',
+    tone: StatusTone.normal,
+    icon: AppIconKind.offline,
+  );
 }
 
 StatusLabel buildJobLastRunLabel(TaskStatus status) {

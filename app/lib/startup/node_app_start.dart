@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
-import 'package:local_auth/local_auth.dart';
 
 import 'package:agent_orchestration/background/platform_runner_presence.dart';
 import 'package:agent_orchestration/background/runner_presence.dart';
@@ -9,7 +8,6 @@ import 'package:agent_orchestration/bridge/codecs/account_values.dart' as node;
 import 'package:agent_orchestration/bridge/commands/account_commands.dart'
     as node;
 import 'package:agent_orchestration/bridge/node/node_command_channel.dart';
-import 'package:agent_orchestration/confirmation.dart';
 import 'package:agent_orchestration/data/app_dependencies.dart';
 import 'package:agent_orchestration/data/clock.dart';
 import 'package:agent_orchestration/data/models/device.dart';
@@ -35,10 +33,6 @@ Future<StartedApp> startNodeApp() async {
   final NodeDependencies nodeDependencies = buildNodeDependencies(
     channel: channel,
     clock: const SystemClock(),
-    biometricConfirmation: SystemBiometricConfirmation(
-      authentication: LocalAuthentication(),
-      methodName: describeConfirmationMethod(defaultTargetPlatform),
-    ),
     qrCodeScanner: const CameraQrCodeScanner(),
     folderPicker: const PlatformFolderPicker(),
     workspaceChoiceStore: const SharedPreferencesWorkspaceChoiceStore(),

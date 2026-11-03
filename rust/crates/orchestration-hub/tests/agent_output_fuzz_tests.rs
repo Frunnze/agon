@@ -1,12 +1,16 @@
+mod agent_reading;
+
+use agent_reading::parse_agent_line;
 use orchestration_core::workflow::AgentKind;
 use orchestration_hub::agent_event::AgentEvent;
-use orchestration_hub::agent_output::parse_agent_line;
 use proptest::prelude::*;
 use serde_json::Value;
 
 const CLAUDE_STREAM: &str = include_str!("fixtures/claude_stream.jsonl");
+const CODEX_STREAM: &str = include_str!("fixtures/codex_stream.jsonl");
+const GEMINI_STREAM: &str = include_str!("fixtures/gemini_stream.jsonl");
 
-const JSON_KEYS: [&str; 13] = [
+const JSON_KEYS: [&str; 26] = [
     "type",
     "subtype",
     "message",
@@ -20,9 +24,22 @@ const JSON_KEYS: [&str; 13] = [
     "is_error",
     "session_id",
     "thinking",
+    "thread_id",
+    "item",
+    "aggregated_output",
+    "status",
+    "changes",
+    "path",
+    "kind",
+    "error",
+    "role",
+    "tool_name",
+    "parameters",
+    "output",
+    "query",
 ];
 
-const JSON_WORDS: [&str; 11] = [
+const JSON_WORDS: [&str; 26] = [
     "system",
     "init",
     "assistant",
@@ -34,6 +51,21 @@ const JSON_WORDS: [&str; 11] = [
     "Bash",
     "Edit",
     "user",
+    "thread.started",
+    "item.started",
+    "item.completed",
+    "turn.completed",
+    "turn.failed",
+    "agent_message",
+    "command_execution",
+    "file_change",
+    "mcp_tool_call",
+    "failed",
+    "message",
+    "tool_result",
+    "error",
+    "replace",
+    "update",
 ];
 
 fn any_agent() -> impl Strategy<Value = AgentKind> {
@@ -86,6 +118,14 @@ fn has_only_meaningful_text(events: &[AgentEvent]) -> bool {
     })
 }
 
+fn any_recorded_stream() -> impl Strategy<Value = (AgentKind, &'static str)> {
+    prop_oneof![
+        Just((AgentKind::ClaudeCode, CLAUDE_STREAM)),
+        Just((AgentKind::Codex, CODEX_STREAM)),
+        Just((AgentKind::GeminiCli, GEMINI_STREAM)),
+    ]
+}
+
 fn mutate_line(line: &str, cut: usize, insertion: &str) -> String {
     let characters: Vec<char> = line.chars().collect();
     let cut_position = cut % (characters.len() + 1);
@@ -117,6 +157,7 @@ proptest! {
 
     #[test]
     fn test_parse_agent_line_property_mutated_stream_lines_never_panic(
+        (agent, stream) in any_recorded_stream(),
         line_index in any::<usize>(),
         cut in any::<usize>(),
         insertion in prop_oneof![
@@ -127,26 +168,27 @@ proptest! {
             Just("\n".to_string()),
         ],
     ) {
-        let lines: Vec<&str> = CLAUDE_STREAM.lines().collect();
+        let lines: Vec<&str> = stream.lines().collect();
         let line = lines[line_index % lines.len()];
         let mutated = mutate_line(line, cut, &insertion);
 
-        let events = parse_agent_line(AgentKind::ClaudeCode, &mutated);
+        let events = parse_agent_line(agent, &mutated);
 
         prop_assert!(has_only_meaningful_text(&events));
     }
 
     #[test]
     fn test_parse_agent_line_property_truncated_lines_never_panic(
+        (agent, stream) in any_recorded_stream(),
         line_index in any::<usize>(),
         cut in any::<usize>(),
     ) {
-        let lines: Vec<&str> = CLAUDE_STREAM.lines().collect();
+        let lines: Vec<&str> = stream.lines().collect();
         let line = lines[line_index % lines.len()];
         let kept_characters = cut % (line.chars().count() + 1);
         let truncated: String = line.chars().take(kept_characters).collect();
 
-        let events = parse_agent_line(AgentKind::ClaudeCode, &truncated);
+        let events = parse_agent_line(agent, &truncated);
 
         prop_assert!(has_only_meaningful_text(&events));
     }

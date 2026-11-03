@@ -45,6 +45,7 @@ final class TaskDraft {
     required this.projectId,
     required this.doer,
     required this.runsOn,
+    required this.agentPlace,
     required List<SkillId> skills,
     required this.usesAutomaticSkills,
     required this.approvalPolicy,
@@ -55,6 +56,7 @@ final class TaskDraft {
   final ProjectId projectId;
   final TaskDoer doer;
   final RunnerTarget runsOn;
+  final AgentPlace agentPlace;
   final List<SkillId> skills;
   final bool usesAutomaticSkills;
   final ApprovalPolicy approvalPolicy;
@@ -75,6 +77,7 @@ final class Task {
     required this.projectId,
     required this.doer,
     required this.runsOn,
+    required this.agentPlace,
     required List<SkillId> skills,
     required this.usesAutomaticSkills,
     required this.approvalPolicy,
@@ -94,6 +97,7 @@ final class Task {
        projectId = draft.projectId,
        doer = draft.doer,
        runsOn = draft.runsOn,
+       agentPlace = draft.agentPlace,
        skills = draft.skills,
        usesAutomaticSkills = draft.usesAutomaticSkills,
        approvalPolicy = draft.approvalPolicy;
@@ -104,6 +108,7 @@ final class Task {
   final ProjectId projectId;
   final TaskDoer doer;
   final RunnerTarget runsOn;
+  final AgentPlace agentPlace;
   final List<SkillId> skills;
   final bool usesAutomaticSkills;
   final ApprovalPolicy approvalPolicy;
@@ -118,6 +123,7 @@ final class Task {
       projectId: projectId,
       doer: doer,
       runsOn: runsOn,
+      agentPlace: agentPlace,
       skills: skills,
       usesAutomaticSkills: usesAutomaticSkills,
       approvalPolicy: approvalPolicy,

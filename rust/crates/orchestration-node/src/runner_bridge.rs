@@ -8,13 +8,14 @@ mod host_detection;
 mod image_check;
 mod live_host;
 mod node_runner_server;
+mod offer_checks;
 mod own_copy_reading;
 mod prepared_runner;
 mod runner_handle;
 mod runner_launcher;
 mod transient_retry;
 
-pub use agent_placing::place_agents;
+pub use agent_placing::{find_settings_place, offer_sandboxes};
 pub use configuration_building::build_runner_configuration;
 pub use credential_passing::{
     choose_container_credential, pass_agent_credential,
@@ -28,7 +29,8 @@ pub use image_check::{
     ImageProbeOutcome, describe_image_problem, probe_local_image,
 };
 pub use node_runner_server::NodeRunnerServer;
-pub(crate) use own_copy_reading::read_own_copy;
+pub use offer_checks::check_offers;
+pub(crate) use own_copy_reading::{holds_own_copy, read_own_copy};
 pub(crate) use runner_launcher::RunnerLauncher;
 pub use transient_retry::{
     FIRST_RETRY_DELAY, LONGEST_RETRY_DELAY, is_transient_failure,

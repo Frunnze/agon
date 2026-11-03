@@ -1,10 +1,21 @@
 use std::path::Path;
 
+use orchestration_hub::cached_clones::list_cached_repositories;
+
 use super::file_host::read_cached_clone;
 use super::file_readers::check_reader_access;
 use crate::live_link_messages::{FileAnswer, FileRequest};
 use crate::node::DeviceSession;
 use crate::node_error::NodeError;
+
+pub(crate) fn holds_own_copy(
+    cache_root: &Path,
+    address: &str,
+) -> Result<bool, NodeError> {
+    let cached_addresses = list_cached_repositories(cache_root)?;
+    let holds_copy = cached_addresses.iter().any(|cached| cached == address);
+    Ok(holds_copy)
+}
 
 pub(crate) async fn read_own_copy(
     session: &DeviceSession,

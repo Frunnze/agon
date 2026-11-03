@@ -1,9 +1,10 @@
 use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 
+use orchestration_core::agent_place::AgentPlace;
+
 use super::login_session::{AgentLoginView, LoginSession};
 use crate::agent_credentials::AgentCredentials;
 use crate::node_error::NodeError;
-use crate::runner_settings::AgentPlace;
 
 type OpenSession = Option<LoginSession>;
 

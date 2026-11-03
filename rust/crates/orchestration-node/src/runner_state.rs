@@ -1,21 +1,24 @@
 use std::sync::{Mutex, MutexGuard, PoisonError};
 
-use crate::runner_settings::{AgentPlace, RunnerSettings};
+use orchestration_core::agent_place::AgentPlace;
+
+use crate::place_offers::{PlaceOffer, find_blocking_problem};
+use crate::runner_settings::RunnerSettings;
 
 #[derive(Debug)]
 pub struct RunnerState {
     settings_in_effect: Mutex<Option<RunnerSettings>>,
-    problem: Mutex<Option<String>>,
-    chosen_place: Mutex<Option<AgentPlace>>,
+    checked_offers: Mutex<Vec<PlaceOffer>>,
+    chosen_offers: Mutex<Option<Vec<AgentPlace>>>,
 }
 
 impl RunnerState {
     #[must_use]
-    pub fn new(chosen_place: Option<AgentPlace>) -> Self {
+    pub fn new(chosen_offers: Option<Vec<AgentPlace>>) -> Self {
         Self {
             settings_in_effect: Mutex::new(None),
-            problem: Mutex::new(None),
-            chosen_place: Mutex::new(chosen_place),
+            checked_offers: Mutex::new(Vec::new()),
+            chosen_offers: Mutex::new(chosen_offers),
         }
     }
 
@@ -30,22 +33,27 @@ impl RunnerState {
     }
 
     #[must_use]
-    pub fn problem(&self) -> Option<String> {
-        lock(&self.problem).clone()
+    pub fn checked_offers(&self) -> Vec<PlaceOffer> {
+        lock(&self.checked_offers).clone()
     }
 
     #[cfg(feature = "runner")]
-    pub(crate) fn record_problem(&self, problem: Option<String>) {
-        *lock(&self.problem) = problem;
+    pub(crate) fn record_checked_offers(&self, offers: Vec<PlaceOffer>) {
+        *lock(&self.checked_offers) = offers;
     }
 
     #[must_use]
-    pub fn chosen_place(&self) -> Option<AgentPlace> {
-        *lock(&self.chosen_place)
+    pub fn problem(&self) -> Option<String> {
+        find_blocking_problem(&lock(&self.checked_offers))
     }
 
-    pub(crate) fn remember_chosen_place(&self, place: AgentPlace) {
-        *lock(&self.chosen_place) = Some(place);
+    #[must_use]
+    pub fn chosen_offers(&self) -> Option<Vec<AgentPlace>> {
+        lock(&self.chosen_offers).clone()
+    }
+
+    pub(crate) fn remember_chosen_offers(&self, offers: Vec<AgentPlace>) {
+        *lock(&self.chosen_offers) = Some(offers);
     }
 }
 

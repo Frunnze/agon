@@ -1,4 +1,5 @@
 use orchestration_api::work::RunAssignment;
+use orchestration_core::approval::ApprovalPolicy;
 use orchestration_core::task::{TaskDoer, TaskPlace};
 use orchestration_core::workflow::AgentKind;
 use proptest::prelude::*;
@@ -99,6 +100,10 @@ proptest! {
         prop_assert_eq!(&assignment.task.doer, &expected_doer);
         prop_assert_eq!(&assignment.task.title, "Draft new workflow");
         prop_assert!(is_workspace_task(&desk, &assignment));
+        prop_assert_eq!(
+            assignment.task.approval_policy,
+            ApprovalPolicy::NeverAsk
+        );
         let recorded = desk.prepared.server.recorded_requests();
         let task_upload = recorded.iter().find(|request| {
             is_task_upload(request)
@@ -137,6 +142,10 @@ proptest! {
         prop_assert!(details.contains(CANVAS_UNITS));
         prop_assert_eq!(&assignment.task.title, "Change workflow release");
         prop_assert!(is_workspace_task(&desk, &assignment));
+        prop_assert_eq!(
+            assignment.task.approval_policy,
+            ApprovalPolicy::NeverAsk
+        );
     }
 }
 
@@ -159,6 +168,7 @@ fn fill_agent_settings_queues_a_workspace_task_naming_the_agent() {
     };
     assert_eq!(assignment.task.title, "Fill in agent plan of release");
     assert!(is_workspace_task(&desk, &assignment), "{assignment:?}");
+    assert_eq!(assignment.task.approval_policy, ApprovalPolicy::NeverAsk);
 }
 
 #[test]

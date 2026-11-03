@@ -1,4 +1,3 @@
-export 'fakes/approving_biometric_confirmation.dart';
 export 'fakes/fake_agent_login_repository.dart';
 export 'fakes/fake_approval_repository.dart';
 export 'fakes/fake_audit_repository.dart';

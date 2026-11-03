@@ -3,7 +3,9 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
 
+use orchestration_core::agent_place::find_sandbox_place;
 use orchestration_core::device::{RunnerLink, SandboxKind};
+use orchestration_core::identifiers::TaskId;
 use orchestration_hub::clone_source::CloneSource;
 use orchestration_hub::slots::SlotCounter;
 use orchestration_runner::agent_run_executor::AgentRunExecutor;
@@ -16,6 +18,7 @@ use orchestration_runner::runner_configuration::{
 };
 use proptest::collection::vec;
 use proptest::prelude::*;
+use uuid::Uuid;
 
 use crate::fake_agent::test_container;
 use crate::fake_server::FakeServer;
@@ -45,35 +48,38 @@ fn any_sandbox_kind() -> impl Strategy<Value = SandboxKind> {
     ]
 }
 
+fn any_sandbox() -> impl Strategy<Value = AgentSandbox> {
+    (any_sandbox_kind(), vec("[a-z]{1,8}\\.[a-z]{2,3}", 0..3)).prop_map(
+        |(kind, allowed_hosts)| AgentSandbox {
+            kind,
+            container: test_container(),
+            allowed_hosts,
+            environment: BTreeMap::new(),
+        },
+    )
+}
+
 fn any_configuration() -> impl Strategy<Value = RunnerConfiguration> {
     (
         vec("[a-z]{1,8}", 0..4),
         1_u32..16,
-        any_sandbox_kind(),
-        vec("[a-z]{1,8}\\.[a-z]{2,3}", 0..3),
+        vec(any_sandbox(), 1..3),
         any_intervals(),
     )
-        .prop_map(
-            |(labels, slot_capacity, kind, allowed_hosts, intervals)| {
-                RunnerConfiguration {
-                    labels,
-                    slot_capacity,
-                    link: RunnerLink::Relay,
-                    sandbox: AgentSandbox {
-                        kind,
-                        container: test_container(),
-                        allowed_hosts,
-                        environment: BTreeMap::new(),
-                    },
-                    worktree_roots: WorktreeRoots {
-                        cache_root: PathBuf::from(CACHE_ROOT),
-                        worktrees_root: PathBuf::from(WORKTREES_ROOT),
-                    },
-                    clone_source: CloneSource::standard(),
-                    intervals,
-                }
-            },
-        )
+        .prop_map(|(labels, slot_capacity, sandboxes, intervals)| {
+            RunnerConfiguration {
+                labels,
+                slot_capacity,
+                link: RunnerLink::Relay,
+                sandboxes,
+                worktree_roots: WorktreeRoots {
+                    cache_root: PathBuf::from(CACHE_ROOT),
+                    worktrees_root: PathBuf::from(WORKTREES_ROOT),
+                },
+                clone_source: CloneSource::standard(),
+                intervals,
+            }
+        })
 }
 
 fn with_zero_interval(
@@ -146,6 +152,20 @@ proptest! {
     }
 
     #[test]
+    fn test_validate_configuration_property_rejects_a_runner_offering_nothing(
+        configuration in any_configuration(),
+    ) {
+        let changed = RunnerConfiguration {
+            sandboxes: Vec::new(),
+            ..configuration
+        };
+
+        let validated = validate_configuration(&changed);
+
+        prop_assert_eq!(validated, Err(ConfigurationProblem::NoSandbox));
+    }
+
+    #[test]
     fn test_validate_configuration_property_rejects_relative_folders(
         configuration in any_configuration(),
         relative_folder in "[a-z]{1,8}(/[a-z]{1,8}){0,2}",
@@ -210,13 +230,19 @@ proptest! {
         configuration in any_configuration(),
         busy in 0_u32..16,
         cached_repositories in proptest::collection::vec("[a-z./]{1,20}", 0..4),
+        held_numbers in proptest::collection::vec(any::<u128>(), 0..4),
     ) {
         let slots = take_slots(configuration.slot_capacity, busy);
+        let held_tasks: Vec<TaskId> = held_numbers
+            .iter()
+            .map(|number| TaskId(Uuid::from_u128(*number)))
+            .collect();
 
         let heartbeat = describe_heartbeat(
             &configuration,
             slots,
             cached_repositories.clone(),
+            held_tasks.clone(),
         );
 
         prop_assert_eq!(&heartbeat.labels, &configuration.labels);
@@ -224,11 +250,15 @@ proptest! {
         prop_assert_eq!(heartbeat.slots_busy, slots.busy_slots());
         prop_assert!(heartbeat.slots_busy <= heartbeat.slots_total);
         prop_assert_eq!(heartbeat.link, configuration.link);
-        prop_assert_eq!(heartbeat.sandbox, configuration.sandbox.kind);
-        prop_assert_eq!(
-            &heartbeat.allowed_hosts,
-            &configuration.sandbox.allowed_hosts
-        );
+        let mut offers = Vec::new();
+        let mut allowed_hosts = Vec::new();
+        for sandbox in &configuration.sandboxes {
+            offers.extend(find_sandbox_place(sandbox.kind));
+            allowed_hosts.extend(sandbox.allowed_hosts.iter().cloned());
+        }
+        prop_assert_eq!(&heartbeat.offers, &offers);
+        prop_assert_eq!(&heartbeat.allowed_hosts, &allowed_hosts);
         prop_assert_eq!(heartbeat.cached_repositories, cached_repositories);
+        prop_assert_eq!(heartbeat.held_tasks, held_tasks);
     }
 }

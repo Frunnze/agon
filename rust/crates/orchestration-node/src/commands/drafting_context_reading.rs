@@ -126,6 +126,7 @@ async fn read_runners(
                 },
                 is_online: runner.online,
                 labels: runner.labels,
+                offers: runner.offers,
             });
         }
     }

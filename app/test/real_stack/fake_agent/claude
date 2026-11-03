@@ -14,13 +14,25 @@ esac
 
 session=
 previous=
+reads_input=
 for argument in "$@"; do
   if [ "$previous" = "--resume" ]; then
     session="$argument"
   fi
+  if [ "$previous" = "--input-format" ]; then
+    reads_input=yes
+  fi
   previous="$argument"
   prompt="$argument"
 done
+if [ -n "$reads_input" ]; then
+  IFS= read -r prompt_line
+  prompt=$(printf '%s' "$prompt_line" | perl -MJSON::PP -e '
+    binmode STDOUT, ":utf8";
+    print decode_json(<STDIN>)->{message}{content};
+  '; printf x)
+  prompt=${prompt%x}
+fi
 
 wait_for_file() {
   waited=0
@@ -118,7 +130,8 @@ case "$prompt" in
 \"details\":\"Drafted by the fake agent.\",\
 \"project_id\":\"$project_id\",\
 \"doer\":{\"kind\":\"one_agent\",\"agent\":\"claude_code\"},\
-\"runs_on\":{\"kind\":\"any_free_runner\"},\"skills\":[],\
+\"runs_on\":{\"kind\":\"any_free_runner\"},\
+\"agent_place\":\"local_process\",\"skills\":[],\
 \"uses_automatic_skills\":true,\
 \"approval_policy\":\"ask_before_risky_actions\",\"schedule\":null}"
     finish "item-draft-$$" "$(escape_json "$draft")"

@@ -15,7 +15,7 @@ const String _builderTask = 'Read the code and write a short plan.';
 const String _nodeTask = 'Read the code, write a plan and list the risks.';
 const String _editDiagramLabel = 'Edit diagram';
 const String _discardLabel = 'Discard change';
-const String _signLabel = 'Sign with $confirmationMethodName';
+const String _signLabel = 'Sign change';
 const String _unsignedBanner = "This version won't run until you sign it";
 
 Future<void> _changeTaskInBuilder(

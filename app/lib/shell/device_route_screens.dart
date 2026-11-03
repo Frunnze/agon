@@ -39,6 +39,7 @@ Widget buildRunnerDetailScreen({
   return RunnerDetailScreen(
     deviceId: route.deviceId,
     runnerRepository: dependencies.runnerRepository,
+    agentLoginRepository: dependencies.agentLoginRepository,
     deviceRepository: dependencies.deviceRepository,
     workspaceRepository: dependencies.workspaceRepository,
     taskRepository: dependencies.taskRepository,
@@ -57,7 +58,6 @@ Widget buildDevicesScreen({
     pairingRepository: dependencies.pairingRepository,
     workspaceRepository: dependencies.workspaceRepository,
     projectRepository: dependencies.projectRepository,
-    biometricConfirmation: dependencies.biometricConfirmation,
     clock: dependencies.clock,
     navigation: navigation,
   );
@@ -83,7 +83,6 @@ Widget buildPairingApprovalScreen({
     pairingRepository: dependencies.pairingRepository,
     deviceRepository: dependencies.deviceRepository,
     workspaceRepository: dependencies.workspaceRepository,
-    biometricConfirmation: dependencies.biometricConfirmation,
     navigation: navigation,
   );
 }

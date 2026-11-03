@@ -25,8 +25,15 @@ fn approval_action() -> impl Strategy<Value = ApprovalAction> {
         (any::<String>(), any::<String>()).prop_map(|(repository, what)| {
             ApprovalAction::DeleteBranchOrFiles { repository, what }
         }),
+        run_command_action(),
         sign_workflow_action(),
     ]
+}
+
+fn run_command_action() -> impl Strategy<Value = ApprovalAction> {
+    (any::<String>(), any::<String>()).prop_map(|(tool, command)| {
+        ApprovalAction::RunCommand { tool, command }
+    })
 }
 
 fn approval_policy() -> impl Strategy<Value = ApprovalPolicy> {
@@ -43,6 +50,18 @@ fn sign_workflow_action() -> impl Strategy<Value = ApprovalAction> {
 }
 
 proptest! {
+    #[test]
+    fn test_needs_approval_property_run_command_needs_it_only_when_asking(
+        policy in approval_policy(),
+        action in run_command_action(),
+    ) {
+        let asks = policy == ApprovalPolicy::AskBeforeRiskyActions;
+
+        let needs_it = needs_approval(policy, &action);
+
+        prop_assert_eq!(needs_it, asks);
+    }
+
     #[test]
     fn test_needs_approval_property_signing_a_workflow_always_needs_it(
         policy in approval_policy(),

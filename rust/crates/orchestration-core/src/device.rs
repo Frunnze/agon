@@ -1,6 +1,7 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
+use crate::agent_place::AgentPlace;
 use crate::identifiers::{DeviceId, WorkspaceId};
 use crate::peer_address::SignedPeerAddress;
 
@@ -55,7 +56,8 @@ pub struct Runner {
     pub link: RunnerLink,
     pub online: bool,
     pub accepting_new_runs: bool,
-    pub sandbox: SandboxKind,
+    #[serde(default)]
+    pub offers: Vec<AgentPlace>,
     pub allowed_hosts: Vec<String>,
     #[serde(default)]
     pub cached_repositories: Vec<String>,

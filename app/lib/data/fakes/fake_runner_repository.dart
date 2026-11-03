@@ -13,14 +13,14 @@ final class FakeRunnerRepository extends ChangeNotifier
     implements RunnerRepository {
   FakeRunnerRepository({
     required List<Runner> runners,
-    required AgentPlace? thisAgentPlace,
+    required List<PlaceOffer>? thisDeviceOffers,
     required String? thisRunnerProblem,
   }) : _runners = List<Runner>.unmodifiable(runners),
-       _thisAgentPlace = thisAgentPlace,
+       _thisDeviceOffers = thisDeviceOffers,
        _thisRunnerProblem = thisRunnerProblem;
 
   List<Runner> _runners;
-  AgentPlace? _thisAgentPlace;
+  List<PlaceOffer>? _thisDeviceOffers;
   String? _thisRunnerProblem;
 
   @override
@@ -47,19 +47,26 @@ final class FakeRunnerRepository extends ChangeNotifier
   }
 
   @override
-  AgentPlace? findThisAgentPlace() => _thisAgentPlace;
+  List<PlaceOffer>? findThisDeviceOffers() => _thisDeviceOffers;
 
   @override
   String? findThisRunnerProblem() => _thisRunnerProblem;
 
   @override
-  Future<void> chooseAgentPlace(AgentPlace place) async {
-    if (_thisAgentPlace == null) {
+  Future<void> chooseAgentOffers(List<AgentPlace> offers) async {
+    final List<PlaceOffer>? previousOffers = _thisDeviceOffers;
+    if (previousOffers == null) {
       throw StateError(_notARunnerProblem);
     }
 
-    _thisAgentPlace = place;
-    if (place == AgentPlace.localProcess) {
+    _thisDeviceOffers = List<PlaceOffer>.unmodifiable(<PlaceOffer>[
+      for (final AgentPlace place in offers)
+        PlaceOffer(
+          place: place,
+          problem: _findPreviousProblem(previousOffers, place),
+        ),
+    ]);
+    if (offers.contains(AgentPlace.localProcess)) {
       _thisRunnerProblem = null;
     }
     notifyListeners();
@@ -74,4 +81,16 @@ final class FakeRunnerRepository extends ChangeNotifier
     notifyListeners();
     return runner;
   }
+}
+
+String? _findPreviousProblem(
+  List<PlaceOffer> previousOffers,
+  AgentPlace place,
+) {
+  for (final PlaceOffer offer in previousOffers) {
+    if (offer.place == place) {
+      return offer.problem;
+    }
+  }
+  return null;
 }

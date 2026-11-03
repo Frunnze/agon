@@ -1,4 +1,7 @@
+import 'dart:math';
+
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:agent_orchestration/data/app_dependencies.dart';
@@ -11,24 +14,28 @@ import 'package:agent_orchestration/data/repository/file_repository.dart';
 import 'package:agent_orchestration/shell/app_navigation.dart';
 import 'package:agent_orchestration/shell/app_route.dart';
 
+import '../../bridge/support/random_typed_values.dart';
 import '../../support/app_harness.dart';
+import '../../support/random_inputs.dart';
 import 'file_screen_steps.dart';
 
 final class _CountingFileRepository implements FileRepository {
   _CountingFileRepository(this._inner);
 
   final FileRepository _inner;
-  int openings = 0;
+  final List<DeviceId?> askedPreferences = <DeviceId?>[];
 
   @override
   Future<RepositoryFileSource> openRepository({
     required ProjectId projectId,
     required String repositoryAddress,
+    required DeviceId? preferredRunnerId,
   }) {
-    openings += 1;
+    askedPreferences.add(preferredRunnerId);
     return _inner.openRepository(
       projectId: projectId,
       repositoryAddress: repositoryAddress,
+      preferredRunnerId: preferredRunnerId,
     );
   }
 
@@ -56,6 +63,7 @@ final class _RefusingFileRepository implements FileRepository {
   Future<RepositoryFileSource> openRepository({
     required ProjectId projectId,
     required String repositoryAddress,
+    required DeviceId? preferredRunnerId,
   }) async {
     throw StateError('the runner refused to show the files');
   }
@@ -129,11 +137,64 @@ void main() {
         projectId: GalleryProjectIds.acmeApp,
         repositoryAddress: galleryAppRepositoryAddress,
         branch: 'release',
+        preferredRunnerId: GalleryDeviceIds.officeServer,
       ),
     );
     await choosePickerOption(tester, label: 'Repository', option: 'acme/api');
     expect(navigation.currentRoute, apiFilesRoute);
     expect(navigation.routes.length, 1);
+  });
+
+  testWidgets(
+    'test_project_files_screen_property_asks_for_the_preferred_runner',
+    (WidgetTester tester) async {
+      final Random random = seededRandom(9711);
+      for (int i = 0; i < widgetPropertyIterations; i += 1) {
+        final DeviceId? preferred = random.nextBool()
+            ? randomDeviceId(random)
+            : null;
+        final _CountingFileRepository counting = _CountingFileRepository(
+          buildGalleryDependencies().fileRepository,
+        );
+
+        await openFiles(
+          tester,
+          size: phoneSize,
+          route: ProjectFilesRoute(
+            projectId: GalleryProjectIds.acmeApp,
+            repositoryAddress: galleryAppRepositoryAddress,
+            preferredRunnerId: preferred,
+          ),
+          dependencies: _withFiles(counting),
+        );
+
+        expect(counting.askedPreferences, <DeviceId?>[preferred]);
+        await tester.pumpWidget(const SizedBox.shrink());
+      }
+    },
+  );
+
+  testWidgets('a branch picked on a file page keeps its runner', (
+    WidgetTester tester,
+  ) async {
+    final AppNavigation navigation = await openFiles(
+      tester,
+      size: desktopSize,
+      route: appFilesRoute,
+    );
+    await openTreePath(tester, <String>['src', 'auth', 'login.ts']);
+
+    await choosePickerOption(tester, label: 'Branch', option: 'release');
+
+    expect(
+      navigation.currentRoute,
+      const ProjectFilesRoute(
+        projectId: GalleryProjectIds.acmeApp,
+        repositoryAddress: galleryAppRepositoryAddress,
+        branch: 'release',
+        preferredRunnerId: GalleryDeviceIds.officeServer,
+      ),
+    );
   });
 
   testWidgets('the breadcrumb returns to the files page', (
@@ -216,7 +277,7 @@ void main() {
     await tester.tap(find.text('Try again'));
     await pumpFrames(tester);
 
-    expect(counting.openings, 2);
+    expect(counting.askedPreferences.length, 2);
     expect(find.text('No runner with acme/api is online'), findsOneWidget);
   });
 

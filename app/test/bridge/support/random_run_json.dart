@@ -122,6 +122,14 @@ Map<String, Object?> randomJobViewJson(Random random) {
   };
 }
 
+Map<String, Object?> randomRunCommandJson(Random random) {
+  return <String, Object?>{
+    'kind': 'run_command',
+    'tool': randomText(random),
+    'command': randomText(random),
+  };
+}
+
 Map<String, Object?> randomApprovalActionJson(Random random) {
   final List<Map<String, Object?>> actions = <Map<String, Object?>>[
     <String, Object?>{
@@ -140,6 +148,7 @@ Map<String, Object?> randomApprovalActionJson(Random random) {
       'kind': 'sign_workflow',
       'workflow_id': randomUuidText(random),
     },
+    randomRunCommandJson(random),
   ];
   return pickOne(random, actions);
 }

@@ -60,6 +60,7 @@ final class TaskFormValues {
     required this.projectId,
     required this.doer,
     required this.runsOn,
+    required this.agentPlace,
     required List<SkillId> skillIds,
     required this.usesAutomaticSkills,
     required this.approvalPolicy,
@@ -79,6 +80,7 @@ final class TaskFormValues {
       projectId: projectId,
       doer: doer,
       runsOn: const AnyFreeRunner(),
+      agentPlace: defaultAgentPlace,
       skillIds: const <SkillId>[],
       usesAutomaticSkills: true,
       approvalPolicy: ApprovalPolicy.askBeforeRiskyActions,
@@ -97,6 +99,7 @@ final class TaskFormValues {
       projectId: task.projectId,
       doer: task.doer,
       runsOn: task.runsOn,
+      agentPlace: task.agentPlace,
       skillIds: task.skills,
       usesAutomaticSkills: task.usesAutomaticSkills,
       approvalPolicy: task.approvalPolicy,
@@ -111,6 +114,7 @@ final class TaskFormValues {
   final ProjectId projectId;
   final TaskDoer doer;
   final RunnerTarget runsOn;
+  final AgentPlace agentPlace;
   final List<SkillId> skillIds;
   final bool usesAutomaticSkills;
   final ApprovalPolicy approvalPolicy;
@@ -124,6 +128,7 @@ final class TaskFormValues {
     ProjectId? projectId,
     TaskDoer? doer,
     RunnerTarget? runsOn,
+    AgentPlace? agentPlace,
     List<SkillId>? skillIds,
     bool? usesAutomaticSkills,
     ApprovalPolicy? approvalPolicy,
@@ -137,6 +142,7 @@ final class TaskFormValues {
       projectId: projectId ?? this.projectId,
       doer: doer ?? this.doer,
       runsOn: runsOn ?? this.runsOn,
+      agentPlace: agentPlace ?? this.agentPlace,
       skillIds: skillIds ?? this.skillIds,
       usesAutomaticSkills: usesAutomaticSkills ?? this.usesAutomaticSkills,
       approvalPolicy: approvalPolicy ?? this.approvalPolicy,
@@ -171,6 +177,7 @@ final class TaskFormValues {
       projectId: projectId,
       doer: doer,
       runsOn: runsOn,
+      agentPlace: agentPlace,
       skills: skillIds,
       usesAutomaticSkills: usesAutomaticSkills,
       approvalPolicy: approvalPolicy,

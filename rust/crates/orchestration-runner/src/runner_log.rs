@@ -3,6 +3,7 @@ use orchestration_hub::keep_awake::KeepAwakeError;
 use tokio::task::JoinError;
 use tracing::warn;
 
+use crate::leftover_cleanup::LeftoverError;
 use crate::runner_server::ServerError;
 
 pub(crate) fn log_heartbeat_failure(problem: &ServerError) {
@@ -34,4 +35,16 @@ pub(crate) fn log_run_task_failure(problem: &JoinError) {
 
 pub(crate) fn log_sleep_prevention_unavailable(problem: &KeepAwakeError) {
     warn!(%problem, "the run goes on without keeping the computer awake");
+}
+
+pub(crate) fn log_leftover_listing_failure(problem: &LeftoverError) {
+    warn!(%problem, "could not list the work kept on this runner");
+}
+
+pub(crate) fn log_leftover_removal_failure(problem: &LeftoverError) {
+    warn!(%problem, "could not remove the work of deleted items");
+}
+
+pub(crate) fn log_task_folder_removal_failure(problem: &std::io::Error) {
+    warn!(%problem, "could not remove the folder of a finished draft");
 }

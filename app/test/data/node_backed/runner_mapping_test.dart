@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:agent_orchestration/bridge/codecs/catalog_views.dart' as node;
 import 'package:agent_orchestration/bridge/codecs/device_values.dart' as node;
+import 'package:agent_orchestration/bridge/node/runner_settings.dart' as node;
 import 'package:agent_orchestration/data/models/runner.dart';
 import 'package:agent_orchestration/data/node_backed/mapping.dart';
 
@@ -44,12 +45,6 @@ void main() {
     }
   });
 
-  test('test_map_sandbox_kind_from_node_property_keeps_name', () {
-    for (final node.SandboxKind wire in node.SandboxKind.values) {
-      expect(mapSandboxKindFromNode(wire).name, wire.name);
-    }
-  });
-
   test('test_map_runner_from_node_property_keeps_every_field', () {
     final Random random = seededRandom(9303);
     for (int i = 0; i < propertyIterations; i += 1) {
@@ -65,7 +60,10 @@ void main() {
       expect(runner.link.name, wire.link.name);
       expect(runner.online, wire.online);
       expect(runner.acceptingNewRuns, wire.acceptingNewRuns);
-      expect(runner.sandbox.name, wire.sandbox.name);
+      expect(
+        <String>[for (final AgentPlace offer in runner.offers) offer.name],
+        <String>[for (final node.AgentPlace offer in wire.offers) offer.name],
+      );
       expect(runner.allowedHosts, wire.allowedHosts);
     }
   });

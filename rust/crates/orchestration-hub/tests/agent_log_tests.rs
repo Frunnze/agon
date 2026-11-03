@@ -1,17 +1,20 @@
 mod agent_log_lines;
+mod agent_reading;
 mod claude_lines;
 mod claude_tool_results;
+mod json_texts;
 
 use agent_log_lines::{
-    Ending, any_agent, any_stream_json_line, any_unparsed_agent,
-    describe_claude_log, describe_log, error_line, has_content, init_line,
-    is_shortened_from, normal_line, reads_as_json, result_line, said_line,
+    Ending, any_agent, any_stream_json_line, describe_claude_log,
+    describe_log, error_line, has_content, init_line, is_shortened_from,
+    normal_line, result_line, said_line,
 };
 use claude_lines::{any_detail, assistant_line};
 use claude_tool_results::{
     ToolOutcome, any_tool_result_content, read_tool_result_text,
     tool_result_line,
 };
+use json_texts::reads_as_json;
 use proptest::prelude::*;
 use serde_json::{Value, json};
 
@@ -21,6 +24,24 @@ const FAILED_PREFIX: &str = "Failed: ";
 const SESSION_PREFIX: &str = "Agent started, session ";
 const FINISHED_TEXT: &str = "Finished";
 const UNKNOWN_TOOL_FAILURE: &str = "the tool failed";
+const READ_EVENT_TYPES: [&str; 16] = [
+    "system",
+    "assistant",
+    "user",
+    "result",
+    "thread.started",
+    "turn.started",
+    "turn.completed",
+    "turn.failed",
+    "item.started",
+    "item.updated",
+    "item.completed",
+    "error",
+    "init",
+    "message",
+    "tool_use",
+    "tool_result",
+];
 
 #[test]
 fn describes_a_realistic_claude_stream_as_readable_lines() {
@@ -190,10 +211,11 @@ proptest! {
 
     #[test]
     fn test_describe_agent_log_lines_property_unread_json_stays_out(
-        agent in any_unparsed_agent(),
+        agent in any_agent(),
         event_type in "[a-z_.]{1,16}",
         text in any::<String>(),
     ) {
+        prop_assume!(!READ_EVENT_TYPES.contains(&event_type.as_str()));
         let line = json!({"type": event_type, "text": text}).to_string();
 
         prop_assert_eq!(describe_log(agent, &line), Vec::new());

@@ -96,13 +96,6 @@ enum AppIconKind {
     ),
     IconPathShape('M8 11V8a4 4 0 0 1 8 0v3'),
   ]),
-  fingerprint(<IconShape>[
-    IconPathShape('M6.5 7.5a7 7 0 0 1 11.5 4'),
-    IconPathShape('M5.5 12v1.5'),
-    IconPathShape('M9 18.5a10 10 0 0 0 .8-4V12a2.2 2.2 0 0 1 4.4 0v1.5'),
-    IconPathShape('M8.6 9.6A4.8 4.8 0 0 1 16.8 13v1.5a14 14 0 0 1-.8 4.5'),
-    IconPathShape('M12 13v1.5a8 8 0 0 1-1.6 5'),
-  ]),
   terminal(<IconShape>[IconPathShape('m5 7 5 5-5 5M12 17h7')]),
   edit(<IconShape>[
     IconPathShape('M4 20h4L19 9l-4-4L4 16z'),

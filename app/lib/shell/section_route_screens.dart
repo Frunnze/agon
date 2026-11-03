@@ -25,7 +25,6 @@ Widget buildSectionScreen({
         taskRepository: dependencies.taskRepository,
         workflowRepository: dependencies.workflowRepository,
         deviceRepository: dependencies.deviceRepository,
-        biometricConfirmation: dependencies.biometricConfirmation,
         clock: dependencies.clock,
         navigation: navigation,
       );
@@ -35,6 +34,7 @@ Widget buildSectionScreen({
         workflowRepository: dependencies.workflowRepository,
         projectRepository: dependencies.projectRepository,
         deviceRepository: dependencies.deviceRepository,
+        approvalRepository: dependencies.approvalRepository,
         clock: dependencies.clock,
         navigation: navigation,
       );

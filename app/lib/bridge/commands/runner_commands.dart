@@ -36,16 +36,23 @@ final class PauseRunnerCommand implements NodeCommand<void> {
   void decodeReply(Object? okValue) => decodeNothing(okValue);
 }
 
-final class ChooseAgentPlaceCommand implements NodeCommand<void> {
-  const ChooseAgentPlaceCommand({required this.place});
+final class ChooseAgentOffersCommand implements NodeCommand<void> {
+  ChooseAgentOffersCommand({required List<AgentPlace> offers})
+    : offers = List<AgentPlace>.unmodifiable(offers);
 
-  final AgentPlace place;
-
-  @override
-  String get name => 'choose_agent_place';
+  final List<AgentPlace> offers;
 
   @override
-  JsonObject get arguments => <String, Object?>{'place': place.wireName};
+  String get name => 'choose_agent_offers';
+
+  @override
+  JsonObject get arguments {
+    return <String, Object?>{
+      'offers': <String>[
+        for (final AgentPlace offer in offers) offer.wireName,
+      ],
+    };
+  }
 
   @override
   void decodeReply(Object? okValue) => decodeNothing(okValue);

@@ -64,7 +64,7 @@ pub fn detect_runner_settings(facts: &HostFacts) -> RunnerSettings {
     RunnerSettings {
         labels: describe_labels(facts),
         slot_capacity,
-        sandbox: choose_sandbox(facts),
+        sandbox: SandboxSettings::LocalProcess,
         clone_url_template: None,
         passed_environment: Vec::new(),
     }
@@ -109,15 +109,6 @@ pub fn detect_container_sandbox(facts: &HostFacts) -> SandboxSettings {
         image: DEFAULT_CONTAINER_IMAGE.to_owned(),
         allowed_hosts: DEFAULT_ALLOWED_HOSTS.map(str::to_owned).to_vec(),
     }
-}
-
-fn choose_sandbox(facts: &HostFacts) -> SandboxSettings {
-    let has_engine = facts.programs_found.contains(DOCKER_PROGRAM)
-        || facts.programs_found.contains(PODMAN_PROGRAM);
-    if has_engine {
-        return detect_container_sandbox(facts);
-    }
-    SandboxSettings::LocalProcess
 }
 
 fn is_program_on_path(program: &str) -> bool {

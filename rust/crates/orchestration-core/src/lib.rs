@@ -1,6 +1,7 @@
 #![allow(clippy::missing_errors_doc)]
 
 pub mod agent_kind_label;
+pub mod agent_place;
 pub mod agents_markdown;
 pub mod approval;
 pub mod approval_policy;

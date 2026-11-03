@@ -178,7 +178,9 @@ final class RunnersView implements JsonEncodable {
     required List<RunnerView> runners,
     required this.thisDeviceProblem,
     required this.thisDeviceSettings,
-  }) : runners = List<RunnerView>.unmodifiable(runners);
+    required List<PlaceOffer>? thisDeviceOffers,
+  }) : runners = List<RunnerView>.unmodifiable(runners),
+       thisDeviceOffers = _freezeOffers(thisDeviceOffers);
 
   factory RunnersView.fromJson(Object? json) {
     final JsonObject fields = decodeObject(json);
@@ -196,6 +198,11 @@ final class RunnersView implements JsonEncodable {
         'this_device_settings',
         RunnerSettings.fromJson,
       ),
+      thisDeviceOffers: readOptionalField(
+        fields,
+        'this_device_offers',
+        _decodeOffers,
+      ),
     );
   }
 
@@ -204,6 +211,7 @@ final class RunnersView implements JsonEncodable {
   final List<RunnerView> runners;
   final String? thisDeviceProblem;
   final RunnerSettings? thisDeviceSettings;
+  final List<PlaceOffer>? thisDeviceOffers;
 
   @override
   JsonObject toJson() {
@@ -213,6 +221,45 @@ final class RunnersView implements JsonEncodable {
       'runners': encodeList(runners),
       'this_device_problem': thisDeviceProblem,
       'this_device_settings': thisDeviceSettings?.toJson(),
+      'this_device_offers': _encodeOffers(thisDeviceOffers),
     };
   }
+}
+
+final class PlaceOffer implements JsonEncodable {
+  const PlaceOffer({required this.place, required this.problem});
+
+  factory PlaceOffer.fromJson(Object? json) {
+    final JsonObject fields = decodeObject(json);
+    return PlaceOffer(
+      place: readField(fields, 'place', AgentPlace.decode),
+      problem: readOptionalField(fields, 'problem', decodeText),
+    );
+  }
+
+  final AgentPlace place;
+  final String? problem;
+
+  @override
+  JsonObject toJson() {
+    return <String, Object?>{'place': place.wireName, 'problem': problem};
+  }
+}
+
+List<PlaceOffer> _decodeOffers(Object? json) {
+  return decodeList(json, PlaceOffer.fromJson);
+}
+
+List<PlaceOffer>? _freezeOffers(List<PlaceOffer>? offers) {
+  if (offers == null) {
+    return null;
+  }
+  return List<PlaceOffer>.unmodifiable(offers);
+}
+
+Object? _encodeOffers(List<PlaceOffer>? offers) {
+  if (offers == null) {
+    return null;
+  }
+  return encodeList(offers);
 }

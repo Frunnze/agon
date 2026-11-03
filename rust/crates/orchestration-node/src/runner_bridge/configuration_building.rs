@@ -20,11 +20,16 @@ const RUNNER_LINK: RunnerLink = RunnerLink::Direct;
 
 pub fn build_runner_configuration(
     settings: &RunnerSettings,
+    offered_sandboxes: &[SandboxSettings],
     data_directory: &Path,
     process_environment: &BTreeMap<String, String>,
 ) -> Result<RunnerConfiguration, NodeError> {
     let agent_environment =
         pick_passed_environment(settings, process_environment)?;
+    let mut sandboxes = Vec::new();
+    for offered in offered_sandboxes {
+        sandboxes.push(describe_sandbox(offered, agent_environment.clone()));
+    }
     let worktree_roots = WorktreeRoots {
         cache_root: data_directory.join(REPOSITORY_CACHE_DIRECTORY_NAME),
         worktrees_root: data_directory.join(WORKTREES_FOLDER_NAME),
@@ -33,7 +38,7 @@ pub fn build_runner_configuration(
         labels: settings.labels.clone(),
         slot_capacity: settings.slot_capacity,
         link: RUNNER_LINK,
-        sandbox: describe_sandbox(&settings.sandbox, agent_environment),
+        sandboxes,
         worktree_roots,
         clone_source: describe_clone_source(settings)?,
         intervals: RunnerIntervals::standard(),

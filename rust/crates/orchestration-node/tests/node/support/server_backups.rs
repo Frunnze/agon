@@ -8,12 +8,17 @@ use super::test_device::{TestDevice, describe, read_text};
 use super::waiting::wait_for;
 
 pub const TAKEOVER_SECONDS: u64 = 3;
+const STEADY_TAKEOVER_SECONDS: u64 = 3600;
 pub const SYNC_LIMIT: Duration = Duration::from_secs(90);
 const STATE_FILE_PATH: &str = "hosted-app-server/state.json";
 const CLIENT_ROLE: &str = "client";
 
-pub fn start_backup_device() -> Result<TestDevice, String> {
+pub fn start_backup_ready_to_take_over() -> Result<TestDevice, String> {
     TestDevice::start_keeping(pick_free_port()?, TAKEOVER_SECONDS)
+}
+
+pub fn start_steady_backup_device() -> Result<TestDevice, String> {
+    TestDevice::start_keeping(pick_free_port()?, STEADY_TAKEOVER_SECONDS)
 }
 
 pub fn start_server_backup(device: &TestDevice) -> Result<Value, String> {

@@ -1,6 +1,7 @@
 use chrono::{DateTime, Utc, Weekday};
 use serde::{Deserialize, Serialize};
 
+use crate::agent_place::AgentPlace;
 use crate::approval::ApprovalPolicy;
 use crate::device::RunnerTarget;
 use crate::identifiers::{
@@ -55,10 +56,17 @@ pub struct Task {
     pub place: TaskPlace,
     pub doer: TaskDoer,
     pub runs_on: RunnerTarget,
+    #[serde(default = "place_of_tasks_saved_before_places")]
+    pub agent_place: Option<AgentPlace>,
     pub skills: Vec<SkillId>,
     pub uses_automatic_skills: bool,
     pub approval_policy: ApprovalPolicy,
     pub schedule: Option<Schedule>,
     pub status: TaskStatus,
     pub created_at: DateTime<Utc>,
+}
+
+#[allow(clippy::unnecessary_wraps)]
+const fn place_of_tasks_saved_before_places() -> Option<AgentPlace> {
+    Some(AgentPlace::LocalProcess)
 }

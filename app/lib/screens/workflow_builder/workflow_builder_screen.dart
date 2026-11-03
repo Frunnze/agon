@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import 'package:agent_orchestration/data/biometric_confirmation.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/workflow.dart';
 import 'package:agent_orchestration/data/repository/device_repository.dart';
@@ -31,7 +30,6 @@ class WorkflowBuilderScreen extends StatefulWidget {
     required this.deviceRepository,
     required this.runnerRepository,
     required this.skillRepository,
-    required this.biometricConfirmation,
     required this.navigation,
     super.key,
   });
@@ -43,7 +41,6 @@ class WorkflowBuilderScreen extends StatefulWidget {
   final DeviceRepository deviceRepository;
   final RunnerRepository runnerRepository;
   final SkillRepository skillRepository;
-  final BiometricConfirmation biometricConfirmation;
   final AppNavigation navigation;
 
   @override
@@ -253,13 +250,6 @@ class _WorkflowBuilderScreenState extends State<WorkflowBuilderScreen> {
     final String? problem = describeSigningProblem(workflow);
     setState(() => _notice = problem);
     if (problem != null) {
-      return;
-    }
-
-    final bool isConfirmed = await widget.biometricConfirmation.confirm(
-      reason: 'Sign ${workflow.name}',
-    );
-    if (!isConfirmed) {
       return;
     }
 

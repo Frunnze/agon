@@ -1,6 +1,7 @@
 use std::collections::BTreeMap;
 use std::path::Path;
 
+use orchestration_core::device::SandboxKind;
 use orchestration_node::runner_bridge::build_runner_configuration;
 use orchestration_node::runner_settings::{
     ContainerEngineChoice, RunnerSettings, SandboxSettings,
@@ -33,7 +34,52 @@ fn any_environment() -> impl Strategy<Value = BTreeMap<String, String>> {
     prop::collection::btree_map(any_variable_name(), "[ -~]{1,30}", 0..6)
 }
 
+fn any_offered_sandbox() -> impl Strategy<Value = SandboxSettings> {
+    prop_oneof![
+        Just(SandboxSettings::LocalProcess),
+        "[a-z]{1,8}:[a-z0-9]{1,4}".prop_map(|image| {
+            SandboxSettings::Container {
+                engine: ContainerEngineChoice::Podman,
+                image,
+                allowed_hosts: vec!["api.anthropic.com".to_owned()],
+            }
+        }),
+    ]
+}
+
+fn kind_of(sandbox: &SandboxSettings) -> SandboxKind {
+    match sandbox {
+        SandboxSettings::LocalProcess => SandboxKind::LocalProcess,
+        SandboxSettings::Container { .. } => SandboxKind::Container,
+    }
+}
+
 proptest! {
+    #[test]
+    fn test_build_runner_configuration_property_one_sandbox_per_offer(
+        offered in prop::collection::vec(any_offered_sandbox(), 1..3),
+    ) {
+        let settings = container_settings(Vec::new());
+
+        let configuration = build_runner_configuration(
+            &settings,
+            &offered,
+            Path::new(DATA_DIRECTORY),
+            &BTreeMap::new(),
+        );
+
+        let Ok(configuration) = configuration else {
+            return Err(TestCaseError::fail(format!("{configuration:?}")));
+        };
+        let kinds: Vec<SandboxKind> = configuration
+            .sandboxes
+            .iter()
+            .map(|sandbox| sandbox.kind)
+            .collect();
+        let expected: Vec<SandboxKind> = offered.iter().map(kind_of).collect();
+        prop_assert_eq!(kinds, expected);
+    }
+
     #[test]
     fn test_build_runner_configuration_property_passes_named_variables(
         process_environment in any_environment(),
@@ -48,6 +94,7 @@ proptest! {
 
         let configuration = build_runner_configuration(
             &settings,
+            std::slice::from_ref(&settings.sandbox),
             Path::new(DATA_DIRECTORY),
             &process_environment,
         );
@@ -55,8 +102,9 @@ proptest! {
         let Ok(configuration) = configuration else {
             return Err(TestCaseError::fail(format!("{configuration:?}")));
         };
-        let agent_environment = configuration.sandbox.environment;
-        prop_assert_eq!(agent_environment, process_environment);
+        for sandbox in configuration.sandboxes {
+            prop_assert_eq!(&sandbox.environment, &process_environment);
+        }
     }
 
     #[test]
@@ -70,6 +118,7 @@ proptest! {
 
         let configuration = build_runner_configuration(
             &settings,
+            std::slice::from_ref(&settings.sandbox),
             Path::new(DATA_DIRECTORY),
             &process_environment,
         );
@@ -96,6 +145,7 @@ fn runner_settings_without_passed_environment_pass_nothing() {
 
     let configuration = build_runner_configuration(
         &settings,
+        std::slice::from_ref(&settings.sandbox),
         Path::new(DATA_DIRECTORY),
         &BTreeMap::new(),
     );
@@ -103,5 +153,6 @@ fn runner_settings_without_passed_environment_pass_nothing() {
     let Ok(configuration) = configuration else {
         panic!("the configuration builds: {configuration:?}");
     };
-    assert!(configuration.sandbox.environment.is_empty());
+    assert_eq!(configuration.sandboxes.len(), 1);
+    assert!(configuration.sandboxes[0].environment.is_empty());
 }

@@ -1,7 +1,5 @@
-import 'package:agent_orchestration/data/models/runner.dart';
 import 'package:agent_orchestration/widgets/mixed_text.dart';
 
-const TextSegment _notLimitedSegment = TextSegment('Not limited');
 const TextSegment _nothingElseSegment = TextSegment('. Nothing else.');
 
 final RegExp _hostNamePattern = RegExp(
@@ -50,14 +48,7 @@ List<TextSegment> describeReachableHosts(List<String> hosts) {
   return segments;
 }
 
-List<TextSegment> describeNetworkAccess({
-  required SandboxKind sandbox,
-  required List<String> allowedHosts,
-}) {
-  if (sandbox == SandboxKind.localProcess) {
-    return const <TextSegment>[_notLimitedSegment];
-  }
-
+List<TextSegment> describeContainerNetwork(List<String> allowedHosts) {
   return <TextSegment>[
     ...describeReachableHosts(allowedHosts),
     _nothingElseSegment,

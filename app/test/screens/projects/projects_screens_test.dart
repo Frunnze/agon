@@ -32,7 +32,7 @@ const List<String> _galleryProjectTexts = <String>[
   'acme-app',
   'acme/app, acme/api',
   '2 repos',
-  '3 tasks',
+  '4 tasks',
   '1 task running',
   'ml-ranker',
   'acme/ranker',
@@ -54,7 +54,7 @@ const List<String> _switcherTexts = <String>[
 ];
 const List<String> _projectPageTexts = <String>[
   'acme-app',
-  '2 repos · 3 tasks',
+  '2 repos · 4 tasks',
   'Browse files',
   'Add repo',
   'acme/app',

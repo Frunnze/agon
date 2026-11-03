@@ -4,24 +4,27 @@ use std::time::{Duration, Instant};
 
 use tokio::runtime::Runtime;
 
+use super::agent_placing::find_settings_place;
 use super::credential_passing::choose_container_credential;
 use super::host_detection::{detect_runner_settings, read_host_facts};
-use super::image_check::{describe_image_problem, probe_local_image};
+use super::image_check::probe_local_image;
 use super::node_runner_server::NodeRunnerServer;
+use super::offer_checks::check_offers;
 use super::prepared_runner::PreparedRunner;
 use super::runner_handle::RunnerHandle;
 use crate::agent_credentials::AgentCredential;
 use crate::device_roles::can_run_tasks;
 use crate::node::Node;
 use crate::node_error::NodeError;
-use crate::runner_settings::{RunnerChoice, RunnerSettings};
+use crate::place_offers::PlaceOffer;
+use crate::runner_settings::{RunnerChoice, SandboxSettings};
 use crate::runner_state::RunnerState;
 
 const IMAGE_RECHECK_INTERVAL: Duration = Duration::from_secs(10);
 
 #[derive(Debug)]
 struct RunningRunner {
-    settings: RunnerSettings,
+    working_sandboxes: Vec<SandboxSettings>,
     container_credential: Option<AgentCredential>,
     handle: RunnerHandle,
 }
@@ -73,29 +76,46 @@ impl RunnerLauncher {
             return Ok(());
         }
 
-        let settings = prepared.choose_settings(node.runner_state());
-        let container_credential = choose_container_credential(
-            &settings.sandbox,
+        let runner_state = node.runner_state();
+        runner_state.record_settings(prepared.starting_settings.clone());
+        let offered = prepared.choose_offered_sandboxes(runner_state);
+        let credential = choose_container_credential(
+            &offered,
             node.agent_credentials().current(),
         );
+        let offers_changed = have_offers_changed(runner_state, &offered);
+
         let mut running_runner = self.lock_runner();
-        if let Some(running) = running_runner.as_ref()
-            && running.settings == settings
-            && running.container_credential == container_credential
+        let running = running_runner.as_ref();
+        let credential_changed = running
+            .is_some_and(|running| running.container_credential != credential);
+        if offers_changed || credential_changed {
+            *self.lock_last_image_check() = None;
+        }
+        let runs_every_offer =
+            is_running(running, &offered, credential.as_ref());
+        if (runs_every_offer && !offers_changed) || !self.is_image_check_due()
         {
+            return Ok(());
+        }
+
+        let checked_offers = check_offers(&offered, probe_local_image);
+        let working_sandboxes = keep_working(&offered, &checked_offers);
+        runner_state.record_checked_offers(checked_offers);
+        let running = running_runner.as_ref();
+        if is_running(running, &working_sandboxes, credential.as_ref()) {
             return Ok(());
         }
         if let Some(previous) = running_runner.take() {
             previous.handle.stop(runtime);
         }
-        self.record_settings(node.runner_state(), &settings);
-        if !self.passes_due_image_check(node.runner_state(), &settings) {
+        if working_sandboxes.is_empty() {
             return Ok(());
         }
 
         let configuration = prepared.configure_for_device(
-            &settings,
-            container_credential.as_ref(),
+            &working_sandboxes,
+            credential.as_ref(),
             account.device.id,
         )?;
         let endpoint = Arc::clone(&node.peer_side()?.endpoint);
@@ -103,8 +123,8 @@ impl RunnerLauncher {
         let handle =
             RunnerHandle::start(runtime, endpoint, server, configuration);
         *running_runner = Some(RunningRunner {
-            settings,
-            container_credential,
+            working_sandboxes,
+            container_credential: credential,
             handle,
         });
         Ok(())
@@ -119,34 +139,6 @@ impl RunnerLauncher {
         if let Some(running) = running_runner {
             running.handle.stop(runtime);
         }
-    }
-
-    fn record_settings(
-        &self,
-        runner_state: &RunnerState,
-        settings: &RunnerSettings,
-    ) {
-        let in_effect = runner_state.settings_in_effect();
-        if in_effect.as_ref() == Some(settings) {
-            return;
-        }
-        runner_state.record_settings(settings.clone());
-        *self.lock_last_image_check() = None;
-    }
-
-    fn passes_due_image_check(
-        &self,
-        runner_state: &RunnerState,
-        settings: &RunnerSettings,
-    ) -> bool {
-        if !self.is_image_check_due() {
-            return false;
-        }
-        let image_problem =
-            describe_image_problem(&settings.sandbox, probe_local_image);
-        let passes = image_problem.is_none();
-        runner_state.record_problem(image_problem);
-        passes
     }
 
     fn is_image_check_due(&self) -> bool {
@@ -172,4 +164,43 @@ impl RunnerLauncher {
             .lock()
             .unwrap_or_else(PoisonError::into_inner)
     }
+}
+
+fn keep_working(
+    offered: &[SandboxSettings],
+    checked_offers: &[PlaceOffer],
+) -> Vec<SandboxSettings> {
+    let mut working_sandboxes = Vec::new();
+    for (sandbox, checked_offer) in offered.iter().zip(checked_offers) {
+        if checked_offer.problem.is_none() {
+            working_sandboxes.push(sandbox.clone());
+        }
+    }
+    working_sandboxes
+}
+
+fn have_offers_changed(
+    runner_state: &RunnerState,
+    offered: &[SandboxSettings],
+) -> bool {
+    let mut checked_places = Vec::new();
+    for checked_offer in runner_state.checked_offers() {
+        checked_places.push(checked_offer.place);
+    }
+    let mut offered_places = Vec::new();
+    for sandbox in offered {
+        offered_places.push(find_settings_place(sandbox));
+    }
+    checked_places != offered_places
+}
+
+fn is_running(
+    running: Option<&RunningRunner>,
+    sandboxes: &[SandboxSettings],
+    container_credential: Option<&AgentCredential>,
+) -> bool {
+    running.is_some_and(|running| {
+        running.working_sandboxes == sandboxes
+            && running.container_credential.as_ref() == container_credential
+    })
 }

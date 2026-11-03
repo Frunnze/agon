@@ -29,7 +29,7 @@ FakeDeviceRepository buildGalleryDeviceRepository() {
 FakeRunnerRepository _buildGalleryRunnerRepository() {
   return FakeRunnerRepository(
     runners: galleryRunners,
-    thisAgentPlace: null,
+    thisDeviceOffers: null,
     thisRunnerProblem: null,
   );
 }
@@ -173,7 +173,7 @@ void main() {
   });
 
   test(
-    'test_choose_agent_place_property_fake_shows_the_chosen_place',
+    'test_choose_agent_offers_property_fake_shows_the_chosen_offers',
     () async {
       final Random random = seededRandom(811);
 
@@ -181,29 +181,44 @@ void main() {
         final String problem = 'blocked ${randomText(random)}';
         final FakeRunnerRepository repository = FakeRunnerRepository(
           runners: galleryRunners,
-          thisAgentPlace: pickOne(random, AgentPlace.values),
+          thisDeviceOffers: <PlaceOffer>[
+            PlaceOffer(place: AgentPlace.container, problem: problem),
+          ],
           thisRunnerProblem: problem,
         );
-        final AgentPlace place = pickOne(random, AgentPlace.values);
+        final List<AgentPlace> chosen = <AgentPlace>[
+          for (final AgentPlace place in AgentPlace.values)
+            if (random.nextBool()) place,
+        ];
+        if (chosen.isEmpty) {
+          chosen.add(AgentPlace.container);
+        }
 
-        await repository.chooseAgentPlace(place);
+        await repository.chooseAgentOffers(chosen);
 
-        expect(repository.findThisAgentPlace(), place);
-        final String? expectedProblem = place == AgentPlace.localProcess
-            ? null
-            : problem;
+        final List<PlaceOffer> expectedOffers = <PlaceOffer>[
+          for (final AgentPlace place in chosen)
+            PlaceOffer(
+              place: place,
+              problem: place == AgentPlace.container ? problem : null,
+            ),
+        ];
+        expect(repository.findThisDeviceOffers(), expectedOffers);
+        final String? expectedProblem =
+            chosen.contains(AgentPlace.localProcess) ? null : problem;
         expect(repository.findThisRunnerProblem(), expectedProblem);
       }
     },
   );
 
-  test('test_choose_agent_place_property_fake_without_agents_refuses', () {
+  test('test_choose_agent_offers_property_fake_without_agents_refuses', () {
     final Random random = seededRandom(812);
     final FakeRunnerRepository repository = _buildGalleryRunnerRepository();
 
     for (int i = 0; i < propertyIterations; i += 1) {
+      final AgentPlace place = pickOne(random, AgentPlace.values);
       expect(
-        repository.chooseAgentPlace(pickOne(random, AgentPlace.values)),
+        repository.chooseAgentOffers(<AgentPlace>[place]),
         throwsA(isA<StateError>()),
       );
     }

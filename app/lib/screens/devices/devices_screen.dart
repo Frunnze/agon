@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/widgets.dart';
 
-import 'package:agent_orchestration/data/biometric_confirmation.dart';
 import 'package:agent_orchestration/data/clock.dart';
 import 'package:agent_orchestration/data/models/device.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
@@ -42,7 +41,6 @@ class DevicesScreen extends StatelessWidget {
     required this.pairingRepository,
     required this.workspaceRepository,
     required this.projectRepository,
-    required this.biometricConfirmation,
     required this.clock,
     required this.navigation,
     super.key,
@@ -52,7 +50,6 @@ class DevicesScreen extends StatelessWidget {
   final PairingRepository pairingRepository;
   final WorkspaceRepository workspaceRepository;
   final ProjectRepository projectRepository;
-  final BiometricConfirmation biometricConfirmation;
   final Clock clock;
   final AppNavigation navigation;
 
@@ -135,7 +132,13 @@ class DevicesScreen extends StatelessWidget {
       meta: <Widget>[
         Text(device.role.label),
         Text(workspaceNames),
-        Text(describeLastSeen(device.lastSeen, clock.now())),
+        Text(
+          describeDeviceLastSeen(
+            device: device,
+            thisDeviceId: currentDeviceId,
+            now: clock.now(),
+          ),
+        ),
       ],
       end: device.id == currentDeviceId
           ? null
@@ -162,18 +165,12 @@ class DevicesScreen extends StatelessWidget {
           device,
           DeviceNames(deviceRepository.listDevices()),
         ),
-        confirmationMethod: biometricConfirmation.methodName,
       ),
     );
     if (choice != RevokeChoice.revoke) {
       return;
     }
 
-    final bool isConfirmed = await biometricConfirmation.confirm(
-      reason: 'Revoke ${device.name}',
-    );
-    if (isConfirmed) {
-      await deviceRepository.revokeDevice(device.id);
-    }
+    await deviceRepository.revokeDevice(device.id);
   }
 }

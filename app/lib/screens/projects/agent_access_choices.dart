@@ -12,9 +12,7 @@ String describeAgentAccessChoiceTitle(AgentAccess access) {
   }
 }
 
-List<ChoiceOption<AgentAccess>> buildAgentAccessChoices({
-  required String confirmationMethodName,
-}) {
+List<ChoiceOption<AgentAccess>> buildAgentAccessChoices() {
   return <ChoiceOption<AgentAccess>>[
     ChoiceOption<AgentAccess>(
       value: AgentAccess.readOnly,
@@ -25,9 +23,7 @@ List<ChoiceOption<AgentAccess>> buildAgentAccessChoices({
     ChoiceOption<AgentAccess>(
       value: AgentAccess.pushAfterApproval,
       title: describeAgentAccessChoiceTitle(AgentAccess.pushAfterApproval),
-      detail:
-          'The hub pushes for the agent after you approve with '
-          '$confirmationMethodName.',
+      detail: 'The hub pushes for the agent after you approve.',
     ),
   ];
 }

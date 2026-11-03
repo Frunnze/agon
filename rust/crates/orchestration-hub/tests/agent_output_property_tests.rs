@@ -1,9 +1,10 @@
+mod agent_reading;
 mod claude_lines;
 
+use agent_reading::parse_agent_line;
 use claude_lines::{any_detail, assistant_line, parse_claude};
 use orchestration_core::workflow::AgentKind;
 use orchestration_hub::agent_event::AgentEvent;
-use orchestration_hub::agent_output::parse_agent_line;
 use proptest::prelude::*;
 use serde_json::{Value, json};
 
@@ -61,23 +62,6 @@ proptest! {
     ) {
         prop_assume!(!is_json_object(&line));
 
-        let events = parse_agent_line(agent, &line);
-
-        let expected = AgentEvent::Said(line.trim_end().to_string());
-        prop_assert_eq!(events, vec![expected]);
-    }
-
-    #[test]
-    fn test_parse_agent_line_property_codex_and_gemini_lines_are_said(
-        agent in prop_oneof![
-            Just(AgentKind::Codex),
-            Just(AgentKind::GeminiCli),
-        ],
-        line in prop_oneof![
-            any_non_blank_text(),
-            Just(r#"{"type":"result","subtype":"success"}"#.to_string()),
-        ],
-    ) {
         let events = parse_agent_line(agent, &line);
 
         let expected = AgentEvent::Said(line.trim_end().to_string());

@@ -76,7 +76,7 @@ proptest! {
     #![proptest_config(ProptestConfig::with_cases(WORKSPACE_RUN_CASES))]
 
     #[test]
-    fn test_execute_property_a_workspace_run_stays_in_an_empty_folder(
+    fn test_execute_property_a_workspace_run_leaves_no_folder_behind(
         instruction in proptest::sample::select(AGENT_INSTRUCTIONS.to_vec()),
     ) {
         let report = run_in_workspace(instruction).map_err(to_case_error)?;
@@ -91,8 +91,10 @@ proptest! {
             .canonicalize()
             .map_err(to_case_error)?;
         prop_assert!(working_folder.starts_with(&worktrees_root));
-        let entries = fs::read_dir(working_folder).map_err(to_case_error)?;
-        prop_assert_eq!(entries.count(), 0);
+        prop_assert!(!working_folder.exists());
+        let left_folders =
+            fs::read_dir(&worktrees_root).map_err(to_case_error)?;
+        prop_assert_eq!(left_folders.count(), 0);
         prop_assert!(!report.folders.cache_root.exists());
     }
 }

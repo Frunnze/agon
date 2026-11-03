@@ -1,5 +1,6 @@
 export 'settings/add_workspace_device_dialog.dart';
-export 'settings/agent_place_section.dart';
+export 'settings/agent_login_section.dart';
+export 'settings/agent_offers_section.dart';
 export 'settings/app_server_section.dart';
 export 'settings/audit_log_tab.dart';
 export 'settings/general_settings_tab.dart';

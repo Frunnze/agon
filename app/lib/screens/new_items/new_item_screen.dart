@@ -6,7 +6,6 @@ import 'package:agent_orchestration/data/folder_picker.dart';
 import 'package:agent_orchestration/data/models/item_draft.dart';
 import 'package:agent_orchestration/data/models/project.dart';
 import 'package:agent_orchestration/data/models/runner.dart';
-import 'package:agent_orchestration/presentation/device_names.dart';
 import 'package:agent_orchestration/presentation/problem_text.dart';
 import 'package:agent_orchestration/screens/new_items/chosen_folders.dart';
 import 'package:agent_orchestration/screens/new_items/draft_review.dart';
@@ -123,16 +122,13 @@ class _NewItemScreenState extends State<NewItemScreen> {
     return ItemDraftingView(
       texts: _texts,
       wish: request.wish,
-      state: DraftingState(
-        drafterText: describeItemDrafter(
-          running: _running,
-          deviceNames: DeviceNames(
-            widget.sources.deviceRepository.listDevices(),
-          ),
-        ),
+      state: describeDraftingState(
+        running: _running,
         draftProblem: _draftProblem,
         stopProblem: _stopProblem,
         returnLabel: returnLabel,
+        deviceRepository: widget.sources.deviceRepository,
+        navigation: widget.navigation,
       ),
       onStop: () => unawaited(_stopDrafting(afterStopping: _leaveDrafting)),
       onFillForm: _openForm,

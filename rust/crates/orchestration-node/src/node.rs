@@ -6,6 +6,7 @@ use std::sync::{Arc, Mutex, MutexGuard, OnceLock, PoisonError, RwLock};
 use std::time::Duration;
 
 use orchestration_api::accounts::AccountView;
+use orchestration_core::agent_place::AgentPlace;
 use orchestration_security::identity::DeviceIdentity;
 use orchestration_security::peer_addresses::{
     PeerSecret, generate_peer_secret,
@@ -24,7 +25,7 @@ use crate::identity_store::{IdentityStore, open_identity_store};
 use crate::node_configuration::{NodeConfiguration, PeerRelayChoice};
 use crate::node_error::NodeError;
 use crate::peer_side::PeerSide;
-use crate::runner_settings::AgentPlace;
+use crate::place_offers::normalize_offers;
 use crate::runner_state::RunnerState;
 use crate::server_address::ServerAddress;
 use crate::server_client::{PeerDialer, ServerClient, SignedServerClient};
@@ -82,7 +83,7 @@ impl Node {
         let server_dialer = Arc::new(PeerDialer::new(relay_choice));
         let app_server =
             connect_recorded_server(&device_files, &server_dialer, None)?;
-        let runner_state = RunnerState::new(device_files.load_agent_place()?);
+        let runner_state = RunnerState::new(device_files.load_agent_offers()?);
         Ok(Self {
             identity_store,
             agent_credentials,
@@ -217,15 +218,19 @@ impl Node {
         &self.runner_state
     }
 
-    pub fn choose_agent_place(
+    pub fn choose_agent_offers(
         &self,
-        place: AgentPlace,
+        offers: &[AgentPlace],
     ) -> Result<(), NodeError> {
         if self.runner_state.settings_in_effect().is_none() {
             return Err(NodeError::RunnerUnavailable);
         }
-        self.device_files.save_agent_place(place)?;
-        self.runner_state.remember_chosen_place(place);
+        if offers.is_empty() {
+            return Err(NodeError::NoAgentOffers);
+        }
+        let normalized_offers = normalize_offers(offers);
+        self.device_files.save_agent_offers(&normalized_offers)?;
+        self.runner_state.remember_chosen_offers(normalized_offers);
         Ok(())
     }
 

@@ -12,9 +12,10 @@ import '../../support/app_harness.dart';
 import '../../support/builder_harness.dart';
 import '../../support/form_finders.dart';
 
-const String _approvalHint =
-    'On: it stops and asks you before it pushes, deploys or deletes. Off: '
-    'it never asks.';
+const String _askHint = 'It asks you before each command and each push.';
+const String _autoHint =
+    'It runs commands and pushes without asking, and refuses risky '
+    'commands. In Docker it can run anything.';
 const String _draftedNote =
     'Check each agent before you sign. Change anything by hand: drag between '
     'dots, add agents, or edit the settings.';
@@ -50,8 +51,11 @@ const List<String> _settingsTexts = <String>[
   'Skills to use',
   'ios-release',
   'Also let the agent pick automatic skills',
+  'Commands',
   'Ask for approval',
-  _approvalHint,
+  _askHint,
+  'Auto',
+  _autoHint,
   'Remove agent',
 ];
 
@@ -145,7 +149,7 @@ void main() {
     expect(find.text('Another agent has this name'), findsOneWidget);
 
     await enterFieldText(tester, label: 'Task', text: 'Build the iOS app.');
-    await tapVisible(tester, find.text('Ask for approval'));
+    await tapVisible(tester, find.text('Auto'));
     await tester.pump();
     await tapVisible(
       tester,

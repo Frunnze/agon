@@ -16,13 +16,12 @@ import 'package:agent_orchestration/shell/app_section.dart';
 
 import '../support/app_harness.dart';
 import '../support/random_inputs.dart';
-import '../support/recording_biometric_confirmation.dart';
 
 const ApprovalId _runlessApprovalId = ApprovalId('runless-approval');
 const SectionRoute _approvalsRoute = SectionRoute(AppSection.approvals);
 const Map<ApprovalDecision, String> _decisionButtons =
     <ApprovalDecision, String>{
-      ApprovalDecision.approved: 'Approve with Touch ID',
+      ApprovalDecision.approved: 'Approve',
       ApprovalDecision.denied: 'Deny',
     };
 
@@ -44,10 +43,7 @@ ApprovalAction _randomRunlessAction(Random random) {
   }
 }
 
-AppDependencies _buildDependencies({
-  required ApprovalAction action,
-  required RecordingBiometricConfirmation confirmation,
-}) {
+AppDependencies _buildDependencies({required ApprovalAction action}) {
   final AppDependencies base = buildGalleryDependencies();
   final ApprovalRequest runless = ApprovalRequest(
     id: _runlessApprovalId,
@@ -65,12 +61,11 @@ AppDependencies _buildDependencies({
       clock: base.clock,
       currentDeviceId: GalleryDeviceIds.airLaptop,
     ),
-    biometricConfirmation: confirmation,
   );
 }
 
 void main() {
-  testWidgets('test_review_approval_property_runless_ones_open_the_dialog', (
+  testWidgets('test_review_approval_property_runless_one_tap_decides', (
     WidgetTester tester,
   ) async {
     final Random random = seededRandom(10021);
@@ -80,12 +75,7 @@ void main() {
         random,
         ApprovalDecision.values,
       );
-      final RecordingBiometricConfirmation confirmation =
-          RecordingBiometricConfirmation(answer: random.nextBool());
-      final AppDependencies dependencies = _buildDependencies(
-        action: action,
-        confirmation: confirmation,
-      );
+      final AppDependencies dependencies = _buildDependencies(action: action);
       await tester.pumpWidget(const SizedBox.shrink());
       await pumpApp(
         tester,
@@ -104,17 +94,8 @@ void main() {
 
       final ApprovalRequest request = dependencies.approvalRepository
           .findApproval(_runlessApprovalId);
-      expect(confirmation.askedReasons, <String>[
-        describeDecisionReason(
-          decision: decision,
-          action: action,
-          workflows: galleryWorkflows,
-        ),
-      ]);
-      expect(request.isPending, !confirmation.answer);
-      if (confirmation.answer) {
-        expect(request.decision?.decision, decision);
-      }
+      expect(request.decision?.decision, decision);
+      expect(find.text('Asked by'), findsNothing);
     }
   });
 
@@ -127,7 +108,6 @@ void main() {
       route: _approvalsRoute,
       dependencies: _buildDependencies(
         action: const DeployAction(target: 'production'),
-        confirmation: RecordingBiometricConfirmation(answer: true),
       ),
     );
 

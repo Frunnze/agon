@@ -7,10 +7,10 @@ use orchestration_api::routes::{ACCOUNTS, PROJECTS, RUNNER_HEARTBEAT, TASKS};
 use orchestration_api::work::{
     HeartbeatRequest, SaveTaskRequest, TaskSaved, TaskStart,
 };
+use orchestration_core::agent_place::AgentPlace;
 use orchestration_core::approval::ApprovalPolicy;
 use orchestration_core::device::{
     Device, DeviceRole, HardwareKeyKind, Runner, RunnerLink, RunnerTarget,
-    SandboxKind,
 };
 use orchestration_core::identifiers::{ProjectId, TaskId, WorkspaceId};
 use orchestration_core::task::{
@@ -145,6 +145,7 @@ pub fn one_agent_task(
             agent: AgentKind::ClaudeCode,
         },
         runs_on,
+        agent_place: Some(AgentPlace::LocalProcess),
         skills: Vec::new(),
         uses_automatic_skills: true,
         approval_policy: ApprovalPolicy::AskBeforeRiskyActions,
@@ -164,6 +165,7 @@ pub fn workspace_task(workspace_id: WorkspaceId) -> Task {
         one_agent_task(unplaced_project_id, RunnerTarget::AnyFreeRunner, None);
     Task {
         place: TaskPlace::InWorkspace { workspace_id },
+        agent_place: None,
         ..project_task
     }
 }
@@ -190,9 +192,10 @@ pub fn heartbeat_with(
         slots_total,
         slots_busy,
         link: RunnerLink::Direct,
-        sandbox: SandboxKind::Container,
+        offers: vec![AgentPlace::Container, AgentPlace::LocalProcess],
         allowed_hosts: vec!["api.anthropic.com".to_owned()],
         cached_repositories: Vec::new(),
+        held_tasks: Vec::new(),
     }
 }
 

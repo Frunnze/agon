@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:agent_orchestration/data/models/approval.dart';
 import 'package:agent_orchestration/data/models/workflow.dart';
 import 'package:agent_orchestration/data/rules/local_folder_address.dart';
-import 'package:agent_orchestration/icons/app_icon_kind.dart';
 import 'package:agent_orchestration/presentation/identifier_text.dart';
 import 'package:agent_orchestration/screens/approvals/approval_text.dart';
 import 'package:agent_orchestration/widgets/app_button.dart';
@@ -34,7 +33,6 @@ class ApprovalDialog extends StatelessWidget {
     required this.runLabel,
     required this.askedBy,
     required this.workflows,
-    required this.confirmationMethod,
     required this.deviceNames,
     super.key,
   });
@@ -43,7 +41,6 @@ class ApprovalDialog extends StatelessWidget {
   final String? runLabel;
   final String askedBy;
   final List<Workflow> workflows;
-  final String confirmationMethod;
   final DeviceNames deviceNames;
 
   @override
@@ -99,11 +96,37 @@ class ApprovalDialog extends StatelessWidget {
       );
     }
 
+    if (action is RunCommandAction) {
+      return _buildCommandDialog(context, action, askedByFact);
+    }
+
     return AppDialog(
       title: '${describeApprovalTitle(action, workflows)}?',
       content: <Widget>[
         Text(describeActionRequest(runLabel: runLabel)),
         FactList(facts: <Fact>[askedByFact]),
+      ],
+      actions: _buildDecisionButtons(context),
+    );
+  }
+
+  Widget _buildCommandDialog(
+    BuildContext context,
+    RunCommandAction action,
+    Fact askedByFact,
+  ) {
+    final String request = describeToolUseRequest(
+      runLabel: runLabel,
+      tool: action.tool,
+    );
+
+    return AppDialog(
+      title: '${describeToolUse(action.tool)}?',
+      content: <Widget>[
+        Text(request),
+        FactList(facts: <Fact>[askedByFact]),
+        CodeBlock(lines: <CodeBlockLine>[CodeBlockLine(action.command)]),
+        const DialogNote('The run waits until you decide.'),
       ],
       actions: _buildDecisionButtons(context),
     );
@@ -118,8 +141,7 @@ class ApprovalDialog extends StatelessWidget {
         onPressed: () => navigator.pop(ApprovalDecision.denied),
       ),
       AppButton.primary(
-        label: 'Approve with $confirmationMethod',
-        icon: AppIconKind.fingerprint,
+        label: 'Approve',
         onPressed: () => navigator.pop(ApprovalDecision.approved),
       ),
     ];

@@ -1,6 +1,8 @@
+mod agent_reading;
+
+use agent_reading::parse_agent_line;
 use orchestration_core::workflow::AgentKind;
 use orchestration_hub::agent_event::AgentEvent;
-use orchestration_hub::agent_output::parse_agent_line;
 
 const CLAUDE_STREAM: &str = include_str!("fixtures/claude_stream.jsonl");
 

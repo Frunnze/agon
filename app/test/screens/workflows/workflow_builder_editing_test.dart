@@ -11,7 +11,6 @@ import 'package:agent_orchestration/shell/app_route.dart';
 import '../../support/app_harness.dart';
 import '../../support/builder_harness.dart';
 import '../../support/form_finders.dart';
-import '../../support/refusing_biometric_confirmation.dart';
 
 const String _askHint = 'Ask the agent, e.g. add a test step after ios';
 
@@ -140,17 +139,14 @@ void main() {
     expect(moved.vertical, closeTo(start.vertical + 40, 1));
   });
 
-  testWidgets('sign and save needs a complete workflow and Touch ID', (
+  testWidgets('sign and save signs a complete workflow in one tap', (
     WidgetTester tester,
   ) async {
-    final AppDependencies refusing = replaceRepositories(
-      buildGalleryDependencies(),
-      biometricConfirmation: const RefusingBiometricConfirmation(),
-    );
-    await openPipelineBuilder(
+    final AppDependencies dependencies = buildGalleryDependencies();
+    final AppNavigation navigation = await openPipelineBuilder(
       tester,
       size: tallDesktopSize,
-      dependencies: refusing,
+      dependencies: dependencies,
     );
     await tester.tap(find.text('Add agent'));
     await pumpFrames(tester);
@@ -158,23 +154,14 @@ void main() {
     await tester.tap(find.text('Sign and save'));
     await pumpFrames(tester);
     expect(find.text('Choose an agent for new-agent'), findsOneWidget);
+    expect(readPipeline(dependencies).signature, isNull);
 
     await tapVisible(tester, find.text('Remove agent'));
     await pumpFrames(tester);
     await tester.tap(find.text('Sign and save'));
     await pumpFrames(tester);
-    expect(readPipeline(refusing).signature, isNull);
 
-    final AppDependencies approving = buildGalleryDependencies();
-    final AppNavigation navigation = await openPipelineBuilder(
-      tester,
-      size: tallDesktopSize,
-      dependencies: approving,
-    );
-    await tester.tap(find.text('Sign and save'));
-    await pumpFrames(tester);
-
-    expect(readPipeline(approving).signature, isNotNull);
+    expect(readPipeline(dependencies).signature, isNotNull);
     expect(navigation.routes, <AppRoute>[workflowsSectionRoute]);
     expect(find.text('Not signed yet'), findsNothing);
   });

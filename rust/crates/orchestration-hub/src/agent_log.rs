@@ -1,6 +1,5 @@
-use serde_json::Value;
-
 use crate::agent_event::AgentEvent;
+use crate::json_lines::reads_as_json;
 use crate::terminal_text::strip_terminal_control_sequences;
 use crate::text_shortening::shorten_to_characters;
 
@@ -79,11 +78,6 @@ fn shorten_readable_text(text: &str) -> Option<String> {
 fn join_words(text: &str) -> String {
     let words: Vec<&str> = text.split_whitespace().collect();
     words.join(WORD_SEPARATOR)
-}
-
-fn reads_as_json(text: &str) -> bool {
-    let parsed = serde_json::from_str::<Value>(text);
-    parsed.is_ok_and(|value| value.is_object() || value.is_array())
 }
 
 fn normal_line(text: String) -> AgentLogLine {

@@ -1,6 +1,7 @@
 import 'package:agent_orchestration/bridge/codecs/device_values.dart' as node;
 import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/runner.dart';
+import 'package:agent_orchestration/data/node_backed/mapping/agent_place_mapping.dart';
 
 RunnerTarget mapRunnerTargetFromNode(node.RunnerTarget target) {
   return switch (target) {
@@ -33,14 +34,6 @@ RunnerLink mapRunnerLinkFromNode(node.RunnerLink link) {
   };
 }
 
-SandboxKind mapSandboxKindFromNode(node.SandboxKind kind) {
-  return switch (kind) {
-    node.SandboxKind.container => SandboxKind.container,
-    node.SandboxKind.microVirtualMachine => SandboxKind.microVirtualMachine,
-    node.SandboxKind.localProcess => SandboxKind.localProcess,
-  };
-}
-
 Runner mapRunnerFromNode(node.Runner runner) {
   return Runner(
     deviceId: runner.deviceId,
@@ -50,7 +43,7 @@ Runner mapRunnerFromNode(node.Runner runner) {
     link: mapRunnerLinkFromNode(runner.link),
     online: runner.online,
     acceptingNewRuns: runner.acceptingNewRuns,
-    sandbox: mapSandboxKindFromNode(runner.sandbox),
+    offers: mapAgentPlacesFromNode(runner.offers),
     allowedHosts: runner.allowedHosts,
   );
 }

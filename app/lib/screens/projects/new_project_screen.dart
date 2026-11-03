@@ -40,7 +40,6 @@ class NewProjectScreen extends StatefulWidget {
     required this.workspaceRepository,
     required this.deviceRepository,
     required this.folderPicker,
-    required this.confirmationMethodName,
     required this.navigation,
     super.key,
   });
@@ -49,7 +48,6 @@ class NewProjectScreen extends StatefulWidget {
   final WorkspaceRepository workspaceRepository;
   final DeviceRepository deviceRepository;
   final FolderPicker? folderPicker;
-  final String confirmationMethodName;
   final AppNavigation navigation;
 
   @override
@@ -141,9 +139,7 @@ class _NewProjectScreenState extends State<NewProjectScreen> {
               label: 'What agents can do',
               children: <Widget>[
                 ChoiceListField<AgentAccess>(
-                  options: buildAgentAccessChoices(
-                    confirmationMethodName: widget.confirmationMethodName,
-                  ),
+                  options: buildAgentAccessChoices(),
                   selected: _access,
                   onChanged: (AgentAccess access) =>
                       setState(() => _access = access),

@@ -25,6 +25,8 @@ pub enum ProcessExit {
 pub enum SupervisorError {
     #[error("could not open a terminal: {0}")]
     OpenTerminal(String),
+    #[error("could not connect to the input and output of the process")]
+    OpenPipes,
     #[error("could not read the terminal output: {0}")]
     ReadOutput(String),
     #[error("could not start {program}: {reason}")]
@@ -63,13 +65,20 @@ pub fn start_process(
 
     let (sender, output_lines) = unbounded_channel();
     thread::spawn(move || forward_output_lines(reader, &sender));
-    Ok(RunningProcess {
-        output_lines,
-        child,
-    })
+    Ok(RunningProcess::new(output_lines, child))
 }
 
 impl RunningProcess {
+    pub(crate) fn new(
+        output_lines: UnboundedReceiver<String>,
+        child: Box<dyn Child + Send + Sync>,
+    ) -> Self {
+        Self {
+            output_lines,
+            child,
+        }
+    }
+
     pub fn stop(&mut self) -> Result<(), SupervisorError> {
         let finished = self
             .child
@@ -102,7 +111,7 @@ pub(crate) fn build_terminal_command(
     builder
 }
 
-fn forward_output_lines(
+pub(crate) fn forward_output_lines(
     reader: Box<dyn Read + Send>,
     sender: &UnboundedSender<String>,
 ) {

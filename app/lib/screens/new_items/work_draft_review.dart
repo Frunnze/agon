@@ -15,6 +15,8 @@ import 'package:agent_orchestration/data/repository/task_repository.dart';
 import 'package:agent_orchestration/data/repository/workflow_repository.dart';
 import 'package:agent_orchestration/data/repository/workspace_repository.dart';
 import 'package:agent_orchestration/data/rules/schedule_rules.dart';
+import 'package:agent_orchestration/presentation/agent_place_text.dart';
+import 'package:agent_orchestration/presentation/approval_policy_text.dart';
 import 'package:agent_orchestration/presentation/device_names.dart';
 import 'package:agent_orchestration/presentation/skill_names.dart';
 import 'package:agent_orchestration/screens/new_items/draft_review.dart';
@@ -28,9 +30,6 @@ const String unknownWorkflowText = 'Unknown workflow';
 const String anyFreeRunnerText = 'Any free runner';
 const String automaticSkillsOnText = 'The agent may also pick them';
 const String automaticSkillsOffText = 'Off';
-const String approvalOnText =
-    'On: it stops and asks before it pushes, deploys or deletes';
-const String approvalOffText = 'Off: it never asks';
 const String startsAtOnceText = 'As soon as you approve';
 
 String describeRunsOn(RunnerTarget target, DeviceNames deviceNames) {
@@ -45,10 +44,9 @@ String describeRunsOn(RunnerTarget target, DeviceNames deviceNames) {
 }
 
 String describeApprovalPolicy(ApprovalPolicy policy) {
-  return switch (policy) {
-    ApprovalPolicy.askBeforeRiskyActions => approvalOnText,
-    ApprovalPolicy.neverAsk => approvalOffText,
-  };
+  final String title = describeApprovalPolicyTitle(policy);
+  final String detail = describeApprovalPolicyDetail(policy);
+  return '$title. $detail';
 }
 
 String describeRepeatingTask(Schedule schedule) {
@@ -95,6 +93,7 @@ final class WorkDraftReview implements DraftReview {
       _describeProjectFact(work.projectId),
       describeTextFact('Who does it', _describeDoer(work.doer)),
       describeTextFact('Runs on', describeRunsOn(work.runsOn, deviceNames)),
+      describeTextFact(agentPlaceTitle, describeTaskPlace(work.agentPlace)),
       if (skillNames.isEmpty)
         describeMutedFact('Skills to use', noneChosenText)
       else
@@ -106,7 +105,7 @@ final class WorkDraftReview implements DraftReview {
             : automaticSkillsOffText,
       ),
       describeTextFact(
-        'Ask for approval',
+        approvalPolicyLabel,
         describeApprovalPolicy(work.approvalPolicy),
       ),
       _describeTimingFact(work.schedule),

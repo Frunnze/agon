@@ -1,6 +1,7 @@
 use std::collections::BTreeMap;
 
 use chrono::{DateTime, Utc};
+use orchestration_core::agent_place::AgentPlace;
 use orchestration_core::approval::ApprovalPolicy;
 use orchestration_core::device::{RunnerLink, RunnerTarget};
 use orchestration_core::identifiers::{
@@ -63,6 +64,7 @@ pub fn sample_task(details: &str) -> Task {
             agent: AgentKind::ClaudeCode,
         },
         runs_on: RunnerTarget::AnyFreeRunner,
+        agent_place: Some(AgentPlace::LocalProcess),
         skills: Vec::new(),
         uses_automatic_skills: true,
         approval_policy: ApprovalPolicy::AskBeforeRiskyActions,

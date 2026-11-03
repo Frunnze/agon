@@ -5,6 +5,7 @@ abstract interface class FileRepository {
   Future<RepositoryFileSource> openRepository({
     required ProjectId projectId,
     required String repositoryAddress,
+    required DeviceId? preferredRunnerId,
   });
 
   Future<List<RepositoryEntry>> listFolder({

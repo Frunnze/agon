@@ -1,3 +1,4 @@
+use orchestration_core::agent_place::AgentPlace;
 use orchestration_core::approval::ApprovalPolicy;
 use orchestration_core::device::RunnerTarget;
 use orchestration_core::identifiers::{
@@ -27,6 +28,11 @@ const SKILL_IDENTIFIER_BASE: u128 = 0x300;
 const MAXIMUM_LISTED: usize = 4;
 const NAME_WORD_PATTERN: &str = "[a-z]{3,8}";
 const MORNING_HOUR: u32 = 9;
+const SAMPLE_OFFERS: [&[AgentPlace]; 3] = [
+    &[AgentPlace::LocalProcess],
+    &[],
+    &[AgentPlace::LocalProcess, AgentPlace::Container],
+];
 
 pub fn kind_strategy() -> impl Strategy<Value = DraftKind> {
     prop_oneof![
@@ -136,6 +142,7 @@ fn build_sample_context(
     }
     for index in 0..runner_count {
         let labels = (0..index).map(|label| format!("label-{label}"));
+        let offers = SAMPLE_OFFERS[index % SAMPLE_OFFERS.len()].to_vec();
         context.runners.push(DraftingRunner {
             device: DraftingDevice {
                 id: DeviceId(format!("{index:06x}")),
@@ -143,6 +150,7 @@ fn build_sample_context(
             },
             is_online: index % 2 == 0,
             labels: labels.collect(),
+            offers,
         });
     }
     context
@@ -192,6 +200,7 @@ pub fn valid_work_draft(
         project_id: context.projects.first().map(|project| project.id),
         doer,
         runs_on,
+        agent_place: AgentPlace::LocalProcess,
         skills: context.skills.iter().map(|skill| skill.id).collect(),
         uses_automatic_skills: true,
         approval_policy: ApprovalPolicy::AskBeforeRiskyActions,

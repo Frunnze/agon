@@ -3,11 +3,12 @@ use serde_json::Value;
 
 use crate::agent_event::AgentEvent;
 use crate::claude_tool_results::describe_tool_failures;
+use crate::failure_texts::UNKNOWN_FAILURE_REASON;
+use crate::known_tools::CLAUDE_TOOLS;
 use crate::tool_description::describe_tool_use;
 
 const INITIALIZED_SUBTYPE: &str = "init";
 const SUCCESS_SUBTYPE: &str = "success";
-const UNKNOWN_FAILURE_REASON: &str = "the agent stopped with an error";
 
 #[derive(Debug, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
@@ -52,7 +53,10 @@ enum ClaudeContent {
     Other,
 }
 
-pub(crate) fn parse_claude_line(line: &str) -> Vec<AgentEvent> {
+pub(crate) fn parse_claude_line(
+    line: &str,
+    task_folder: &str,
+) -> Vec<AgentEvent> {
     let Ok(event) = serde_json::from_str::<ClaudeStreamEvent>(line) else {
         return vec![AgentEvent::Said(line.to_string())];
     };
@@ -62,7 +66,9 @@ pub(crate) fn parse_claude_line(line: &str) -> Vec<AgentEvent> {
             subtype,
             session_id,
         } => describe_system_event(subtype.as_deref(), session_id),
-        ClaudeStreamEvent::Assistant { message } => describe_message(&message),
+        ClaudeStreamEvent::Assistant { message } => {
+            describe_message(&message, task_folder)
+        }
         ClaudeStreamEvent::User { message } => {
             describe_tool_failures(&message)
         }
@@ -88,7 +94,10 @@ fn describe_system_event(
     }
 }
 
-fn describe_message(message: &ClaudeMessage) -> Vec<AgentEvent> {
+fn describe_message(
+    message: &ClaudeMessage,
+    task_folder: &str,
+) -> Vec<AgentEvent> {
     let mut events = Vec::new();
     for content in &message.content {
         match content {
@@ -96,9 +105,9 @@ fn describe_message(message: &ClaudeMessage) -> Vec<AgentEvent> {
                 events.push(AgentEvent::Said(text.trim().to_string()));
             }
             ClaudeContent::ToolUse { name, input } => {
-                events.push(AgentEvent::UsedTool(describe_tool_use(
-                    name, input,
-                )));
+                let description =
+                    describe_tool_use(&CLAUDE_TOOLS, name, input, task_folder);
+                events.push(AgentEvent::UsedTool(description));
             }
             ClaudeContent::Text { .. } | ClaudeContent::Other => {}
         }

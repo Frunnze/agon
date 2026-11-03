@@ -1,7 +1,6 @@
 import 'package:agent_orchestration/data/models/agent_login.dart';
 import 'package:agent_orchestration/data/models/runner.dart';
 
-const String agentLoginTitle = 'Claude Code';
 const String loggedInText = 'Logged in';
 const String notLoggedInText = 'Not logged in';
 const String notInstalledText = 'Not installed';
@@ -76,6 +75,13 @@ List<AgentLoginAction> chooseAgentLoginActions({
     AgentLoginAction.connect,
     AgentLoginAction.useApiKey,
   ];
+}
+
+String describeAgentLoginTitle(AgentPlace place) {
+  return switch (place) {
+    AgentPlace.container => 'Claude Code in Docker',
+    AgentPlace.localProcess => 'Claude Code on this computer',
+  };
 }
 
 String describeAgentLoginAction(AgentLoginAction action) {

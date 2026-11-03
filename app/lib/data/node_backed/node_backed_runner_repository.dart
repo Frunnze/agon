@@ -35,7 +35,7 @@ final class NodeBackedRunnerRepository extends ChangeNotifier
   final WorkspaceRepository _workspaceRepository;
   final FetchSequence _fetches = FetchSequence();
   List<Runner> _runners = const <Runner>[];
-  AgentPlace? _thisAgentPlace;
+  List<PlaceOffer>? _thisDeviceOffers;
   String? _thisRunnerProblem;
 
   @override
@@ -52,7 +52,7 @@ final class NodeBackedRunnerRepository extends ChangeNotifier
   }
 
   @override
-  AgentPlace? findThisAgentPlace() => _thisAgentPlace;
+  List<PlaceOffer>? findThisDeviceOffers() => _thisDeviceOffers;
 
   @override
   String? findThisRunnerProblem() => _thisRunnerProblem;
@@ -66,7 +66,7 @@ final class NodeBackedRunnerRepository extends ChangeNotifier
     }
 
     _runners = _mapRunners(view);
-    _thisAgentPlace = _mapThisAgentPlace(view);
+    _thisDeviceOffers = _mapThisDeviceOffers(view);
     _thisRunnerProblem = view?.thisDeviceProblem;
     notifyListeners();
   }
@@ -99,10 +99,13 @@ final class NodeBackedRunnerRepository extends ChangeNotifier
   }
 
   @override
-  Future<void> chooseAgentPlace(AgentPlace place) async {
+  Future<void> chooseAgentOffers(List<AgentPlace> offers) async {
+    final List<node.AgentPlace> wireOffers = <node.AgentPlace>[
+      for (final AgentPlace offer in offers) mapAgentPlaceToNode(offer),
+    ];
     await executeNodeCommand(
       _channel,
-      node.ChooseAgentPlaceCommand(place: mapAgentPlaceToNode(place)),
+      node.ChooseAgentOffersCommand(offers: wireOffers),
     );
     await load();
   }
@@ -144,10 +147,10 @@ List<Runner> _mapRunners(node.RunnersView? view) {
   return List<Runner>.unmodifiable(runners);
 }
 
-AgentPlace? _mapThisAgentPlace(node.RunnersView? view) {
-  final node.RunnerSettings? settings = view?.thisDeviceSettings;
-  if (settings == null) {
+List<PlaceOffer>? _mapThisDeviceOffers(node.RunnersView? view) {
+  final List<node.PlaceOffer>? offers = view?.thisDeviceOffers;
+  if (offers == null) {
     return null;
   }
-  return mapAgentPlaceFromNode(settings.sandbox);
+  return mapPlaceOffersFromNode(offers);
 }

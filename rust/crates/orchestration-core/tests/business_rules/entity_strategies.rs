@@ -1,8 +1,7 @@
 use chrono::{DateTime, Utc, Weekday};
+use orchestration_core::agent_place::AgentPlace;
 use orchestration_core::approval::ApprovalPolicy;
-use orchestration_core::device::{
-    Runner, RunnerLink, RunnerTarget, SandboxKind,
-};
+use orchestration_core::device::{Runner, RunnerLink, RunnerTarget};
 use orchestration_core::identifiers::{
     DeviceId, ProjectId, RuleId, TaskId, WorkflowId, WorkspaceId,
 };
@@ -124,7 +123,7 @@ pub fn runner() -> impl Strategy<Value = Runner> {
                 link: RunnerLink::Direct,
                 online,
                 accepting_new_runs,
-                sandbox: SandboxKind::Container,
+                offers: vec![AgentPlace::Container],
                 allowed_hosts: Vec::new(),
                 cached_repositories: Vec::new(),
             },
@@ -141,6 +140,10 @@ pub fn available_runner() -> impl Strategy<Value = Runner> {
             ..runner
         },
     )
+}
+
+pub fn agent_place() -> impl Strategy<Value = AgentPlace> {
+    prop_oneof![Just(AgentPlace::Container), Just(AgentPlace::LocalProcess)]
 }
 
 pub fn agent_kind() -> impl Strategy<Value = AgentKind> {
@@ -173,6 +176,7 @@ pub fn example_task() -> Task {
             agent: AgentKind::ClaudeCode,
         },
         runs_on: RunnerTarget::AnyFreeRunner,
+        agent_place: Some(AgentPlace::LocalProcess),
         skills: Vec::new(),
         uses_automatic_skills: false,
         approval_policy: ApprovalPolicy::NeverAsk,

@@ -32,5 +32,8 @@ pub fn describe_approval_action(
                 .unwrap_or_else(|| workflow_id.0.to_string());
             format!("Sign workflow {workflow_name}")
         }
+        ApprovalAction::RunCommand { tool, command } => {
+            format!("Use {tool}: {command}")
+        }
     }
 }

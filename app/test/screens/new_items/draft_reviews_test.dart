@@ -15,6 +15,7 @@ import 'package:agent_orchestration/data/models/schedule.dart';
 import 'package:agent_orchestration/data/models/scope.dart';
 import 'package:agent_orchestration/data/models/task.dart';
 import 'package:agent_orchestration/data/models/workflow.dart';
+import 'package:agent_orchestration/presentation/agent_place_text.dart';
 import 'package:agent_orchestration/screens/new_items/draft_review.dart';
 import 'package:agent_orchestration/screens/new_items/library_draft_reviews.dart';
 import 'package:agent_orchestration/screens/new_items/project_draft_review.dart';
@@ -37,9 +38,10 @@ const List<String> _taskTerms = <String>[
   'Project',
   'Who does it',
   'Runs on',
+  'Where agents run',
   'Skills to use',
   'Automatic skills',
-  'Ask for approval',
+  'Commands',
 ];
 
 String _readFactText(Fact fact) {
@@ -97,6 +99,7 @@ DraftedWork _randomWork(Random random) {
       const SpecificRunner(GalleryDeviceIds.macStudio),
       const SpecificRunner(DeviceId('device-nowhere')),
     ]),
+    agentPlace: pickOne(random, AgentPlace.values),
     skills: random.nextBool()
         ? const <SkillId>[]
         : const <SkillId>[GallerySkillIds.gitCleanup],
@@ -138,6 +141,10 @@ void main() {
         _ => unknownProjectText,
       };
       expect(project, expectedProject);
+      expect(
+        _readFactText(_findFact(facts, agentPlaceTitle)),
+        describeTaskPlace(work.agentPlace),
+      );
       final bool repeats = work.schedule != null || kind == DraftKind.job;
       expect(terms.last, repeats ? 'Repeats' : 'Starts');
     }

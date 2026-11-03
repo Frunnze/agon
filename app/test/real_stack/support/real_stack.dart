@@ -14,6 +14,7 @@ import 'package:agent_orchestration/bridge/node/runner_settings.dart';
 import 'package:agent_orchestration/data/app_dependencies.dart';
 import 'package:agent_orchestration/data/clock.dart';
 import 'package:agent_orchestration/data/fakes.dart';
+import 'package:agent_orchestration/data/models/agent_login.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/node_backed.dart';
 import 'package:agent_orchestration/shell/app_navigation.dart';
@@ -35,13 +36,16 @@ import 'stack_waiting.dart';
 export 'stack_accounts.dart'
     show NodePreparation, appDeviceName, homeWorkspaceName;
 
-const String confirmationMethodName = 'Touch ID';
 const String runnerDeviceName = 'office-runner';
 const Timeout realStackTimeout = Timeout(Duration(minutes: 4));
 const int _drainRounds = 8;
 const Duration _drainStep = Duration(seconds: 5);
 const Duration _exchangeEndLimit = Duration(seconds: 90);
 const Duration _exchangeEndStep = Duration(milliseconds: 50);
+const AgentLoginStatus _loggedInClaudeCode = AgentLoginStatus(
+  claudeLogin: ClaudeLogin.loggedIn,
+  containerCredential: AgentCredentialKind.longLivedToken,
+);
 
 String? findRealStackSkipReason() {
   final List<String> requiredFiles = <String>[
@@ -78,9 +82,17 @@ final class RealStack {
   final node.AccountSummary? account;
   final RecordedRunnerPresence runnerPresence;
   final FixedFolderPicker folderPicker;
+  final FakeAgentLoginRepository _agentLogins = FakeAgentLoginRepository(
+    status: _loggedInClaudeCode,
+  );
   LocalOrchestrationServer server;
 
-  AppDependencies get dependencies => nodeDependencies.app;
+  AppDependencies get dependencies {
+    return replaceRepositories(
+      nodeDependencies.app,
+      agentLoginRepository: _agentLogins,
+    );
+  }
 
   WorkspaceId get homeWorkspaceId => _requireAccount().workspaces.single.id;
 
@@ -126,6 +138,14 @@ final class RealStack {
       prepareNode: createClientAndRunnerAccount,
       runner: runner,
     );
+  }
+
+  static Future<RealStack> openAsHostingRunner(
+    WidgetTester tester, {
+    required RunnerSettings runner,
+  }) {
+    const NodePreparation prepareHosting = createHostedClientAndRunnerAccount;
+    return _open(tester, prepareNode: prepareHosting, runner: runner);
   }
 
   Future<RunnerDevice> startRunner(
@@ -222,9 +242,6 @@ final class RealStack {
     final NodeDependencies nodeDependencies = buildNodeDependencies(
       channel: channel,
       clock: const SystemClock(),
-      biometricConfirmation: const ApprovingBiometricConfirmation(
-        methodName: confirmationMethodName,
-      ),
       qrCodeScanner: FixedQrCodeScanner(null),
       folderPicker: folderPicker,
       workspaceChoiceStore: MemoryWorkspaceChoiceStore(

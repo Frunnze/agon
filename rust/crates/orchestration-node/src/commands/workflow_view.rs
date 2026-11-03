@@ -37,10 +37,7 @@ pub(super) fn build_workflow_view(
     let opened_workflow = open_workflow(keyring, stored_workflow)?;
     let sealed_document = render_workflow_document(stored_workflow);
     let signature = stored_workflow.signature.as_ref();
-    let signer_key = signature
-        .and_then(|signature| find_signer(devices, &signature.signed_by))
-        .map(|signer| signer.signing_public_key.as_slice());
-    let state = signature_state(signature, &sealed_document, signer_key);
+    let state = read_signature_state(stored_workflow, devices);
 
     let mut changes = Vec::new();
     if let Some(signature) = signature
@@ -88,6 +85,18 @@ pub(super) async fn read_stored_workflow(
         kind: "workflow",
         identifier: workflow_id.0.to_string(),
     })
+}
+
+pub(super) fn read_signature_state(
+    stored_workflow: &Workflow,
+    devices: &[Device],
+) -> SignatureState {
+    let sealed_document = render_workflow_document(stored_workflow);
+    let signature = stored_workflow.signature.as_ref();
+    let signer_key = signature
+        .and_then(|signature| find_signer(devices, &signature.signed_by))
+        .map(|signer| signer.signing_public_key.as_slice());
+    signature_state(signature, &sealed_document, signer_key)
 }
 
 fn find_signer<'devices>(

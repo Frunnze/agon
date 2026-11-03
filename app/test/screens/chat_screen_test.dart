@@ -105,7 +105,7 @@ void main() {
       expect(find.text('Agent on mac-studio, just now'), findsOneWidget);
       expect(find.text('9be07d1 Bump build number to 214'), findsOneWidget);
       expect(find.text('Deny'), findsOneWidget);
-      expect(find.text('Approve with Touch ID'), findsOneWidget);
+      expect(find.text('Approve'), findsOneWidget);
       final Rect dialog = tester.getRect(find.byType(AppDialog));
       if (size == phoneSize) {
         expect(dialog.bottom, closeTo(size.height, 1));
@@ -148,7 +148,7 @@ void main() {
     );
     await pumpFrames(tester);
 
-    await tester.tap(find.text('Approve with Touch ID'));
+    await tester.tap(find.text('Approve'));
     await pumpFrames(tester);
 
     final ApprovalRequest request = dependencies.approvalRepository

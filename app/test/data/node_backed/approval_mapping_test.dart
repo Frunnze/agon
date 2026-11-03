@@ -28,6 +28,10 @@ void _expectSameAction(ApprovalAction action, node.ApprovalAction wire) {
       expect(deletion.what, wire.what);
     case node.SignWorkflow():
       expect((action as SignWorkflowAction).workflowId, wire.workflowId);
+    case node.RunCommand():
+      final RunCommandAction command = action as RunCommandAction;
+      expect(command.tool, wire.tool);
+      expect(command.command, wire.command);
   }
 }
 

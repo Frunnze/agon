@@ -6,10 +6,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:agent_orchestration/data/app_dependencies.dart';
 import 'package:agent_orchestration/data/fakes.dart';
 import 'package:agent_orchestration/data/gallery/gallery_identifiers.dart';
+import 'package:agent_orchestration/data/gallery/gallery_runners.dart';
 import 'package:agent_orchestration/data/gallery/gallery_runs.dart';
 import 'package:agent_orchestration/data/gallery/gallery_tasks.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/run.dart';
+import 'package:agent_orchestration/data/models/runner.dart';
 import 'package:agent_orchestration/data/models/task.dart';
 import 'package:agent_orchestration/presentation/agent_login_text.dart';
 import 'package:agent_orchestration/shell/app_navigation.dart';
@@ -18,6 +20,7 @@ import 'package:agent_orchestration/shell/app_route.dart';
 import '../support/app_harness.dart';
 import '../support/form_finders.dart';
 import '../support/random_inputs.dart';
+import '../support/sample_runners.dart';
 
 const DeviceId _thisDeviceId = GalleryDeviceIds.airLaptop;
 const DeviceId _otherRunnerId = GalleryDeviceIds.macStudio;
@@ -72,6 +75,16 @@ Future<AppNavigation> _openFailedRun(
         clock: dependencies.clock,
         currentDeviceId: _thisDeviceId,
         workflowRepository: dependencies.workflowRepository,
+      ),
+      runnerRepository: FakeRunnerRepository(
+        runners: <Runner>[
+          ...galleryRunners,
+          buildOnlineRunnerOn(_thisDeviceId),
+        ],
+        thisDeviceOffers: const <PlaceOffer>[
+          PlaceOffer(place: AgentPlace.container, problem: null),
+        ],
+        thisRunnerProblem: null,
       ),
     ),
   );

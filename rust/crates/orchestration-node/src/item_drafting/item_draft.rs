@@ -1,3 +1,4 @@
+use orchestration_core::agent_place::AgentPlace;
 use orchestration_core::approval::ApprovalPolicy;
 use orchestration_core::device::RunnerTarget;
 use orchestration_core::identifiers::{ProjectId, SkillId};
@@ -24,6 +25,7 @@ pub struct WorkDraft {
     pub project_id: Option<ProjectId>,
     pub doer: TaskDoer,
     pub runs_on: RunnerTarget,
+    pub agent_place: AgentPlace,
     pub skills: Vec<SkillId>,
     pub uses_automatic_skills: bool,
     pub approval_policy: ApprovalPolicy,

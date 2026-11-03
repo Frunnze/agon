@@ -2,7 +2,9 @@ use axum::Json;
 use axum::extract::State;
 use chrono::{DateTime, TimeDelta, Utc};
 use orchestration_api::updates::ChangeTopic;
-use orchestration_api::work::{HeartbeatRequest, SetAcceptingRunsRequest};
+use orchestration_api::work::{
+    HeartbeatAnswer, HeartbeatRequest, SetAcceptingRunsRequest,
+};
 use orchestration_core::device::Runner;
 use orchestration_core::identifiers::DeviceId;
 
@@ -11,6 +13,7 @@ use crate::change::Change;
 use crate::device_registration::name_device;
 use crate::error::ServerError;
 use crate::extractors::{PathValue, parse_json_body};
+use crate::forgotten_work::find_forgotten_work;
 use crate::request_ledger::Presence;
 use crate::server::SharedServer;
 use crate::stored_state::StoredState;
@@ -31,14 +34,19 @@ pub async fn list_runners(
 pub async fn receive_heartbeat(
     State(server): State<SharedServer>,
     request: SignedRequest,
-) -> Result<Json<Runner>, ServerError> {
+) -> Result<Json<HeartbeatAnswer>, ServerError> {
     request.caller.require_runner()?;
     let heartbeat: HeartbeatRequest = parse_json_body(&request.body)?;
     let runner_id = &request.caller.device_id;
     let runner = server.apply(runner_id, |state, _now| {
         record_heartbeat(state, runner_id, &heartbeat)
     })?;
-    Ok(Json(runner))
+    let forgotten_work =
+        server.read(|state| Ok(find_forgotten_work(state, &heartbeat)))?;
+    Ok(Json(HeartbeatAnswer {
+        runner,
+        forgotten_work,
+    }))
 }
 
 pub async fn set_accepting_runs(
@@ -102,7 +110,7 @@ fn record_heartbeat(
         link: heartbeat.link,
         online: true,
         accepting_new_runs,
-        sandbox: heartbeat.sandbox,
+        offers: heartbeat.offers.clone(),
         allowed_hosts: heartbeat.allowed_hosts.clone(),
         cached_repositories: heartbeat.cached_repositories.clone(),
     };

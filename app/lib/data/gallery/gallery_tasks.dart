@@ -25,6 +25,7 @@ Task _buildGalleryTask({
     projectId: projectId,
     doer: doer,
     runsOn: const AnyFreeRunner(),
+    agentPlace: AgentPlace.container,
     skills: skills,
     usesAutomaticSkills: true,
     approvalPolicy: ApprovalPolicy.askBeforeRiskyActions,

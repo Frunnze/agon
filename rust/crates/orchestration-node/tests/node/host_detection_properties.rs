@@ -90,26 +90,12 @@ proptest! {
     }
 
     #[test]
-    fn test_detect_runner_settings_property_prefers_a_container_engine(
+    fn test_detect_runner_settings_property_starts_on_this_computer(
         facts in any_host_facts(),
     ) {
         let settings = detect_runner_settings(&facts);
 
-        let expected_engine = if has_program(&facts, "docker") {
-            Some(ContainerEngineChoice::Docker)
-        } else if has_program(&facts, "podman") {
-            Some(ContainerEngineChoice::Podman)
-        } else {
-            None
-        };
-        let chosen_engine = match &settings.sandbox {
-            SandboxSettings::Container { engine, image, .. } => {
-                prop_assert!(!image.is_empty());
-                Some(*engine)
-            }
-            SandboxSettings::LocalProcess => None,
-        };
-        prop_assert_eq!(chosen_engine, expected_engine);
+        prop_assert_eq!(settings.sandbox, SandboxSettings::LocalProcess);
     }
 
     #[test]
@@ -135,19 +121,4 @@ proptest! {
         prop_assert!(!allowed_hosts.is_empty());
     }
 
-    #[test]
-    fn test_detect_runner_settings_property_found_engines_run_containers(
-        facts in any_host_facts(),
-    ) {
-        let settings = detect_runner_settings(&facts);
-
-        let has_engine = has_program(&facts, "docker")
-            || has_program(&facts, "podman");
-        if has_engine {
-            let detected = detect_container_sandbox(&facts);
-            prop_assert_eq!(settings.sandbox, detected);
-        } else {
-            prop_assert_eq!(settings.sandbox, SandboxSettings::LocalProcess);
-        }
-    }
 }
