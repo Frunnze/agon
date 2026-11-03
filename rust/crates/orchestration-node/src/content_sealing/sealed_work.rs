@@ -130,5 +130,6 @@ pub fn open_run_assignment(
         workflow: opened_workflow,
         skills: opened_skills,
         rules: opened_rules,
+        follow_up: assignment.follow_up,
     })
 }

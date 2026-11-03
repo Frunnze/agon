@@ -55,7 +55,8 @@ class _TaskFormState extends State<TaskForm> {
   late final TextEditingController _timeController = TextEditingController(
     text: widget.initialValues.timeText,
   );
-  bool _showsProblems = false;
+  String? _titleProblem;
+  String? _timeProblem;
   bool _isSubmitting = false;
 
   @override
@@ -80,10 +81,6 @@ class _TaskFormState extends State<TaskForm> {
 
   @override
   Widget build(BuildContext context) {
-    final TaskFormValues current = _readValues();
-    final String? titleProblem = _showsProblems
-        ? current.describeTitleProblem()
-        : null;
     final MissingFolderRunner? missingFolderRunner =
         widget.options.missingFolderRunners[_values.projectId];
 
@@ -94,7 +91,8 @@ class _TaskFormState extends State<TaskForm> {
           children: <Widget>[
             TextField(
               controller: _titleController,
-              decoration: InputDecoration(errorText: titleProblem),
+              decoration: InputDecoration(errorText: _titleProblem),
+              onChanged: (String _) => setState(() => _titleProblem = null),
             ),
           ],
         ),
@@ -160,7 +158,8 @@ class _TaskFormState extends State<TaskForm> {
           repeatHint: widget.repeatHint,
           weekday: _values.weekday,
           timeController: _timeController,
-          timeProblem: _showsProblems ? current.describeTimeProblem() : null,
+          timeProblem: _timeProblem,
+          onTimeChanged: (String _) => setState(() => _timeProblem = null),
           onRepeatChanged: (RepeatChoice repeat) =>
               _updateValues(_readValues().copyWith(repeat: repeat)),
           onWeekdayChanged: (weekday) =>
@@ -250,8 +249,11 @@ class _TaskFormState extends State<TaskForm> {
 
   Future<void> _submit(SubmitFormAction action) async {
     final TaskFormValues values = _readValues();
+    setState(() {
+      _titleProblem = values.describeTitleProblem();
+      _timeProblem = values.describeTimeProblem();
+    });
     if (!values.isValid) {
-      setState(() => _showsProblems = true);
       return;
     }
 

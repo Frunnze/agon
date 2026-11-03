@@ -52,6 +52,23 @@ void main() {
     }
   });
 
+  test('test_with_name_property_changes_only_the_name', () {
+    final Random random = seededRandom(9404);
+
+    for (int i = 0; i < propertyIterations; i += 1) {
+      final Workflow workflow = randomAcyclicWorkflow(random);
+      final String newName = randomWordPhrase(random);
+      final Workflow renamed = workflow.withName(newName);
+
+      expect(renamed.name, newName);
+      expect(renamed.id, workflow.id);
+      expect(renamed.availability, same(workflow.availability));
+      expect(renamed.signature, workflow.signature);
+      expect(renamed.agents, workflow.agents);
+      expect(renamed.connections, workflow.connections);
+    }
+  });
+
   test('test_agent_connection_equality_property_same_ends_equal', () {
     final Random random = seededRandom(9403);
 

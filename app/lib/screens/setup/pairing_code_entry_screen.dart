@@ -98,6 +98,7 @@ class _PairingCodeEntryScreenState extends State<PairingCodeEntryScreen> {
           hint: 'Dashes and spaces are optional.',
           controller: _codeController,
           problem: _codeProblem,
+          onChanged: (String _) => setState(() => _codeProblem = null),
           style: _codeInputStyle,
           textAlign: TextAlign.center,
         ),

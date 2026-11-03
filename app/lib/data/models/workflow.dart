@@ -125,6 +125,17 @@ final class Workflow {
     throw StateError('Workflow $name has no agent $agentId');
   }
 
+  Workflow withName(String newName) {
+    return Workflow(
+      id: id,
+      name: newName,
+      availability: availability,
+      agents: agents,
+      connections: connections,
+      signature: signature,
+    );
+  }
+
   Workflow withGraph({
     required List<WorkflowAgent> agents,
     required List<AgentConnection> connections,

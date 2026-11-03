@@ -101,6 +101,11 @@ pub struct HeartbeatAnswer {
     pub forgotten_work: ForgottenWork,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct FollowUp {
+    pub answered_user_messages: usize,
+}
+
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RunAssignment {
     pub step_name: String,
@@ -111,6 +116,8 @@ pub struct RunAssignment {
     pub workflow: Option<Workflow>,
     pub skills: Vec<Skill>,
     pub rules: Vec<Rule>,
+    #[serde(default)]
+    pub follow_up: Option<FollowUp>,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

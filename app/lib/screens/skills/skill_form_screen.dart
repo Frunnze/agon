@@ -71,7 +71,9 @@ class _SkillFormScreenState extends State<SkillFormScreen> {
       TextEditingController(text: widget.existingSkill?.instructions);
   late ScopeSelection _scope = _buildInitialScope();
   late SkillUsage _usage = widget.existingSkill?.usage ?? SkillUsage.automatic;
-  bool _showsProblems = false;
+  String? _nameProblem;
+  String? _summaryProblem;
+  String? _instructionsProblem;
   bool _isSaving = false;
 
   @override
@@ -136,9 +138,8 @@ class _SkillFormScreenState extends State<SkillFormScreen> {
                 TextField(
                   controller: _nameController,
                   style: _monospaceInput,
-                  decoration: InputDecoration(
-                    errorText: _showsProblems ? _findNameProblem() : null,
-                  ),
+                  decoration: InputDecoration(errorText: _nameProblem),
+                  onChanged: (String _) => setState(() => _nameProblem = null),
                 ),
               ],
             ),
@@ -148,9 +149,9 @@ class _SkillFormScreenState extends State<SkillFormScreen> {
               children: <Widget>[
                 TextField(
                   controller: _summaryController,
-                  decoration: InputDecoration(
-                    errorText: _showsProblems ? _findSummaryProblem() : null,
-                  ),
+                  decoration: InputDecoration(errorText: _summaryProblem),
+                  onChanged: (String _) =>
+                      setState(() => _summaryProblem = null),
                 ),
               ],
             ),
@@ -164,10 +165,10 @@ class _SkillFormScreenState extends State<SkillFormScreen> {
                   maxLines: _instructionsMaximumLines,
                   decoration: InputDecoration(
                     contentPadding: multiLineFieldPadding,
-                    errorText: _showsProblems
-                        ? _findInstructionsProblem()
-                        : null,
+                    errorText: _instructionsProblem,
                   ),
+                  onChanged: (String _) =>
+                      setState(() => _instructionsProblem = null),
                 ),
               ],
             ),
@@ -218,12 +219,20 @@ class _SkillFormScreenState extends State<SkillFormScreen> {
   }
 
   Future<void> _save() async {
+    final String? nameProblem = _findNameProblem();
+    final String? summaryProblem = _findSummaryProblem();
+    final String? instructionsProblem = _findInstructionsProblem();
+    setState(() {
+      _nameProblem = nameProblem;
+      _summaryProblem = summaryProblem;
+      _instructionsProblem = instructionsProblem;
+    });
+
     final bool hasProblem =
-        _findNameProblem() != null ||
-        _findSummaryProblem() != null ||
-        _findInstructionsProblem() != null;
+        nameProblem != null ||
+        summaryProblem != null ||
+        instructionsProblem != null;
     if (hasProblem) {
-      setState(() => _showsProblems = true);
       return;
     }
 
@@ -236,7 +245,7 @@ class _SkillFormScreenState extends State<SkillFormScreen> {
       usage: _usage,
     );
     await _storeSkill(draft);
-    widget.navigation.closeRoute();
+    widget.navigation.closeSavedForm();
   }
 
   Future<Skill> _storeSkill(SkillDraft draft) {

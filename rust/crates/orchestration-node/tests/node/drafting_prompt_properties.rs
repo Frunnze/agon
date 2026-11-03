@@ -17,7 +17,8 @@ const PROMPT_CASES: u32 = 24;
 const REPLY_OPENING: &str = "Reply with one JSON object and nothing else.";
 const LISTED_IDS_ONLY: &str = "Use only the ids listed above.";
 const LOCAL_TIME: &str = "Times are the person's local time.";
-const NULL_PROJECT: &str = "Set project_id to null when no project fits.";
+const NULL_PROJECT: &str = "Set project_id to null only when several \
+                            projects could fit and the request names none.";
 const REPO_FORMS: &str = "Write each repo as a GitHub address or the \
                           absolute path of a git folder on this computer.";
 const CHOSEN_FOLDERS_HEADING: &str =

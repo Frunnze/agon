@@ -67,7 +67,7 @@ class _RuleFormScreenState extends State<RuleFormScreen> {
     text: widget.existingRule?.details,
   );
   late ScopeSelection _scope = _buildInitialScope();
-  bool _showsProblems = false;
+  String? _titleProblem;
   bool _isSaving = false;
 
   @override
@@ -115,9 +115,9 @@ class _RuleFormScreenState extends State<RuleFormScreen> {
               children: <Widget>[
                 TextField(
                   controller: _titleController,
-                  decoration: InputDecoration(
-                    errorText: _showsProblems ? _findTitleProblem() : null,
-                  ),
+                  decoration: InputDecoration(errorText: _titleProblem),
+                  onChanged: (String _) =>
+                      setState(() => _titleProblem = null),
                 ),
               ],
             ),
@@ -168,8 +168,9 @@ class _RuleFormScreenState extends State<RuleFormScreen> {
   }
 
   Future<void> _save() async {
-    if (_findTitleProblem() != null) {
-      setState(() => _showsProblems = true);
+    final String? titleProblem = _findTitleProblem();
+    setState(() => _titleProblem = titleProblem);
+    if (titleProblem != null) {
       return;
     }
 
@@ -180,7 +181,7 @@ class _RuleFormScreenState extends State<RuleFormScreen> {
       scope: _scope.toScope(),
     );
     await _storeRule(draft);
-    widget.navigation.closeRoute();
+    widget.navigation.closeSavedForm();
   }
 
   Future<Rule> _storeRule(RuleDraft draft) {

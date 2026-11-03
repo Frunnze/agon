@@ -106,7 +106,7 @@ proptest! {
     #![proptest_config(ProptestConfig::with_cases(ANSWER_CASES))]
 
     #[test]
-    fn test_parse_item_answer_property_work_must_say_where_agents_run(
+    fn test_parse_item_answer_property_a_wrong_place_is_refused(
         context in context_strategy(),
         is_job in any::<bool>(),
         words in "[a-z]{1,12}",
@@ -115,7 +115,6 @@ proptest! {
             Just(json!("anywhere")),
             Just(json!(1)),
         ],
-        is_missing in any::<bool>(),
     ) {
         let kind = if is_job { DraftKind::Job } else { DraftKind::Task };
         let drafted = sample_draft(kind, &context, &words);
@@ -123,11 +122,7 @@ proptest! {
         let fields = answer
             .as_object_mut()
             .ok_or_else(|| TestCaseError::fail("the answer is no object"))?;
-        if is_missing {
-            fields.remove(PLACE_FIELD);
-        } else {
-            fields.insert(PLACE_FIELD.to_owned(), wrong_place);
-        }
+        fields.insert(PLACE_FIELD.to_owned(), wrong_place);
 
         let parsed = parse_item_answer(kind, &answer.to_string());
 

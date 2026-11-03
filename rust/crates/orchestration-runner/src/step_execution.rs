@@ -1,7 +1,7 @@
 use orchestration_api::work::RunEvent;
 use orchestration_core::run::StepStatus;
 
-use crate::agent_invocation::{AgentEnding, invoke_agent};
+use crate::agent_invocation::AgentEnding;
 use crate::branch_pusher::BranchPusher;
 use crate::commit_publishing::{Publishing, publish_commits};
 use crate::conversation::{StepProgress, answer_user_messages};
@@ -9,6 +9,7 @@ use crate::run_context::RunContext;
 use crate::run_error::RunError;
 use crate::run_events::{post_run_events, step_status_changed};
 use crate::runner_server::RunnerServer;
+use crate::step_opening::{StepOpening, open_agent_conversation};
 use crate::step_plan::StepPlan;
 use crate::uncommitted_changes::{
     commit_uncommitted_changes, compose_change_commit_subject,
@@ -17,10 +18,11 @@ use crate::uncommitted_changes::{
 pub(crate) async fn execute_step<S: RunnerServer, P: BranchPusher>(
     context: &RunContext<S, P>,
     step: &StepPlan,
-    prompt: &str,
+    opening: &StepOpening,
     answered_messages: usize,
 ) -> StepProgress {
-    let attempt = attempt_step(context, step, prompt, answered_messages).await;
+    let attempt =
+        attempt_step(context, step, opening, answered_messages).await;
     match attempt {
         Ok(progress) => progress,
         Err(problem) => StepProgress {
@@ -33,14 +35,14 @@ pub(crate) async fn execute_step<S: RunnerServer, P: BranchPusher>(
 async fn attempt_step<S: RunnerServer, P: BranchPusher>(
     context: &RunContext<S, P>,
     step: &StepPlan,
-    prompt: &str,
+    opening: &StepOpening,
     answered_messages: usize,
 ) -> Result<StepProgress, RunError> {
     let server = context.server.as_ref();
     let running = step_status_changed(&step.name, StepStatus::Running);
     post_run_events(server, context.run_id, vec![running]).await?;
 
-    let first_ending = invoke_agent(context, step, prompt, None).await?;
+    let first_ending = open_agent_conversation(context, step, opening).await?;
     let conversation =
         answer_user_messages(context, step, first_ending, answered_messages)
             .await?;

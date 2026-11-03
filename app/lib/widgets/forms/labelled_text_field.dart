@@ -7,6 +7,7 @@ class LabelledTextField extends StatelessWidget {
     required this.label,
     required this.controller,
     required this.problem,
+    required this.onChanged,
     super.key,
     this.hint,
     this.style,
@@ -16,6 +17,7 @@ class LabelledTextField extends StatelessWidget {
   final String label;
   final TextEditingController controller;
   final String? problem;
+  final ValueChanged<String> onChanged;
   final String? hint;
   final TextStyle? style;
   final TextAlign textAlign;
@@ -32,6 +34,7 @@ class LabelledTextField extends StatelessWidget {
           textAlign: textAlign,
           autocorrect: false,
           decoration: InputDecoration(errorText: problem),
+          onChanged: onChanged,
         ),
       ],
     );

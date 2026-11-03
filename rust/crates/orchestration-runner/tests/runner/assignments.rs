@@ -80,6 +80,7 @@ pub fn assignment_for(
         workflow,
         skills: Vec::new(),
         rules: Vec::new(),
+        follow_up: None,
     })
 }
 

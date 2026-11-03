@@ -1,76 +1,148 @@
+use std::fmt::Display;
+
 use orchestration_core::naming::validate_name;
 use orchestration_core::schedule_rules::ScheduleProblem;
 
-pub(super) const EMPTY_WORK_TITLE: &str =
-    "The agent wrote nothing for what should be done.";
-pub(super) const UNKNOWN_WORKFLOW: &str =
-    "The agent chose a workflow that does not exist here.";
-pub(super) const UNKNOWN_SKILL: &str =
-    "The agent chose a skill that does not exist here.";
-pub(super) const JOB_WITHOUT_SCHEDULE: &str =
-    "A job needs a schedule. Ask for changes and say how often it repeats.";
+pub(super) const EMPTY_WORK_TITLE: &str = "What should be done: it is empty. \
+                                           Ask for changes and say what \
+                                           should be done.";
+pub(super) const JOB_WITHOUT_SCHEDULE: &str = "Repeats: a job needs a \
+                                               schedule. Ask for changes and \
+                                               say how often it repeats.";
 pub(super) const NO_REPOSITORY: &str =
-    "The agent found no repo. Ask for changes and say where the code is.";
-pub(super) const EMPTY_SKILL_SUMMARY: &str =
-    "The agent wrote nothing for what the skill does.";
-pub(super) const EMPTY_SKILL_INSTRUCTIONS: &str =
-    "The agent wrote no instructions.";
-pub(super) const EMPTY_RULE_TITLE: &str =
-    "The agent wrote nothing for the rule.";
-pub(super) const FOREIGN_WORKSPACE: &str =
-    "The agent chose a workspace that does not exist here.";
-pub(super) const EMPTY_SCOPE: &str = "The agent left the scope empty.";
-const SENTENCE_END: char = '.';
+    "Repos: none found. Ask for changes and say where the code is.";
+pub(super) const EMPTY_SKILL_SUMMARY: &str = "What it does: it is empty. Ask \
+                                              for changes and say what the \
+                                              skill does.";
+pub(super) const EMPTY_SKILL_INSTRUCTIONS: &str = "Instructions: they are \
+                                                   empty. Ask for changes and \
+                                                   say what agents should \
+                                                   do.";
+pub(super) const EMPTY_RULE_TITLE: &str = "Rule: it is empty. Ask for \
+                                           changes and say what agents must \
+                                           follow.";
+pub(super) const FOREIGN_WORKSPACE: &str = "Applies to: the chosen workspace \
+                                            does not exist here. Ask for \
+                                            changes and say this workspace \
+                                            or everywhere.";
+pub(super) const EMPTY_SCOPE: &str =
+    "Applies to: it is empty. Ask for changes and say where it applies.";
+const CHOICE_SEPARATOR: &str = ", ";
+const ONE_AGENT_CHOICE: &str = "one agent";
+const ANY_FREE_RUNNER_CHOICE: &str = "any free runner";
+const NO_SKILL_CHOICE: &str = "none";
+const ALL_PROJECTS_CHOICE: &str = "all projects";
+const ANOTHER_NAME_FIX: &str = "Ask for changes and give another name.";
+const REPOSITORY_FIX: &str = "Ask for changes and give a GitHub address or a \
+                              git folder on this computer.";
 
-pub(super) fn describe_missing_project(workspace_name: &str) -> String {
+pub(super) fn describe_missing_project(
+    workspace_name: &str,
+    project_names: &[&str],
+) -> String {
+    if project_names.is_empty() {
+        return describe_workspace_without_projects(workspace_name);
+    }
     format!(
-        "No project in {workspace_name} fits this. Ask for changes and name \
-         the project, or add the project first."
+        "Project: the agent could not tell which one. Ask for changes and \
+         name one of: {}.",
+        project_names.join(CHOICE_SEPARATOR)
     )
 }
 
-pub(super) fn describe_foreign_project(workspace_name: &str) -> String {
-    format!("The agent chose a project that is not in {workspace_name}.")
-}
-
-pub(super) fn describe_unsigned_workflow(workflow_name: &str) -> String {
+pub(super) fn describe_foreign_project(
+    workspace_name: &str,
+    project_names: &[&str],
+) -> String {
+    if project_names.is_empty() {
+        return describe_workspace_without_projects(workspace_name);
+    }
     format!(
-        "The workflow {workflow_name} is not signed yet, so it cannot do the \
-         work."
+        "Project: the chosen one is not in {workspace_name}. Ask for changes \
+         and name one of: {}.",
+        project_names.join(CHOICE_SEPARATOR)
     )
 }
 
-pub(super) fn describe_foreign_runner(workspace_name: &str) -> String {
-    format!("The agent chose a runner that is not in {workspace_name}.")
+pub(super) fn describe_foreign_scope_project(
+    workspace_name: &str,
+    project_names: &[&str],
+) -> String {
+    format!(
+        "Applies to: a chosen project is not in {workspace_name}. Ask for \
+         changes and name one of: {}.",
+        join_choices(project_names, ALL_PROJECTS_CHOICE)
+    )
+}
+
+pub(super) fn describe_unknown_workflow(signed_names: &[&str]) -> String {
+    format!(
+        "Who does it: the chosen workflow does not exist here. Ask for \
+         changes and name one of: {}.",
+        join_choices(signed_names, ONE_AGENT_CHOICE)
+    )
+}
+
+pub(super) fn describe_unsigned_workflow(
+    workflow_name: &str,
+    signed_names: &[&str],
+) -> String {
+    format!(
+        "Who does it: the workflow {workflow_name} is not signed yet. Ask for \
+         changes and name one of: {}.",
+        join_choices(signed_names, ONE_AGENT_CHOICE)
+    )
+}
+
+pub(super) fn describe_foreign_runner(
+    workspace_name: &str,
+    runner_names: &[&str],
+) -> String {
+    format!(
+        "Runs on: the chosen runner is not in {workspace_name}. Ask for \
+         changes and name one of: {}.",
+        join_choices(runner_names, ANY_FREE_RUNNER_CHOICE)
+    )
+}
+
+pub(super) fn describe_unknown_skill(skill_names: &[&str]) -> String {
+    format!(
+        "Skills to use: a chosen skill does not exist here. Ask for changes \
+         and name one of: {}.",
+        join_choices(skill_names, NO_SKILL_CHOICE)
+    )
 }
 
 pub(super) fn describe_invalid_schedule(problem: &ScheduleProblem) -> String {
-    format!("The schedule is not valid: {problem}.")
+    format!("Repeats: {problem}. Ask for changes and give a valid time.")
 }
 
 pub(super) fn describe_taken_project_name(name: &str) -> String {
-    format!("A project named {name} already exists.")
+    format!("Name: a project named {name} already exists. {ANOTHER_NAME_FIX}")
 }
 
 pub(super) fn describe_taken_skill_name(name: &str) -> String {
-    format!("A skill named {name} already exists.")
+    format!("Name: a skill named {name} already exists. {ANOTHER_NAME_FIX}")
 }
 
-pub(super) fn describe_missing_branch(address: &str) -> String {
-    format!("The agent gave no branch for {address}.")
+pub(super) fn describe_repository_problem(problem: impl Display) -> String {
+    format!("Repos: {problem}. {REPOSITORY_FIX}")
 }
 
 pub(super) fn find_name_problem(name: &str) -> Option<String> {
     let problem = validate_name(name).err()?;
-    Some(write_sentence(&problem.to_string()))
+    Some(format!("Name: {problem}. {ANOTHER_NAME_FIX}"))
 }
 
-pub(super) fn write_sentence(message: &str) -> String {
-    let mut characters = message.chars();
-    let first_character = characters.next();
-    let capital: String = first_character
-        .into_iter()
-        .flat_map(char::to_uppercase)
-        .collect();
-    format!("{capital}{}{SENTENCE_END}", characters.as_str())
+fn describe_workspace_without_projects(workspace_name: &str) -> String {
+    format!(
+        "Project: {workspace_name} has no projects yet. Add a project first, \
+         then draft this again."
+    )
+}
+
+fn join_choices(names: &[&str], last_choice: &str) -> String {
+    let mut choices = names.to_vec();
+    choices.push(last_choice);
+    choices.join(CHOICE_SEPARATOR)
 }

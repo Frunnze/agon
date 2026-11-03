@@ -96,6 +96,7 @@ class _NewProjectScreenState extends State<NewProjectScreen> {
                   autocorrect: false,
                   style: AppTextStyles.body.merge(AppTextStyles.monospace),
                   decoration: InputDecoration(errorText: _nameProblem),
+                  onChanged: (String _) => setState(() => _nameProblem = null),
                 ),
               ],
             ),
@@ -120,6 +121,8 @@ class _NewProjectScreenState extends State<NewProjectScreen> {
                 RepositoryEntryField(
                   controller: _addressController,
                   problem: _addressProblem,
+                  onChanged: (String _) =>
+                      setState(() => _addressProblem = null),
                   placeholder: folderPicker == null
                       ? _phonePlaceholder
                       : _computerPlaceholder,
@@ -277,6 +280,6 @@ class _NewProjectScreenState extends State<NewProjectScreen> {
         ],
       ),
     );
-    widget.navigation.replaceRoute(ProjectRoute(project.id));
+    widget.navigation.replaceSavedForm(ProjectRoute(project.id));
   }
 }

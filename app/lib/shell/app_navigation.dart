@@ -29,6 +29,19 @@ final class AppNavigation extends ChangeNotifier {
     notifyListeners();
   }
 
+  void closeSavedForm() {
+    _routes = List<AppRoute>.unmodifiable(_listRoutesBelowSavedForm());
+    notifyListeners();
+  }
+
+  void replaceSavedForm(AppRoute destination) {
+    _routes = List<AppRoute>.unmodifiable(<AppRoute>[
+      ..._listRoutesBelowSavedForm(),
+      destination,
+    ]);
+    notifyListeners();
+  }
+
   void closeRoute() {
     if (_routes.length < 2) {
       throw StateError('The first page of a section cannot be closed');
@@ -38,6 +51,16 @@ final class AppNavigation extends ChangeNotifier {
       _routes.sublist(0, _routes.length - 1),
     );
     notifyListeners();
+  }
+
+  List<AppRoute> _listRoutesBelowSavedForm() {
+    final List<AppRoute> below = _routes.sublist(0, _routes.length - 1);
+    final bool isOfferedByNewPage =
+        below.length > 1 && below.last is NewPageRoute;
+    if (isOfferedByNewPage) {
+      return below.sublist(0, below.length - 1);
+    }
+    return below;
   }
 
   void returnTo(AppRoute route) {

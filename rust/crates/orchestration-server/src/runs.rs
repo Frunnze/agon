@@ -5,13 +5,14 @@ use chrono::{DateTime, Utc};
 use orchestration_api::updates::ChangeTopic;
 use orchestration_api::work::SendChatMessageRequest;
 use orchestration_core::identifiers::{DeviceId, RunId, TaskId};
-use orchestration_core::run::Run;
+use orchestration_core::run::{ChatAuthor, Run};
 use uuid::Uuid;
 
 use crate::authentication::{AuthenticatedDevice, SignedRequest};
 use crate::change::Change;
 use crate::error::ServerError;
 use crate::extractors::{PathValue, parse_json_body};
+use crate::follow_ups::append_chat_message;
 use crate::run_changes::{cancel_run_record, retry_run_record};
 use crate::run_starts::{
     describe_run, describe_run_detail, start_run, sync_task_status,
@@ -104,7 +105,7 @@ pub async fn send_chat_message(
         parse_json_body(&request.body)?;
     let run_id = RunId(run_uuid);
     let run = server.apply(&request.caller.device_id, |state, _now| {
-        append_chat_message(state, run_id, &message_request)
+        send_person_message(state, run_id, &message_request)
     })?;
     Ok(Json(run))
 }
@@ -209,17 +210,21 @@ fn store_changed_run(
         .with_detail(detail)
 }
 
-fn append_chat_message(
+fn send_person_message(
     state: &mut StoredState,
     run_id: RunId,
     request: &SendChatMessageRequest,
 ) -> Result<Change<Run>, ServerError> {
-    let record = state
-        .runs
-        .get_mut(&run_id)
-        .ok_or(ServerError::NotFound(UNKNOWN_RUN))?;
-    record.run.chat.push(request.message.clone());
-    let run = record.run.clone();
+    if request.message.author != ChatAuthor::You {
+        return Err(ServerError::Invalid(
+            "a sent message must come from the person".to_owned(),
+        ));
+    }
+    let record = find_run(state, run_id)?;
+    let changed = append_chat_message(record, &request.message);
+    let run = changed.run.clone();
+    state.runs.insert(run_id, changed);
+    sync_task_status(state, run.task_id, run.status);
     let event_text =
         format!("Sent a message to {}", describe_run(state, &run));
     Ok(Change::recorded(

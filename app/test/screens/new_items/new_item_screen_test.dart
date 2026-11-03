@@ -14,8 +14,8 @@ import 'new_item_harness.dart';
 
 const String _drafterLine = 'Claude Code is drafting on office-server';
 const String _projectProblem =
-    'No project in acme fits this. Ask for changes and name the project, '
-    'or add the project first.';
+    'Project: the agent could not tell which one. Ask for changes and name '
+    'one of: acme-app, billing.';
 
 void main() {
   for (final MapEntry<DraftKind, AppRoute> entry in newItemRoutes.entries) {

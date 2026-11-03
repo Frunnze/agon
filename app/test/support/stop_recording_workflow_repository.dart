@@ -38,6 +38,11 @@ final class StopRecordingWorkflowRepository extends ChangeNotifier
   }
 
   @override
+  Future<Workflow> createWorkflow(Workflow unsavedWorkflow) {
+    throw UnimplementedError();
+  }
+
+  @override
   Future<Workflow> saveWorkflow(Workflow workflow) {
     throw UnimplementedError();
   }

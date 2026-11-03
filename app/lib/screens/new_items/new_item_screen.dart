@@ -107,9 +107,11 @@ class _NewItemScreenState extends State<NewItemScreen> {
       texts: _texts,
       wishController: _wishController,
       wishProblem: _wishProblem,
+      onWishChanged: (String _) => setState(() => _wishProblem = null),
       notice: notice,
       folderChoice: folderChoice,
       onDraft: _startFirstDraft,
+      onAddManually: _openFormAboveRequest,
       onBack: widget.navigation.closeRoute,
     );
   }
@@ -159,6 +161,10 @@ class _NewItemScreenState extends State<NewItemScreen> {
 
   void _openForm() {
     widget.navigation.replaceRoute(widget.formRoute);
+  }
+
+  void _openFormAboveRequest() {
+    widget.navigation.openRoute(widget.formRoute);
   }
 
   ItemDraftRequest _describeRequest(ItemDraftChange? change) {

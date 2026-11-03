@@ -18,6 +18,7 @@ class ScheduleFields extends StatelessWidget {
     required this.weekday,
     required this.timeController,
     required this.timeProblem,
+    required this.onTimeChanged,
     required this.onRepeatChanged,
     required this.onWeekdayChanged,
     super.key,
@@ -29,6 +30,7 @@ class ScheduleFields extends StatelessWidget {
   final Weekday weekday;
   final TextEditingController timeController;
   final String? timeProblem;
+  final ValueChanged<String> onTimeChanged;
   final ValueChanged<RepeatChoice> onRepeatChanged;
   final ValueChanged<Weekday> onWeekdayChanged;
 
@@ -79,6 +81,7 @@ class ScheduleFields extends StatelessWidget {
                   hintText: _timeHint,
                   errorText: timeProblem,
                 ),
+                onChanged: onTimeChanged,
               ),
             ],
           ),

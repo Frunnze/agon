@@ -51,7 +51,7 @@ pub(super) fn describe_workflow(workflow: &DraftingWorkflow) -> String {
 pub(super) fn describe_skill(skill: &DraftingSkill) -> String {
     let usage = match skill.usage {
         SkillUsage::Automatic => "automatic",
-        SkillUsage::WhenChosen => "when chosen",
+        SkillUsage::WhenChosen => "when_chosen",
     };
     format!(
         "{} (id {}), {usage}: {}",

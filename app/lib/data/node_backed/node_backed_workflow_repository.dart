@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 
 import 'package:agent_orchestration/bridge/codecs/change_values.dart' as node;
+import 'package:agent_orchestration/bridge/codecs/workflow_values.dart'
+    as node;
 import 'package:agent_orchestration/bridge/codecs/workflow_views.dart' as node;
 import 'package:agent_orchestration/bridge/commands/deletion_commands.dart'
     as node;
@@ -93,6 +95,22 @@ final class NodeBackedWorkflowRepository extends ChangeNotifier
       }
     }
     return null;
+  }
+
+  @override
+  Future<Workflow> createWorkflow(Workflow unsavedWorkflow) async {
+    final node.Workflow planned = mapWorkflowToNode(unsavedWorkflow);
+    final node.WorkflowView created = await executeNodeCommand(
+      _channel,
+      node.CreateWorkflowCommand(
+        workspaceId: _workspaceRepository.currentWorkspace().id,
+        workflowName: planned.name,
+        availability: planned.availability,
+        agents: planned.agents,
+        connections: planned.connections,
+      ),
+    );
+    return _storeView(created);
   }
 
   @override

@@ -9,6 +9,7 @@ class RepositoryEntryField extends StatelessWidget {
     required this.controller,
     required this.problem,
     required this.placeholder,
+    required this.onChanged,
     required this.onAdded,
     super.key,
   });
@@ -16,6 +17,7 @@ class RepositoryEntryField extends StatelessWidget {
   final TextEditingController controller;
   final String? problem;
   final String placeholder;
+  final ValueChanged<String> onChanged;
   final VoidCallback onAdded;
 
   @override
@@ -29,6 +31,7 @@ class RepositoryEntryField extends StatelessWidget {
             autocorrect: false,
             keyboardType: TextInputType.url,
             style: AppTextStyles.body.merge(AppTextStyles.monospace),
+            onChanged: onChanged,
             onSubmitted: (String _) => onAdded(),
             decoration: InputDecoration(
               hintText: placeholder,

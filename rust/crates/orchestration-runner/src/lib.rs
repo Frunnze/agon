@@ -35,6 +35,7 @@ pub mod skill_selection;
 mod steady_interval;
 pub mod step_command;
 mod step_execution;
+pub mod step_opening;
 pub mod step_plan;
 pub mod step_prompt;
 pub mod uncommitted_changes;

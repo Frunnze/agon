@@ -12,7 +12,8 @@ const String changeHint = 'The agent drafts it again with your note.';
 const String changeFieldLabel = 'What should the agent change?';
 const String draftProblemsTitle = 'The agent could not fill in everything';
 const String draftProblemsNote =
-    'Ask for changes to fix it. Approve stays off until then.';
+    'Each line names the field and how to fix it. Approve stays off until '
+    'then.';
 const String approveLabel = 'Approve';
 const String sendChangeLabel = 'Send';
 const String stopDraftingLabel = 'Stop drafting';

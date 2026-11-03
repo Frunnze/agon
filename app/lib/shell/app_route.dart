@@ -7,6 +7,8 @@ import 'package:agent_orchestration/data/models/workflow_draft.dart';
 import 'package:agent_orchestration/shell/app_section.dart';
 import 'package:agent_orchestration/shell/draft_kind_sections.dart';
 
+part 'setup_routes.dart';
+
 sealed class AppRoute {
   const AppRoute(this.section);
 
@@ -29,7 +31,11 @@ final class SectionRoute extends AppRoute {
   const SectionRoute(super.section);
 }
 
-final class NewTaskRoute extends AppRoute {
+sealed class NewPageRoute extends AppRoute {
+  const NewPageRoute(super.section);
+}
+
+final class NewTaskRoute extends NewPageRoute {
   const NewTaskRoute() : super(AppSection.tasks);
 }
 
@@ -60,7 +66,7 @@ final class ChatRoute extends AppRoute {
   String get identity => runId.value;
 }
 
-final class NewJobRoute extends AppRoute {
+final class NewJobRoute extends NewPageRoute {
   const NewJobRoute() : super(AppSection.jobs);
 }
 
@@ -86,7 +92,7 @@ final class WorkspaceSwitcherRoute extends AppRoute {
   const WorkspaceSwitcherRoute() : super(AppSection.projects);
 }
 
-final class NewProjectRoute extends AppRoute {
+final class NewProjectRoute extends NewPageRoute {
   const NewProjectRoute() : super(AppSection.projects);
 }
 
@@ -146,8 +152,12 @@ final class RepositoryFileRoute extends AppRoute {
   String get identity => '${filesRoute.identity} $branch $path';
 }
 
-final class NewWorkflowRoute extends AppRoute {
+final class NewWorkflowRoute extends NewPageRoute {
   const NewWorkflowRoute() : super(AppSection.workflows);
+}
+
+final class ManualWorkflowRoute extends AppRoute {
+  const ManualWorkflowRoute() : super(AppSection.workflows);
 }
 
 final class WorkflowDraftingRoute extends AppRoute {
@@ -181,7 +191,7 @@ final class WorkflowBuilderRoute extends AppRoute {
   String get identity => '${workflowId.value} ${opening.name}';
 }
 
-final class NewWorkflowTaskRoute extends AppRoute {
+final class NewWorkflowTaskRoute extends NewPageRoute {
   const NewWorkflowTaskRoute(this.workflowId) : super(AppSection.tasks);
 
   final WorkflowId workflowId;
@@ -190,7 +200,7 @@ final class NewWorkflowTaskRoute extends AppRoute {
   String get identity => workflowId.value;
 }
 
-final class NewSkillRoute extends AppRoute {
+final class NewSkillRoute extends NewPageRoute {
   const NewSkillRoute() : super(AppSection.skills);
 }
 
@@ -230,7 +240,7 @@ final class EditRuleRoute extends AppRoute {
   String get identity => ruleId.value;
 }
 
-final class NewRuleRoute extends AppRoute {
+final class NewRuleRoute extends NewPageRoute {
   const NewRuleRoute({required this.presetProjectId})
     : super(AppSection.rules);
 
@@ -273,30 +283,4 @@ final class PairingCodeRoute extends AppRoute {
 
 final class PairingApprovalRoute extends AppRoute {
   const PairingApprovalRoute() : super(AppSection.devices);
-}
-
-sealed class SetupRoute extends AppRoute {
-  const SetupRoute() : super(AppSection.devices);
-}
-
-final class SetupRoleRoute extends SetupRoute {
-  const SetupRoleRoute();
-}
-
-final class PairingCodeEntryRoute extends SetupRoute {
-  const PairingCodeEntryRoute(this.role);
-
-  final DeviceRole role;
-
-  @override
-  String get identity => role.name;
-}
-
-final class PairingDoneRoute extends SetupRoute {
-  const PairingDoneRoute(this.outcome);
-
-  final PairingOutcome outcome;
-
-  @override
-  String get identity => outcome.deviceName;
 }

@@ -3,6 +3,7 @@ use std::collections::BTreeMap;
 use chrono::{DateTime, Utc};
 use orchestration_api::accounts::{DeviceRegistration, SealedWorkspaceKey};
 use orchestration_api::updates::ChangeNotification;
+use orchestration_api::work::FollowUp;
 use orchestration_core::approval::ApprovalRequest;
 use orchestration_core::device::{Device, Runner};
 use orchestration_core::identifiers::{
@@ -89,4 +90,6 @@ pub struct WorkflowRecord {
 pub struct RunRecord {
     pub run: Run,
     pub pinned_steps: BTreeMap<String, DeviceId>,
+    #[serde(default)]
+    pub follow_ups: BTreeMap<String, FollowUp>,
 }

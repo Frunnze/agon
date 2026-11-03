@@ -18,6 +18,7 @@ mod devices;
 mod error;
 mod events;
 mod extractors;
+mod follow_ups;
 mod forgotten_work;
 mod logging;
 mod memberships;

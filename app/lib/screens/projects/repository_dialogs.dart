@@ -120,6 +120,7 @@ class _AddRepositoryDialogState extends State<AddRepositoryDialog> {
               controller: _addressController,
               problem: _addressProblem,
               placeholder: 'github.com/acme/repo',
+              onChanged: (String _) => setState(() => _addressProblem = null),
               onAdded: _addRepository,
             ),
           ],

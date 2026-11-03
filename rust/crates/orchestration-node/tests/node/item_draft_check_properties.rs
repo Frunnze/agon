@@ -9,8 +9,12 @@ use orchestration_node::item_drafting::{
 use proptest::prelude::*;
 use uuid::Uuid;
 
+use crate::support::draft_problem_texts::{
+    join_choices, join_names, list_project_names, list_runner_names,
+    list_signed_workflow_names, list_skill_names,
+};
 use crate::support::drafting_samples::{
-    FOREIGN_DEVICE_ID, context_strategy, foreign_uuid, padded,
+    FOREIGN_DEVICE_ID, context_strategy, foreign_uuid, padded, sample_project,
     valid_work_draft,
 };
 use crate::support::entity_strategies::secret_text_strategy;
@@ -19,8 +23,10 @@ const CHECK_CASES: u32 = 32;
 const UNSIGNED_WORKFLOW_NAME: &str = "unsigned-flow";
 const INVALID_MINUTE: u32 = 75;
 const PROJECT_IDENTIFIER_BASE: u128 = 0x100;
-const JOB_WITHOUT_SCHEDULE: &str =
-    "A job needs a schedule. Ask for changes and say how often it repeats.";
+const JOB_WITHOUT_SCHEDULE: &str = "Repeats: a job needs a schedule. Ask \
+                                    for changes and say how often it \
+                                    repeats.";
+const EXTRA_PROJECT_INDEX: usize = 7;
 
 type WorkWrapper = fn(WorkDraft) -> ItemDraft;
 
@@ -55,6 +61,10 @@ fn work_wrapper_strategy() -> impl Strategy<Value = WorkWrapper> {
     prop_oneof![Just(task), Just(job)]
 }
 
+fn describe_workflow_choices(context: &DraftingContext) -> String {
+    join_choices(list_signed_workflow_names(context), "one agent")
+}
+
 fn apply_work_defect(
     context: &mut DraftingContext,
     work: &mut WorkDraft,
@@ -63,23 +73,38 @@ fn apply_work_defect(
     match defect {
         WorkDefect::EmptyTitle => {
             " \n ".clone_into(&mut work.title);
-            "The agent wrote nothing for what should be done.".to_owned()
+            "What should be done: it is empty. Ask for changes and say what \
+             should be done."
+                .to_owned()
         }
         WorkDefect::NoProject => {
+            let extra =
+                sample_project(EXTRA_PROJECT_INDEX, "extra", "github.com/a/x");
+            context.projects.push(extra);
             work.project_id = None;
-            "No project in acme fits this. Ask for changes and name the \
-             project, or add the project first."
-                .to_owned()
+            format!(
+                "Project: the agent could not tell which one. Ask for \
+                 changes and name one of: {}.",
+                join_names(&list_project_names(context))
+            )
         }
         WorkDefect::ForeignProject => {
             work.project_id = Some(ProjectId(foreign_uuid()));
-            "The agent chose a project that is not in acme.".to_owned()
+            format!(
+                "Project: the chosen one is not in acme. Ask for changes and \
+                 name one of: {}.",
+                join_names(&list_project_names(context))
+            )
         }
         WorkDefect::UnknownWorkflow => {
             work.doer = TaskDoer::Workflow {
                 workflow_id: WorkflowId(foreign_uuid()),
             };
-            "The agent chose a workflow that does not exist here.".to_owned()
+            format!(
+                "Who does it: the chosen workflow does not exist here. Ask \
+                 for changes and name one of: {}.",
+                describe_workflow_choices(context)
+            )
         }
         WorkDefect::UnsignedWorkflow => {
             let workflow_id = WorkflowId(foreign_uuid());
@@ -90,26 +115,36 @@ fn apply_work_defect(
             });
             work.doer = TaskDoer::Workflow { workflow_id };
             format!(
-                "The workflow {UNSIGNED_WORKFLOW_NAME} is not signed yet, so \
-                 it cannot do the work."
+                "Who does it: the workflow {UNSIGNED_WORKFLOW_NAME} is not \
+                 signed yet. Ask for changes and name one of: {}.",
+                describe_workflow_choices(context)
             )
         }
         WorkDefect::ForeignRunner => {
             work.runs_on = RunnerTarget::SpecificRunner {
                 device_id: DeviceId(FOREIGN_DEVICE_ID.to_owned()),
             };
-            "The agent chose a runner that is not in acme.".to_owned()
+            format!(
+                "Runs on: the chosen runner is not in acme. Ask for changes \
+                 and name one of: {}.",
+                join_choices(list_runner_names(context), "any free runner")
+            )
         }
         WorkDefect::UnknownSkill => {
             work.skills.push(SkillId(foreign_uuid()));
             work.skills.push(SkillId(foreign_uuid()));
-            "The agent chose a skill that does not exist here.".to_owned()
+            format!(
+                "Skills to use: a chosen skill does not exist here. Ask for \
+                 changes and name one of: {}.",
+                join_choices(list_skill_names(context), "none")
+            )
         }
         WorkDefect::InvalidSchedule => {
             work.schedule = Some(Schedule::Hour {
                 minute: INVALID_MINUTE,
             });
-            "The schedule is not valid: minute 75 is not between 0 and 59."
+            "Repeats: minute 75 is not between 0 and 59. Ask for changes and \
+             give a valid time."
                 .to_owned()
         }
     }
@@ -211,6 +246,27 @@ proptest! {
             Vec::new()
         };
         prop_assert_eq!(problems, expected);
+    }
+
+    #[test]
+    fn test_check_item_draft_property_the_only_project_fills_a_missing_one(
+        context in context_strategy(),
+        wrap in work_wrapper_strategy(),
+    ) {
+        let mut context = context;
+        context.projects.truncate(1);
+        let mut work = valid_work_draft(&context, "Ship", "Ship it");
+        let only_project_id = work.project_id;
+        work.project_id = None;
+
+        let checked = check_item_draft(&context, &wrap(work.clone()));
+
+        let completed = WorkDraft {
+            project_id: only_project_id,
+            ..work
+        };
+        prop_assert_eq!(checked.draft, wrap(completed));
+        prop_assert!(checked.problems.is_empty(), "{:?}", checked.problems);
     }
 
     #[test]

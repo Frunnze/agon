@@ -2,7 +2,7 @@ use axum::Json;
 use axum::extract::State;
 use chrono::{DateTime, Utc};
 use orchestration_api::updates::ChangeTopic;
-use orchestration_api::work::{ClaimResponse, RunAssignment};
+use orchestration_api::work::{ClaimResponse, FollowUp, RunAssignment};
 use orchestration_core::agent_place::can_take_place;
 use orchestration_core::device::{Runner, RunnerTarget};
 use orchestration_core::identifiers::{
@@ -210,16 +210,18 @@ fn assign_step(
     }
     record.pinned_steps.remove(step_name);
     let run = record.run.clone();
+    let follow_up = record.follow_ups.get(step_name).copied();
     if let Some(runner) = state.runners.get_mut(runner_id) {
         runner.slots_busy = runner.slots_busy.saturating_add(1);
     }
-    build_assignment(state, run, step_name)
+    build_assignment(state, run, step_name, follow_up)
 }
 
 fn build_assignment(
     state: &StoredState,
     run: Run,
     step_name: &str,
+    follow_up: Option<FollowUp>,
 ) -> Result<RunAssignment, ServerError> {
     let task = state
         .tasks
@@ -240,6 +242,7 @@ fn build_assignment(
         skills,
         rules,
         run,
+        follow_up,
     })
 }
 

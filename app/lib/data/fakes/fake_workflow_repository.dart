@@ -37,6 +37,7 @@ final class FakeWorkflowRepository extends ChangeNotifier
   final Duration _draftStepDelay;
   final Set<WorkflowDraft> _runningDrafts = <WorkflowDraft>{};
   int _draftedWorkflowCount = 0;
+  int _createdWorkflowCount = 0;
   List<Workflow> _workflows;
   List<WorkflowChange> _changes;
 
@@ -61,6 +62,23 @@ final class FakeWorkflowRepository extends ChangeNotifier
       }
     }
     return null;
+  }
+
+  @override
+  Future<Workflow> createWorkflow(Workflow unsavedWorkflow) async {
+    _createdWorkflowCount += 1;
+    final Workflow created = Workflow(
+      id: WorkflowId('created-workflow-$_createdWorkflowCount'),
+      name: unsavedWorkflow.name,
+      availability: unsavedWorkflow.availability,
+      agents: unsavedWorkflow.agents,
+      connections: unsavedWorkflow.connections,
+      signature: null,
+    );
+
+    _workflows = appendRecord(_workflows, created);
+    notifyListeners();
+    return created;
   }
 
   @override

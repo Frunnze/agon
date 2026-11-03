@@ -15,6 +15,12 @@ const AGENT_TASK_CASES: u32 = 4;
 const PLANNING_AGENT_ID: &str = "00000000-0000-0000-0000-000000000011";
 const UNKNOWN_AGENT_ID: &str = "00000000-0000-0000-0000-000000000099";
 const CANVAS_UNITS: &str = "position is in canvas pixels";
+const WORKFLOW_FIELD_FORMS: [&str; 4] = [
+    "{\"kind\": \"any_free_runner\"}",
+    "ask_before_risky_actions",
+    "never_ask",
+    "{\"horizontal\": ",
+];
 
 fn is_task_upload(request: &RecordedRequest) -> bool {
     request.method == "POST" && request.path == "/tasks"
@@ -93,6 +99,9 @@ proptest! {
         for expected_part in &expected_parts {
             let is_written = details.contains(expected_part.as_str());
             prop_assert!(is_written, "{}", details);
+        }
+        for field_form in WORKFLOW_FIELD_FORMS {
+            prop_assert!(details.contains(field_form), "{}", details);
         }
         let expected_doer = TaskDoer::OneAgent {
             agent: AgentKind::ClaudeCode,

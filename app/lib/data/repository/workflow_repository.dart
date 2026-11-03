@@ -11,6 +11,8 @@ abstract interface class WorkflowRepository implements Listenable {
 
   WorkflowChange? findPendingChange(WorkflowId workflowId);
 
+  Future<Workflow> createWorkflow(Workflow unsavedWorkflow);
+
   Future<Workflow> saveWorkflow(Workflow workflow);
 
   Future<Workflow> signWorkflow(WorkflowId workflowId);

@@ -105,6 +105,7 @@ class _WorkspaceSwitcherDialogState extends State<WorkspaceSwitcherDialog> {
               controller: _nameController,
               autofocus: true,
               decoration: InputDecoration(errorText: _nameProblem),
+              onChanged: (String _) => setState(() => _nameProblem = null),
             ),
           ],
         ),

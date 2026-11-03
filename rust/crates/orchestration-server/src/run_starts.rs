@@ -48,6 +48,7 @@ pub fn start_run(
     let record = RunRecord {
         run: run.clone(),
         pinned_steps: BTreeMap::new(),
+        follow_ups: BTreeMap::new(),
     };
     state.runs.insert(run.id, record);
     sync_task_status(state, task_id, run.status);

@@ -5,6 +5,7 @@ import 'package:agent_orchestration/theme/app_spacing.dart';
 import 'package:agent_orchestration/widgets/app_button.dart';
 
 const double _sideBySideMinimumWidth = 480;
+const String addAgentLabel = 'Add agent';
 
 class BuilderToolbar extends StatelessWidget {
   const BuilderToolbar({
@@ -25,7 +26,7 @@ class BuilderToolbar extends StatelessWidget {
 
   Widget _buildToolbar(BuildContext context, BoxConstraints limits) {
     final Widget addButton = AppButton.secondary(
-      label: 'Add agent',
+      label: addAgentLabel,
       icon: AppIconKind.plus,
       onPressed: onAgentAdded,
     );

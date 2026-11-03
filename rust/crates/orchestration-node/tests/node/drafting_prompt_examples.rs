@@ -98,7 +98,7 @@ fn a_prompt_lists_the_context_in_the_agreed_line_format() {
         Skills:\n\
         - release-notes (id 00000000-0000-0000-0000-000000000005), \
         automatic: Write release notes\n\
-        - ios (id 00000000-0000-0000-0000-000000000006), when chosen: \
+        - ios (id 00000000-0000-0000-0000-000000000006), when_chosen: \
         Build the app\n\
         Runners:\n\
         - air-laptop (id a1b2c3), online, labels: mac, arm, offers: \

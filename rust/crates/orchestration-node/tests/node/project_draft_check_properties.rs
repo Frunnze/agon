@@ -23,7 +23,11 @@ const PROJECT_NAME_PATTERN: &str = "[a-z][a-z0-9]{2,8}";
 const BRANCH_PATTERN: &str = "[a-z][a-z0-9-]{0,8}[a-z0-9]";
 const DETACHED_HEAD: &str = "4b825dc642cb6eb9a060e54bf8d69288fbee4904";
 const NO_REPOSITORY: &str =
-    "The agent found no repo. Ask for changes and say where the code is.";
+    "Repos: none found. Ask for changes and say where the code is.";
+const FOREIGN_FOLDER: &str =
+    "the folder /Users/someone/app is on another computer, so add it there";
+const REPOSITORY_FIX: &str = "Ask for changes and give a GitHub address or a \
+                              git folder on this computer.";
 
 fn repository(address: &str, default_branch: &str) -> RepositoryDraft {
     RepositoryDraft {
@@ -49,6 +53,10 @@ fn check_project(
         return (Vec::new(), vec!["the draft is no project".to_owned()]);
     };
     (project.repositories, checked.problems)
+}
+
+fn describe_repository_problem(problem: &str) -> String {
+    format!("Repos: {problem}. {REPOSITORY_FIX}")
 }
 
 fn this_device_address(path: &str) -> String {
@@ -81,19 +89,22 @@ fn folder_problems_are_written_as_sentences() {
 
     let (repositories, problems) = check_project(&empty_context(), &drafted);
 
+    let missing_folder = format!(
+        "the folder {missing_path} does not exist or this app cannot open it"
+    );
+    let plain_folder =
+        format!("the folder {parent_path} is not a git repository");
     let expected = vec![
-        format!(
-            "The folder {missing_path} does not exist or this app cannot \
-             open it."
+        describe_repository_problem(&missing_folder),
+        describe_repository_problem(&plain_folder),
+        describe_repository_problem(FOREIGN_FOLDER),
+        describe_repository_problem(
+            "only https and git@ addresses are supported, not ftp",
         ),
-        format!("The folder {parent_path} is not a git repository."),
-        "The folder /Users/someone/app is on another computer, so add it there."
-            .to_owned(),
-        "Only https and git@ addresses are supported, not ftp.".to_owned(),
-        "The agent gave no branch for github.com/acme/app.".to_owned(),
     ];
     assert_eq!(problems, expected);
-    assert!(repositories.is_empty(), "{repositories:?}");
+    let github_on_main = repository("github.com/acme/app", "main");
+    assert_eq!(repositories, vec![github_on_main]);
 }
 
 #[test]
@@ -111,8 +122,8 @@ fn a_detached_folder_has_no_branch_checked_out() {
 
     let (repositories, problems) = check_project(&empty_context(), &drafted);
 
-    let expected = format!("The folder {path} has no branch checked out.");
-    assert_eq!(problems, vec![expected]);
+    let detached = format!("the folder {path} has no branch checked out");
+    assert_eq!(problems, vec![describe_repository_problem(&detached)]);
     assert!(repositories.is_empty(), "{repositories:?}");
 }
 
@@ -154,7 +165,7 @@ fn test_check_item_draft_property_a_git_folder_becomes_a_local_address() {
 }
 
 #[test]
-fn test_check_item_draft_property_a_local_address_needs_a_branch() {
+fn test_check_item_draft_property_a_missing_branch_defaults_to_main() {
     let mut runner = TestRunner::new(Config::with_cases(PROJECT_CASES));
 
     let outcome = runner.run(&PROJECT_NAME_PATTERN, |name| {
@@ -166,9 +177,8 @@ fn test_check_item_draft_property_a_local_address_needs_a_branch() {
         let (repositories, problems) =
             check_project(&empty_context(), &drafted);
 
-        let expected = format!("The agent gave no branch for {address}.");
-        prop_assert_eq!(problems, vec![expected]);
-        prop_assert!(repositories.is_empty());
+        prop_assert!(problems.is_empty(), "{:?}", problems);
+        prop_assert_eq!(repositories, vec![repository(&address, "main")]);
         Ok(())
     });
 
@@ -237,10 +247,14 @@ proptest! {
         let (_, taken_problems) = check_project(&context, &taken);
         let (_, invalid_problems) = check_project(&context, &invalid);
 
-        let taken_sentence = format!("A project named {name} already exists.");
+        let taken_sentence = format!(
+            "Name: a project named {name} already exists. Ask for changes \
+             and give another name."
+        );
         prop_assert_eq!(taken_problems, vec![taken_sentence]);
-        let invalid_sentence = "A name can only use lowercase letters, \
-                                digits and dashes, not 'B'.";
+        let invalid_sentence = "Name: a name can only use lowercase letters, \
+                                digits and dashes, not 'B'. Ask for changes \
+                                and give another name.";
         prop_assert_eq!(invalid_problems, vec![invalid_sentence.to_owned()]);
     }
 }

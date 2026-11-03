@@ -16,6 +16,8 @@ mod device_tests;
 mod event_tests;
 mod failure_report_tests;
 mod fixtures;
+mod follow_up_fixtures;
+mod follow_up_tests;
 mod forgotten_work_tests;
 mod fuzz_tests;
 mod hosting_tests;

@@ -14,11 +14,12 @@ use crate::authentication::SignedRequest;
 use crate::change::Change;
 use crate::error::ServerError;
 use crate::extractors::{PathValue, parse_json_body};
+use crate::follow_ups::append_chat_message;
 use crate::run_changes::is_step_finished;
 use crate::run_starts::{describe_run, describe_run_detail, sync_task_status};
-use crate::runs::holds_step;
+use crate::runs::{find_run, holds_step};
 use crate::server::SharedServer;
-use crate::stored_state::StoredState;
+use crate::stored_state::{RunRecord, StoredState};
 
 const EVENT_TEXT_SEPARATOR: &str = "; ";
 
@@ -44,20 +45,18 @@ fn record_run_events(
     request: &RunEventsRequest,
     now: DateTime<Utc>,
 ) -> Result<Change<Run>, ServerError> {
-    let record = state
-        .runs
-        .get_mut(&run_id)
-        .ok_or(ServerError::NotFound("the run"))?;
-    if !holds_step(&record.run, runner_id) {
+    let record = find_run(state, run_id)?;
+    if !is_run_runner(record, runner_id) {
         return Err(ServerError::Forbidden(
             "the runner holds no step of this run",
         ));
     }
-    let mut run = record.run.clone();
+    let mut changed = record.clone();
     for event in &request.events {
-        run = apply_run_event(run, event, runner_id, now)?;
+        changed = apply_run_event(changed, event, runner_id, now)?;
     }
-    record.run = run.clone();
+    let run = changed.run.clone();
+    state.runs.insert(run_id, changed);
 
     sync_task_status(state, run.task_id, run.status);
     let run_label = describe_run(state, &run);
@@ -68,45 +67,55 @@ fn record_run_events(
     Ok(change.with_detail(detail))
 }
 
+fn is_run_runner(record: &RunRecord, runner_id: &DeviceId) -> bool {
+    let is_pinned = record
+        .pinned_steps
+        .values()
+        .any(|pinned_runner| pinned_runner == runner_id);
+    is_pinned || holds_step(&record.run, runner_id)
+}
+
 fn apply_run_event(
-    mut run: Run,
+    record: RunRecord,
     event: &RunEvent,
     runner_id: &DeviceId,
     now: DateTime<Utc>,
-) -> Result<Run, ServerError> {
-    match event {
+) -> Result<RunRecord, ServerError> {
+    let mut run = record.run.clone();
+    let changed_run = match event {
+        RunEvent::ChatAppended { message } => {
+            return Ok(append_chat_message(&record, message));
+        }
         RunEvent::StepStatusChanged { step_name, status } => {
             require_held_step(&run, step_name, runner_id)?;
-            Ok(apply_step_status(&run, step_name, *status, now)?)
+            apply_step_status(&run, step_name, *status, now)?
         }
         RunEvent::LogAppended { line } => {
             run.log.push(line.clone());
-            Ok(run)
-        }
-        RunEvent::ChatAppended { message } => {
-            run.chat.push(message.clone());
-            Ok(run)
+            run
         }
         RunEvent::SessionStarted { session } => {
             run.agent_session = Some(session.clone());
-            Ok(run)
+            run
         }
         RunEvent::WorktreeCreated { branch } => {
             run.worktree_branch = Some(branch.clone());
-            Ok(run)
+            run
         }
-        RunEvent::LinkChanged { link } => {
-            Ok(record_link_change(&run, *link, now))
-        }
+        RunEvent::LinkChanged { link } => record_link_change(&run, *link, now),
         RunEvent::Failed { failure } => {
-            fail_step(&run, failure, runner_id, now)
+            fail_step(&run, failure, runner_id, now)?
         }
         RunEvent::StepResultRecorded { step_name, result } => {
             require_held_step(&run, step_name, runner_id)?;
-            Ok(record_step_result(&run, step_name, result)?)
+            record_step_result(&run, step_name, result)?
         }
-        RunEvent::Finished => finish_held_steps(run, runner_id, now),
-    }
+        RunEvent::Finished => finish_held_steps(run, runner_id, now)?,
+    };
+    Ok(RunRecord {
+        run: changed_run,
+        ..record
+    })
 }
 
 fn require_held_step(

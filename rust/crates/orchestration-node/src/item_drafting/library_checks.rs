@@ -5,7 +5,7 @@ use super::drafting_context::DraftingContext;
 use super::item_draft::{ItemDraft, RuleDraft, SkillDraft};
 use super::problem_sentences::{
     EMPTY_RULE_TITLE, EMPTY_SCOPE, EMPTY_SKILL_INSTRUCTIONS,
-    EMPTY_SKILL_SUMMARY, FOREIGN_WORKSPACE, describe_foreign_project,
+    EMPTY_SKILL_SUMMARY, FOREIGN_WORKSPACE, describe_foreign_scope_project,
     describe_taken_skill_name, find_name_problem,
 };
 
@@ -107,6 +107,12 @@ fn find_project_scope_problem(
     let has_foreign_project = projects
         .iter()
         .any(|project_id| !context.includes_project(*project_id));
-    has_foreign_project
-        .then(|| describe_foreign_project(&context.workspace.name))
+    if !has_foreign_project {
+        return None;
+    }
+    let project_names = context.list_project_names();
+    Some(describe_foreign_scope_project(
+        &context.workspace.name,
+        &project_names,
+    ))
 }

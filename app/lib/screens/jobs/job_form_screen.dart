@@ -105,6 +105,6 @@ class JobFormScreen extends StatelessWidget {
     } else {
       await jobRepository.updateJob(job.id, draft);
     }
-    navigation.closeRoute();
+    navigation.closeSavedForm();
   }
 }

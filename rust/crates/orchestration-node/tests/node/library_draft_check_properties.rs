@@ -7,6 +7,7 @@ use orchestration_node::item_drafting::{
 };
 use proptest::prelude::*;
 
+use crate::support::draft_problem_texts::{join_choices, list_project_names};
 use crate::support::drafting_samples::{
     context_strategy, foreign_uuid, padded, valid_rule_draft,
     valid_skill_draft,
@@ -16,10 +17,13 @@ use crate::support::entity_strategies::secret_text_strategy;
 const LIBRARY_CASES: u32 = 32;
 const SKILL_NAME_PATTERN: &str = "[a-z]{3,8}";
 const TAKEN_SKILL_NAME: &str = "taken";
-const EMPTY_SCOPE: &str = "The agent left the scope empty.";
-const FOREIGN_WORKSPACE: &str =
-    "The agent chose a workspace that does not exist here.";
-const FOREIGN_PROJECT: &str = "The agent chose a project that is not in acme.";
+const EMPTY_SCOPE: &str =
+    "Applies to: it is empty. Ask for changes and say where it applies.";
+const FOREIGN_WORKSPACE: &str = "Applies to: the chosen workspace does not \
+                                 exist here. Ask for changes and say this \
+                                 workspace or everywhere.";
+const EMPTY_RULE_TITLE: &str = "Rule: it is empty. Ask for changes and say \
+                                what agents must follow.";
 
 #[derive(Clone, Copy, Debug)]
 enum ScopeDefect {
@@ -57,7 +61,19 @@ fn skill_defect_strategy() -> impl Strategy<Value = SkillDefect> {
     ]
 }
 
-fn apply_scope_defect(scope: &mut Scope, defect: ScopeDefect) -> String {
+fn describe_foreign_project(context: &DraftingContext) -> String {
+    format!(
+        "Applies to: a chosen project is not in acme. Ask for changes and \
+         name one of: {}.",
+        join_choices(list_project_names(context), "all projects")
+    )
+}
+
+fn apply_scope_defect(
+    context: &DraftingContext,
+    scope: &mut Scope,
+    defect: ScopeDefect,
+) -> String {
     match defect {
         ScopeDefect::ForeignWorkspace => {
             scope.workspaces = WorkspaceScope::OnlyWorkspaces {
@@ -69,7 +85,7 @@ fn apply_scope_defect(scope: &mut Scope, defect: ScopeDefect) -> String {
             scope.projects = ProjectScope::OnlyProjects {
                 projects: vec![ProjectId(foreign_uuid())],
             };
-            FOREIGN_PROJECT.to_owned()
+            describe_foreign_project(context)
         }
         ScopeDefect::EmptyWorkspaceList => {
             scope.workspaces = WorkspaceScope::OnlyWorkspaces {
@@ -94,8 +110,8 @@ fn apply_skill_defect(
     match defect {
         SkillDefect::InvalidName => {
             "Notes".clone_into(&mut skill.name);
-            "A name can only use lowercase letters, digits and dashes, not \
-             'N'."
+            "Name: a name can only use lowercase letters, digits and dashes, \
+             not 'N'. Ask for changes and give another name."
                 .to_owned()
         }
         SkillDefect::TakenName => {
@@ -106,18 +122,25 @@ fn apply_skill_defect(
                 usage: SkillUsage::Automatic,
             });
             skill.name = padded(TAKEN_SKILL_NAME);
-            format!("A skill named {TAKEN_SKILL_NAME} already exists.")
+            format!(
+                "Name: a skill named {TAKEN_SKILL_NAME} already exists. Ask \
+                 for changes and give another name."
+            )
         }
         SkillDefect::EmptySummary => {
             "  ".clone_into(&mut skill.summary);
-            "The agent wrote nothing for what the skill does.".to_owned()
+            "What it does: it is empty. Ask for changes and say what the \
+             skill does."
+                .to_owned()
         }
         SkillDefect::EmptyInstructions => {
             "\n".clone_into(&mut skill.instructions);
-            "The agent wrote no instructions.".to_owned()
+            "Instructions: they are empty. Ask for changes and say what \
+             agents should do."
+                .to_owned()
         }
         SkillDefect::Scope(scope_defect) => {
-            apply_scope_defect(&mut skill.scope, scope_defect)
+            apply_scope_defect(context, &mut skill.scope, scope_defect)
         }
     }
 }
@@ -187,10 +210,10 @@ proptest! {
     ) {
         let mut rule = valid_rule_draft(&context, &words);
         let expected = if let Some(scope_defect) = scope_defect {
-            apply_scope_defect(&mut rule.scope, scope_defect)
+            apply_scope_defect(&context, &mut rule.scope, scope_defect)
         } else {
             " ".clone_into(&mut rule.title);
-            "The agent wrote nothing for the rule.".to_owned()
+            EMPTY_RULE_TITLE.to_owned()
         };
 
         let checked = check_item_draft(&context, &ItemDraft::Rule(rule));
@@ -210,15 +233,13 @@ proptest! {
             ScopeDefect::EmptyProjectList,
         ];
         for scope_defect in empty_both {
-            apply_scope_defect(&mut rule.scope, scope_defect);
+            apply_scope_defect(&context, &mut rule.scope, scope_defect);
         }
 
         let checked = check_item_draft(&context, &ItemDraft::Rule(rule));
 
-        let expected = vec![
-            "The agent wrote nothing for the rule.".to_owned(),
-            EMPTY_SCOPE.to_owned(),
-        ];
+        let expected =
+            vec![EMPTY_RULE_TITLE.to_owned(), EMPTY_SCOPE.to_owned()];
         prop_assert_eq!(checked.problems, expected);
     }
 
@@ -229,8 +250,10 @@ proptest! {
         words in secret_text_strategy(),
     ) {
         let mut skill = valid_skill_draft(&context, &name, &words);
-        apply_scope_defect(&mut skill.scope, ScopeDefect::ForeignWorkspace);
-        apply_scope_defect(&mut skill.scope, ScopeDefect::EmptyProjectList);
+        let foreign = ScopeDefect::ForeignWorkspace;
+        apply_scope_defect(&context, &mut skill.scope, foreign);
+        let empty = ScopeDefect::EmptyProjectList;
+        apply_scope_defect(&context, &mut skill.scope, empty);
 
         let checked = check_item_draft(&context, &ItemDraft::Skill(skill));
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:agent_orchestration/data/models/workflow_draft.dart';
 import 'package:agent_orchestration/icons/app_icon_kind.dart';
+import 'package:agent_orchestration/screens/new_items/item_request_view.dart';
 import 'package:agent_orchestration/screens/workflow_builder.dart';
 import 'package:agent_orchestration/shell/app_navigation.dart';
 import 'package:agent_orchestration/shell/app_route.dart';
@@ -91,16 +92,28 @@ class _NewWorkflowScreenState extends State<NewWorkflowScreen> {
                 contentPadding: multiLineFieldPadding,
                 errorText: _descriptionProblem,
               ),
+              onChanged: (String _) =>
+                  setState(() => _descriptionProblem = null),
             ),
           ],
         ),
         const SizedBox(height: AppSpacing.space3),
-        Center(
-          child: AppButton.primary(
-            label: draftWorkflowLabel,
-            icon: AppIconKind.draft,
-            onPressed: _startDrafting,
-          ),
+        Wrap(
+          alignment: WrapAlignment.center,
+          spacing: AppSpacing.space2,
+          runSpacing: AppSpacing.space2,
+          children: <Widget>[
+            AppButton.primary(
+              label: draftWorkflowLabel,
+              icon: AppIconKind.draft,
+              onPressed: _startDrafting,
+            ),
+            AppButton.secondary(
+              label: addManuallyLabel,
+              onPressed: () =>
+                  widget.navigation.openRoute(const ManualWorkflowRoute()),
+            ),
+          ],
         ),
       ],
     );

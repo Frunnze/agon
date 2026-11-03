@@ -1,6 +1,8 @@
 pub mod address_strategies;
 pub mod command_builders;
 pub mod command_strategies;
+pub mod draft_answer_samples;
+pub mod draft_problem_texts;
 pub mod drafting_desk;
 pub mod drafting_samples;
 pub mod entity_strategies;

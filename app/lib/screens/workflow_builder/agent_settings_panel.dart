@@ -41,7 +41,7 @@ class AgentSettingsPanel extends StatefulWidget {
   final List<SelectOption<RunnerTarget>> runnerOptions;
   final List<Skill> skills;
   final ValueChanged<WorkflowAgent> onAgentChanged;
-  final VoidCallback onFillInRequested;
+  final VoidCallback? onFillInRequested;
   final VoidCallback onRemoved;
   final VoidCallback onDone;
 
@@ -79,6 +79,7 @@ class _AgentSettingsPanelState extends State<AgentSettingsPanel> {
   @override
   Widget build(BuildContext context) {
     final WorkflowAgent agent = widget.agent;
+    final VoidCallback? fillIn = widget.onFillInRequested;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -97,14 +98,15 @@ class _AgentSettingsPanelState extends State<AgentSettingsPanel> {
             AppButton.secondary(label: 'Done', onPressed: widget.onDone),
           ],
         ),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: AppButton.secondary(
-            label: 'Fill in with agent',
-            icon: AppIconKind.draft,
-            onPressed: widget.onFillInRequested,
+        if (fillIn != null)
+          Align(
+            alignment: Alignment.centerLeft,
+            child: AppButton.secondary(
+              label: 'Fill in with agent',
+              icon: AppIconKind.draft,
+              onPressed: fillIn,
+            ),
           ),
-        ),
         FormFieldBlock(
           label: 'Name',
           children: <Widget>[

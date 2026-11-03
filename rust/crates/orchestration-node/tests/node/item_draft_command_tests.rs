@@ -93,7 +93,10 @@ fn an_item_draft_naming_an_unknown_project_carries_the_problem() {
 
     assert_eq!(status["ok"]["state"], "done", "{status}");
     assert_eq!(status["ok"]["draft"]["kind"], "job", "{status}");
-    let expected = json!(["The agent chose a project that is not in acme."]);
+    let expected = json!([
+        "Project: the chosen one is not in acme. Ask for changes and name \
+         one of: acme-app."
+    ]);
     assert_eq!(status["ok"]["problems"], expected, "{status}");
 }
 
@@ -128,7 +131,9 @@ fn a_project_draft_naming_a_missing_folder_carries_the_folder_problem() {
     let status = item_draft_status(&desk, &draft);
 
     let expected_problem = format!(
-        "The folder {missing_path} does not exist or this app cannot open it."
+        "Repos: the folder {missing_path} does not exist or this app cannot \
+         open it. Ask for changes and give a GitHub address or a git folder \
+         on this computer."
     );
     assert_eq!(status["ok"]["problems"], json!([expected_problem]));
     assert_eq!(status["ok"]["draft"]["repositories"], json!([]));

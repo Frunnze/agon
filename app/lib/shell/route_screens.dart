@@ -147,6 +147,11 @@ Widget buildRouteScreen({
       );
     case NewWorkflowRoute():
       return NewWorkflowScreen(navigation: navigation);
+    case ManualWorkflowRoute():
+      return buildManualWorkflowScreen(
+        dependencies: dependencies,
+        navigation: navigation,
+      );
     case WorkflowDraftingRoute():
       return buildWorkflowDraftingScreen(
         route: route,

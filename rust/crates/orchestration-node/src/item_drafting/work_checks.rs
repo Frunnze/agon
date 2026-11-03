@@ -8,20 +8,20 @@ use super::draft_checks::CheckedDraft;
 use super::drafting_context::DraftingContext;
 use super::item_draft::{ItemDraft, WorkDraft};
 use super::problem_sentences::{
-    EMPTY_WORK_TITLE, JOB_WITHOUT_SCHEDULE, UNKNOWN_SKILL, UNKNOWN_WORKFLOW,
-    describe_foreign_project, describe_foreign_runner,
-    describe_invalid_schedule, describe_missing_project,
-    describe_unsigned_workflow,
+    EMPTY_WORK_TITLE, JOB_WITHOUT_SCHEDULE, describe_foreign_project,
+    describe_foreign_runner, describe_invalid_schedule,
+    describe_missing_project, describe_unknown_skill,
+    describe_unknown_workflow, describe_unsigned_workflow,
 };
 
 pub(super) fn check_task_draft(
     context: &DraftingContext,
     work: &WorkDraft,
 ) -> CheckedDraft {
-    let trimmed = work.trimmed();
-    let problems = find_work_problems(context, &trimmed);
+    let completed = complete_work(context, work);
+    let problems = find_work_problems(context, &completed);
     CheckedDraft {
-        draft: ItemDraft::Task(trimmed),
+        draft: ItemDraft::Task(completed),
         problems,
     }
 }
@@ -30,14 +30,25 @@ pub(super) fn check_job_draft(
     context: &DraftingContext,
     work: &WorkDraft,
 ) -> CheckedDraft {
-    let trimmed = work.trimmed();
-    let mut problems = find_work_problems(context, &trimmed);
-    if trimmed.schedule.is_none() {
+    let completed = complete_work(context, work);
+    let mut problems = find_work_problems(context, &completed);
+    if completed.schedule.is_none() {
         problems.push(JOB_WITHOUT_SCHEDULE.to_owned());
     }
     CheckedDraft {
-        draft: ItemDraft::Job(trimmed),
+        draft: ItemDraft::Job(completed),
         problems,
+    }
+}
+
+fn complete_work(context: &DraftingContext, work: &WorkDraft) -> WorkDraft {
+    let trimmed = work.trimmed();
+    let project_id = trimmed
+        .project_id
+        .or_else(|| context.find_only_project_id());
+    WorkDraft {
+        project_id,
+        ..trimmed
     }
 }
 
@@ -63,13 +74,14 @@ fn find_project_problem(
     project_id: Option<ProjectId>,
 ) -> Option<String> {
     let workspace_name = &context.workspace.name;
+    let project_names = context.list_project_names();
     let Some(project_id) = project_id else {
-        return Some(describe_missing_project(workspace_name));
+        return Some(describe_missing_project(workspace_name, &project_names));
     };
     if context.includes_project(project_id) {
         return None;
     }
-    Some(describe_foreign_project(workspace_name))
+    Some(describe_foreign_project(workspace_name, &project_names))
 }
 
 fn find_doer_problem(
@@ -83,13 +95,14 @@ fn find_doer_problem(
         .workflows
         .iter()
         .find(|workflow| workflow.id == *workflow_id);
+    let signed_names = context.list_signed_workflow_names();
     let Some(workflow) = workflow else {
-        return Some(UNKNOWN_WORKFLOW.to_owned());
+        return Some(describe_unknown_workflow(&signed_names));
     };
     if workflow.is_signed {
         return None;
     }
-    Some(describe_unsigned_workflow(&workflow.name))
+    Some(describe_unsigned_workflow(&workflow.name, &signed_names))
 }
 
 fn find_runner_problem(
@@ -106,7 +119,11 @@ fn find_runner_problem(
     if is_listed {
         return None;
     }
-    Some(describe_foreign_runner(&context.workspace.name))
+    let runner_names = context.list_runner_names();
+    Some(describe_foreign_runner(
+        &context.workspace.name,
+        &runner_names,
+    ))
 }
 
 fn find_skill_problem(
@@ -116,7 +133,10 @@ fn find_skill_problem(
     let has_unknown_skill = skills.iter().any(|skill_id| {
         !context.skills.iter().any(|skill| skill.id == *skill_id)
     });
-    has_unknown_skill.then(|| UNKNOWN_SKILL.to_owned())
+    if !has_unknown_skill {
+        return None;
+    }
+    Some(describe_unknown_skill(&context.list_skill_names()))
 }
 
 fn find_schedule_problem(schedule: Option<&Schedule>) -> Option<String> {

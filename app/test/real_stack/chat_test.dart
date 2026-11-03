@@ -17,6 +17,7 @@ import 'support/task_steps.dart';
 const String _chattingTitle = 'Wait for release and listen';
 const String _followUpMessage = 'Also add a line about the tests.';
 const String _followUpReply = 'answered the follow-up';
+const String _finishedTitle = 'Finish the work then answer';
 
 Finder _findComposerInput() {
   return find.descendant(
@@ -92,6 +93,56 @@ void main() {
         tester,
         stack: stack,
         title: _chattingTitle,
+        status: node.RunStatus.done,
+      );
+
+      expect(runner.readRecord(resumedFileName), contains(_followUpMessage));
+      expect(find.text(agentFinishedReply), findsOneWidget);
+      await stack.close(tester);
+    },
+    skip: findRealStackSkipReason() != null,
+    timeout: realStackTimeout,
+  );
+
+  testWidgets(
+    'test_chat_property_message_to_a_finished_run_wakes_the_agent',
+    (WidgetTester tester) async {
+      final RealStack stack = await RealStack.openWithAccount(tester);
+      final RunnerDevice runner = await pairRunnerWithProject(
+        tester,
+        stack: stack,
+        agentAccess: node.AgentAccess.readOnly,
+      );
+      await startNewTaskNow(
+        tester,
+        title: _finishedTitle,
+        details: 'Answer a question after the work.',
+      );
+      await waitUntilRunStatus(
+        tester,
+        stack: stack,
+        title: _finishedTitle,
+        status: node.RunStatus.done,
+      );
+
+      await tapAndWait(
+        tester,
+        find.text('Ask the agent'),
+        expected: findPageTitle('Agent on $runnerDeviceName'),
+      );
+      await waitUntilShown(tester, find.text(agentFinishedReply));
+      await _sendThroughComposer(tester, _followUpMessage);
+      await waitUntilShown(tester, find.text(_followUpMessage));
+      await waitUntilTrue(
+        tester,
+        description: 'the agent to resume with the message',
+        isReached: () => runner.hasRecord(resumedFileName),
+      );
+      await waitUntilShown(tester, find.text(_followUpReply));
+      await waitUntilRunStatus(
+        tester,
+        stack: stack,
+        title: _finishedTitle,
         status: node.RunStatus.done,
       );
 

@@ -85,6 +85,20 @@ Widget buildWorkflowBuilderScreen({
   );
 }
 
+Widget buildManualWorkflowScreen({
+  required AppDependencies dependencies,
+  required AppNavigation navigation,
+}) {
+  return ManualWorkflowScreen(
+    workflowRepository: dependencies.workflowRepository,
+    workspaceRepository: dependencies.workspaceRepository,
+    deviceRepository: dependencies.deviceRepository,
+    runnerRepository: dependencies.runnerRepository,
+    skillRepository: dependencies.skillRepository,
+    navigation: navigation,
+  );
+}
+
 Widget buildWorkflowTaskFormScreen({
   required WorkflowId workflowId,
   required AppDependencies dependencies,

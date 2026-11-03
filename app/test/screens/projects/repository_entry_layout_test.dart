@@ -30,6 +30,7 @@ void main() {
           controller: TextEditingController(),
           problem: problem,
           placeholder: 'github.com/acme/repo or /path/to/folder',
+          onChanged: (String _) {},
           onAdded: () {},
         ),
       );

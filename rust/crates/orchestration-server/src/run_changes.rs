@@ -1,5 +1,5 @@
 use chrono::{DateTime, Utc};
-use orchestration_core::run::{RunStatus, RunStep, StepStatus};
+use orchestration_core::run::{Run, RunStatus, RunStep, StepStatus};
 use orchestration_core::run_lifecycle::{derive_run_status, is_run_finished};
 
 use crate::error::ServerError;
@@ -20,7 +20,7 @@ pub fn cancel_run_record(
     run.finished_at = Some(now);
     Ok(RunRecord {
         run,
-        pinned_steps: record.pinned_steps.clone(),
+        ..record.clone()
     })
 }
 
@@ -41,12 +41,23 @@ pub fn retry_run_record(record: &RunRecord) -> Result<RunRecord, ServerError> {
         pinned_steps.insert(failure.step_name.clone(), runner_id.clone());
     }
 
-    let mut run = record.run.clone();
-    run.steps = run.steps.iter().map(reset_unfinished_step).collect();
-    run.status = derive_run_status(&run.steps);
-    run.failure = None;
-    run.finished_at = None;
-    Ok(RunRecord { run, pinned_steps })
+    let reset_steps =
+        record.run.steps.iter().map(reset_unfinished_step).collect();
+    Ok(RunRecord {
+        run: reopen_run(&record.run, reset_steps),
+        pinned_steps,
+        follow_ups: record.follow_ups.clone(),
+    })
+}
+
+pub fn reopen_run(run: &Run, steps: Vec<RunStep>) -> Run {
+    Run {
+        status: derive_run_status(&steps),
+        steps,
+        failure: None,
+        finished_at: None,
+        ..run.clone()
+    }
 }
 
 pub fn is_step_finished(status: StepStatus) -> bool {

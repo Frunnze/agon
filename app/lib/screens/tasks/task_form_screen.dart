@@ -107,7 +107,7 @@ class TaskFormScreen extends StatelessWidget {
     }
 
     await _storeTask(values);
-    navigation.closeRoute();
+    navigation.closeSavedForm();
   }
 
   Future<void> _startNow(TaskFormValues values) async {
@@ -117,7 +117,7 @@ class TaskFormScreen extends StatelessWidget {
         : await _storeJob(values, schedule);
 
     final Run run = await taskRepository.startTask(task.id);
-    navigation.replaceRoute(TaskRunRoute(run.id));
+    navigation.replaceSavedForm(TaskRunRoute(run.id));
   }
 
   Future<Task> _storeTask(TaskFormValues values) {

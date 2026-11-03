@@ -54,4 +54,45 @@ impl DraftingContext {
     pub(super) fn includes_project(&self, project_id: ProjectId) -> bool {
         self.projects.iter().any(|project| project.id == project_id)
     }
+
+    pub(super) fn find_only_project_id(&self) -> Option<ProjectId> {
+        match self.projects.as_slice() {
+            [only_project] => Some(only_project.id),
+            _ => None,
+        }
+    }
+
+    pub(super) fn list_project_names(&self) -> Vec<&str> {
+        let mut names = Vec::new();
+        for project in &self.projects {
+            names.push(project.name.as_str());
+        }
+        names
+    }
+
+    pub(super) fn list_signed_workflow_names(&self) -> Vec<&str> {
+        let mut names = Vec::new();
+        for workflow in &self.workflows {
+            if workflow.is_signed {
+                names.push(workflow.name.as_str());
+            }
+        }
+        names
+    }
+
+    pub(super) fn list_skill_names(&self) -> Vec<&str> {
+        let mut names = Vec::new();
+        for skill in &self.skills {
+            names.push(skill.name.as_str());
+        }
+        names
+    }
+
+    pub(super) fn list_runner_names(&self) -> Vec<&str> {
+        let mut names = Vec::new();
+        for runner in &self.runners {
+            names.push(runner.device.name.as_str());
+        }
+        names
+    }
 }

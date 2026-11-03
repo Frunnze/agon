@@ -1,5 +1,5 @@
 use orchestration_api::work::RunAssignment;
-use orchestration_core::run::{ChatAuthor, Run};
+use orchestration_core::run::Run;
 
 use crate::agent_invocation::AgentEnding;
 use crate::branch_pusher::BranchPusher;
@@ -10,6 +10,7 @@ use crate::run_workspace::RunWorkspace;
 use crate::runner_server::RunnerServer;
 use crate::skill_selection::select_step_skills;
 use crate::step_execution::execute_step;
+use crate::step_opening::{choose_step_opening, count_answered_messages};
 use crate::step_plan::StepPlan;
 use crate::step_prompt::{UpstreamResult, compose_step_prompt};
 
@@ -20,9 +21,10 @@ pub(crate) async fn run_assigned_step<S: RunnerServer, P: BranchPusher>(
 ) -> RunOutcome {
     let repository_folders = name_repository_folders(&context.workspace);
     let prompt = prompt_for_step(step, assignment, &repository_folders);
-    let answered_messages = count_user_messages(&assignment.run);
+    let opening = choose_step_opening(assignment, prompt);
+    let answered_messages = count_answered_messages(assignment);
     let progress =
-        execute_step(context, step, &prompt, answered_messages).await;
+        execute_step(context, step, &opening, answered_messages).await;
 
     match progress.ending {
         AgentEnding::Succeeded(_) => RunOutcome::Finished,
@@ -34,13 +36,6 @@ pub(crate) async fn run_assigned_step<S: RunnerServer, P: BranchPusher>(
         }
         AgentEnding::Cancelled => RunOutcome::Cancelled,
     }
-}
-
-fn count_user_messages(run: &Run) -> usize {
-    run.chat
-        .iter()
-        .filter(|message| message.author == ChatAuthor::You)
-        .count()
 }
 
 fn name_repository_folders(workspace: &RunWorkspace) -> Vec<String> {
