@@ -24,7 +24,8 @@ const String terminalHint =
 const String terminalLabel = 'Claude Code login';
 const String commandPrompt = r'$';
 const String thisComputerLoginHint =
-    'Claude Code is not connected on this computer.';
+    "Claude Code couldn't log in for this run. Connect it on this "
+    "computer's runner page.";
 const List<String> _loginProblemMarks = <String>[
   'Not logged in',
   'Please run /login',
