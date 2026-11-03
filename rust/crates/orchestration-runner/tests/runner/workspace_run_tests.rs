@@ -3,7 +3,9 @@ use std::path::PathBuf;
 use std::sync::Arc;
 
 use orchestration_core::identifiers::SkillId;
-use orchestration_core::library::{Skill, SkillSource, SkillUsage};
+use orchestration_core::library::{
+    Skill, SkillImprovement, SkillSource, SkillUsage,
+};
 use orchestration_core::scope::Scope;
 use orchestration_core::task::Task;
 use orchestration_runner::run_executor::RunOutcome;
@@ -42,6 +44,8 @@ fn automatic_skill() -> Skill {
         scope: Scope::everywhere(),
         usage: SkillUsage::Automatic,
         source: SkillSource::Created,
+        improvement: SkillImprovement::Never,
+        history: Vec::new(),
     }
 }
 

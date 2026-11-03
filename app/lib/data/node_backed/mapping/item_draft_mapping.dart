@@ -53,6 +53,7 @@ DraftedItem mapDraftedItemFromNode(node.ItemDraft draft) {
         instructions: draft.instructions,
         scope: mapScopeFromNode(draft.scope),
         usage: mapSkillUsageFromNode(draft.usage),
+        improvement: mapSkillImprovementFromNode(draft.improvement),
       ),
     ),
     node.RuleItemDraft() => DraftedRule(
@@ -82,6 +83,7 @@ node.ItemDraft mapDraftedItemToNode(DraftedItem item, DraftKind kind) {
       instructions: skill.instructions,
       scope: mapScopeToNode(skill.scope),
       usage: mapSkillUsageToNode(skill.usage),
+      improvement: mapSkillImprovementToNode(skill.improvement),
     ),
     DraftedRule(:final RuleDraft rule) => node.RuleItemDraft(
       title: rule.title,

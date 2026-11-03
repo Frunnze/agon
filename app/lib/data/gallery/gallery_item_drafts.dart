@@ -96,6 +96,7 @@ ItemDraft _buildSkillDraft() {
           projects: OnlyProjects(const <ProjectId>[GalleryProjectIds.docs]),
         ),
         usage: SkillUsage.automatic,
+        improvement: SkillImprovement.never,
       ),
     ),
     problems: const <String>[],

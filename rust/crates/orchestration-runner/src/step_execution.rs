@@ -1,4 +1,5 @@
 use orchestration_api::work::RunEvent;
+use orchestration_core::library::Skill;
 use orchestration_core::run::StepStatus;
 
 use crate::agent_invocation::AgentEnding;
@@ -10,6 +11,7 @@ use crate::run_context::RunContext;
 use crate::run_error::RunError;
 use crate::run_events::{post_run_events, step_status_changed};
 use crate::runner_server::RunnerServer;
+use crate::skill_proposals::hand_over_skill_improvements;
 use crate::step_opening::{StepOpening, open_agent_conversation};
 use crate::step_outcome::{OutcomeProblem, read_reported_outcome};
 use crate::step_plan::StepPlan;
@@ -20,11 +22,12 @@ use crate::uncommitted_changes::{
 pub(crate) async fn execute_step<S: RunnerServer, P: BranchPusher>(
     context: &RunContext<S, P>,
     step: &StepPlan,
+    skills: &[&Skill],
     opening: &StepOpening,
     answered_messages: usize,
 ) -> StepProgress {
     let attempt =
-        attempt_step(context, step, opening, answered_messages).await;
+        attempt_step(context, step, skills, opening, answered_messages).await;
     match attempt {
         Ok(progress) => progress,
         Err(problem) => StepProgress {
@@ -37,6 +40,7 @@ pub(crate) async fn execute_step<S: RunnerServer, P: BranchPusher>(
 async fn attempt_step<S: RunnerServer, P: BranchPusher>(
     context: &RunContext<S, P>,
     step: &StepPlan,
+    skills: &[&Skill],
     opening: &StepOpening,
     answered_messages: usize,
 ) -> Result<StepProgress, RunError> {
@@ -68,6 +72,7 @@ async fn attempt_step<S: RunnerServer, P: BranchPusher>(
         });
     }
 
+    hand_over_skill_improvements(context, skills, &transcript).await;
     let mut finishing_events = Vec::new();
     if let Some(final_message) = &transcript.final_message {
         finishing_events.push(RunEvent::StepResultRecorded {

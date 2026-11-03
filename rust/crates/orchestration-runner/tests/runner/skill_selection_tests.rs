@@ -1,6 +1,8 @@
 use orchestration_core::approval::ApprovalPolicy;
 use orchestration_core::identifiers::{ProjectId, SkillId, WorkspaceId};
-use orchestration_core::library::{Skill, SkillSource, SkillUsage};
+use orchestration_core::library::{
+    Skill, SkillImprovement, SkillSource, SkillUsage,
+};
 use orchestration_core::scope::{ProjectScope, Scope, WorkspaceScope};
 use orchestration_core::workflow::AgentKind;
 use orchestration_runner::skill_selection::select_step_skills;
@@ -54,6 +56,8 @@ fn build_skill(index: usize, choice: &SkillChoice) -> Skill {
         },
         usage,
         source: SkillSource::Created,
+        improvement: SkillImprovement::Never,
+        history: Vec::new(),
     }
 }
 

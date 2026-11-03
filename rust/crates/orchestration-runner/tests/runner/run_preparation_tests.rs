@@ -2,7 +2,9 @@ use std::fs;
 use std::sync::Arc;
 
 use orchestration_core::identifiers::SkillId;
-use orchestration_core::library::{Skill, SkillSource, SkillUsage};
+use orchestration_core::library::{
+    Skill, SkillImprovement, SkillSource, SkillUsage,
+};
 use orchestration_core::run::StepStatus;
 use orchestration_core::scope::Scope;
 use orchestration_core::task::Task;
@@ -37,6 +39,8 @@ fn skill_named(number: u128, name: &str, usage: SkillUsage) -> Skill {
         scope: Scope::everywhere(),
         usage,
         source: SkillSource::Created,
+        improvement: SkillImprovement::Never,
+        history: Vec::new(),
     }
 }
 

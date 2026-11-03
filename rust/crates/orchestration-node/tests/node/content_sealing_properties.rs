@@ -26,11 +26,11 @@ use crate::support::test_device::fail;
 
 const SEALING_CASES: u32 = 32;
 
-fn sample_workspace() -> WorkspaceId {
+pub fn sample_workspace() -> WorkspaceId {
     WorkspaceId(Uuid::from_u128(7))
 }
 
-fn hides_every_secret<Sealed: Serialize>(
+pub fn hides_every_secret<Sealed: Serialize>(
     sealed: &Sealed,
     secrets: &[String],
 ) -> Result<bool, TestCaseError> {

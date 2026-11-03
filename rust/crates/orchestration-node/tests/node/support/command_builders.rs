@@ -52,6 +52,7 @@ pub fn create_skill_command(workspace_id: &str, instructions: &str) -> Value {
         "instructions": instructions,
         "scope": everywhere_scope(),
         "usage": "automatic",
+        "improvement": "never",
     })
 }
 

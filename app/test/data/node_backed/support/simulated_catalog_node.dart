@@ -49,6 +49,7 @@ final class SimulatedCatalogNode {
         'create_skill': _createSkill,
         'update_skill': _libraryEdits.updateSkill,
         'delete_skill': _libraryEdits.deleteSkill,
+        'undo_skill_change': _libraryEdits.undoSkillChange,
         'list_rules': _listForWorkspace(rules),
         'create_rule': _createRule,
         'update_rule': _libraryEdits.updateRule,
@@ -94,6 +95,8 @@ final class SimulatedCatalogNode {
       'scope': _everywhere,
       'usage': 'when_chosen',
       'source': 'created',
+      'improvement': 'never',
+      'history': <Object?>[],
     };
     skills.add(skill);
     return skill;
@@ -232,6 +235,7 @@ final class SimulatedCatalogNode {
     skill['instructions'] = command['instructions'];
     skill['scope'] = command['scope'];
     skill['usage'] = command['usage'];
+    skill['improvement'] = command['improvement'];
     return _withoutWorkspace(skill);
   }
 

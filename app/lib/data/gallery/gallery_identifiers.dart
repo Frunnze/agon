@@ -47,6 +47,7 @@ abstract final class GallerySkillIds {
   static const SkillId codeReview = SkillId('skill-code-review');
   static const SkillId gitCleanup = SkillId('skill-git-cleanup');
   static const SkillId writeTests = SkillId('skill-write-tests');
+  static const SkillId changelogEntries = SkillId('skill-changelog-entries');
 }
 
 abstract final class GalleryTaskIds {
@@ -70,6 +71,7 @@ abstract final class GalleryRunIds {
   static const RunId renameBillingModule1 = RunId(
     'run-rename-billing-module-1',
   );
+  static const RunId featurePipeline12 = RunId('run-feature-pipeline-12');
 }
 
 abstract final class GalleryApprovalIds {
@@ -82,5 +84,8 @@ abstract final class GalleryApprovalIds {
   );
   static const ApprovalId runReleaseTests = ApprovalId(
     'approval-run-release-tests',
+  );
+  static const ApprovalId improveChangelogEntries = ApprovalId(
+    'approval-improve-changelog-entries',
   );
 }

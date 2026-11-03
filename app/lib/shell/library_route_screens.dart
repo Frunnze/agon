@@ -38,6 +38,7 @@ Widget buildSkillDetailScreen({
     taskRepository: dependencies.taskRepository,
     workspaceRepository: dependencies.workspaceRepository,
     projectRepository: dependencies.projectRepository,
+    clock: dependencies.clock,
     navigation: navigation,
   );
 }

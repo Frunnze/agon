@@ -87,6 +87,8 @@ fn expected_fields(kind: DraftKind) -> &'static [&'static str] {
             "usage",
             "automatic",
             "when_chosen",
+            "improvement",
+            "ask_me",
             "only_workspaces",
             "only_projects",
         ],

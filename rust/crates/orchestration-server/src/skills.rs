@@ -1,10 +1,12 @@
 use axum::Json;
 use axum::extract::State;
+use chrono::{DateTime, Utc};
 use orchestration_api::catalog::SaveSkillRequest;
 use orchestration_api::updates::ChangeTopic;
 use orchestration_core::identifiers::SkillId;
-use orchestration_core::library::Skill;
+use orchestration_core::library::{Skill, SkillChangeOrigin};
 use orchestration_core::naming::validate_name;
+use orchestration_core::skill_history::record_skill_change;
 use uuid::Uuid;
 
 use crate::authentication::SignedRequest;
@@ -43,8 +45,8 @@ pub async fn update_skill(
     request.caller.require_client()?;
     let save_request: SaveSkillRequest = parse_json_body(&request.body)?;
     let skill_id = SkillId(skill_uuid);
-    let skill = server.apply(&request.caller.device_id, |state, _now| {
-        replace_skill(state, skill_id, &save_request.skill)
+    let skill = server.apply(&request.caller.device_id, |state, now| {
+        replace_skill(state, skill_id, &save_request.skill, now)
     })?;
     Ok(Json(skill))
 }
@@ -67,6 +69,7 @@ fn replace_skill(
     state: &mut StoredState,
     skill_id: SkillId,
     skill: &Skill,
+    now: DateTime<Utc>,
 ) -> Result<Change<Skill>, ServerError> {
     let existing = state
         .skills
@@ -79,9 +82,17 @@ fn replace_skill(
     }
     validate_name(&skill.name)?;
 
-    let replaced = Skill {
+    let kept = Skill {
         source: existing.source,
+        instructions: existing.instructions.clone(),
+        history: existing.history.clone(),
         ..skill.clone()
+    };
+    let replaced = if skill.instructions == existing.instructions {
+        kept
+    } else {
+        let origin = SkillChangeOrigin::PersonEdit;
+        record_skill_change(&kept, &skill.instructions, origin, now)
     };
     state.skills.insert(skill_id, replaced.clone());
     let event_text = format!("Changed skill {}", replaced.name);

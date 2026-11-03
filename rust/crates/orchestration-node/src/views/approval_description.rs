@@ -35,5 +35,8 @@ pub fn describe_approval_action(
         ApprovalAction::RunCommand { tool, command } => {
             format!("Use {tool}: {command}")
         }
+        ApprovalAction::ImproveSkill { summary, .. } => {
+            format!("Improve a skill: {summary}")
+        }
     }
 }

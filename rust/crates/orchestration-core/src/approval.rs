@@ -1,7 +1,7 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
-use crate::identifiers::{ApprovalId, DeviceId, RunId, WorkflowId};
+use crate::identifiers::{ApprovalId, DeviceId, RunId, SkillId, WorkflowId};
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
@@ -24,6 +24,11 @@ pub enum ApprovalAction {
     RunCommand {
         tool: String,
         command: String,
+    },
+    ImproveSkill {
+        skill_id: SkillId,
+        summary: String,
+        proposed_instructions: String,
     },
 }
 

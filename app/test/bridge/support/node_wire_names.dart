@@ -29,6 +29,16 @@ const List<String> nodeSkillUsages = <String>['automatic', 'when_chosen'];
 
 const List<String> nodeSkillSources = <String>['built_in', 'created'];
 
+const List<String> nodeSkillImprovements = <String>['never', 'ask_me', 'auto'];
+
+const String nodePersonEditOrigin = 'person_edit';
+
+const List<String> nodeSkillChangeOrigins = <String>[
+  nodePersonEditOrigin,
+  'approved_agent_run',
+  'automatic_agent_run',
+];
+
 const List<String> nodeAgentKinds = <String>[
   'claude_code',
   'codex',

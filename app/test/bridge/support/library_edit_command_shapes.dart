@@ -23,6 +23,7 @@ const List<CommandShape> libraryEditCommandShapes = <CommandShape>[
       'instructions',
       'scope',
       'usage',
+      'improvement',
     },
     buildCommand: _buildUpdateSkill,
     buildReplyJson: randomSkillJson,
@@ -34,6 +35,13 @@ const List<CommandShape> libraryEditCommandShapes = <CommandShape>[
     buildCommand: _buildDeleteSkill,
     buildReplyJson: buildNoReply,
     encodeReply: encodeNoReply,
+  ),
+  CommandShape(
+    commandName: 'undo_skill_change',
+    argumentFields: <String>{'skill_id'},
+    buildCommand: _buildUndoSkillChange,
+    buildReplyJson: randomSkillJson,
+    encodeReply: encodeValueReply,
   ),
   CommandShape(
     commandName: 'update_rule',
@@ -66,11 +74,16 @@ NodeCommand<Object?> _buildUpdateSkill(Random random) {
     instructions: randomText(random),
     scope: Scope.fromJson(randomScopeJson(random)),
     usage: pickOne(random, SkillUsage.values),
+    improvement: pickOne(random, SkillImprovement.values),
   );
 }
 
 NodeCommand<Object?> _buildDeleteSkill(Random random) {
   return DeleteSkillCommand(skillId: SkillId(randomUuidText(random)));
+}
+
+NodeCommand<Object?> _buildUndoSkillChange(Random random) {
+  return UndoSkillChangeCommand(skillId: SkillId(randomUuidText(random)));
 }
 
 NodeCommand<Object?> _buildUpdateRule(Random random) {

@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:agent_orchestration/bridge/codecs/approval_values.dart'
     as node;
+import 'package:agent_orchestration/bridge/codecs/approval_views.dart' as node;
 import 'package:agent_orchestration/bridge/codecs/run_chat_values.dart'
     as node;
 import 'package:agent_orchestration/bridge/codecs/run_values.dart' as node;

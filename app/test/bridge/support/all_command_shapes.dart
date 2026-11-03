@@ -56,6 +56,7 @@ const List<String> nodeCommandNames = <String>[
   'create_skill',
   'update_skill',
   'delete_skill',
+  'undo_skill_change',
   'list_rules',
   'create_rule',
   'update_rule',

@@ -1,5 +1,5 @@
 use chrono::{DateTime, Utc};
-use orchestration_core::identifiers::{DeviceId, WorkspaceId};
+use orchestration_core::identifiers::{DeviceId, RunId, WorkspaceId};
 use orchestration_core::library::{Rule, Skill};
 use orchestration_core::workflow::{Workflow, WorkflowSignature};
 use orchestration_core::workspace::{Project, Repository};
@@ -54,6 +54,13 @@ pub struct SignWorkflowRequest {
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SaveSkillRequest {
     pub skill: Skill,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ImproveSkillRequest {
+    pub run_id: RunId,
+    pub summary: String,
+    pub instructions: String,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]

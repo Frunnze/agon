@@ -187,6 +187,30 @@ void main() {
     }
   });
 
+  test('test_describe_person_step_subtitle_property_names_you_not_runner', () {
+    final Random random = seededRandom(4010);
+
+    for (int i = 0; i < propertyIterations; i += 1) {
+      final Run run = randomRunWithStatuses(random);
+      final RunStep step = pickOne(random, run.steps);
+      final String text = joinSegments(
+        describePersonStepSubtitle(step: step, now: galleryNow),
+      );
+
+      expect(text, isNotEmpty);
+      expect(text, isNot(contains('runner')));
+      if (step.status == StepStatus.done) {
+        expect(text, startsWith('You · answered after '));
+      }
+      if (step.status == StepStatus.waitingForPerson) {
+        expect(text, startsWith('Asked you '));
+      }
+      if (step.status == StepStatus.skipped) {
+        expect(text, 'Did not start');
+      }
+    }
+  });
+
   test('test_describe_step_subtitle_property_matches_step_status', () {
     final Random random = seededRandom(4009);
 

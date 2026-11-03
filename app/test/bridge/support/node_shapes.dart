@@ -1,6 +1,7 @@
 import 'package:agent_orchestration/bridge/codecs/drafting_task_views.dart';
 import 'package:agent_orchestration/bridge/codecs/account_values.dart';
 import 'package:agent_orchestration/bridge/codecs/approval_values.dart';
+import 'package:agent_orchestration/bridge/codecs/approval_views.dart';
 import 'package:agent_orchestration/bridge/codecs/audit_values.dart';
 import 'package:agent_orchestration/bridge/codecs/catalog_views.dart';
 import 'package:agent_orchestration/bridge/codecs/change_values.dart';
@@ -13,6 +14,7 @@ import 'package:agent_orchestration/bridge/codecs/run_progress_values.dart';
 import 'package:agent_orchestration/bridge/codecs/run_values.dart';
 import 'package:agent_orchestration/bridge/codecs/schedule_values.dart';
 import 'package:agent_orchestration/bridge/codecs/server_group_values.dart';
+import 'package:agent_orchestration/bridge/codecs/skill_change_values.dart';
 import 'package:agent_orchestration/bridge/codecs/task_values.dart';
 import 'package:agent_orchestration/bridge/codecs/task_views.dart';
 import 'package:agent_orchestration/bridge/codecs/workflow_values.dart';
@@ -58,6 +60,16 @@ const List<NodeShape> nodeShapes = <NodeShape>[
   ),
   NodeShape('scope_from_json', randomScopeJson, Scope.fromJson),
   NodeShape('skill_from_json', randomSkillJson, Skill.fromJson),
+  NodeShape(
+    'skill_change_origin_from_json',
+    randomSkillChangeOriginJson,
+    SkillChangeOrigin.fromJson,
+  ),
+  NodeShape(
+    'skill_change_from_json',
+    randomSkillChangeJson,
+    SkillChange.fromJson,
+  ),
   NodeShape('rule_from_json', randomRuleJson, Rule.fromJson),
   NodeShape(
     'agents_markdown_view_from_json',
@@ -226,6 +238,11 @@ const List<NodeShape> nodeShapes = <NodeShape>[
     'approval_view_from_json',
     randomApprovalViewJson,
     ApprovalView.fromJson,
+  ),
+  NodeShape(
+    'skill_change_view_from_json',
+    randomSkillChangeViewJson,
+    SkillChangeView.fromJson,
   ),
   NodeShape(
     'runner_summary_from_json',

@@ -128,17 +128,28 @@ class _RunStepsSectionState extends State<RunStepsSection> {
     setState(() => _stepsShowingEarlierRounds = shownSteps);
   }
 
+  bool _isPersonStep(RunStep step) {
+    final WorkflowAgentId? agentId = step.agentId;
+    final Workflow? workflow = widget.workflow;
+    if (agentId == null || workflow == null) {
+      return false;
+    }
+    return workflow.findAgent(agentId).stepKind == StepKind.person;
+  }
+
   List<TextSegment> _describeSubtitle(RunStep step) {
-    final List<TextSegment> base = describeStepSubtitle(
-      step: step,
-      target: findStepTarget(
-        step: step,
-        task: widget.task,
-        workflow: widget.workflow,
-      ),
-      deviceNames: widget.deviceNames,
-      now: widget.now,
-    );
+    final List<TextSegment> base = _isPersonStep(step)
+        ? describePersonStepSubtitle(step: step, now: widget.now)
+        : describeStepSubtitle(
+            step: step,
+            target: findStepTarget(
+              step: step,
+              task: widget.task,
+              workflow: widget.workflow,
+            ),
+            deviceNames: widget.deviceNames,
+            now: widget.now,
+          );
     final List<String?> extras = <String?>[
       describeStepRound(step: step, workflow: widget.workflow),
       describeStepOutcome(step.outcome),

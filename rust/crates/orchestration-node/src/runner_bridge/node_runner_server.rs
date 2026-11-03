@@ -1,15 +1,17 @@
 use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 
+use orchestration_api::catalog::ImproveSkillRequest;
 use orchestration_api::work::{
     ClaimResponse, CreateApprovalRequest, ForgottenWork, HeartbeatRequest,
     RunEvent, RunEventsRequest,
 };
 use orchestration_core::approval::ApprovalDecision;
-use orchestration_core::identifiers::{RunId, WorkspaceId};
+use orchestration_core::identifiers::{RunId, SkillId, WorkspaceId};
 use orchestration_core::peer_address::ENDPOINT_PUBLIC_KEY_LENGTH;
 use orchestration_core::run::{ChatAuthor, ChatMessage, RunStatus};
 use orchestration_runner::runner_server::{RunnerServer, ServerError};
+use orchestration_security::sealing::seal_text;
 use tokio::sync::broadcast;
 
 use super::approval_waiting::wait_for_decision;
@@ -141,6 +143,22 @@ impl NodeRunnerServer {
         Ok(())
     }
 
+    async fn hand_over_sealed_improvement(
+        &self,
+        skill_id: SkillId,
+        proposal: &ImproveSkillRequest,
+    ) -> Result<(), NodeError> {
+        let workspace_id = self.find_claimed_workspace(proposal.run_id)?;
+        let session = self.node.open_session()?;
+        let workspace_key = session.keyring.key_for(workspace_id)?;
+        let sealed_proposal = ImproveSkillRequest {
+            instructions: seal_text(workspace_key, &proposal.instructions)?,
+            ..proposal.clone()
+        };
+        let client = session.client();
+        client.improve_skill(skill_id, &sealed_proposal).await
+    }
+
     async fn read_opened_user_messages(
         &self,
         run_id: RunId,
@@ -213,6 +231,16 @@ impl RunnerServer for NodeRunnerServer {
         request: &CreateApprovalRequest,
     ) -> Result<ApprovalDecision, ServerError> {
         wait_for_decision(&self.node, request)
+            .await
+            .map_err(ServerError::from)
+    }
+
+    async fn propose_skill_improvement(
+        &self,
+        skill_id: SkillId,
+        proposal: &ImproveSkillRequest,
+    ) -> Result<(), ServerError> {
+        self.hand_over_sealed_improvement(skill_id, proposal)
             .await
             .map_err(ServerError::from)
     }

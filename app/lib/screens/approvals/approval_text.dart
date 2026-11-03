@@ -54,6 +54,11 @@ String describeActionRequest({required String? runLabel}) {
   return '${_describeAskingAgent(runLabel)} asks before it does this.';
 }
 
+String describeSkillChangeRequest({required String? runLabel}) {
+  final String askingAgent = _describeAskingAgent(runLabel);
+  return '$askingAgent wants to change these instructions.';
+}
+
 String describeToolUse(String tool) {
   if (tool == _commandToolName) {
     return 'Run a command';
@@ -99,6 +104,11 @@ String describeApprovalTitle(ApprovalAction action, List<Workflow> workflows) {
       return 'Sign workflow ${_findWorkflowName(workflowId, workflows)}';
     case RunCommandAction(:final String tool, :final String command):
       return '${describeToolUse(tool)}: $command';
+    case ImproveSkillAction(:final SkillChangePreview? preview):
+      if (preview == null) {
+        return 'Improve a deleted skill';
+      }
+      return 'Improve skill ${preview.skillName}';
   }
 }
 
@@ -119,6 +129,8 @@ List<TextSegment> describeApprovalContext({
     case DeleteBranchOrFilesAction():
     case RunCommandAction():
       break;
+    case ImproveSkillAction(:final String summary):
+      parts.add(summary);
     case SignWorkflowAction():
       if (change == null) {
         return const <TextSegment>[TextSegment('Not signed yet')];

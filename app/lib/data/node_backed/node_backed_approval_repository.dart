@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 
-import 'package:agent_orchestration/bridge/codecs/approval_values.dart'
-    as node;
+import 'package:agent_orchestration/bridge/codecs/approval_views.dart' as node;
 import 'package:agent_orchestration/bridge/codecs/change_values.dart' as node;
 import 'package:agent_orchestration/bridge/commands/approval_commands.dart'
     as node;
@@ -53,7 +52,7 @@ final class NodeBackedApprovalRepository extends ChangeNotifier
     );
     final List<ApprovalRequest> approvals = <ApprovalRequest>[
       for (final node.ApprovalView approvalView in view.approvals)
-        mapApprovalRequestFromNode(approvalView.approval),
+        mapApprovalViewFromNode(approvalView),
     ];
 
     _approvals = List<ApprovalRequest>.unmodifiable(approvals);

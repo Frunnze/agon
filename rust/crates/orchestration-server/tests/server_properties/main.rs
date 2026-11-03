@@ -53,6 +53,8 @@ mod server_group_fixtures;
 mod server_group_tests;
 mod setup_code_tests;
 mod skill_edit_tests;
+mod skill_improvement_fixtures;
+mod skill_improvement_tests;
 mod step_claim_tests;
 mod takeover_tests;
 mod test_client;

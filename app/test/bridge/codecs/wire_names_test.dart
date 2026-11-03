@@ -36,6 +36,7 @@ const List<_WireNameFamily> _families = <_WireNameFamily>[
   _WireNameFamily(AgentAccess.values, nodeAgentAccesses),
   _WireNameFamily(SkillUsage.values, nodeSkillUsages),
   _WireNameFamily(SkillSource.values, nodeSkillSources),
+  _WireNameFamily(SkillImprovement.values, nodeSkillImprovements),
   _WireNameFamily(AgentKind.values, nodeAgentKinds),
   _WireNameFamily(SignatureState.values, nodeSignatureStates),
   _WireNameFamily(DiffLineChange.values, nodeDiffChanges),

@@ -27,6 +27,7 @@ SkillDraft randomSkillDraft(Random random) {
     instructions: randomText(random),
     scope: const Scope.everywhere(),
     usage: pickOne(random, SkillUsage.values),
+    improvement: pickOne(random, SkillImprovement.values),
   );
 }
 
@@ -35,6 +36,7 @@ void main() {
     final Random random = seededRandom(701);
     final FakeSkillRepository repository = FakeSkillRepository(
       skills: gallerySkills,
+      clock: FixedClock(galleryNow),
     );
 
     for (int i = 0; i < propertyIterations; i += 1) {
@@ -59,6 +61,7 @@ void main() {
     final Random random = seededRandom(702);
     final FakeSkillRepository repository = FakeSkillRepository(
       skills: gallerySkills,
+      clock: FixedClock(galleryNow),
     );
 
     for (int i = 0; i < propertyIterations; i += 1) {
@@ -75,6 +78,7 @@ void main() {
     final Random random = seededRandom(703);
     final FakeSkillRepository repository = FakeSkillRepository(
       skills: gallerySkills,
+      clock: FixedClock(galleryNow),
     );
 
     for (int i = 0; i < propertyIterations; i += 1) {
@@ -83,6 +87,8 @@ void main() {
         final Skill skill = await repository.createSkill(draft);
         expect(skill.source, SkillSource.created);
         expect(skill.usage, draft.usage);
+        expect(skill.improvement, draft.improvement);
+        expect(skill.history, isEmpty);
       }
     }
   });

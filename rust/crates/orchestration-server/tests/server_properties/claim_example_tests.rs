@@ -6,7 +6,9 @@ use orchestration_api::catalog::{SaveRuleRequest, SaveSkillRequest};
 use orchestration_api::work::{SetAcceptingRunsRequest, TaskStart};
 use orchestration_core::device::RunnerTarget;
 use orchestration_core::identifiers::{ProjectId, RuleId, SkillId};
-use orchestration_core::library::{Rule, Skill, SkillSource, SkillUsage};
+use orchestration_core::library::{
+    Rule, Skill, SkillImprovement, SkillSource, SkillUsage,
+};
 use orchestration_core::scope::{ProjectScope, Scope, WorkspaceScope};
 use uuid::Uuid;
 
@@ -134,6 +136,8 @@ fn assignments_carry_the_skills_and_rules_that_apply() {
                 scope,
                 usage: SkillUsage::Automatic,
                 source: SkillSource::Created,
+                improvement: SkillImprovement::Never,
+                history: Vec::new(),
             };
             let request = SaveSkillRequest { skill };
             test.post(&account.owner, "/skills", &request).await;

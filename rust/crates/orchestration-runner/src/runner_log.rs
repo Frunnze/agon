@@ -1,4 +1,4 @@
-use orchestration_core::identifiers::RunId;
+use orchestration_core::identifiers::{RunId, SkillId};
 use orchestration_hub::keep_awake::KeepAwakeError;
 use tokio::task::JoinError;
 use tracing::warn;
@@ -47,4 +47,17 @@ pub(crate) fn log_leftover_removal_failure(problem: &LeftoverError) {
 
 pub(crate) fn log_task_folder_removal_failure(problem: &std::io::Error) {
     warn!(%problem, "could not remove the folder of a finished draft");
+}
+
+pub(crate) fn log_skill_proposal_failure(
+    run_id: RunId,
+    skill_id: SkillId,
+    problem: &ServerError,
+) {
+    warn!(
+        run = %run_id.0,
+        skill = %skill_id.0,
+        %problem,
+        "could not hand over the skill improvement"
+    );
 }

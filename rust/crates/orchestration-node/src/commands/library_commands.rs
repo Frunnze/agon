@@ -6,7 +6,9 @@ use orchestration_core::agents_markdown::render_agents_markdown;
 use orchestration_core::identifiers::{
     ProjectId, RuleId, SkillId, WorkspaceId, generate_uuid,
 };
-use orchestration_core::library::{Rule, Skill, SkillSource, SkillUsage};
+use orchestration_core::library::{
+    Rule, Skill, SkillImprovement, SkillSource, SkillUsage,
+};
 use orchestration_core::naming::validate_name;
 use orchestration_core::scope::Scope;
 use orchestration_core::scope_rules::workspace_scope_includes;
@@ -42,6 +44,7 @@ pub(super) enum LibraryCommand {
         instructions: String,
         scope: Scope,
         usage: SkillUsage,
+        improvement: SkillImprovement,
     },
     ListRules {
         workspace_id: WorkspaceId,
@@ -93,6 +96,7 @@ pub(super) async fn handle_library_command(
             instructions,
             scope,
             usage,
+            improvement,
         } => {
             validate_name(&name)?;
             let skill = Skill {
@@ -103,6 +107,8 @@ pub(super) async fn handle_library_command(
                 scope,
                 usage,
                 source: SkillSource::Created,
+                improvement,
+                history: Vec::new(),
             };
             let workspace_key = session.keyring.key_for(workspace_id)?;
             let sealed_skill = seal_skill(workspace_key, &skill)?;

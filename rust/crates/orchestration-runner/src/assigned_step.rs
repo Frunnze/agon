@@ -1,4 +1,5 @@
 use orchestration_api::work::RunAssignment;
+use orchestration_core::library::Skill;
 use orchestration_core::run::Run;
 
 use crate::agent_invocation::AgentEnding;
@@ -23,11 +24,14 @@ pub(crate) async fn run_assigned_step<S: RunnerServer, P: BranchPusher>(
     step: &StepPlan,
 ) -> RunOutcome {
     let repository_folders = name_repository_folders(&context.workspace);
-    let prompt = prompt_for_step(step, assignment, &repository_folders);
+    let skills = select_assigned_skills(step, assignment);
+    let prompt =
+        prompt_for_step(step, assignment, &repository_folders, &skills);
     let opening = choose_step_opening(assignment, prompt);
     let answered_messages = count_answered_messages(assignment);
     let progress =
-        execute_step(context, step, &opening, answered_messages).await;
+        execute_step(context, step, &skills, &opening, answered_messages)
+            .await;
 
     match progress.ending {
         AgentEnding::Succeeded(_) => RunOutcome::Finished,
@@ -51,26 +55,33 @@ fn name_repository_folders(workspace: &RunWorkspace) -> Vec<String> {
     folders
 }
 
+fn select_assigned_skills<'assignment>(
+    step: &StepPlan,
+    assignment: &'assignment RunAssignment,
+) -> Vec<&'assignment Skill> {
+    let Some(project) = &assignment.project else {
+        return Vec::new();
+    };
+    select_step_skills(
+        step,
+        &assignment.skills,
+        project.workspace_id,
+        project.id,
+    )
+}
+
 fn prompt_for_step(
     step: &StepPlan,
     assignment: &RunAssignment,
     repository_folders: &[String],
+    skills: &[&Skill],
 ) -> String {
-    let skills = match &assignment.project {
-        Some(project) => select_step_skills(
-            step,
-            &assignment.skills,
-            project.workspace_id,
-            project.id,
-        ),
-        None => Vec::new(),
-    };
     let upstream_results = collect_upstream_results(step, &assignment.run);
     let prompt = compose_step_prompt(
         &step.instruction,
         &assignment.task.details,
         repository_folders,
-        &skills,
+        skills,
         &upstream_results,
     );
     if step.outcome_choices.is_empty() {

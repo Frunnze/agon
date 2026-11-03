@@ -54,6 +54,15 @@ sealed class ApprovalAction implements JsonEncodable {
         tool: readField(fields, 'tool', decodeText),
         command: readField(fields, 'command', decodeText),
       ),
+      ImproveSkill.kind => ImproveSkill(
+        skillId: readField(fields, 'skill_id', decodeSkillId),
+        summary: readField(fields, 'summary', decodeText),
+        proposedInstructions: readField(
+          fields,
+          'proposed_instructions',
+          decodeText,
+        ),
+      ),
       _ => throw FormatException('unknown approval action $kind'),
     };
   }
@@ -139,6 +148,30 @@ final class RunCommand extends ApprovalAction {
   }
 }
 
+final class ImproveSkill extends ApprovalAction {
+  const ImproveSkill({
+    required this.skillId,
+    required this.summary,
+    required this.proposedInstructions,
+  });
+
+  static const String kind = 'improve_skill';
+
+  final SkillId skillId;
+  final String summary;
+  final String proposedInstructions;
+
+  @override
+  JsonObject toJson() {
+    return <String, Object?>{
+      'kind': kind,
+      'skill_id': skillId.value,
+      'summary': summary,
+      'proposed_instructions': proposedInstructions,
+    };
+  }
+}
+
 final class SignedDecision implements JsonEncodable {
   SignedDecision({
     required this.decision,
@@ -211,62 +244,6 @@ final class ApprovalRequest implements JsonEncodable {
       'requested_by': requestedBy.value,
       'requested_at': encodeMoment(requestedAt),
       'decision': decision?.toJson(),
-    };
-  }
-}
-
-final class ApprovalView implements JsonEncodable {
-  const ApprovalView({
-    required this.approval,
-    required this.description,
-    required this.isWaiting,
-  });
-
-  factory ApprovalView.fromJson(Object? json) {
-    final JsonObject fields = decodeObject(json);
-    return ApprovalView(
-      approval: readField(fields, 'approval', ApprovalRequest.fromJson),
-      description: readField(fields, 'description', decodeText),
-      isWaiting: readField(fields, 'is_waiting', decodeFlag),
-    );
-  }
-
-  final ApprovalRequest approval;
-  final String description;
-  final bool isWaiting;
-
-  @override
-  JsonObject toJson() {
-    return <String, Object?>{
-      'approval': approval.toJson(),
-      'description': description,
-      'is_waiting': isWaiting,
-    };
-  }
-}
-
-final class ApprovalsView implements JsonEncodable {
-  ApprovalsView({
-    required this.waitingCount,
-    required List<ApprovalView> approvals,
-  }) : approvals = List<ApprovalView>.unmodifiable(approvals);
-
-  factory ApprovalsView.fromJson(Object? json) {
-    final JsonObject fields = decodeObject(json);
-    return ApprovalsView(
-      waitingCount: readField(fields, 'waiting_count', decodeInteger),
-      approvals: readListField(fields, 'approvals', ApprovalView.fromJson),
-    );
-  }
-
-  final int waitingCount;
-  final List<ApprovalView> approvals;
-
-  @override
-  JsonObject toJson() {
-    return <String, Object?>{
-      'waiting_count': waitingCount,
-      'approvals': encodeList(approvals),
     };
   }
 }

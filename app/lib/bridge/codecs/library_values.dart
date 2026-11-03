@@ -1,5 +1,6 @@
 import 'package:agent_orchestration/bridge/codecs/identifier_codecs.dart';
 import 'package:agent_orchestration/bridge/codecs/json_values.dart';
+import 'package:agent_orchestration/bridge/codecs/skill_change_values.dart';
 import 'package:agent_orchestration/bridge/codecs/workspace_values.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 
@@ -27,8 +28,23 @@ enum SkillSource implements WireNamed {
   static SkillSource decode(Object? json) => decodeWireName(values, json);
 }
 
+enum SkillImprovement implements WireNamed {
+  never('never'),
+  askMe('ask_me'),
+  auto('auto');
+
+  const SkillImprovement(this.wireName);
+
+  @override
+  final String wireName;
+
+  static SkillImprovement decode(Object? json) {
+    return decodeWireName(values, json);
+  }
+}
+
 final class Skill implements JsonEncodable {
-  const Skill({
+  Skill({
     required this.id,
     required this.name,
     required this.summary,
@@ -36,7 +52,9 @@ final class Skill implements JsonEncodable {
     required this.scope,
     required this.usage,
     required this.source,
-  });
+    required this.improvement,
+    required List<SkillChange> history,
+  }) : history = List<SkillChange>.unmodifiable(history);
 
   factory Skill.fromJson(Object? json) {
     final JsonObject fields = decodeObject(json);
@@ -48,6 +66,12 @@ final class Skill implements JsonEncodable {
       scope: readField(fields, 'scope', Scope.fromJson),
       usage: readField(fields, 'usage', SkillUsage.decode),
       source: readField(fields, 'source', SkillSource.decode),
+      improvement: readField(fields, 'improvement', SkillImprovement.decode),
+      history: readListFieldWhenPresent(
+        fields,
+        'history',
+        SkillChange.fromJson,
+      ),
     );
   }
 
@@ -58,6 +82,8 @@ final class Skill implements JsonEncodable {
   final Scope scope;
   final SkillUsage usage;
   final SkillSource source;
+  final SkillImprovement improvement;
+  final List<SkillChange> history;
 
   @override
   JsonObject toJson() {
@@ -69,6 +95,8 @@ final class Skill implements JsonEncodable {
       'scope': scope.toJson(),
       'usage': usage.wireName,
       'source': source.wireName,
+      'improvement': improvement.wireName,
+      'history': encodeList(history),
     };
   }
 }

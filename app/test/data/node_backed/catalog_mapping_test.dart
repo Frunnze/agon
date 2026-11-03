@@ -227,6 +227,8 @@ void main() {
       expect(mapScopeToNode(skill.scope).toJson(), wire.scope.toJson());
       expect(mapSkillUsageToNode(skill.usage), wire.usage);
       expect(skill.source, mapSkillSourceFromNode(wire.source));
+      expect(mapSkillImprovementToNode(skill.improvement), wire.improvement);
+      expect(skill.history.length, wire.history.length);
     }
   });
 

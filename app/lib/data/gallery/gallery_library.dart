@@ -3,10 +3,30 @@ import 'package:agent_orchestration/data/gallery/gallery_moments.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/library.dart';
 import 'package:agent_orchestration/data/models/scope.dart';
+import 'package:agent_orchestration/data/models/skill_change.dart';
 
 final OnlyWorkspaces _inAcme = OnlyWorkspaces(const <WorkspaceId>[
   GalleryWorkspaceIds.acme,
 ]);
+
+final List<SkillChange> _iosReleaseHistory = <SkillChange>[
+  SkillChange(
+    origin: const PersonEdit(),
+    savedAt: galleryDaysAgo(5),
+    replacedInstructions: 'Build the app.\nUpload it.',
+  ),
+  SkillChange(
+    origin: const AutomaticAgentRun(GalleryRunIds.featurePipeline12),
+    savedAt: galleryDaysAgo(3),
+    replacedInstructions: 'Build the release scheme.\nUpload it.',
+  ),
+  SkillChange(
+    origin: const ApprovedAgentRun(GalleryRunIds.release41),
+    savedAt: galleryToday(12, 9),
+    replacedInstructions:
+        'Build the release scheme.\nSign it.\nUpload it to TestFlight.',
+  ),
+];
 
 final List<Skill> gallerySkills = List<Skill>.unmodifiable(<Skill>[
   Skill(
@@ -20,15 +40,19 @@ final List<Skill> gallerySkills = List<Skill>.unmodifiable(<Skill>[
     ),
     usage: SkillUsage.automatic,
     source: SkillSource.created,
+    improvement: SkillImprovement.askMe,
+    history: _iosReleaseHistory,
   ),
-  const Skill(
+  Skill(
     id: GallerySkillIds.codeReview,
     name: 'code-review',
     summary: 'Check a change for bugs and risky edits',
     instructions: 'Read the diff.\nList bugs and risky edits.',
-    scope: Scope.everywhere(),
+    scope: const Scope.everywhere(),
     usage: SkillUsage.automatic,
     source: SkillSource.created,
+    improvement: SkillImprovement.never,
+    history: const <SkillChange>[],
   ),
   Skill(
     id: GallerySkillIds.gitCleanup,
@@ -38,15 +62,19 @@ final List<Skill> gallerySkills = List<Skill>.unmodifiable(<Skill>[
     scope: Scope(workspaces: _inAcme, projects: const AllProjects()),
     usage: SkillUsage.whenChosen,
     source: SkillSource.created,
+    improvement: SkillImprovement.never,
+    history: const <SkillChange>[],
   ),
-  const Skill(
+  Skill(
     id: GallerySkillIds.writeTests,
     name: 'write-tests',
     summary: 'Write failing tests before changing code',
     instructions: 'Write a failing test.\nMake it pass.',
-    scope: Scope.everywhere(),
+    scope: const Scope.everywhere(),
     usage: SkillUsage.whenChosen,
     source: SkillSource.builtIn,
+    improvement: SkillImprovement.never,
+    history: const <SkillChange>[],
   ),
 ]);
 

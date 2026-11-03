@@ -9,7 +9,7 @@ String? describeStepOutcome(String? outcome) {
   if (outcome == null) {
     return null;
   }
-  return '→ $outcome';
+  return '→\u00A0$outcome';
 }
 
 WorkflowAgent? _findAgentNamed(Workflow workflow, String name) {

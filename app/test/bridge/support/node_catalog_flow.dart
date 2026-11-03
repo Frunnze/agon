@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:agent_orchestration/bridge/codecs/approval_values.dart';
+import 'package:agent_orchestration/bridge/codecs/approval_views.dart';
 import 'package:agent_orchestration/bridge/codecs/audit_values.dart';
 import 'package:agent_orchestration/bridge/codecs/catalog_views.dart';
 import 'package:agent_orchestration/bridge/codecs/device_values.dart';
@@ -102,6 +103,7 @@ Future<void> _expectLibraryListed(
       instructions: 'Read the diff first.',
       scope: _everywhere,
       usage: SkillUsage.whenChosen,
+      improvement: SkillImprovement.askMe,
     ),
   );
   final List<Rule> rules = await channel.execute(
@@ -118,6 +120,8 @@ Future<void> _expectLibraryListed(
   expect(rules.single.details, 'Before every push.');
   expect(skills.single.id, skill.id);
   expect(skills.single.instructions, 'Read the diff first.');
+  expect(skills.single.improvement, SkillImprovement.askMe);
+  expect(skills.single.history, isEmpty);
   expect(agentsMarkdown.markdown, contains('Run the tests'));
 }
 

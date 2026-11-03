@@ -155,8 +155,25 @@ Map<String, Object?> randomApprovalActionJson(Random random) {
       'workflow_id': randomUuidText(random),
     },
     randomRunCommandJson(random),
+    randomImproveSkillJson(random),
   ];
   return pickOne(random, actions);
+}
+
+Map<String, Object?> randomImproveSkillJson(Random random) {
+  return <String, Object?>{
+    'kind': 'improve_skill',
+    'skill_id': randomUuidText(random),
+    'summary': randomText(random),
+    'proposed_instructions': randomText(random),
+  };
+}
+
+Map<String, Object?> randomSkillChangeViewJson(Random random) {
+  return <String, Object?>{
+    'skill_name': randomText(random),
+    'changes': randomListOf(random, randomDiffLineJson),
+  };
 }
 
 Map<String, Object?> randomSignedDecisionJson(Random random) {
@@ -184,6 +201,7 @@ Map<String, Object?> randomApprovalViewJson(Random random) {
     'approval': randomApprovalRequestJson(random),
     'description': randomText(random),
     'is_waiting': random.nextBool(),
+    'skill_change': randomOptional(random, randomSkillChangeViewJson),
   };
 }
 

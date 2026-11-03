@@ -13,4 +13,6 @@ abstract interface class SkillRepository implements Listenable {
   Future<Skill> updateSkill(SkillId skillId, SkillDraft draft);
 
   Future<void> deleteSkill(SkillId skillId);
+
+  Future<Skill> undoLatestAgentChange(SkillId skillId);
 }

@@ -27,6 +27,7 @@ mod run_preparation_tests;
 mod runner_loop_tests;
 mod runner_tests;
 mod sandbox_choice_tests;
+mod skill_improvement_execution_tests;
 mod skill_selection_tests;
 mod step_command_tests;
 mod step_opening_properties;

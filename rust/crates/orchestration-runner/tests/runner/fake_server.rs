@@ -3,12 +3,13 @@ use std::future::{pending, ready};
 use std::sync::Mutex;
 
 use chrono::DateTime;
+use orchestration_api::catalog::ImproveSkillRequest;
 use orchestration_api::work::{
     ClaimResponse, CreateApprovalRequest, ForgottenWork, HeartbeatRequest,
     RunAssignment, RunEvent, RunEventsRequest,
 };
 use orchestration_core::approval::ApprovalDecision;
-use orchestration_core::identifiers::RunId;
+use orchestration_core::identifiers::{RunId, SkillId};
 use orchestration_core::run::{ChatAuthor, ChatMessage};
 use orchestration_runner::runner_server::{RunnerServer, ServerError};
 
@@ -33,6 +34,7 @@ struct RecordedState {
     heartbeats: Vec<HeartbeatRequest>,
     events: Vec<(RunId, RunEvent)>,
     approval_requests: Vec<CreateApprovalRequest>,
+    skill_proposals: Vec<(SkillId, ImproveSkillRequest)>,
 }
 
 #[derive(Debug)]
@@ -41,6 +43,7 @@ pub struct FakeServer {
     cancellation_rule: CancellationRule,
     user_messages: Vec<ChatMessage>,
     forgotten_work: ForgottenWork,
+    is_refusing_skill_proposals: bool,
     state: Mutex<RecordedState>,
 }
 
@@ -57,6 +60,7 @@ impl FakeServer {
             cancellation_rule: CancellationRule::Never,
             user_messages: Vec::new(),
             forgotten_work: ForgottenWork::default(),
+            is_refusing_skill_proposals: false,
             state: Mutex::new(state),
         }
     }
@@ -97,6 +101,17 @@ impl FakeServer {
             forgotten_work,
             ..self
         }
+    }
+
+    pub fn refusing_skill_proposals(self) -> Self {
+        Self {
+            is_refusing_skill_proposals: true,
+            ..self
+        }
+    }
+
+    pub fn skill_proposals(&self) -> Vec<(SkillId, ImproveSkillRequest)> {
+        hold(&self.state).skill_proposals.clone()
     }
 
     pub fn heartbeats(&self) -> Vec<HeartbeatRequest> {
@@ -182,6 +197,20 @@ impl RunnerServer for FakeServer {
             ApprovalAnswer::Decide(decision) => Ok(decision),
             ApprovalAnswer::NeverDecide => pending().await,
         }
+    }
+
+    fn propose_skill_improvement(
+        &self,
+        skill_id: SkillId,
+        proposal: &ImproveSkillRequest,
+    ) -> impl Future<Output = Result<(), ServerError>> + Send {
+        let proposed = (skill_id, proposal.clone());
+        hold(&self.state).skill_proposals.push(proposed);
+        if self.is_refusing_skill_proposals {
+            let reason = "agents may not improve this skill".to_owned();
+            return ready(Err(ServerError { reason }));
+        }
+        ready(Ok(()))
     }
 
     fn read_user_messages(

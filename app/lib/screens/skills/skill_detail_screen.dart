@@ -2,8 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/widgets.dart';
 
+import 'package:agent_orchestration/data/clock.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/library.dart';
+import 'package:agent_orchestration/data/models/workflow.dart';
 import 'package:agent_orchestration/data/repository/job_repository.dart';
 import 'package:agent_orchestration/data/repository/project_repository.dart';
 import 'package:agent_orchestration/data/repository/skill_repository.dart';
@@ -17,6 +19,7 @@ import 'package:agent_orchestration/presentation/skill_text.dart';
 import 'package:agent_orchestration/screens/shared/deletion_prompts.dart';
 import 'package:agent_orchestration/screens/shared/deletion_review.dart';
 import 'package:agent_orchestration/screens/shared/scope_catalog_lookup.dart';
+import 'package:agent_orchestration/screens/skills/skill_history_section.dart';
 import 'package:agent_orchestration/shell/app_navigation.dart';
 import 'package:agent_orchestration/shell/app_route.dart';
 import 'package:agent_orchestration/shell/app_section.dart';
@@ -41,6 +44,7 @@ class SkillDetailScreen extends StatelessWidget {
     required this.taskRepository,
     required this.workspaceRepository,
     required this.projectRepository,
+    required this.clock,
     required this.navigation,
     super.key,
   });
@@ -52,6 +56,7 @@ class SkillDetailScreen extends StatelessWidget {
   final TaskRepository taskRepository;
   final WorkspaceRepository workspaceRepository;
   final ProjectRepository projectRepository;
+  final Clock clock;
   final AppNavigation navigation;
 
   @override
@@ -75,9 +80,10 @@ class SkillDetailScreen extends StatelessWidget {
       workspaceRepository: workspaceRepository,
       projectRepository: projectRepository,
     );
+    final List<Workflow> workflows = workflowRepository.listWorkflows();
     final String users = describeSkillUsers(
       skillId: skill.id,
-      workflows: workflowRepository.listWorkflows(),
+      workflows: workflows,
       jobs: jobRepository.listJobs(),
       tasks: taskRepository.listTasks(),
     );
@@ -117,6 +123,12 @@ class SkillDetailScreen extends StatelessWidget {
                     term: 'When agents use it',
                     description: <TextSegment>[TextSegment(skill.usage.label)],
                   ),
+                  Fact(
+                    term: 'Agents may improve it',
+                    description: <TextSegment>[
+                      TextSegment(skill.improvement.label),
+                    ],
+                  ),
                   Fact.chips(
                     term: 'Applies to',
                     chips: describeScopeChips(skill.scope, catalog),
@@ -140,6 +152,17 @@ class SkillDetailScreen extends StatelessWidget {
               ),
             ],
           ),
+        ),
+        SplitLayout(
+          start: SkillHistorySection(
+            history: skill.history,
+            taskRepository: taskRepository,
+            workflows: workflows,
+            now: clock.now(),
+            onUndo: () =>
+                unawaited(skillRepository.undoLatestAgentChange(skill.id)),
+          ),
+          end: const SizedBox.shrink(),
         ),
       ],
     );

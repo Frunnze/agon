@@ -4,8 +4,12 @@ use axum::http::StatusCode;
 use chrono::{DateTime, Utc};
 use orchestration_api::updates::ChangeTopic;
 use orchestration_api::work::{CreateApprovalRequest, DecideApprovalRequest};
-use orchestration_core::approval::{ApprovalRequest, SignedDecision};
-use orchestration_core::identifiers::{ApprovalId, DeviceId, generate_uuid};
+use orchestration_core::approval::{
+    ApprovalDecision, ApprovalRequest, SignedDecision,
+};
+use orchestration_core::identifiers::{
+    ApprovalId, DeviceId, RunId, generate_uuid,
+};
 use orchestration_security::decisions::verify_decision;
 use uuid::Uuid;
 
@@ -17,6 +21,7 @@ use crate::error::ServerError;
 use crate::extractors::{PathValue, parse_json_body};
 use crate::runs::{find_run, holds_step};
 use crate::server::SharedServer;
+use crate::skill_improvements::save_approved_improvement;
 use crate::stored_state::StoredState;
 
 pub async fn list_approvals(
@@ -53,13 +58,17 @@ pub async fn decide_approval(
         parse_json_body(&request.body)?;
     let approval_id = ApprovalId(approval_uuid);
     let caller_id = &request.caller.device_id;
-    let approval = server.apply(caller_id, |state, _now| {
-        record_decision(
+    let approval = server.apply(caller_id, |state, now| {
+        let decided = record_decision(
             state,
             approval_id,
             caller_id,
             &decide_request.decision,
-        )
+        )?;
+        if decide_request.decision.decision == ApprovalDecision::Approved {
+            save_approved_improvement(state, &decided.outcome, now);
+        }
+        Ok(decided)
     })?;
     Ok(Json(approval))
 }
@@ -78,19 +87,28 @@ fn visible_approvals(
     approvals
 }
 
-fn open_approval(
+pub fn require_step_holder(
+    state: &StoredState,
+    runner_id: &DeviceId,
+    run_id: RunId,
+) -> Result<(), ServerError> {
+    let record = find_run(state, run_id)?;
+    if !holds_step(&record.run, runner_id) {
+        return Err(ServerError::Forbidden(
+            "the runner holds no step of this run",
+        ));
+    }
+    Ok(())
+}
+
+pub fn open_approval(
     state: &mut StoredState,
     runner_id: &DeviceId,
     request: &CreateApprovalRequest,
     now: DateTime<Utc>,
 ) -> Result<Change<ApprovalRequest>, ServerError> {
     if let Some(run_id) = request.run_id {
-        let record = find_run(state, run_id)?;
-        if !holds_step(&record.run, runner_id) {
-            return Err(ServerError::Forbidden(
-                "the runner holds no step of this run",
-            ));
-        }
+        require_step_holder(state, runner_id, run_id)?;
     }
     let approval = ApprovalRequest {
         id: ApprovalId(generate_uuid()),

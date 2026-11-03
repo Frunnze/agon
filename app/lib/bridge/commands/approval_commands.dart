@@ -1,4 +1,5 @@
 import 'package:agent_orchestration/bridge/codecs/approval_values.dart';
+import 'package:agent_orchestration/bridge/codecs/approval_views.dart';
 import 'package:agent_orchestration/bridge/codecs/json_values.dart';
 import 'package:agent_orchestration/bridge/commands/node_command.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';

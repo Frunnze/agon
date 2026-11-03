@@ -121,6 +121,7 @@ void main() {
           instructions: 'Read the diff first.',
           scope: Scope.everywhere(),
           usage: SkillUsage.whenChosen,
+          improvement: SkillImprovement.never,
         ),
       );
       await skills.load();

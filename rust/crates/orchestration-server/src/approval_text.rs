@@ -19,6 +19,9 @@ pub fn describe_request(action: &ApprovalAction) -> String {
         ApprovalAction::RunCommand { tool, command } => {
             format!("Asked to use {tool}: {command}")
         }
+        ApprovalAction::ImproveSkill { summary, .. } => {
+            format!("Asked to improve a skill: {summary}")
+        }
     }
 }
 
@@ -46,6 +49,7 @@ fn describe_action_in_progress(action: &ApprovalAction) -> String {
         ApprovalAction::RunCommand { tool, command } => {
             format!("using {tool}: {command}")
         }
+        ApprovalAction::ImproveSkill { .. } => "improving a skill".to_owned(),
     }
 }
 

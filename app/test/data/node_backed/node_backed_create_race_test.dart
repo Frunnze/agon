@@ -137,6 +137,7 @@ void main() {
             instructions: 'Instructions $i',
             scope: const Scope.everywhere(),
             usage: SkillUsage.automatic,
+            improvement: SkillImprovement.never,
           ),
         ),
         fetchedArea: node.ChangeArea.skills,

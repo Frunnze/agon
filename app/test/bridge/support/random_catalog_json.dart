@@ -127,6 +127,24 @@ Map<String, Object?> randomSkillJson(Random random) {
     'scope': randomScopeJson(random),
     'usage': pickOne(random, nodeSkillUsages),
     'source': pickOne(random, nodeSkillSources),
+    'improvement': pickOne(random, nodeSkillImprovements),
+    'history': randomListOf(random, randomSkillChangeJson),
+  };
+}
+
+Map<String, Object?> randomSkillChangeOriginJson(Random random) {
+  final String kind = pickOne(random, nodeSkillChangeOrigins);
+  if (kind == nodePersonEditOrigin) {
+    return <String, Object?>{'kind': kind};
+  }
+  return <String, Object?>{'kind': kind, 'run_id': randomUuidText(random)};
+}
+
+Map<String, Object?> randomSkillChangeJson(Random random) {
+  return <String, Object?>{
+    'origin': randomSkillChangeOriginJson(random),
+    'saved_at': randomMomentText(random),
+    'replaced_instructions': randomText(random),
   };
 }
 

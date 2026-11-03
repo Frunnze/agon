@@ -2,6 +2,7 @@ import 'package:agent_orchestration/data/gallery/gallery_identifiers.dart';
 import 'package:agent_orchestration/data/gallery/gallery_moments.dart';
 import 'package:agent_orchestration/data/gallery/gallery_runs.dart';
 import 'package:agent_orchestration/data/models/approval.dart';
+import 'package:agent_orchestration/data/models/diff_line.dart';
 
 final List<ApprovalRequest> galleryApprovals =
     List<ApprovalRequest>.unmodifiable(<ApprovalRequest>[
@@ -60,5 +61,42 @@ final ApprovalRequest galleryRunCommandApproval = ApprovalRequest(
   ),
   requestedBy: GalleryDeviceIds.macStudio,
   requestedAt: galleryToday(14, 9, 20),
+  decision: null,
+);
+
+final ApprovalRequest galleryImproveSkillApproval = ApprovalRequest(
+  id: GalleryApprovalIds.improveChangelogEntries,
+  runId: GalleryRunIds.release41,
+  action: ImproveSkillAction(
+    skillId: GallerySkillIds.changelogEntries,
+    summary: '2 lines added, 1 line removed',
+    preview: SkillChangePreview(
+      skillName: 'changelog-entries',
+      lines: const <DiffLine>[
+        DiffLine(
+          change: DiffLineChange.unchanged,
+          text: 'Add one entry per merged pull request.',
+        ),
+        DiffLine(
+          change: DiffLineChange.removed,
+          text: 'Write each entry in the past tense.',
+        ),
+        DiffLine(
+          change: DiffLineChange.added,
+          text: 'Write each entry in the present tense.',
+        ),
+        DiffLine(
+          change: DiffLineChange.added,
+          text: 'Start with the area it changes, like Login.',
+        ),
+        DiffLine(
+          change: DiffLineChange.unchanged,
+          text: 'Skip changes to tests and tooling.',
+        ),
+      ],
+    ),
+  ),
+  requestedBy: GalleryDeviceIds.macStudio,
+  requestedAt: galleryToday(14, 4, 40),
   decision: null,
 );

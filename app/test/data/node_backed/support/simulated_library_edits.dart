@@ -1,12 +1,14 @@
 import 'simulated_node_replies.dart';
 
 const String _workspaceField = 'workspace';
+const String _personEditKind = 'person_edit';
 const List<String> _skillFields = <String>[
   'name',
   'summary',
   'instructions',
   'scope',
   'usage',
+  'improvement',
 ];
 const List<String> _ruleFields = <String>['title', 'details', 'scope'];
 
@@ -33,6 +35,29 @@ final class SimulatedLibraryEdits {
     );
     skills.remove(skill);
     return null;
+  }
+
+  Object? undoSkillChange(SimulatedCommand command) {
+    final Map<String, Object?> skill = findSimulatedRecord(
+      skills,
+      kind: 'skill',
+      identifier: command['skill_id'],
+    );
+    final List<Object?> history = skill['history']! as List<Object?>;
+    if (history.isEmpty) {
+      throw const SimulatedNodeFailure('the skill has no agent change');
+    }
+
+    final Map<String, Object?> latest = history.last! as Map<String, Object?>;
+    final Map<String, Object?> origin =
+        latest['origin']! as Map<String, Object?>;
+    if (origin['kind'] == _personEditKind) {
+      throw const SimulatedNodeFailure('the latest change was not an agent');
+    }
+
+    skill['instructions'] = latest['replaced_instructions'];
+    skill['history'] = history.sublist(0, history.length - 1);
+    return _withoutWorkspace(skill);
   }
 
   Object? updateRule(SimulatedCommand command) {
@@ -63,7 +88,10 @@ Map<String, Object?> _copyFields(
   for (final String field in fields) {
     record[field] = command[field];
   }
+  return _withoutWorkspace(record);
+}
 
+Map<String, Object?> _withoutWorkspace(Map<String, Object?> record) {
   final Map<String, Object?> reply = Map<String, Object?>.of(record);
   reply.remove(_workspaceField);
   return reply;

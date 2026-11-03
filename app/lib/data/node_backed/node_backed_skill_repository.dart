@@ -82,6 +82,7 @@ final class NodeBackedSkillRepository extends ChangeNotifier
         instructions: draft.instructions,
         scope: mapScopeToNode(draft.scope),
         usage: mapSkillUsageToNode(draft.usage),
+        improvement: mapSkillImprovementToNode(draft.improvement),
       ),
     );
     return _storeSkill(mapSkillFromNode(created));
@@ -106,9 +107,19 @@ final class NodeBackedSkillRepository extends ChangeNotifier
         instructions: draft.instructions,
         scope: mapScopeToNode(draft.scope),
         usage: mapSkillUsageToNode(draft.usage),
+        improvement: mapSkillImprovementToNode(draft.improvement),
       ),
     );
     return _storeSkill(mapSkillFromNode(updated));
+  }
+
+  @override
+  Future<Skill> undoLatestAgentChange(SkillId skillId) async {
+    final node.Skill restored = await executeNodeCommand(
+      _channel,
+      node.UndoSkillChangeCommand(skillId: skillId),
+    );
+    return _storeSkill(mapSkillFromNode(restored));
   }
 
   @override

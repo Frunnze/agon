@@ -88,6 +88,7 @@ Map<String, Object?> randomItemDraftJson(Random random) {
       'instructions': randomText(random),
       'scope': randomScopeJson(random),
       'usage': pickOne(random, nodeSkillUsages),
+      'improvement': pickOne(random, nodeSkillImprovements),
     },
     'rule' => <String, Object?>{
       'kind': kind,

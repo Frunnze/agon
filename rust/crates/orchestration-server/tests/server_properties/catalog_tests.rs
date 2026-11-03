@@ -4,7 +4,9 @@ use orchestration_api::catalog::{
     SaveSkillRequest, SetRuleEnabledRequest,
 };
 use orchestration_core::identifiers::{RuleId, SkillId};
-use orchestration_core::library::{Rule, Skill, SkillSource, SkillUsage};
+use orchestration_core::library::{
+    Rule, Skill, SkillImprovement, SkillSource, SkillUsage,
+};
 use orchestration_core::scope::Scope;
 use orchestration_core::workspace::{AgentAccess, Project, Repository};
 use proptest::prelude::*;
@@ -144,6 +146,8 @@ fn skills_are_saved_and_listed() {
             scope: Scope::everywhere(),
             usage: SkillUsage::Automatic,
             source: SkillSource::Created,
+            improvement: SkillImprovement::Never,
+            history: Vec::new(),
         };
         let request = SaveSkillRequest { skill };
         let response = test.post(&account.owner, "/skills", &request).await;

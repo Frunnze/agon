@@ -58,6 +58,7 @@ const List<CommandShape> catalogCommandShapes = <CommandShape>[
       'instructions',
       'scope',
       'usage',
+      'improvement',
     },
     buildCommand: _buildCreateSkill,
     buildReplyJson: randomSkillJson,
@@ -132,6 +133,7 @@ NodeCommand<Object?> _buildCreateSkill(Random random) {
     instructions: randomText(random),
     scope: Scope.fromJson(randomScopeJson(random)),
     usage: pickOne(random, SkillUsage.values),
+    improvement: pickOne(random, SkillImprovement.values),
   );
 }
 

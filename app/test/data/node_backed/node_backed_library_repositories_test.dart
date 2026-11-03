@@ -68,6 +68,7 @@ SkillDraft _buildSkillDraft(String name) {
     instructions: 'Instructions',
     scope: const Scope.everywhere(),
     usage: SkillUsage.automatic,
+    improvement: SkillImprovement.never,
   );
 }
 

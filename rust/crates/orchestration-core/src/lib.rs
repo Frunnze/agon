@@ -27,6 +27,8 @@ pub mod scope;
 pub mod scope_rules;
 pub mod server_group;
 pub mod server_keeping;
+pub mod skill_history;
+pub mod skill_improvement;
 pub mod step_outcomes;
 pub mod step_results;
 pub mod task;

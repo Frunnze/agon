@@ -74,6 +74,11 @@ case "$prompt" in
     ;;
 esac
 reply="finished $name"
+improved=$(printf '%s\n' "$prompt" | sed -n 's/.*please-improve-\([a-z]*\).*/\1/p' | head -n 1)
+if [ -n "$improved" ]; then
+  reply="$reply\\nSKILL IMPROVEMENT: $improved\\nBuild twice."
+  reply="$reply\\nEND SKILL IMPROVEMENT"
+fi
 outcome=$(printf '%s\n' "$prompt" | sed -n 's/.*please-outcome-\([a-z]*\).*/\1/p' | head -n 1)
 if [ -n "$outcome" ]; then
   reply="$reply\\nOUTCOME: $outcome"

@@ -31,6 +31,7 @@ mod runner_log;
 pub mod runner_loop;
 pub mod runner_server;
 pub mod sandbox_choice;
+mod skill_proposals;
 pub mod skill_selection;
 mod steady_interval;
 pub mod step_command;

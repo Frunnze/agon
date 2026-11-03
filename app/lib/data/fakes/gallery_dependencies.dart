@@ -87,7 +87,7 @@ AppDependencies buildGalleryDependencies() {
       clock: clock,
     ),
     workflowRepository: workflowRepository,
-    skillRepository: FakeSkillRepository(skills: gallerySkills),
+    skillRepository: FakeSkillRepository(skills: gallerySkills, clock: clock),
     ruleRepository: FakeRuleRepository(rules: galleryRules, clock: clock),
     runnerRepository: FakeRunnerRepository(
       runners: galleryRunners,

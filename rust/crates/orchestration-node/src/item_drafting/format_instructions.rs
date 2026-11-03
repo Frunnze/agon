@@ -64,6 +64,9 @@ const SKILL_FIELD_LINES: [&str; 2] = [
     "- instructions: the full instructions agents follow.",
 ];
 const SKILL_USAGE_LINE: &str = "- usage: automatic or when_chosen.";
+const SKILL_IMPROVEMENT_LINE: &str = "- improvement: never, ask_me or auto, \
+     how agents may improve the skill; never unless the person asks for \
+     agents to improve it.";
 const RULE_FIELD_LINES: [&str; 2] = [
     "- title: the rule in one short sentence.",
     "- details: more about the rule, or an empty text.",
@@ -97,6 +100,7 @@ fn list_kind_lines(kind: DraftKind) -> Vec<String> {
             lines.extend(own_lines(&SKILL_FIELD_LINES));
             lines.push(SCOPE_LINE.to_owned());
             lines.push(SKILL_USAGE_LINE.to_owned());
+            lines.push(SKILL_IMPROVEMENT_LINE.to_owned());
             lines
         }
         DraftKind::Rule => {

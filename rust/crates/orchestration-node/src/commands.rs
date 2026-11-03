@@ -29,6 +29,7 @@ mod run_commands;
 mod runner_commands;
 mod server_backup_commands;
 mod shown_words;
+mod skill_change_view;
 mod task_commands;
 mod task_views;
 mod workflow_agent_commands;

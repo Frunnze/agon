@@ -1,6 +1,9 @@
 use orchestration_core::approval::ApprovalAction;
+use orchestration_core::identifiers::SkillId;
+use orchestration_core::library::{Skill, SkillImprovement};
 use proptest::prelude::*;
 use serde_json::{Value, json};
+use uuid::Uuid;
 
 #[test]
 fn a_run_command_approval_has_the_agreed_wire_shape() {
@@ -37,4 +40,46 @@ proptest! {
         prop_assert_eq!(encoded_action, Some(expected_action));
         prop_assert_eq!(decoded_action, Some(action));
     }
+}
+
+#[test]
+fn an_improve_skill_approval_has_the_agreed_wire_shape() {
+    let skill_id = SkillId(Uuid::from_u128(7));
+    let action = ApprovalAction::ImproveSkill {
+        skill_id,
+        summary: "1 line added, 0 lines removed".to_string(),
+        proposed_instructions: "sealed-v1:aW1wcm92ZWQ".to_string(),
+    };
+
+    let encoded_action = serde_json::to_value(&action).ok();
+
+    let expected_action = json!({
+        "kind": "improve_skill",
+        "skill_id": skill_id.0.to_string(),
+        "summary": "1 line added, 0 lines removed",
+        "proposed_instructions": "sealed-v1:aW1wcm92ZWQ",
+    });
+    assert_eq!(encoded_action, Some(expected_action));
+}
+
+#[test]
+fn a_skill_saved_before_improvements_reads_as_never_with_no_history() {
+    let stored_skill = json!({
+        "id": Uuid::from_u128(8).to_string(),
+        "name": "release",
+        "summary": "Ship it",
+        "instructions": "sealed-v1:c2hpcA",
+        "scope": {
+            "workspaces": {"kind": "all_workspaces"},
+            "projects": {"kind": "all_projects"},
+        },
+        "usage": "automatic",
+        "source": "created",
+    });
+
+    let skill: Option<Skill> = serde_json::from_value(stored_skill).ok();
+
+    let read_setting = skill.as_ref().map(|skill| skill.improvement);
+    assert_eq!(read_setting, Some(SkillImprovement::Never));
+    assert_eq!(skill.map(|skill| skill.history), Some(Vec::new()));
 }

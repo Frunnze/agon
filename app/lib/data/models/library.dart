@@ -1,5 +1,6 @@
 import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/scope.dart';
+import 'package:agent_orchestration/data/models/skill_change.dart';
 
 enum SkillUsage {
   automatic('Automatic'),
@@ -12,8 +13,22 @@ enum SkillUsage {
 
 enum SkillSource { builtIn, created }
 
+enum SkillImprovement {
+  never('Never', 'Agents never change this skill.'),
+  askMe(
+    'Ask me',
+    'An agent that used it may propose a better version for you to approve.',
+  ),
+  auto('Auto', "An agent's better version is saved at once. You can undo it.");
+
+  const SkillImprovement(this.label, this.explanation);
+
+  final String label;
+  final String explanation;
+}
+
 final class Skill {
-  const Skill({
+  Skill({
     required this.id,
     required this.name,
     required this.summary,
@@ -21,7 +36,9 @@ final class Skill {
     required this.scope,
     required this.usage,
     required this.source,
-  });
+    required this.improvement,
+    required List<SkillChange> history,
+  }) : history = List<SkillChange>.unmodifiable(history);
 
   final SkillId id;
   final String name;
@@ -30,6 +47,8 @@ final class Skill {
   final Scope scope;
   final SkillUsage usage;
   final SkillSource source;
+  final SkillImprovement improvement;
+  final List<SkillChange> history;
 }
 
 final class SkillDraft {
@@ -39,6 +58,7 @@ final class SkillDraft {
     required this.instructions,
     required this.scope,
     required this.usage,
+    required this.improvement,
   });
 
   final String name;
@@ -46,6 +66,7 @@ final class SkillDraft {
   final String instructions;
   final Scope scope;
   final SkillUsage usage;
+  final SkillImprovement improvement;
 }
 
 final class Rule {

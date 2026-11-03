@@ -5,6 +5,7 @@ import 'package:agent_orchestration/data/models/workflow.dart';
 import 'package:agent_orchestration/data/rules/local_folder_address.dart';
 import 'package:agent_orchestration/presentation/identifier_text.dart';
 import 'package:agent_orchestration/screens/approvals/approval_text.dart';
+import 'package:agent_orchestration/screens/workflows/document_lines.dart';
 import 'package:agent_orchestration/widgets/app_button.dart';
 import 'package:agent_orchestration/widgets/app_dialog.dart';
 import 'package:agent_orchestration/widgets/code_block.dart';
@@ -100,6 +101,10 @@ class ApprovalDialog extends StatelessWidget {
       return _buildCommandDialog(context, action, askedByFact);
     }
 
+    if (action is ImproveSkillAction) {
+      return _buildSkillChangeDialog(context, action, askedByFact);
+    }
+
     return AppDialog(
       title: '${describeApprovalTitle(action, workflows)}?',
       content: <Widget>[
@@ -127,6 +132,32 @@ class ApprovalDialog extends StatelessWidget {
         FactList(facts: <Fact>[askedByFact]),
         CodeBlock(lines: <CodeBlockLine>[CodeBlockLine(action.command)]),
         const DialogNote('The run waits until you decide.'),
+      ],
+      actions: _buildDecisionButtons(context),
+    );
+  }
+
+  Widget _buildSkillChangeDialog(
+    BuildContext context,
+    ImproveSkillAction action,
+    Fact askedByFact,
+  ) {
+    final SkillChangePreview? preview = action.preview;
+    final Fact changeFact = Fact(
+      term: 'Change',
+      description: <TextSegment>[TextSegment(action.summary)],
+    );
+
+    return AppDialog(
+      title: '${describeApprovalTitle(action, workflows)}?',
+      content: <Widget>[
+        Text(describeSkillChangeRequest(runLabel: runLabel)),
+        FactList(facts: <Fact>[askedByFact, changeFact]),
+        if (preview != null) CodeBlock(lines: markDiffLines(preview.lines)),
+        const DialogNote(
+          "Approving saves it as the skill's new version. You can undo it "
+          "from the skill's history.",
+        ),
       ],
       actions: _buildDecisionButtons(context),
     );

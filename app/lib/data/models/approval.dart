@@ -1,3 +1,4 @@
+import 'package:agent_orchestration/data/models/diff_line.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 
 sealed class ApprovalAction {
@@ -43,6 +44,26 @@ final class RunCommandAction extends ApprovalAction {
 
   final String tool;
   final String command;
+}
+
+final class SkillChangePreview {
+  SkillChangePreview({required this.skillName, required List<DiffLine> lines})
+    : lines = List<DiffLine>.unmodifiable(lines);
+
+  final String skillName;
+  final List<DiffLine> lines;
+}
+
+final class ImproveSkillAction extends ApprovalAction {
+  const ImproveSkillAction({
+    required this.skillId,
+    required this.summary,
+    required this.preview,
+  });
+
+  final SkillId skillId;
+  final String summary;
+  final SkillChangePreview? preview;
 }
 
 enum ApprovalPolicy { askBeforeRiskyActions, neverAsk }

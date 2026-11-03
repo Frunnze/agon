@@ -1,9 +1,10 @@
+use orchestration_api::catalog::ImproveSkillRequest;
 use orchestration_api::work::{
     ClaimResponse, CreateApprovalRequest, ForgottenWork, HeartbeatRequest,
     RunEventsRequest,
 };
 use orchestration_core::approval::ApprovalDecision;
-use orchestration_core::identifiers::RunId;
+use orchestration_core::identifiers::{RunId, SkillId};
 use orchestration_core::run::ChatMessage;
 use thiserror::Error;
 
@@ -33,6 +34,12 @@ pub trait RunnerServer: Send + Sync + 'static {
         &self,
         request: &CreateApprovalRequest,
     ) -> impl Future<Output = Result<ApprovalDecision, ServerError>> + Send;
+
+    fn propose_skill_improvement(
+        &self,
+        skill_id: SkillId,
+        proposal: &ImproveSkillRequest,
+    ) -> impl Future<Output = Result<(), ServerError>> + Send;
 
     fn read_user_messages(
         &self,

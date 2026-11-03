@@ -87,6 +87,7 @@ void main() {
             instructions: 'List merged pull requests.',
             scope: _everywhere,
             usage: node.SkillUsage.automatic,
+            improvement: node.SkillImprovement.never,
           ),
         ),
       );

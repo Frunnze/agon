@@ -50,6 +50,7 @@ mod server_group_trust;
 mod settings;
 mod setup_code;
 mod skill_deletion;
+mod skill_improvements;
 mod skills;
 mod stored_state;
 mod task_deletion;

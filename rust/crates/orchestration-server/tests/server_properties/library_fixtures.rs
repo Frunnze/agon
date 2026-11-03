@@ -1,7 +1,9 @@
 use axum::http::StatusCode;
 use orchestration_api::catalog::{SaveRuleRequest, SaveSkillRequest};
 use orchestration_core::identifiers::{RuleId, SkillId};
-use orchestration_core::library::{Rule, Skill, SkillSource, SkillUsage};
+use orchestration_core::library::{
+    Rule, Skill, SkillImprovement, SkillSource, SkillUsage,
+};
 use orchestration_core::scope::Scope;
 use uuid::Uuid;
 
@@ -20,6 +22,8 @@ pub fn sample_skill(name: &str) -> Skill {
         scope: Scope::everywhere(),
         usage: SkillUsage::Automatic,
         source: SkillSource::Created,
+        improvement: SkillImprovement::Never,
+        history: Vec::new(),
     }
 }
 

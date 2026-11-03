@@ -6,22 +6,18 @@ import 'package:agent_orchestration/data/clock.dart';
 import 'package:agent_orchestration/data/models/approval.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/person_step.dart';
-import 'package:agent_orchestration/data/models/run.dart';
-import 'package:agent_orchestration/data/models/task.dart';
 import 'package:agent_orchestration/data/models/workflow.dart';
 import 'package:agent_orchestration/data/repository/approval_repository.dart';
 import 'package:agent_orchestration/data/repository/device_repository.dart';
 import 'package:agent_orchestration/data/repository/person_step_repository.dart';
 import 'package:agent_orchestration/data/repository/task_repository.dart';
 import 'package:agent_orchestration/data/repository/workflow_repository.dart';
-import 'package:agent_orchestration/data/repository/record_not_found.dart';
 import 'package:agent_orchestration/presentation/device_names.dart';
-import 'package:agent_orchestration/presentation/doer_text.dart';
-import 'package:agent_orchestration/presentation/run_text.dart';
 import 'package:agent_orchestration/presentation/time_phrases.dart';
 import 'package:agent_orchestration/screens/approvals/approval_review.dart';
 import 'package:agent_orchestration/screens/approvals/approval_text.dart';
 import 'package:agent_orchestration/screens/shared/person_step_questions.dart';
+import 'package:agent_orchestration/screens/shared/run_label_lookup.dart';
 import 'package:agent_orchestration/shell/app_navigation.dart';
 import 'package:agent_orchestration/shell/app_route.dart';
 import 'package:agent_orchestration/widgets/app_page.dart';
@@ -174,20 +170,10 @@ class ApprovalsScreen extends StatelessWidget {
     if (runId == null) {
       return null;
     }
-
-    final Run run;
-    final Task task;
-    try {
-      run = taskRepository.findRun(runId);
-      task = taskRepository.findTask(run.taskId);
-    } on RecordNotFound {
-      return null;
-    }
-
-    return describeRunLabel(
-      task: task,
-      workflow: findWorkflowForDoer(task.doer, workflows),
-      run: run,
+    return findRunLabel(
+      runId: runId,
+      taskRepository: taskRepository,
+      workflows: workflows,
     );
   }
 
@@ -197,23 +183,28 @@ class ApprovalsScreen extends StatelessWidget {
 
     if (action is SignWorkflowAction) {
       navigation.openRoute(WorkflowChangeRoute(action.workflowId));
-    } else if (runId != null) {
-      navigation.openRoute(ChatRoute(runId));
+    } else if (action is ImproveSkillAction || runId == null) {
+      unawaited(_reviewHere(context, request));
     } else {
-      unawaited(_reviewWithoutRun(context, request));
+      navigation.openRoute(ChatRoute(runId));
     }
   }
 
-  Future<void> _reviewWithoutRun(
-    BuildContext context,
-    ApprovalRequest request,
-  ) {
+  Future<void> _reviewHere(BuildContext context, ApprovalRequest request) {
     final ApprovalReview review = ApprovalReview(
       approvalRepository: approvalRepository,
       workflowRepository: workflowRepository,
       deviceRepository: deviceRepository,
       clock: clock,
     );
-    return review.review(context: context, request: request, runLabel: null);
+    final String? runLabel = _describeRunLabel(
+      request.runId,
+      workflowRepository.listWorkflows(),
+    );
+    return review.review(
+      context: context,
+      request: request,
+      runLabel: runLabel,
+    );
   }
 }

@@ -1,4 +1,4 @@
-use orchestration_core::library::{Rule, Skill};
+use orchestration_core::library::{Rule, Skill, SkillChange};
 use orchestration_core::task::Task;
 use orchestration_core::workflow::{Workflow, WorkflowAgent};
 use orchestration_security::sealing::{WorkspaceKey, seal_text};
@@ -30,8 +30,17 @@ pub fn seal_skill(
     workspace_key: &WorkspaceKey,
     skill: &Skill,
 ) -> Result<Skill, NodeError> {
+    let mut sealed_history = Vec::new();
+    for change in &skill.history {
+        let replaced = &change.replaced_instructions;
+        sealed_history.push(SkillChange {
+            replaced_instructions: seal_text(workspace_key, replaced)?,
+            ..change.clone()
+        });
+    }
     Ok(Skill {
         instructions: seal_text(workspace_key, &skill.instructions)?,
+        history: sealed_history,
         ..skill.clone()
     })
 }
@@ -40,8 +49,17 @@ pub fn open_skill(
     keyring: &WorkspaceKeyring,
     skill: &Skill,
 ) -> Result<Skill, NodeError> {
+    let mut opened_history = Vec::new();
+    for change in &skill.history {
+        let replaced = &change.replaced_instructions;
+        opened_history.push(SkillChange {
+            replaced_instructions: keyring.open_text(replaced)?,
+            ..change.clone()
+        });
+    }
     Ok(Skill {
         instructions: keyring.open_text(&skill.instructions)?,
+        history: opened_history,
         ..skill.clone()
     })
 }

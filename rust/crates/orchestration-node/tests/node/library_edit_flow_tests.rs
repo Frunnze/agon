@@ -76,6 +76,7 @@ fn test_update_skill_property_lists_the_new_fields_and_seals_them() {
                 "instructions": instructions,
                 "scope": everywhere_scope(),
                 "usage": usage,
+                "improvement": "ask_me",
             }))
             .map_err(fail)?;
         let skills =
@@ -87,6 +88,7 @@ fn test_update_skill_property_lists_the_new_fields_and_seals_them() {
         prop_assert_eq!(&updated["name"], &json!(name));
         prop_assert_eq!(&updated["instructions"], &json!(instructions));
         prop_assert_eq!(&updated["usage"], &json!(usage));
+        prop_assert_eq!(&updated["improvement"], &json!("ask_me"));
         prop_assert_eq!(&updated["source"], &json!("created"));
         let listed = skills
             .as_array()
@@ -226,6 +228,7 @@ fn bad_edits_and_unknown_items_are_refused() {
         "instructions": FIRST_SECRET,
         "scope": everywhere_scope(),
         "usage": "automatic",
+        "improvement": "never",
     }));
     let unknown_skill = device.run(&json!({
         "command": "delete_skill",

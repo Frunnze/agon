@@ -31,6 +31,7 @@ final class CreateSkillCommand implements NodeCommand<Skill> {
     required this.instructions,
     required this.scope,
     required this.usage,
+    required this.improvement,
   });
 
   final WorkspaceId workspaceId;
@@ -39,6 +40,7 @@ final class CreateSkillCommand implements NodeCommand<Skill> {
   final String instructions;
   final Scope scope;
   final SkillUsage usage;
+  final SkillImprovement improvement;
 
   @override
   String get name => 'create_skill';
@@ -52,6 +54,7 @@ final class CreateSkillCommand implements NodeCommand<Skill> {
       'instructions': instructions,
       'scope': scope.toJson(),
       'usage': usage.wireName,
+      'improvement': improvement.wireName,
     };
   }
 
@@ -68,6 +71,7 @@ final class UpdateSkillCommand implements NodeCommand<Skill> {
     required this.instructions,
     required this.scope,
     required this.usage,
+    required this.improvement,
   });
 
   final WorkspaceId workspaceId;
@@ -77,6 +81,7 @@ final class UpdateSkillCommand implements NodeCommand<Skill> {
   final String instructions;
   final Scope scope;
   final SkillUsage usage;
+  final SkillImprovement improvement;
 
   @override
   String get name => 'update_skill';
@@ -91,6 +96,7 @@ final class UpdateSkillCommand implements NodeCommand<Skill> {
       'instructions': instructions,
       'scope': scope.toJson(),
       'usage': usage.wireName,
+      'improvement': improvement.wireName,
     };
   }
 
@@ -111,6 +117,21 @@ final class DeleteSkillCommand implements NodeCommand<void> {
 
   @override
   void decodeReply(Object? okValue) => decodeNothing(okValue);
+}
+
+final class UndoSkillChangeCommand implements NodeCommand<Skill> {
+  const UndoSkillChangeCommand({required this.skillId});
+
+  final SkillId skillId;
+
+  @override
+  String get name => 'undo_skill_change';
+
+  @override
+  JsonObject get arguments => <String, Object?>{'skill_id': skillId.value};
+
+  @override
+  Skill decodeReply(Object? okValue) => Skill.fromJson(okValue);
 }
 
 final class ListRulesCommand implements NodeCommand<List<Rule>> {

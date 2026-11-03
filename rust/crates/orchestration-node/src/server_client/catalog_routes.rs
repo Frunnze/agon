@@ -1,11 +1,13 @@
 use orchestration_api::catalog::{
-    AddRepositoryRequest, RemoveRepositoryRequest, SaveProjectRequest,
-    SaveRuleRequest, SaveSkillRequest, SaveWorkflowRequest,
-    SetRuleEnabledRequest, SignWorkflowRequest, WorkflowListing,
+    AddRepositoryRequest, ImproveSkillRequest, RemoveRepositoryRequest,
+    SaveProjectRequest, SaveRuleRequest, SaveSkillRequest,
+    SaveWorkflowRequest, SetRuleEnabledRequest, SignWorkflowRequest,
+    WorkflowListing,
 };
 use orchestration_api::routes::{
-    PROJECT_REPOSITORIES, PROJECTS, RULE, RULE_ENABLED, RULES, SKILL, SKILLS,
-    WORKFLOW, WORKFLOW_DISCARD, WORKFLOW_SIGNATURE, WORKFLOWS,
+    PROJECT_REPOSITORIES, PROJECTS, RULE, RULE_ENABLED, RULES, SKILL,
+    SKILL_IMPROVEMENTS, SKILL_UNDO, SKILLS, WORKFLOW, WORKFLOW_DISCARD,
+    WORKFLOW_SIGNATURE, WORKFLOWS,
 };
 use orchestration_core::identifiers::{
     ProjectId, RuleId, SkillId, WorkflowId,
@@ -14,6 +16,7 @@ use orchestration_core::library::{Rule, Skill};
 use orchestration_core::workspace::Project;
 use reqwest::Method;
 
+use super::decode_answer;
 use super::route_paths::fill_route;
 use super::signed_server_client::SignedServerClient;
 use crate::node_error::NodeError;
@@ -117,15 +120,33 @@ impl SignedServerClient<'_> {
         skill_id: SkillId,
         request: &SaveSkillRequest,
     ) -> Result<Skill, NodeError> {
-        let path = fill_skill_route(skill_id)?;
+        let path = fill_skill_route(SKILL, skill_id)?;
         self.exchange(Method::PUT, &path, request).await
+    }
+
+    pub async fn improve_skill(
+        &self,
+        skill_id: SkillId,
+        request: &ImproveSkillRequest,
+    ) -> Result<(), NodeError> {
+        let path = fill_skill_route(SKILL_IMPROVEMENTS, skill_id)?;
+        self.submit(Method::POST, &path, request).await
+    }
+
+    pub async fn undo_skill_change(
+        &self,
+        skill_id: SkillId,
+    ) -> Result<Skill, NodeError> {
+        let path = fill_skill_route(SKILL_UNDO, skill_id)?;
+        let answer = self.submit_without_body(Method::POST, &path).await?;
+        decode_answer(&answer)
     }
 
     pub async fn delete_skill(
         &self,
         skill_id: SkillId,
     ) -> Result<(), NodeError> {
-        let path = fill_skill_route(skill_id)?;
+        let path = fill_skill_route(SKILL, skill_id)?;
         self.submit_without_body(Method::DELETE, &path).await?;
         Ok(())
     }
@@ -174,9 +195,12 @@ fn fill_workflow_route(
     fill_route(template, &[(WORKFLOW_PLACEHOLDER, &workflow_text)])
 }
 
-fn fill_skill_route(skill_id: SkillId) -> Result<String, NodeError> {
+fn fill_skill_route(
+    route: &str,
+    skill_id: SkillId,
+) -> Result<String, NodeError> {
     let skill_text = skill_id.0.to_string();
-    fill_route(SKILL, &[(SKILL_PLACEHOLDER, &skill_text)])
+    fill_route(route, &[(SKILL_PLACEHOLDER, &skill_text)])
 }
 
 fn fill_rule_route(

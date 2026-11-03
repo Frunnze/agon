@@ -7,6 +7,7 @@ import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/library.dart';
 import 'package:agent_orchestration/data/models/scope.dart';
 import 'package:agent_orchestration/data/node_backed.dart';
+import 'package:agent_orchestration/data/node_backed/mapping.dart';
 import 'package:agent_orchestration/data/repository/record_not_found.dart';
 
 import '../../support/memory_workspace_choice_store.dart';
@@ -87,6 +88,7 @@ void main() {
         instructions: randomText(random),
         scope: const Scope.everywhere(),
         usage: pickOne(random, SkillUsage.values),
+        improvement: pickOne(random, SkillImprovement.values),
       );
       final Future<Skill> updating = opened.skills.updateSkill(
         original.id,
@@ -105,6 +107,11 @@ void main() {
           (Map<String, Object?> skill) => skill['id'] == original.id.value,
         );
         expect(stored['instructions'], draft.instructions);
+        expect(
+          stored['improvement'],
+          mapSkillImprovementToNode(draft.improvement).wireName,
+        );
+        expect(updated.improvement, draft.improvement);
       }
       expect(opened.skills.listSkills().length, _seededItemCount);
     }

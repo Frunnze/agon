@@ -6,7 +6,9 @@ use orchestration_api::catalog::{
 use orchestration_api::work::{SaveTaskRequest, TaskStart};
 use orchestration_core::device::RunnerTarget;
 use orchestration_core::identifiers::{RuleId, SkillId, WorkspaceId};
-use orchestration_core::library::{Rule, Skill, SkillSource, SkillUsage};
+use orchestration_core::library::{
+    Rule, Skill, SkillImprovement, SkillSource, SkillUsage,
+};
 use orchestration_core::scope::Scope;
 use orchestration_core::workspace::Project;
 use proptest::prelude::*;
@@ -136,6 +138,8 @@ fn sample_skill() -> Skill {
         scope: Scope::everywhere(),
         usage: SkillUsage::WhenChosen,
         source: SkillSource::Created,
+        improvement: SkillImprovement::Never,
+        history: Vec::new(),
     }
 }
 

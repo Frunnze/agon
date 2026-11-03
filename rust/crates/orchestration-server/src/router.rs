@@ -14,9 +14,9 @@ use orchestration_api::routes::{
     RUN_CANCEL, RUN_EVENTS, RUN_MESSAGES, RUN_RETRY, RUN_STEP_ANSWER,
     RUNNER_ACCEPTING, RUNNER_CLAIM, RUNNER_HEARTBEAT, RUNNERS, RUNS,
     SERVER_GROUP, SERVER_GROUP_MEMBER, SERVER_GROUP_MEMBERS,
-    SERVER_GROUP_REPLICA, SKILL, SKILLS, TASK, TASK_RUNS, TASKS, WORKFLOW,
-    WORKFLOW_DISCARD, WORKFLOW_SIGNATURE, WORKFLOWS, WORKSPACE,
-    WORKSPACE_DEVICE, WORKSPACE_DEVICES, WORKSPACES,
+    SERVER_GROUP_REPLICA, SKILL, SKILL_IMPROVEMENTS, SKILL_UNDO, SKILLS, TASK,
+    TASK_RUNS, TASKS, WORKFLOW, WORKFLOW_DISCARD, WORKFLOW_SIGNATURE,
+    WORKFLOWS, WORKSPACE, WORKSPACE_DEVICE, WORKSPACE_DEVICES, WORKSPACES,
 };
 
 use crate::backup_guard::refuse_on_backup;
@@ -26,8 +26,9 @@ use crate::{
     accounts, approvals, audit_log, claims, devices, events, pairing_endings,
     pairing_exchange, pairing_joins, pairing_sessions, peer_addresses,
     person_steps, project_deletion, projects, rules, run_events, runners,
-    runs, server_group_routes, skill_deletion, skills, task_deletion, tasks,
-    workflow_deletion, workflows, workspace_deletion, workspaces,
+    runs, server_group_routes, skill_deletion, skill_improvements, skills,
+    task_deletion, tasks, workflow_deletion, workflows, workspace_deletion,
+    workspaces,
 };
 
 pub fn build_router(server: SharedServer) -> Router {
@@ -129,6 +130,8 @@ fn catalog_routes() -> Router<SharedServer> {
             SKILL,
             put(skills::update_skill).delete(skill_deletion::delete_skill),
         )
+        .route(SKILL_IMPROVEMENTS, post(skill_improvements::improve_skill))
+        .route(SKILL_UNDO, post(skill_improvements::undo_skill_change))
         .route(RULES, get(rules::list_rules).post(rules::save_rule))
         .route(RULE, put(rules::update_rule).delete(rules::delete_rule))
         .route(RULE_ENABLED, put(rules::set_rule_enabled))

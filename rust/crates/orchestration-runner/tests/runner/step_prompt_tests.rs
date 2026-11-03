@@ -1,5 +1,7 @@
 use orchestration_core::identifiers::SkillId;
-use orchestration_core::library::{Skill, SkillSource, SkillUsage};
+use orchestration_core::library::{
+    Skill, SkillImprovement, SkillSource, SkillUsage,
+};
 use orchestration_core::scope::Scope;
 use orchestration_runner::step_prompt::{UpstreamResult, compose_step_prompt};
 use proptest::collection::vec;
@@ -15,6 +17,8 @@ fn skill_with(name: &str, instructions: &str) -> Skill {
         scope: Scope::everywhere(),
         usage: SkillUsage::WhenChosen,
         source: SkillSource::BuiltIn,
+        improvement: SkillImprovement::Never,
+        history: Vec::new(),
     }
 }
 
@@ -131,6 +135,69 @@ proptest! {
         for folder in &folders {
             let listed_folder = format!("\n- {folder}/");
             prop_assert!(prompt.contains(&listed_folder));
+        }
+    }
+}
+
+fn skill_improved_by(name: &str, improvement: SkillImprovement) -> Skill {
+    Skill {
+        improvement,
+        ..skill_with(name, "Use fastlane.")
+    }
+}
+
+fn improvement() -> impl Strategy<Value = SkillImprovement> {
+    prop_oneof![
+        Just(SkillImprovement::Never),
+        Just(SkillImprovement::AskMe),
+        Just(SkillImprovement::Auto),
+    ]
+}
+
+#[test]
+fn invites_improvements_to_skills_that_take_them() {
+    let skill = skill_improved_by("release-ios", SkillImprovement::AskMe);
+
+    let prompt = compose_step_prompt("Build", "", &[], &[&skill], &[]);
+
+    let expected_section = "## Improving skills\nIf this work taught you \
+        how to make one of these skills better, you may propose a new \
+        version: release-ios. Near the end of your final message, above \
+        any OUTCOME line, add a line SKILL IMPROVEMENT: <skill name>, then \
+        the full new instructions, then a line END SKILL IMPROVEMENT. Add \
+        at most one such block per skill, and none when nothing should \
+        change.";
+    assert!(prompt.ends_with(expected_section), "{prompt}");
+}
+
+proptest! {
+    #[test]
+    fn test_compose_step_prompt_property_invites_only_improvable_skills(
+        settings in vec(improvement(), 0..4),
+    ) {
+        let mut skills = Vec::new();
+        for (index, setting) in settings.iter().enumerate() {
+            skills.push(skill_improved_by(&format!("skill-{index}"), *setting));
+        }
+        let skill_references: Vec<&Skill> = skills.iter().collect();
+
+        let prompt =
+            compose_step_prompt("Build", "", &[], &skill_references, &[]);
+
+        let has_invitation = prompt.contains("## Improving skills");
+        let is_any_improvable = settings
+            .iter()
+            .any(|setting| *setting != SkillImprovement::Never);
+        prop_assert_eq!(has_invitation, is_any_improvable);
+        for skill in &skills {
+            let invitation_end = prompt.rfind("change.").unwrap_or_default();
+            let named = prompt
+                .find("## Improving skills")
+                .is_some_and(|start| {
+                    prompt[start..invitation_end].contains(&skill.name)
+                });
+            let is_improvable = skill.improvement != SkillImprovement::Never;
+            prop_assert_eq!(named, is_improvable);
         }
     }
 }

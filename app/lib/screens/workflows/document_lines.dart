@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:agent_orchestration/data/models/diff_line.dart';
 import 'package:agent_orchestration/widgets/code_block.dart';
 
 const int diffMarkerWidth = 2;
@@ -43,35 +44,65 @@ List<List<int>> _measureCommonTails(List<String> before, List<String> after) {
   return lengths;
 }
 
-List<CodeBlockLine> diffDocumentLines(String before, String after) {
+List<DiffLine> _compareDocumentLines(String before, String after) {
   final List<String> beforeLines = _readLines(before);
   final List<String> afterLines = _readLines(after);
   final List<List<int>> common = _measureCommonTails(beforeLines, afterLines);
-  final List<CodeBlockLine> lines = <CodeBlockLine>[];
+  final List<DiffLine> lines = <DiffLine>[];
   int row = 0;
   int column = 0;
 
   while (row < beforeLines.length && column < afterLines.length) {
     if (beforeLines[row] == afterLines[column]) {
-      lines.add(CodeBlockLine('$_unchangedMarker${beforeLines[row]}'));
+      lines.add(
+        DiffLine(change: DiffLineChange.unchanged, text: beforeLines[row]),
+      );
       row += 1;
       column += 1;
     } else if (common[row + 1][column] >= common[row][column + 1]) {
-      lines.add(CodeBlockLine.removed('$_removedMarker${beforeLines[row]}'));
+      lines.add(
+        DiffLine(change: DiffLineChange.removed, text: beforeLines[row]),
+      );
       row += 1;
     } else {
-      lines.add(CodeBlockLine.added('$_addedMarker${afterLines[column]}'));
+      lines.add(
+        DiffLine(change: DiffLineChange.added, text: afterLines[column]),
+      );
       column += 1;
     }
   }
   while (row < beforeLines.length) {
-    lines.add(CodeBlockLine.removed('$_removedMarker${beforeLines[row]}'));
+    lines.add(
+      DiffLine(change: DiffLineChange.removed, text: beforeLines[row]),
+    );
     row += 1;
   }
   while (column < afterLines.length) {
-    lines.add(CodeBlockLine.added('$_addedMarker${afterLines[column]}'));
+    lines.add(
+      DiffLine(change: DiffLineChange.added, text: afterLines[column]),
+    );
     column += 1;
   }
 
   return lines;
+}
+
+CodeBlockLine _markDiffLine(DiffLine line) {
+  return switch (line.change) {
+    DiffLineChange.unchanged => CodeBlockLine('$_unchangedMarker${line.text}'),
+    DiffLineChange.added => CodeBlockLine.added('$_addedMarker${line.text}'),
+    DiffLineChange.removed => CodeBlockLine.removed(
+      '$_removedMarker${line.text}',
+    ),
+  };
+}
+
+List<CodeBlockLine> markDiffLines(List<DiffLine> lines) {
+  return <CodeBlockLine>[
+    for (final DiffLine line in lines) _markDiffLine(line),
+  ];
+}
+
+List<CodeBlockLine> diffDocumentLines(String before, String after) {
+  return markDiffLines(_compareDocumentLines(before, after));
 }

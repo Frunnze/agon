@@ -40,6 +40,16 @@ const List<ChoiceOption<SkillUsage>> _usageChoices =
       ),
     ];
 
+final List<ChoiceOption<SkillImprovement>> _improvementChoices =
+    <ChoiceOption<SkillImprovement>>[
+      for (final SkillImprovement improvement in SkillImprovement.values)
+        ChoiceOption<SkillImprovement>(
+          value: improvement,
+          title: improvement.label,
+          detail: improvement.explanation,
+        ),
+    ];
+
 class SkillFormScreen extends StatefulWidget {
   const SkillFormScreen({
     required this.existingSkill,
@@ -71,6 +81,8 @@ class _SkillFormScreenState extends State<SkillFormScreen> {
       TextEditingController(text: widget.existingSkill?.instructions);
   late ScopeSelection _scope = _buildInitialScope();
   late SkillUsage _usage = widget.existingSkill?.usage ?? SkillUsage.automatic;
+  late SkillImprovement _improvement =
+      widget.existingSkill?.improvement ?? SkillImprovement.never;
   String? _nameProblem;
   String? _summaryProblem;
   String? _instructionsProblem;
@@ -190,6 +202,16 @@ class _SkillFormScreenState extends State<SkillFormScreen> {
                 ),
               ],
             ),
+            FormFieldBlock(
+              label: 'Agents may improve it',
+              children: <Widget>[
+                ChoiceListField<SkillImprovement>(
+                  options: _improvementChoices,
+                  selected: _improvement,
+                  onChanged: _changeImprovement,
+                ),
+              ],
+            ),
             Wrap(
               spacing: AppSpacing.space2,
               runSpacing: AppSpacing.space2,
@@ -218,6 +240,10 @@ class _SkillFormScreenState extends State<SkillFormScreen> {
     setState(() => _usage = usage);
   }
 
+  void _changeImprovement(SkillImprovement improvement) {
+    setState(() => _improvement = improvement);
+  }
+
   Future<void> _save() async {
     final String? nameProblem = _findNameProblem();
     final String? summaryProblem = _findSummaryProblem();
@@ -243,6 +269,7 @@ class _SkillFormScreenState extends State<SkillFormScreen> {
       instructions: _instructionsController.text,
       scope: _scope.toScope(),
       usage: _usage,
+      improvement: _improvement,
     );
     await _storeSkill(draft);
     widget.navigation.closeSavedForm();

@@ -2,7 +2,7 @@ use orchestration_core::agent_place::AgentPlace;
 use orchestration_core::approval::ApprovalPolicy;
 use orchestration_core::device::RunnerTarget;
 use orchestration_core::identifiers::{ProjectId, SkillId};
-use orchestration_core::library::SkillUsage;
+use orchestration_core::library::{SkillImprovement, SkillUsage};
 use orchestration_core::scope::Scope;
 use orchestration_core::task::{Schedule, TaskDoer};
 use orchestration_core::workspace::AgentAccess;
@@ -67,6 +67,8 @@ pub struct SkillDraft {
     pub instructions: String,
     pub scope: Scope,
     pub usage: SkillUsage,
+    #[serde(default)]
+    pub improvement: SkillImprovement,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]

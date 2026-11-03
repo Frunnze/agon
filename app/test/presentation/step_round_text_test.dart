@@ -94,7 +94,7 @@ void main() {
     for (int i = 0; i < propertyIterations; i += 1) {
       final String outcome = randomWordPhrase(random);
 
-      expect(describeStepOutcome(outcome), '→ $outcome');
+      expect(describeStepOutcome(outcome), '→\u00A0$outcome');
     }
     expect(describeStepOutcome(null), isNull);
   });
@@ -113,7 +113,7 @@ void main() {
       );
 
       expect(text, startsWith('Round $roundNumber · Done'));
-      expect(text.contains('→ '), round.outcome != null);
+      expect(text.contains('→\u00A0'), round.outcome != null);
       expect(text, contains('took '));
     }
   });

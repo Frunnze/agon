@@ -131,6 +131,7 @@ fn command_names_are_unique_and_cover_the_contract() {
         "create_rule",
         "update_skill",
         "delete_skill",
+        "undo_skill_change",
         "update_rule",
         "delete_rule",
         "list_tasks",

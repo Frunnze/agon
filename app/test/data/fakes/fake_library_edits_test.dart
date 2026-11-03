@@ -27,6 +27,7 @@ SkillDraft _randomSkillDraft(Random random, String name) {
     instructions: randomText(random),
     scope: const Scope.everywhere(),
     usage: pickOne(random, SkillUsage.values),
+    improvement: pickOne(random, SkillImprovement.values),
   );
 }
 
@@ -43,6 +44,7 @@ void main() {
     final Random random = seededRandom(7101);
     final FakeSkillRepository repository = FakeSkillRepository(
       skills: gallerySkills,
+      clock: FixedClock(galleryNow),
     );
 
     for (int i = 0; i < propertyIterations; i += 1) {
@@ -65,6 +67,7 @@ void main() {
       expect(repository.findSkill(original.id).name, name);
       expect(repository.findSkill(original.id).summary, draft.summary);
       expect(repository.findSkill(original.id).usage, draft.usage);
+      expect(repository.findSkill(original.id).improvement, draft.improvement);
       expect(repository.listSkills().length, gallerySkills.length);
     }
   });
@@ -73,6 +76,7 @@ void main() {
     final Random random = seededRandom(7102);
     final FakeSkillRepository repository = FakeSkillRepository(
       skills: gallerySkills,
+      clock: FixedClock(galleryNow),
     );
 
     for (int i = 0; i < propertyIterations; i += 1) {
@@ -99,6 +103,7 @@ void main() {
     for (int i = 0; i < propertyIterations; i += 1) {
       final FakeSkillRepository repository = FakeSkillRepository(
         skills: gallerySkills,
+        clock: FixedClock(galleryNow),
       );
       final Skill deleted = pickOne(random, gallerySkills);
 

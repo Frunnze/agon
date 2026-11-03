@@ -92,6 +92,7 @@ final class SkillDraftReview implements DraftReview {
       ),
       describeOptionalTextFact('What it does', skill.summary),
       describeTextFact('When agents use it', skill.usage.label),
+      describeTextFact('Agents may improve it', skill.improvement.label),
       Fact.chips(
         term: 'Applies to',
         chips: describeDraftScopeChips(skill.scope, catalog),

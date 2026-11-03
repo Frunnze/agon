@@ -170,6 +170,8 @@ void main() {
         scope: randomScope(random),
         usage: base.usage,
         source: pickOne(random, SkillSource.values),
+        improvement: base.improvement,
+        history: base.history,
       );
 
       expect(

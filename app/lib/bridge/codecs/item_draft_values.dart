@@ -178,6 +178,7 @@ final class SkillItemDraft extends ItemDraft {
     required this.instructions,
     required this.scope,
     required this.usage,
+    required this.improvement,
   });
 
   factory SkillItemDraft.fromFields(JsonObject fields) {
@@ -187,6 +188,7 @@ final class SkillItemDraft extends ItemDraft {
       instructions: readField(fields, 'instructions', decodeText),
       scope: readField(fields, 'scope', Scope.fromJson),
       usage: readField(fields, 'usage', SkillUsage.decode),
+      improvement: readField(fields, 'improvement', SkillImprovement.decode),
     );
   }
 
@@ -195,6 +197,7 @@ final class SkillItemDraft extends ItemDraft {
   final String instructions;
   final Scope scope;
   final SkillUsage usage;
+  final SkillImprovement improvement;
 
   @override
   JsonObject toJson() {
@@ -205,6 +208,7 @@ final class SkillItemDraft extends ItemDraft {
       'instructions': instructions,
       'scope': scope.toJson(),
       'usage': usage.wireName,
+      'improvement': improvement.wireName,
     };
   }
 }

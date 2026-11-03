@@ -4,7 +4,7 @@ use orchestration_core::device::RunnerTarget;
 use orchestration_core::identifiers::{
     DeviceId, ProjectId, SkillId, WorkflowId, WorkspaceId,
 };
-use orchestration_core::library::SkillUsage;
+use orchestration_core::library::{SkillImprovement, SkillUsage};
 use orchestration_core::scope::{ProjectScope, Scope, WorkspaceScope};
 use orchestration_core::task::{Schedule, TaskDoer, TimeOfDay};
 use orchestration_core::workflow::AgentKind;
@@ -239,6 +239,7 @@ pub fn valid_skill_draft(
         instructions: format!("Instructions {words}"),
         scope: workspace_scope(context),
         usage: SkillUsage::WhenChosen,
+        improvement: SkillImprovement::Never,
     }
 }
 

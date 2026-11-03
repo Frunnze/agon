@@ -72,6 +72,8 @@ mod server_backup_tests;
 mod server_group_check_properties;
 mod server_order_properties;
 mod server_retry_tests;
+mod skill_improvement_flow_tests;
+mod skill_sealing_properties;
 mod skill_workflow_cleanup_tests;
 mod support;
 mod transient_retry_tests;

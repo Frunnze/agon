@@ -8,7 +8,9 @@ use orchestration_core::identifiers::{
     DeviceId, ProjectId, RuleId, RunId, SkillId, TaskId, WorkflowAgentId,
     WorkflowId, WorkspaceId,
 };
-use orchestration_core::library::{Rule, Skill, SkillSource, SkillUsage};
+use orchestration_core::library::{
+    Rule, Skill, SkillImprovement, SkillSource, SkillUsage,
+};
 use orchestration_core::run::{
     ChatAuthor, ChatMessage, LogLine, Run, RunStatus, RunStep, StepStatus,
 };
@@ -113,6 +115,8 @@ pub fn sample_skill(instructions: &str) -> Skill {
         scope: Scope::everywhere(),
         usage: SkillUsage::Automatic,
         source: SkillSource::Created,
+        improvement: SkillImprovement::Never,
+        history: Vec::new(),
     }
 }
 

@@ -72,9 +72,11 @@ AppDependencies buildDependenciesWithJobs(List<Task> jobs) {
 }
 
 AppDependencies buildDependenciesWithSkills(List<Skill> skills) {
+  final AppDependencies base = buildGalleryDependencies();
+
   return replaceRepositories(
-    buildGalleryDependencies(),
-    skillRepository: FakeSkillRepository(skills: skills),
+    base,
+    skillRepository: FakeSkillRepository(skills: skills, clock: base.clock),
   );
 }
 
