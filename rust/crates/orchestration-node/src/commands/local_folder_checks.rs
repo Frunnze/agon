@@ -8,6 +8,7 @@ use orchestration_core::local_folders::{
 };
 use serde::Serialize;
 
+use super::folder_git_start::start_git_when_missing;
 use crate::node_error::NodeError;
 
 const GIT_FOLDER_NAME: &str = ".git";
@@ -18,6 +19,7 @@ const BRANCH_REFERENCE_PREFIX: &str = "ref: refs/heads/";
 pub(crate) struct CheckedFolder {
     pub(crate) address: String,
     pub(crate) default_branch: String,
+    pub(crate) has_started_git: bool,
 }
 
 pub(crate) fn check_local_folder(
@@ -28,11 +30,13 @@ pub(crate) fn check_local_folder(
         device_id: device_id.clone(),
         path: normalize_folder_path(path)?,
     };
-    require_git_checkout(&folder.path)?;
+    require_folder(&folder.path)?;
+    let has_started_git = start_git_when_missing(Path::new(&folder.path))?;
     let default_branch = read_checked_out_branch(&folder.path)?;
     Ok(CheckedFolder {
         address: render_local_address(&folder)?,
         default_branch,
+        has_started_git,
     })
 }
 
@@ -50,12 +54,16 @@ pub(crate) fn require_folder_on_this_device(
     require_git_checkout(&folder.path)
 }
 
-fn require_git_checkout(path: &str) -> Result<(), NodeError> {
-    let folder = Path::new(path);
-    if !folder.is_dir() {
+fn require_folder(path: &str) -> Result<(), NodeError> {
+    if !Path::new(path).is_dir() {
         return Err(NodeError::FolderMissing(path.to_owned()));
     }
-    if !folder.join(GIT_FOLDER_NAME).is_dir() {
+    Ok(())
+}
+
+fn require_git_checkout(path: &str) -> Result<(), NodeError> {
+    require_folder(path)?;
+    if !Path::new(path).join(GIT_FOLDER_NAME).is_dir() {
         return Err(NodeError::NotGitRepository(path.to_owned()));
     }
     Ok(())

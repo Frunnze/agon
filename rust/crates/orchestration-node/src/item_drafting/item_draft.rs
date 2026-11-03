@@ -47,6 +47,7 @@ pub struct WorkDraft {
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ProjectDraft {
+    #[serde(default)]
     pub name: String,
     pub repositories: Vec<RepositoryDraft>,
     #[serde(default = "pick_form_agent_access")]

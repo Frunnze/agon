@@ -57,6 +57,8 @@ const PROJECT_FIELD_LINES: [&str; 2] = [
 const REPOSITORY_FORMS: &str = "Write each repo as a GitHub address or the \
                                 absolute path of a git folder on this \
                                 computer.";
+const PROJECT_NAME_ADVICE: &str = "Name the project after its first repo or \
+                                   folder unless the person names it.";
 const SKILL_FIELD_LINES: [&str; 2] = [
     "- summary: one sentence on what the skill does.",
     "- instructions: the full instructions agents follow.",
@@ -87,6 +89,7 @@ fn list_kind_lines(kind: DraftKind) -> Vec<String> {
             let mut lines = vec![describe_name_field(kind)];
             lines.extend(own_lines(&PROJECT_FIELD_LINES));
             lines.push(REPOSITORY_FORMS.to_owned());
+            lines.push(PROJECT_NAME_ADVICE.to_owned());
             lines
         }
         DraftKind::Skill => {

@@ -1,21 +1,24 @@
 use orchestration_core::agent_place::AgentPlace;
 use orchestration_core::approval::ApprovalPolicy;
 use orchestration_core::device::RunnerTarget;
+use orchestration_core::naming::convert_to_project_name;
 use orchestration_core::task::TaskDoer;
 use orchestration_core::workflow::AgentKind;
 use orchestration_core::workspace::AgentAccess;
 use orchestration_node::item_drafting::{
-    DraftKind, ItemDraft, WorkDraft, parse_item_answer,
+    DraftKind, ItemDraft, WorkDraft, check_item_draft, parse_item_answer,
 };
 use proptest::prelude::*;
 use serde_json::{Map, Value, json};
 
 use crate::support::draft_answer_samples::well_formed_work;
-use crate::support::drafting_samples::context_strategy;
+use crate::support::drafting_samples::{context_strategy, empty_context};
 use crate::support::entity_strategies::secret_text_strategy;
 use crate::support::test_device::fail;
 
 const DEFAULT_CASES: u32 = 48;
+const REPOSITORY_NAME_PATTERN: &str = "[A-Za-z0-9][A-Za-z0-9_-]{0,12}";
+const BLANK_NAMES: [&str; 2] = ["", "  "];
 const DEFAULTED_WORK_FIELDS: [&str; 7] = [
     "details",
     "doer",
@@ -146,5 +149,36 @@ proptest! {
             return Err(TestCaseError::fail("no rule draft"));
         };
         prop_assert_eq!(rule_draft.details, "");
+    }
+
+    #[test]
+    fn test_check_item_draft_property_a_missing_name_follows_the_first_repo(
+        repository_name in REPOSITORY_NAME_PATTERN,
+        blank_name in proptest::sample::select(BLANK_NAMES.to_vec()),
+        is_name_left_out in any::<bool>(),
+    ) {
+        let first_address = format!("github.com/acme/{repository_name}");
+        let repositories = json!([
+            {"address": first_address, "default_branch": "main"},
+            {"address": "github.com/acme/other", "default_branch": "main"},
+        ]);
+        let answer = if is_name_left_out {
+            json!({ "repositories": repositories })
+        } else {
+            json!({ "name": blank_name, "repositories": repositories })
+        };
+
+        let parsed = parse_item_answer(DraftKind::Project, &answer.to_string())
+            .map_err(fail)?;
+        let checked = check_item_draft(&empty_context(), &parsed);
+
+        let ItemDraft::Project(project) = checked.draft else {
+            return Err(TestCaseError::fail("no project draft"));
+        };
+        prop_assert_eq!(
+            project.name,
+            convert_to_project_name(&repository_name)
+        );
+        prop_assert!(checked.problems.is_empty(), "{:?}", checked.problems);
     }
 }

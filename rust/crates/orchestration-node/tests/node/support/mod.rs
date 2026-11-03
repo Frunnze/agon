@@ -9,6 +9,7 @@ pub mod entity_strategies;
 pub mod fake_engine;
 pub mod file_reader_samples;
 pub mod first_project_desk;
+pub mod folder_checks;
 pub mod folder_laptop;
 pub mod git_folders;
 pub mod git_origin;

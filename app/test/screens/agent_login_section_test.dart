@@ -49,6 +49,7 @@ Future<FakeAgentLoginRepository> _openRunnerPage(
         devices: galleryDevices,
         currentDeviceId: _thisDeviceId,
         peerAddressProblem: null,
+        gitlessFolderPaths: const <String>{},
       ),
       runnerRepository: FakeRunnerRepository(
         runners: <Runner>[

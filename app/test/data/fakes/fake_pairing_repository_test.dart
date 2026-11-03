@@ -24,6 +24,7 @@ final class PairingFixture {
         devices: galleryDevices,
         currentDeviceId: GalleryDeviceIds.airLaptop,
         peerAddressProblem: null,
+        gitlessFolderPaths: const <String>{},
       ) {
     pairingRepository = FakePairingRepository(
       session: galleryPairingSession,

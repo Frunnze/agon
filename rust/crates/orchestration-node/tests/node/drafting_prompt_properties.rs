@@ -21,6 +21,8 @@ const NULL_PROJECT: &str = "Set project_id to null only when several \
                             projects could fit and the request names none.";
 const REPO_FORMS: &str = "Write each repo as a GitHub address or the \
                           absolute path of a git folder on this computer.";
+const PROJECT_NAME_ADVICE: &str = "Name the project after its first repo or \
+                                   folder unless the person names it.";
 const CHOSEN_FOLDERS_HEADING: &str =
     "Folders the person chose on this computer (repos of this project):";
 const FOLDER_NAME_PATTERN: &str = "[a-z][a-z0-9-]{0,8}";
@@ -175,6 +177,10 @@ proptest! {
         prop_assert_eq!(instructions.contains(NULL_PROJECT), is_work);
         let is_project = kind == DraftKind::Project;
         prop_assert_eq!(instructions.contains(REPO_FORMS), is_project);
+        prop_assert_eq!(
+            instructions.contains(PROJECT_NAME_ADVICE),
+            is_project
+        );
     }
 
     #[test]

@@ -64,14 +64,17 @@ final class NodeBackedDeviceRepository extends ChangeNotifier
   String? findPeerAddressProblem() => _peerAddressProblem;
 
   @override
-  Future<RepositoryDraft> checkLocalFolder(String path) async {
+  Future<CheckedFolder> checkLocalFolder(String path) async {
     final node.CheckedLocalFolder checked = await executeNodeCommand(
       _channel,
       node.CheckLocalFolderCommand(path: path),
     );
-    return RepositoryDraft(
-      address: checked.address,
-      defaultBranch: checked.defaultBranch,
+    return CheckedFolder(
+      repository: RepositoryDraft(
+        address: checked.address,
+        defaultBranch: checked.defaultBranch,
+      ),
+      hasStartedGit: checked.hasStartedGit,
     );
   }
 

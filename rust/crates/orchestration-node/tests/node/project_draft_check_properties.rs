@@ -13,15 +13,14 @@ use crate::support::drafting_samples::{
     FOREIGN_DEVICE_ID, THIS_DEVICE_ID, context_strategy, empty_context,
     padded, sample_project,
 };
-use crate::support::git_folders::{
-    GIT_FOLDER_NAME, HEAD_FILE_NAME, create_git_folder,
-};
+use crate::support::git_folders::create_git_folder;
+use crate::support::git_origin::run_git;
 use crate::support::test_device::fail;
 
 const PROJECT_CASES: u32 = 8;
 const PROJECT_NAME_PATTERN: &str = "[a-z][a-z0-9]{2,8}";
 const BRANCH_PATTERN: &str = "[a-z][a-z0-9-]{0,8}[a-z0-9]";
-const DETACHED_HEAD: &str = "4b825dc642cb6eb9a060e54bf8d69288fbee4904";
+const INNER_FOLDER_NAME: &str = "inner";
 const NO_REPOSITORY: &str =
     "Repos: none found. Ask for changes and say where the code is.";
 const FOREIGN_FOLDER: &str =
@@ -75,12 +74,20 @@ fn folder_problems_are_written_as_sentences() {
     let parent = temporary_folder();
     let parent_path = parent.path().display().to_string();
     let missing_path = format!("{parent_path}/missing");
+    let Ok(git_folder) = create_git_folder(parent.path(), "main") else {
+        panic!("the git folder is made");
+    };
+    let inner_folder = git_folder.join(INNER_FOLDER_NAME);
+    let Ok(()) = fs::create_dir_all(&inner_folder) else {
+        panic!("the inner folder is made");
+    };
+    let inner_path = inner_folder.display().to_string();
     let foreign_address = format!("local:{FOREIGN_DEVICE_ID}:/Users/someone/app");
     let drafted = project_draft(
         "billing",
         vec![
             repository(&missing_path, "main"),
-            repository(&parent_path, "main"),
+            repository(&inner_path, "main"),
             repository(&foreign_address, "main"),
             repository("ftp://github.com/acme/app", "main"),
             repository("https://github.com/acme/app", " "),
@@ -92,11 +99,11 @@ fn folder_problems_are_written_as_sentences() {
     let missing_folder = format!(
         "the folder {missing_path} does not exist or this app cannot open it"
     );
-    let plain_folder =
-        format!("the folder {parent_path} is not a git repository");
+    let inner_problem =
+        format!("the folder {inner_path} is not a git repository");
     let expected = vec![
         describe_repository_problem(&missing_folder),
-        describe_repository_problem(&plain_folder),
+        describe_repository_problem(&inner_problem),
         describe_repository_problem(FOREIGN_FOLDER),
         describe_repository_problem(
             "only https and git@ addresses are supported, not ftp",
@@ -113,8 +120,7 @@ fn a_detached_folder_has_no_branch_checked_out() {
     let Ok(folder) = create_git_folder(parent.path(), "main") else {
         panic!("the git folder is made");
     };
-    let head_path = folder.join(GIT_FOLDER_NAME).join(HEAD_FILE_NAME);
-    let Ok(()) = fs::write(head_path, DETACHED_HEAD) else {
+    let Ok(_) = run_git(&folder, &["checkout", "--quiet", "--detach"]) else {
         panic!("the head is detached");
     };
     let path = folder.display().to_string();

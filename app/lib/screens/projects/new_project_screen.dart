@@ -13,8 +13,7 @@ import 'package:agent_orchestration/data/rules/repository_address.dart';
 import 'package:agent_orchestration/presentation/device_names.dart';
 import 'package:agent_orchestration/presentation/problem_text.dart';
 import 'package:agent_orchestration/screens/projects.dart';
-import 'package:agent_orchestration/screens/projects/folder_choice.dart';
-import 'package:agent_orchestration/screens/projects/repository_rows.dart';
+import 'package:agent_orchestration/screens/projects/new_project_repos_field.dart';
 import 'package:agent_orchestration/shell/app_navigation.dart';
 import 'package:agent_orchestration/shell/app_route.dart';
 import 'package:agent_orchestration/theme/app_spacing.dart';
@@ -23,16 +22,7 @@ import 'package:agent_orchestration/widgets/app_button.dart';
 import 'package:agent_orchestration/widgets/app_page.dart';
 import 'package:agent_orchestration/widgets/forms/choice_list_field.dart';
 import 'package:agent_orchestration/widgets/forms/form_field_block.dart';
-import 'package:agent_orchestration/widgets/lists/list_row_data.dart';
-import 'package:agent_orchestration/widgets/lists/responsive_list.dart';
 import 'package:agent_orchestration/widgets/page_header.dart';
-
-const String _computerHint =
-    'Paste a GitHub address or choose a folder on this computer. Add as '
-    'many as needed.';
-const String _phoneHint = 'Paste a GitHub address. Add as many as needed.';
-const String _computerPlaceholder = 'github.com/acme/repo or /path/to/folder';
-const String _phonePlaceholder = 'github.com/acme/repo';
 
 class NewProjectScreen extends StatefulWidget {
   const NewProjectScreen({
@@ -58,6 +48,8 @@ class _NewProjectScreenState extends State<NewProjectScreen> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _addressController = TextEditingController();
   List<RepositoryDraft> _drafts = const <RepositoryDraft>[];
+  Set<String> _gitStartedAddresses = const <String>{};
+  String? _filledName;
   AgentAccess _access = AgentAccess.pushAfterApproval;
   String? _nameProblem;
   String? _addressProblem;
@@ -100,43 +92,19 @@ class _NewProjectScreenState extends State<NewProjectScreen> {
                 ),
               ],
             ),
-            FormFieldBlock(
-              label: 'Repos',
-              hint: folderPicker == null ? _phoneHint : _computerHint,
-              children: <Widget>[
-                if (_drafts.isNotEmpty)
-                  ResponsiveList.plain(
-                    rows: <ListRowData>[
-                      for (final RepositoryDraft draft in _drafts)
-                        buildRepositoryDraftRow(
-                          repository: draft,
-                          deviceNames: deviceNames,
-                          end: AppButton.secondary(
-                            label: 'Remove',
-                            onPressed: () => _removeRepository(draft.address),
-                          ),
-                        ),
-                    ],
-                  ),
-                RepositoryEntryField(
-                  controller: _addressController,
-                  problem: _addressProblem,
-                  onChanged: (String _) =>
-                      setState(() => _addressProblem = null),
-                  placeholder: folderPicker == null
-                      ? _phonePlaceholder
-                      : _computerPlaceholder,
-                  onAdded: () => unawaited(_addTypedRepository()),
-                ),
-                if (folderPicker != null)
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: AppButton.secondary(
-                      label: chooseFolderLabel,
-                      onPressed: () => unawaited(_chooseFolder(folderPicker)),
-                    ),
-                  ),
-              ],
+            NewProjectReposField(
+              drafts: _drafts,
+              gitStartedAddresses: _gitStartedAddresses,
+              deviceNames: deviceNames,
+              addressController: _addressController,
+              addressProblem: _addressProblem,
+              onAddressChanged: (String _) =>
+                  setState(() => _addressProblem = null),
+              onAddressAdded: () => unawaited(_addTypedRepository()),
+              onFolderChosen: folderPicker == null
+                  ? null
+                  : () => unawaited(_chooseFolder(folderPicker)),
+              onRemoved: _removeRepository,
             ),
             FormFieldBlock(
               label: 'What agents can do',
@@ -208,9 +176,9 @@ class _NewProjectScreenState extends State<NewProjectScreen> {
   }
 
   Future<void> _addFolder(String path) async {
-    final RepositoryDraft draft;
+    final CheckedFolder checked;
     try {
-      draft = await widget.deviceRepository.checkLocalFolder(path);
+      checked = await widget.deviceRepository.checkLocalFolder(path);
     } on Object catch (problem) {
       final String? explanation = describeProblemForPeople(problem);
       if (explanation == null) {
@@ -225,22 +193,50 @@ class _NewProjectScreenState extends State<NewProjectScreen> {
     if (!mounted) {
       return;
     }
+    final RepositoryDraft draft = checked.repository;
     if (_listAddedAddresses().contains(draft.address)) {
       setState(() => _addressProblem = repositoryAlreadyAddedProblem);
       return;
+    }
+    if (checked.hasStartedGit) {
+      setState(() {
+        _gitStartedAddresses = <String>{
+          ..._gitStartedAddresses,
+          draft.address,
+        };
+      });
     }
     _keepDraft(draft);
   }
 
   void _keepDraft(RepositoryDraft draft) {
     _addressController.clear();
+    final bool isFirstRepository = _drafts.isEmpty;
     setState(() {
+      if (isFirstRepository) {
+        _fillNameFromFirstRepository(draft);
+      }
       _drafts = List<RepositoryDraft>.unmodifiable(<RepositoryDraft>[
         ..._drafts,
         draft,
       ]);
       _addressProblem = null;
     });
+  }
+
+  void _fillNameFromFirstRepository(RepositoryDraft firstRepository) {
+    final String currentName = _nameController.text;
+    final bool isTypedName =
+        currentName.isNotEmpty && currentName != _filledName;
+    if (isTypedName) {
+      return;
+    }
+
+    final String repositoryName = describeFolderName(firstRepository.address);
+    final String filledName = convertToProjectName(repositoryName);
+    _nameController.text = filledName;
+    _filledName = filledName;
+    _nameProblem = null;
   }
 
   void _removeRepository(String address) {

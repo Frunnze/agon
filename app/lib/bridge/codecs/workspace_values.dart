@@ -78,6 +78,7 @@ final class CheckedLocalFolder {
   const CheckedLocalFolder({
     required this.address,
     required this.defaultBranch,
+    required this.hasStartedGit,
   });
 
   factory CheckedLocalFolder.fromJson(Object? json) {
@@ -85,11 +86,13 @@ final class CheckedLocalFolder {
     return CheckedLocalFolder(
       address: readField(fields, 'address', decodeText),
       defaultBranch: readField(fields, 'default_branch', decodeText),
+      hasStartedGit: readField(fields, 'has_started_git', decodeFlag),
     );
   }
 
   final String address;
   final String defaultBranch;
+  final bool hasStartedGit;
 }
 
 final class Project implements JsonEncodable {

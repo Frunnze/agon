@@ -13,7 +13,7 @@ abstract interface class DeviceRepository implements Listenable {
 
   String? findPeerAddressProblem();
 
-  Future<RepositoryDraft> checkLocalFolder(String path);
+  Future<CheckedFolder> checkLocalFolder(String path);
 
   Future<Device> revokeDevice(DeviceId deviceId);
 

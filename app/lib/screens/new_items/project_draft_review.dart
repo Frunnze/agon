@@ -81,6 +81,7 @@ final class ProjectDraftReview implements DraftReview {
           buildRepositoryDraftRow(
             repository: repository,
             deviceNames: deviceNames,
+            gitStartedAddresses: const <String>{},
             end: null,
           ),
       ],

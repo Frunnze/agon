@@ -23,6 +23,7 @@ FakeDeviceRepository buildGalleryDeviceRepository() {
     devices: galleryDevices,
     currentDeviceId: GalleryDeviceIds.airLaptop,
     peerAddressProblem: null,
+    gitlessFolderPaths: const <String>{},
   );
 }
 

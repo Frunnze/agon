@@ -42,6 +42,7 @@ class ChosenFolderField extends StatefulWidget {
 
 class _ChosenFolderFieldState extends State<ChosenFolderField> {
   String? _problem;
+  Set<String> _gitStartedAddresses = const <String>{};
 
   @override
   Widget build(BuildContext context) {
@@ -78,6 +79,7 @@ class _ChosenFolderFieldState extends State<ChosenFolderField> {
           buildRepositoryDraftRow(
             repository: folder,
             deviceNames: deviceNames,
+            gitStartedAddresses: _gitStartedAddresses,
             end: AppButton.secondary(
               label: _removeLabel,
               onPressed: () => _removeFolder(folder.address),
@@ -93,9 +95,9 @@ class _ChosenFolderFieldState extends State<ChosenFolderField> {
       return;
     }
 
-    final RepositoryDraft folder;
+    final CheckedFolder checked;
     try {
-      folder = await widget.deviceRepository.checkLocalFolder(path);
+      checked = await widget.deviceRepository.checkLocalFolder(path);
     } on Object catch (problem) {
       final String? explanation = describeProblemForPeople(problem);
       if (explanation == null) {
@@ -110,6 +112,7 @@ class _ChosenFolderFieldState extends State<ChosenFolderField> {
     if (!mounted) {
       return;
     }
+    final RepositoryDraft folder = checked.repository;
     final bool isChosenAlready = widget.folders.any(
       (RepositoryDraft chosen) => chosen.address == folder.address,
     );
@@ -117,7 +120,15 @@ class _ChosenFolderFieldState extends State<ChosenFolderField> {
       setState(() => _problem = repositoryAlreadyAddedProblem);
       return;
     }
-    setState(() => _problem = null);
+    setState(() {
+      _problem = null;
+      if (checked.hasStartedGit) {
+        _gitStartedAddresses = <String>{
+          ..._gitStartedAddresses,
+          folder.address,
+        };
+      }
+    });
     widget.onChanged(<RepositoryDraft>[...widget.folders, folder]);
   }
 

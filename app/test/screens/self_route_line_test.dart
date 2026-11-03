@@ -44,6 +44,7 @@ void main() {
               devices: galleryDevices,
               currentDeviceId: thisDevice,
               peerAddressProblem: null,
+              gitlessFolderPaths: const <String>{},
             ),
           ),
         );

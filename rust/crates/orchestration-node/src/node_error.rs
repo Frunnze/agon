@@ -37,6 +37,8 @@ pub enum NodeError {
     NotGitRepository(String),
     #[error("the folder {0} has no branch checked out")]
     NoCheckedOutBranch(String),
+    #[error("could not start git in the folder {folder}: {problem}")]
+    GitNotStarted { folder: String, problem: String },
     #[error("the folder {0} is on another computer, so add it there")]
     FolderOnAnotherDevice(String),
     #[error("only a project draft takes chosen folders, not a {0}")]

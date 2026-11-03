@@ -24,6 +24,7 @@ FakeDeviceRepository buildRunnerDevices({
     devices: galleryDevices,
     currentDeviceId: thisRunnerDeviceId,
     peerAddressProblem: peerAddressProblem,
+    gitlessFolderPaths: const <String>{},
   );
 }
 

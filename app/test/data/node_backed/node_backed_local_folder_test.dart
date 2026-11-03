@@ -24,6 +24,7 @@ void main() {
       final String path = '/Users/someone/${randomWordPhrase(random)}';
       final String address = 'local:3f2a9c:$path';
       final String branch = pickOne(random, _branches);
+      final bool hasStartedGit = random.nextBool();
       final List<Object?> sentCommands = <Object?>[];
       final NodeBackedDeviceRepository repository = NodeBackedDeviceRepository(
         channel: buildSimulatedChannel((String inputJson) {
@@ -31,17 +32,19 @@ void main() {
           return encodeSuccessReply(<String, Object?>{
             'address': address,
             'default_branch': branch,
+            'has_started_git': hasStartedGit,
           });
         }),
       );
 
-      final RepositoryDraft draft = await repository.checkLocalFolder(path);
+      final CheckedFolder checked = await repository.checkLocalFolder(path);
 
       expect(sentCommands, <Object?>[
         <String, Object?>{'command': 'check_local_folder', 'path': path},
       ]);
-      expect(draft.address, address);
-      expect(draft.defaultBranch, branch);
+      expect(checked.repository.address, address);
+      expect(checked.repository.defaultBranch, branch);
+      expect(checked.hasStartedGit, hasStartedGit);
     }
   });
 

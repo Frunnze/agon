@@ -50,7 +50,7 @@ Future<void> _tapText(WidgetTester tester, String text) async {
 }
 
 void _expectFolderRow(String name) {
-  expect(find.text(name), findsOneWidget);
+  expect(findFieldText('Repos', name), findsOneWidget);
   expect(find.text('on air-laptop · main'), findsOneWidget);
 }
 

@@ -43,6 +43,7 @@ AppDependencies buildGalleryDependencies() {
     devices: galleryDevices,
     currentDeviceId: GalleryDeviceIds.airLaptop,
     peerAddressProblem: null,
+    gitlessFolderPaths: const <String>{},
   );
 
   final FakeTaskRepository taskRepository = FakeTaskRepository(

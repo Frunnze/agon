@@ -1,12 +1,20 @@
 use std::ops::RangeInclusive;
 
 use orchestration_core::naming::{
-    MAXIMUM_NAME_LENGTH, NameProblem, validate_name,
+    FALLBACK_PROJECT_NAME, MAXIMUM_NAME_LENGTH, NameProblem,
+    convert_to_project_name, validate_name,
 };
 use proptest::collection::vec;
 use proptest::prelude::*;
 
 const LONGEST_GENERATED_NAME: usize = 2 * MAXIMUM_NAME_LENGTH;
+const NAME_EXAMPLES: [(&str, &str); 5] = [
+    ("Billing UI", "billing-ui"),
+    ("site_2", "site-2"),
+    (".dotfiles", "dotfiles"),
+    ("My  App (old)", "my-app-old"),
+    ("___", FALLBACK_PROJECT_NAME),
+];
 
 fn name_with_lengths(
     lengths: RangeInclusive<usize>,
@@ -77,4 +85,45 @@ proptest! {
 #[test]
 fn test_validate_name_rejects_an_empty_name() {
     assert_eq!(validate_name(""), Err(NameProblem::Empty));
+}
+
+proptest! {
+    #[test]
+    fn test_convert_to_project_name_property_always_gives_a_valid_name(
+        folder_or_repository_name in any::<String>(),
+    ) {
+        let project_name = convert_to_project_name(&folder_or_repository_name);
+
+        prop_assert_eq!(validate_name(&project_name), Ok(()));
+    }
+
+    #[test]
+    fn test_convert_to_project_name_property_is_idempotent(
+        folder_or_repository_name in any::<String>(),
+    ) {
+        let project_name = convert_to_project_name(&folder_or_repository_name);
+
+        let converted_again = convert_to_project_name(&project_name);
+
+        prop_assert_eq!(converted_again, project_name);
+    }
+
+    #[test]
+    fn test_convert_to_project_name_property_keeps_letters_and_digits(
+        folder_or_repository_name in "[a-z0-9]{1,40}",
+    ) {
+        let project_name = convert_to_project_name(&folder_or_repository_name);
+
+        prop_assert_eq!(project_name, folder_or_repository_name);
+    }
+}
+
+#[test]
+fn test_convert_to_project_name_turns_other_characters_into_dashes() {
+    for (folder_or_repository_name, expected) in NAME_EXAMPLES {
+        assert_eq!(
+            convert_to_project_name(folder_or_repository_name),
+            expected
+        );
+    }
 }

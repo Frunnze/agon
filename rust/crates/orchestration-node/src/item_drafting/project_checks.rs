@@ -1,3 +1,4 @@
+use super::answer_defaults::pick_form_project_name;
 use super::draft_checks::CheckedDraft;
 use super::drafting_context::DraftingContext;
 use super::item_draft::{ItemDraft, ProjectDraft, RepositoryDraft};
@@ -10,15 +11,7 @@ pub(super) fn check_project_draft(
     context: &DraftingContext,
     project: &ProjectDraft,
 ) -> CheckedDraft {
-    let name = project.name.trim().to_owned();
-    let mut problems = Vec::new();
-    if let Some(name_problem) = find_project_name_problem(context, &name) {
-        problems.push(name_problem);
-    }
-    if project.repositories.is_empty() {
-        problems.push(NO_REPOSITORY.to_owned());
-    }
-
+    let mut repository_problems = Vec::new();
     let mut resolved_repositories: Vec<RepositoryDraft> = Vec::new();
     for answered in &project.repositories {
         match resolve_repository(&context.this_device.id, answered) {
@@ -30,9 +23,19 @@ pub(super) fn check_project_draft(
                     resolved_repositories.push(resolved);
                 }
             }
-            Err(problem) => problems.push(problem),
+            Err(problem) => repository_problems.push(problem),
         }
     }
+
+    let name = pick_form_project_name(&project.name, &resolved_repositories);
+    let mut problems = Vec::new();
+    if let Some(name_problem) = find_project_name_problem(context, &name) {
+        problems.push(name_problem);
+    }
+    if project.repositories.is_empty() {
+        problems.push(NO_REPOSITORY.to_owned());
+    }
+    problems.extend(repository_problems);
 
     let draft = ProjectDraft {
         name,

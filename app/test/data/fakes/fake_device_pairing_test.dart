@@ -36,6 +36,7 @@ void main() {
         devices: galleryDevices,
         currentDeviceId: GalleryDeviceIds.airLaptop,
         peerAddressProblem: null,
+        gitlessFolderPaths: const <String>{},
       );
       int notifications = 0;
       repository.addListener(() => notifications += 1);
@@ -59,6 +60,7 @@ void main() {
       devices: galleryDevices,
       currentDeviceId: GalleryDeviceIds.airLaptop,
       peerAddressProblem: null,
+      gitlessFolderPaths: const <String>{},
     );
 
     for (int i = 0; i < propertyIterations; i += 1) {

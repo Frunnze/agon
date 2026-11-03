@@ -23,6 +23,8 @@ pub mod node_error;
 pub mod node_runtime;
 mod peer_side;
 pub mod place_offers;
+#[cfg(unix)]
+pub mod reaper_safe_program;
 #[cfg(feature = "runner")]
 pub mod runner_bridge;
 pub mod runner_settings;

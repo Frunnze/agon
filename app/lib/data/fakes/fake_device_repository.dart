@@ -18,14 +18,17 @@ final class FakeDeviceRepository extends ChangeNotifier
     required List<Device> devices,
     required DeviceId currentDeviceId,
     required String? peerAddressProblem,
+    required Set<String> gitlessFolderPaths,
   }) : _devices = List<Device>.unmodifiable(devices),
        _currentDeviceId = currentDeviceId,
-       _peerAddressProblem = peerAddressProblem {
+       _peerAddressProblem = peerAddressProblem,
+       _gitlessFolderPaths = Set<String>.unmodifiable(gitlessFolderPaths) {
     findDevice(currentDeviceId);
   }
 
   final DeviceId _currentDeviceId;
   final String? _peerAddressProblem;
+  final Set<String> _gitlessFolderPaths;
   List<Device> _devices;
 
   @override
@@ -48,7 +51,7 @@ final class FakeDeviceRepository extends ChangeNotifier
   String? findPeerAddressProblem() => _peerAddressProblem;
 
   @override
-  Future<RepositoryDraft> checkLocalFolder(String path) async {
+  Future<CheckedFolder> checkLocalFolder(String path) async {
     String folderPath = path.trim();
     if (!folderPath.startsWith(_unixRoot)) {
       throw StateError('the folder "$path" is not an absolute path');
@@ -57,12 +60,15 @@ final class FakeDeviceRepository extends ChangeNotifier
       folderPath = folderPath.substring(0, folderPath.length - 1);
     }
 
-    return RepositoryDraft(
-      address: renderLocalFolderAddress(
-        deviceId: _currentDeviceId,
-        path: folderPath,
+    return CheckedFolder(
+      repository: RepositoryDraft(
+        address: renderLocalFolderAddress(
+          deviceId: _currentDeviceId,
+          path: folderPath,
+        ),
+        defaultBranch: _fakeCheckedOutBranch,
       ),
-      defaultBranch: _fakeCheckedOutBranch,
+      hasStartedGit: _gitlessFolderPaths.contains(folderPath),
     );
   }
 

@@ -12,6 +12,7 @@ mod device_registration;
 mod drafting_context_reading;
 mod file_commands;
 mod file_holders;
+mod folder_git_start;
 mod hosted_account;
 mod item_draft_commands;
 mod join_status;

@@ -21,6 +21,13 @@ final class RepositoryDraft {
   final String defaultBranch;
 }
 
+final class CheckedFolder {
+  const CheckedFolder({required this.repository, required this.hasStartedGit});
+
+  final RepositoryDraft repository;
+  final bool hasStartedGit;
+}
+
 final class Project {
   Project({
     required this.id,
