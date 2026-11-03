@@ -16,20 +16,13 @@ import 'package:agent_orchestration/data/rules/workflow_graph.dart';
 import 'package:agent_orchestration/icons/app_icon_kind.dart';
 import 'package:agent_orchestration/presentation/device_names.dart';
 import 'package:agent_orchestration/presentation/problem_text.dart';
-import 'package:agent_orchestration/screens/task_form/task_form_options.dart';
 import 'package:agent_orchestration/screens/workflow_builder.dart';
 import 'package:agent_orchestration/screens/workflows.dart';
 import 'package:agent_orchestration/shell/app_navigation.dart';
 import 'package:agent_orchestration/shell/app_route.dart';
 import 'package:agent_orchestration/shell/app_section.dart';
-import 'package:agent_orchestration/theme/app_typography.dart';
-import 'package:agent_orchestration/widgets/app_button.dart';
-import 'package:agent_orchestration/widgets/forms/form_field_block.dart';
 import 'package:agent_orchestration/widgets/status_label.dart';
 
-const String workflowNameLabel = 'Workflow name';
-const String workflowNameHint =
-    'Lowercase letters, digits and dashes, like feature-pipeline.';
 const WorkflowId _unsavedWorkflowId = WorkflowId('unsaved');
 const SectionRoute _workflowsRoute = SectionRoute(AppSection.workflows);
 
@@ -67,7 +60,7 @@ class _ManualWorkflowScreenState extends State<ManualWorkflowScreen> {
     connections: const <AgentConnection>[],
     signature: null,
   );
-  WorkflowAgentId? _selectedAgentId;
+  BuilderSelection? _selection;
   String? _nameProblem;
   String? _notice;
   bool _isSaving = false;
@@ -109,25 +102,12 @@ class _ManualWorkflowScreenState extends State<ManualWorkflowScreen> {
           onCancel: widget.navigation.closeRoute,
           onSigned: () => unawaited(_signAndSave()),
         ),
-        FormFieldBlock(
-          label: workflowNameLabel,
-          hint: workflowNameHint,
-          children: <Widget>[
-            TextField(
-              controller: _nameController,
-              style: AppTextStyles.body.merge(AppTextStyles.monospace),
-              decoration: InputDecoration(errorText: _nameProblem),
-              onChanged: (String _) => setState(() => _nameProblem = null),
-            ),
-          ],
-        ),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: AppButton.secondary(
-            label: addAgentLabel,
-            icon: AppIconKind.plus,
-            onPressed: _addAgent,
-          ),
+        WorkflowNameRow(
+          controller: _nameController,
+          problem: _nameProblem,
+          onChanged: (String _) => setState(() => _nameProblem = null),
+          onAgentAdded: () => _addStep(buildBlankAgent(_workflow)),
+          onPersonStepAdded: () => _addStep(buildBlankPersonStep(_workflow)),
         ),
         if (notice != null)
           StatusLabel(
@@ -150,49 +130,49 @@ class _ManualWorkflowScreenState extends State<ManualWorkflowScreen> {
 
     return EditableWorkflowDiagram(
       workflow: _workflow,
-      selectedAgentId: _selectedAgentId,
+      selection: _selection,
       deviceNames: deviceNames,
-      onAgentSelected: _selectAgent,
-      onSelectionCleared: () => setState(() => _selectedAgentId = null),
+      onAgentSelected: (WorkflowAgentId agentId) =>
+          _select(SelectedStep(agentId)),
+      onConnectionSelected: (AgentConnection connection) =>
+          _select(SelectedConnection(connection)),
+      onSelectionCleared: () => _select(null),
       onAgentMoved: _moveAgent,
       onAgentsConnected: _connectAgents,
     );
   }
 
   Widget? _buildPanel(DeviceNames deviceNames) {
-    final WorkflowAgentId? selectedId = _selectedAgentId;
-    if (selectedId == null) {
-      return null;
-    }
-
-    final WorkflowAgent agent = _workflow.findAgent(selectedId);
-    return AgentSettingsPanel(
-      key: ValueKey<WorkflowAgentId>(agent.id),
+    return buildBuilderPanel(
       workflow: _workflow,
-      agent: agent,
-      runnerOptions: buildRunnerOptions(
+      selection: _selection,
+      sources: BuilderPanelSources(
         runners: widget.runnerRepository.listRunners(),
+        skills: widget.skillRepository.listSkills(),
         deviceNames: deviceNames,
-        chosenTarget: agent.runsOn,
       ),
-      skills: widget.skillRepository.listSkills(),
-      onAgentChanged: _changeAgent,
-      onFillInRequested: null,
-      onRemoved: () => _removeAgent(agent.id),
-      onDone: () => setState(() => _selectedAgentId = null),
+      actions: BuilderPanelActions(
+        onAgentChanged: _changeAgent,
+        onFillInRequested: null,
+        onAgentRemoved: _removeAgent,
+        onConnectionChanged: (AgentConnection connection) => setState(
+          () => _workflow = replaceConnection(_workflow, connection),
+        ),
+        onConnectionRemoved: _removeConnection,
+        onLoopAdded: _addLoop,
+        onDone: () => _select(null),
+      ),
     );
   }
 
-  void _selectAgent(WorkflowAgentId agentId) {
-    setState(() => _selectedAgentId = agentId);
+  void _select(BuilderSelection? selection) {
+    setState(() => _selection = selection);
   }
 
-  void _addAgent() {
-    final WorkflowAgent blank = buildBlankAgent(_workflow);
-
+  void _addStep(WorkflowAgent blank) {
     setState(() {
       _workflow = addAgent(_workflow, blank);
-      _selectedAgentId = blank.id;
+      _selection = SelectedStep(blank.id);
       _notice = null;
     });
   }
@@ -215,17 +195,34 @@ class _ManualWorkflowScreenState extends State<ManualWorkflowScreen> {
       connection,
     );
 
+    final bool isLoop = problem == null && pointsBack(_workflow, connection);
     setState(() {
       _notice = problem?.message;
-      if (problem == null) {
+      if (isLoop) {
+        _selection = DrawnLoop(connection);
+      } else if (problem == null) {
         _workflow = connectAgents(_workflow, connection);
       }
     });
   }
 
+  void _addLoop(AgentConnection loop) {
+    setState(() {
+      _workflow = connectAgents(_workflow, loop);
+      _selection = SelectedConnection(loop);
+    });
+  }
+
+  void _removeConnection(AgentConnection connection) {
+    setState(() {
+      _selection = null;
+      _workflow = removeConnection(_workflow, connection);
+    });
+  }
+
   void _removeAgent(WorkflowAgentId agentId) {
     setState(() {
-      _selectedAgentId = null;
+      _selection = null;
       _workflow = removeAgent(_workflow, agentId);
     });
   }

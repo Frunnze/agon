@@ -2,12 +2,14 @@ import 'package:agent_orchestration/bridge/codecs/device_values.dart';
 import 'package:agent_orchestration/bridge/codecs/identifier_codecs.dart';
 import 'package:agent_orchestration/bridge/codecs/json_values.dart';
 import 'package:agent_orchestration/bridge/codecs/run_chat_values.dart';
+import 'package:agent_orchestration/bridge/codecs/run_round_values.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 
 enum StepStatus implements WireNamed {
   waiting('waiting'),
   running('running'),
   waitingForApproval('waiting_for_approval'),
+  waitingForPerson('waiting_for_person'),
   done('done'),
   failed('failed'),
   skipped('skipped');
@@ -45,6 +47,9 @@ final class RunStep implements JsonEncodable {
     required this.startedAt,
     required this.finishedAt,
     required this.result,
+    required this.outcome,
+    required this.loopSource,
+    required this.earlierRounds,
   });
 
   factory RunStep.fromJson(Object? json) {
@@ -57,6 +62,13 @@ final class RunStep implements JsonEncodable {
       startedAt: readOptionalField(fields, 'started_at', decodeMoment),
       finishedAt: readOptionalField(fields, 'finished_at', decodeMoment),
       result: readOptionalField(fields, 'result', decodeText),
+      outcome: readOptionalField(fields, 'outcome', decodeText),
+      loopSource: readOptionalField(fields, 'loop_source', decodeText),
+      earlierRounds: readListFieldWhenPresent(
+        fields,
+        'earlier_rounds',
+        EarlierRound.fromJson,
+      ),
     );
   }
 
@@ -67,6 +79,9 @@ final class RunStep implements JsonEncodable {
   final DateTime? startedAt;
   final DateTime? finishedAt;
   final String? result;
+  final String? outcome;
+  final String? loopSource;
+  final List<EarlierRound> earlierRounds;
 
   @override
   JsonObject toJson() {
@@ -78,6 +93,9 @@ final class RunStep implements JsonEncodable {
       'started_at': encodeOptionalMoment(startedAt),
       'finished_at': encodeOptionalMoment(finishedAt),
       'result': result,
+      'outcome': outcome,
+      'loop_source': loopSource,
+      'earlier_rounds': encodeList(earlierRounds),
     };
   }
 }
@@ -137,9 +155,13 @@ final class Run implements JsonEncodable {
     required this.startedBy,
     required this.startedAt,
     required this.finishedAt,
+    required List<LoopRounds> loopRounds,
+    required List<RunNote> notes,
   }) : steps = List<RunStep>.unmodifiable(steps),
        log = List<LogLine>.unmodifiable(log),
-       chat = List<ChatMessage>.unmodifiable(chat);
+       chat = List<ChatMessage>.unmodifiable(chat),
+       loopRounds = List<LoopRounds>.unmodifiable(loopRounds),
+       notes = List<RunNote>.unmodifiable(notes);
 
   factory Run.fromJson(Object? json) {
     final JsonObject fields = decodeObject(json);
@@ -159,6 +181,12 @@ final class Run implements JsonEncodable {
       startedBy: readField(fields, 'started_by', decodeDeviceId),
       startedAt: readField(fields, 'started_at', decodeMoment),
       finishedAt: readOptionalField(fields, 'finished_at', decodeMoment),
+      loopRounds: readListFieldWhenPresent(
+        fields,
+        'loop_rounds',
+        LoopRounds.fromJson,
+      ),
+      notes: readListFieldWhenPresent(fields, 'notes', RunNote.fromJson),
     );
   }
 
@@ -177,6 +205,8 @@ final class Run implements JsonEncodable {
   final DeviceId startedBy;
   final DateTime startedAt;
   final DateTime? finishedAt;
+  final List<LoopRounds> loopRounds;
+  final List<RunNote> notes;
 
   @override
   JsonObject toJson() {
@@ -196,6 +226,8 @@ final class Run implements JsonEncodable {
       'started_by': startedBy.value,
       'started_at': encodeMoment(startedAt),
       'finished_at': encodeOptionalMoment(finishedAt),
+      'loop_rounds': encodeList(loopRounds),
+      'notes': encodeList(notes),
     };
   }
 }

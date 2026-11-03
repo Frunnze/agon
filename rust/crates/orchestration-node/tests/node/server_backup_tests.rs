@@ -2,7 +2,7 @@ use std::net::{Ipv4Addr, SocketAddr};
 use std::thread;
 use std::time::{Duration, Instant};
 
-use serde_json::{Value, json};
+use serde_json::json;
 
 use crate::support::hosted_runner::{
     HostedRunner, join_and_approve, run_a_task_from, start_host_pairing,
@@ -13,9 +13,10 @@ use crate::support::hosting_steps::{
     start_hosting_device,
 };
 use crate::support::server_backups::{
-    SYNC_LIMIT, TAKEOVER_SECONDS, list_task_titles, pair_client_at,
-    read_app_servers, read_hosted_state, start_backup_ready_to_take_over,
-    start_server_backup, start_steady_backup_device, wait_until_copied,
+    SYNC_LIMIT, TAKEOVER_SECONDS, create_project, list_task_titles,
+    pair_client_at, read_app_servers, read_hosted_state,
+    start_backup_ready_to_take_over, start_server_backup,
+    start_steady_backup_device, stop_server_backup, wait_until_copied,
     wait_until_standing,
 };
 use crate::support::test_device::{RELAY_DISABLED, TestDevice, read_text};
@@ -27,23 +28,6 @@ const DETECTION_SLACK: Duration = Duration::from_secs(40);
 const PROJECT_NAMES: [&str; 2] = ["copied-app", "copied-site"];
 const REVOCATION_PAUSE: Duration = Duration::from_secs(3);
 const MISDIRECTED_ANSWER_START: &str = "HTTP/1.1 421";
-
-fn stop_server_backup(device: &TestDevice) -> Result<Value, String> {
-    device.run(&json!({ "command": "stop_server_backup" }))
-}
-
-fn create_project(
-    device: &TestDevice,
-    workspace_id: &str,
-    name: &str,
-) -> Result<Value, String> {
-    device.run(&json!({
-        "command": "create_project",
-        "workspace_id": workspace_id,
-        "name": name,
-        "repositories": [],
-    }))
-}
 
 fn read_device_id(device: &TestDevice) -> Result<String, String> {
     let status = device.run(&json!({ "command": "status" }))?;

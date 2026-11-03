@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/widgets.dart';
 
+import 'package:agent_orchestration/data/models/workflow.dart';
 import 'package:agent_orchestration/screens/workflow_builder.dart';
 import 'package:agent_orchestration/theme/app_colors.dart';
 import 'package:agent_orchestration/theme/app_spacing.dart';
@@ -13,15 +14,19 @@ const double _portInset =
 
 enum NodeLook { normal, selected, pending }
 
-final TextStyle _detailStyle = AppTextStyles.caption
+final TextStyle _agentDetailStyle = AppTextStyles.caption
     .merge(AppTextStyles.monospace)
     .copyWith(color: AppColors.inkMuted);
+final TextStyle _personDetailStyle = AppTextStyles.caption.copyWith(
+  color: AppColors.inkMuted,
+);
 
 class AgentNodeBox extends StatelessWidget {
   const AgentNodeBox({
     required this.kindText,
     required this.name,
     required this.targetText,
+    required this.stepKind,
     required this.look,
     super.key,
   });
@@ -29,11 +34,15 @@ class AgentNodeBox extends StatelessWidget {
   final String kindText;
   final String name;
   final String? targetText;
+  final StepKind stepKind;
   final NodeLook look;
 
   @override
   Widget build(BuildContext context) {
     final String? target = targetText;
+    final TextStyle detailStyle = stepKind == StepKind.person
+        ? _personDetailStyle
+        : _agentDetailStyle;
     final bool isSelected = look == NodeLook.selected;
     final Color nameColor = look == NodeLook.pending
         ? AppColors.inkMuted
@@ -47,7 +56,7 @@ class AgentNodeBox extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
-          Text(kindText, style: _detailStyle, maxLines: 1),
+          Text(kindText, style: detailStyle, maxLines: 1),
           Text(
             name,
             style: AppTextStyles.bodyBold.copyWith(color: nameColor),
@@ -57,7 +66,7 @@ class AgentNodeBox extends StatelessWidget {
           if (target != null)
             Text(
               target,
-              style: _detailStyle,
+              style: detailStyle,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
@@ -92,11 +101,7 @@ class AgentNodeBox extends StatelessWidget {
   Widget _buildOutline(Widget content) {
     switch (look) {
       case NodeLook.normal:
-        return _buildFilledOutline(
-          content,
-          fill: AppColors.raised,
-          edge: AppColors.lineStrong,
-        );
+        return _buildNormalOutline(content);
       case NodeLook.selected:
         return _buildFilledOutline(
           content,
@@ -107,6 +112,23 @@ class AgentNodeBox extends StatelessWidget {
         return CustomPaint(
           painter: const DashedOutlinePainter(color: AppColors.lineStrong),
           child: content,
+        );
+    }
+  }
+
+  Widget _buildNormalOutline(Widget content) {
+    switch (stepKind) {
+      case StepKind.agent:
+        return _buildFilledOutline(
+          content,
+          fill: AppColors.raised,
+          edge: AppColors.lineStrong,
+        );
+      case StepKind.person:
+        return _buildFilledOutline(
+          content,
+          fill: AppColors.attentionTint,
+          edge: AppColors.attention,
         );
     }
   }

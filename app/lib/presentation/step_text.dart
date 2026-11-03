@@ -32,6 +32,9 @@ List<TextSegment> describeStepSubtitle({
       return describeRunnerTarget(target, deviceNames);
     case StepStatus.skipped:
       return const <TextSegment>[TextSegment('Did not start')];
+    case StepStatus.waitingForPerson:
+      final String asked = describeWholeMinutes(_measureStep(step, now));
+      return <TextSegment>[TextSegment('Asked you $asked ago')];
     case StepStatus.running:
     case StepStatus.waitingForApproval:
       final String elapsed = describeWholeMinutes(_measureStep(step, now));

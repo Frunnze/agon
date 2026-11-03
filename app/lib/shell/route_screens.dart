@@ -80,6 +80,7 @@ Widget buildRouteScreen({
         projectRepository: dependencies.projectRepository,
         deviceRepository: dependencies.deviceRepository,
         approvalRepository: dependencies.approvalRepository,
+        personStepRepository: dependencies.personStepRepository,
         runnerRepository: dependencies.runnerRepository,
         clock: dependencies.clock,
         navigation: navigation,

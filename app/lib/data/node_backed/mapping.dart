@@ -9,6 +9,7 @@ export 'mapping/item_draft_mapping.dart';
 export 'mapping/library_mapping.dart';
 export 'mapping/live_run_mapping.dart';
 export 'mapping/pairing_mapping.dart';
+export 'mapping/person_step_mapping.dart';
 export 'mapping/repository_file_mapping.dart';
 export 'mapping/run_mapping.dart';
 export 'mapping/runner_mapping.dart';

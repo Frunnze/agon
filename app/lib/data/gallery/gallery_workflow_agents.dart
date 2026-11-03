@@ -19,6 +19,7 @@ WorkflowAgent buildGalleryAgent({
   List<SkillId> skills = const <SkillId>[],
 }) {
   return WorkflowAgent(
+    stepKind: StepKind.agent,
     id: WorkflowAgentId('agent-$workflowName-$name'),
     name: name,
     kind: kind,
@@ -96,7 +97,12 @@ List<AgentConnection> connectInOrder(List<WorkflowAgent> agents) {
 
   for (int index = 1; index < agents.length; index += 1) {
     connections.add(
-      AgentConnection(from: agents[index - 1].id, to: agents[index].id),
+      AgentConnection(
+        from: agents[index - 1].id,
+        to: agents[index].id,
+        condition: null,
+        roundLimit: null,
+      ),
     );
   }
 
@@ -107,10 +113,35 @@ List<AgentConnection> connectFeaturePipeline() {
   final List<WorkflowAgent> agents = featurePipelineAgents;
 
   return <AgentConnection>[
-    AgentConnection(from: agents[0].id, to: agents[1].id),
-    AgentConnection(from: agents[0].id, to: agents[2].id),
-    AgentConnection(from: agents[1].id, to: agents[3].id),
-    AgentConnection(from: agents[2].id, to: agents[3].id),
-    AgentConnection(from: agents[3].id, to: agents[4].id),
+    AgentConnection(
+      from: agents[0].id,
+      to: agents[1].id,
+      condition: null,
+      roundLimit: null,
+    ),
+    AgentConnection(
+      from: agents[0].id,
+      to: agents[2].id,
+      condition: null,
+      roundLimit: null,
+    ),
+    AgentConnection(
+      from: agents[1].id,
+      to: agents[3].id,
+      condition: null,
+      roundLimit: null,
+    ),
+    AgentConnection(
+      from: agents[2].id,
+      to: agents[3].id,
+      condition: null,
+      roundLimit: null,
+    ),
+    AgentConnection(
+      from: agents[3].id,
+      to: agents[4].id,
+      condition: null,
+      roundLimit: null,
+    ),
   ];
 }

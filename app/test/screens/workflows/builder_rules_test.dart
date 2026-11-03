@@ -8,6 +8,7 @@ import 'package:agent_orchestration/data/rules/naming.dart';
 import 'package:agent_orchestration/data/rules/workflow_edits.dart';
 import 'package:agent_orchestration/screens/workflow_builder.dart';
 
+import '../../support/random_branching_workflows.dart';
 import '../../support/random_inputs.dart';
 import '../../support/random_workflows.dart';
 
@@ -62,6 +63,42 @@ void main() {
         expect(problem, isNull);
       }
     }
+  });
+
+  test('test_describe_signing_problem_property_people_need_a_question', () {
+    final Random random = seededRandom(8905);
+
+    for (int i = 0; i < propertyIterations; i += 1) {
+      final Workflow workflow = randomBranchingWorkflow(random);
+      final String? problem = describeSigningProblem(workflow);
+      final bool hasBlankStep = workflow.agents.any(
+        (WorkflowAgent agent) =>
+            agent.task.trim().isEmpty ||
+            (agent.stepKind == StepKind.agent && agent.kind == null),
+      );
+
+      if (workflow.agents.isEmpty) {
+        expect(problem, isNotNull);
+      } else {
+        expect(problem != null, hasBlankStep);
+      }
+    }
+  });
+
+  test('describe signing problem asks a person step for its question', () {
+    final Workflow pipeline = galleryWorkflows[2];
+    final WorkflowAgent person = buildBlankPersonStep(pipeline);
+    final Workflow withPerson = addAgent(pipeline, person);
+    final Workflow asked = replaceAgent(
+      withPerson,
+      person.copyWith(task: 'Ship it?'),
+    );
+
+    expect(
+      describeSigningProblem(withPerson),
+      'Write a question for new-person-step',
+    );
+    expect(describeSigningProblem(asked), isNull);
   });
 
   test('describe signing problem names the agent to fix', () {

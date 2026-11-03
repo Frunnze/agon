@@ -38,6 +38,7 @@ sealed class RunEvent implements JsonEncodable {
       StepResultRecorded.kind => StepResultRecorded(
         stepName: readField(fields, _stepNameField, decodeText),
         result: readField(fields, 'result', decodeText),
+        outcome: readOptionalField(fields, 'outcome', decodeText),
       ),
       RunFinished.kind => const RunFinished(),
       _ => throw FormatException('unknown run event $kind'),
@@ -142,12 +143,17 @@ final class RunFailed extends RunEvent {
 }
 
 final class StepResultRecorded extends RunEvent {
-  const StepResultRecorded({required this.stepName, required this.result});
+  const StepResultRecorded({
+    required this.stepName,
+    required this.result,
+    required this.outcome,
+  });
 
   static const String kind = 'step_result_recorded';
 
   final String stepName;
   final String result;
+  final String? outcome;
 
   @override
   JsonObject toJson() {
@@ -155,6 +161,7 @@ final class StepResultRecorded extends RunEvent {
       _kindField: kind,
       _stepNameField: stepName,
       'result': result,
+      'outcome': outcome,
     };
   }
 }

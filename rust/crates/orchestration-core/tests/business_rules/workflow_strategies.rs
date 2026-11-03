@@ -6,7 +6,7 @@ use orchestration_core::identifiers::{WorkflowAgentId, WorkflowId};
 use orchestration_core::run::{RunStep, StepStatus};
 use orchestration_core::scope::WorkspaceScope;
 use orchestration_core::workflow::{
-    AgentConnection, CanvasPosition, Workflow, WorkflowAgent,
+    AgentConnection, CanvasPosition, StepKind, Workflow, WorkflowAgent,
 };
 use proptest::collection::vec;
 use proptest::option;
@@ -54,6 +54,7 @@ fn workflow_agent(
         uses_automatic_skills: false,
         approval_policy: ApprovalPolicy::NeverAsk,
         position,
+        step_kind: StepKind::Agent,
     }
 }
 
@@ -91,10 +92,10 @@ pub fn acyclic_workflow_with_agent_counts(
             let mut connections = Vec::new();
             for (first, second) in index_pairs {
                 if first < second {
-                    connections.push(AgentConnection {
-                        from: agents[first].id,
-                        to: agents[second].id,
-                    });
+                    connections.push(AgentConnection::plain(
+                        agents[first].id,
+                        agents[second].id,
+                    ));
                 }
             }
             workflow_from_parts(agents, connections)
@@ -114,14 +115,8 @@ pub fn workflow_with_cycle() -> impl Strategy<Value = Workflow> {
         let first_id = workflow.agents[0].id;
         let last_id = workflow.agents[workflow.agents.len() - 1].id;
         let mut connections = workflow.connections.clone();
-        connections.push(AgentConnection {
-            from: first_id,
-            to: last_id,
-        });
-        connections.push(AgentConnection {
-            from: last_id,
-            to: first_id,
-        });
+        connections.push(AgentConnection::plain(first_id, last_id));
+        connections.push(AgentConnection::plain(last_id, first_id));
         workflow_from_parts(workflow.agents.clone(), connections)
     })
 }
@@ -147,9 +142,11 @@ pub fn arbitrary_workflow() -> impl Strategy<Value = Workflow> {
         0..DISTINCT_ARBITRARY_AGENT_IDS,
         0..DISTINCT_ARBITRARY_AGENT_IDS,
     )
-        .prop_map(|(from, to)| AgentConnection {
-            from: agent_identifier(from),
-            to: agent_identifier(to),
+        .prop_map(|(from, to)| {
+            AgentConnection::plain(
+                agent_identifier(from),
+                agent_identifier(to),
+            )
         });
     (
         vec(agent, 0..MAXIMUM_AGENTS),
@@ -165,6 +162,7 @@ pub fn step_status() -> impl Strategy<Value = StepStatus> {
         Just(StepStatus::Waiting),
         Just(StepStatus::Running),
         Just(StepStatus::WaitingForApproval),
+        Just(StepStatus::WaitingForPerson),
         Just(StepStatus::Done),
         Just(StepStatus::Failed),
         Just(StepStatus::Skipped),
@@ -183,6 +181,9 @@ pub fn run_steps() -> impl Strategy<Value = Vec<RunStep>> {
                 started_at: None,
                 finished_at: None,
                 result: None,
+                outcome: None,
+                loop_source: None,
+                earlier_rounds: Vec::new(),
             });
         }
         steps

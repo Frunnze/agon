@@ -55,6 +55,8 @@ pub struct EventsResponse {
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ApiErrorBody {
     pub message: String,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub choices: Vec<String>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]

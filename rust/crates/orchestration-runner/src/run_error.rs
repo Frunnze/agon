@@ -8,6 +8,7 @@ use crate::agents_file::AgentsFileError;
 use crate::git_command::GitError;
 use crate::runner_server::ServerError;
 use crate::step_command::StepCommandError;
+use crate::step_outcome::OutcomeProblem;
 use crate::step_plan::AssignmentProblem;
 
 #[derive(Debug, Error)]
@@ -28,6 +29,8 @@ pub(crate) enum RunError {
     Server(#[from] ServerError),
     #[error(transparent)]
     Git(#[from] GitError),
+    #[error(transparent)]
+    Outcome(#[from] OutcomeProblem),
     #[error("could not commit the changes left in {repository}: {source}")]
     ChangesNotCommitted {
         repository: String,

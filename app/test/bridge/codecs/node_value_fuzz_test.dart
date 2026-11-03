@@ -5,13 +5,18 @@ import 'package:flutter_test/flutter_test.dart';
 import '../../support/random_inputs.dart';
 import '../support/arbitrary_json.dart';
 import '../support/decoding_outcome.dart';
+import '../support/branching_node_shapes.dart';
 import '../support/link_node_shapes.dart';
 import '../support/node_shapes.dart';
 
 const int _firstSeed = 4300;
 
 void main() {
-  final List<NodeShape> shapes = <NodeShape>[...nodeShapes, ...linkNodeShapes];
+  final List<NodeShape> shapes = <NodeShape>[
+    ...nodeShapes,
+    ...linkNodeShapes,
+    ...branchingNodeShapes,
+  ];
   for (int index = 0; index < shapes.length; index += 1) {
     final NodeShape shape = shapes[index];
 

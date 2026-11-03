@@ -15,11 +15,15 @@ const AGENT_TASK_CASES: u32 = 4;
 const PLANNING_AGENT_ID: &str = "00000000-0000-0000-0000-000000000011";
 const UNKNOWN_AGENT_ID: &str = "00000000-0000-0000-0000-000000000099";
 const CANVAS_UNITS: &str = "position is in canvas pixels";
-const WORKFLOW_FIELD_FORMS: [&str; 4] = [
+const WORKFLOW_FIELD_FORMS: [&str; 8] = [
     "{\"kind\": \"any_free_runner\"}",
     "ask_before_risky_actions",
     "never_ask",
     "{\"horizontal\": ",
+    "\"step_kind\": \"person\"",
+    "\"condition\": \"<outcome>\"",
+    "\"round_limit\": 1 to 10",
+    "OUTCOME: <outcome>",
 ];
 
 fn is_task_upload(request: &RecordedRequest) -> bool {

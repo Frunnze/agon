@@ -38,6 +38,10 @@ List<RunStep> _planSteps(Task task, Workflow? workflow) {
         status: StepStatus.waiting,
         startedAt: null,
         finishedAt: null,
+        result: null,
+        outcome: null,
+        loopSource: null,
+        earlierRounds: const <EarlierRound>[],
       ),
     ];
   }
@@ -51,6 +55,10 @@ List<RunStep> _planSteps(Task task, Workflow? workflow) {
         status: StepStatus.waiting,
         startedAt: null,
         finishedAt: null,
+        result: null,
+        outcome: null,
+        loopSource: null,
+        earlierRounds: const <EarlierRound>[],
       ),
   ];
 }
@@ -72,6 +80,10 @@ List<RunStep> _startFirstUnfinishedStep(List<RunStep> steps, DateTime at) {
           status: StepStatus.running,
           startedAt: at,
           finishedAt: null,
+          result: null,
+          outcome: null,
+          loopSource: null,
+          earlierRounds: const <EarlierRound>[],
         ),
       );
     } else {
@@ -83,6 +95,10 @@ List<RunStep> _startFirstUnfinishedStep(List<RunStep> steps, DateTime at) {
           status: StepStatus.waiting,
           startedAt: null,
           finishedAt: null,
+          result: null,
+          outcome: null,
+          loopSource: null,
+          earlierRounds: const <EarlierRound>[],
         ),
       );
     }
@@ -135,6 +151,8 @@ Run createRun({
     startedBy: startedBy,
     startedAt: at,
     finishedAt: null,
+    loopRounds: const <LoopRounds>[],
+    notes: const <RunNote>[],
   );
 }
 
@@ -188,5 +206,7 @@ Run buildRetriedRun({
     startedBy: startedBy,
     startedAt: at,
     finishedAt: null,
+    loopRounds: const <LoopRounds>[],
+    notes: const <RunNote>[],
   );
 }

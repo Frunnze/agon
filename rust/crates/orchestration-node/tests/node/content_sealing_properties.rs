@@ -185,6 +185,7 @@ proptest! {
         let event = RunEvent::StepResultRecorded {
             step_name: "plan".to_owned(),
             result: text.clone(),
+            outcome: None,
         };
 
         let sealed_event =

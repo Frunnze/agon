@@ -3,6 +3,7 @@ use std::collections::BTreeSet;
 
 use thiserror::Error;
 
+use crate::connection_rules::{validate_conditions, validate_loops};
 use crate::identifiers::WorkflowAgentId;
 use crate::workflow::{AgentConnection, Workflow, WorkflowAgent};
 
@@ -22,6 +23,24 @@ pub enum WorkflowProblem {
     SelfConnection { agent_id: WorkflowAgentId },
     #[error("the connections form a cycle")]
     Cycle,
+    #[error(
+        "the outcome {condition:?} must be 1 to 40 lowercase letters, \
+         digits, spaces or dashes, without a space at either end"
+    )]
+    InvalidCondition { condition: String },
+    #[error(
+        "two connections out of {step_name} share the outcome {condition}"
+    )]
+    DuplicateCondition {
+        step_name: String,
+        condition: String,
+    },
+    #[error("a loop connection needs an outcome that takes it")]
+    LoopWithoutCondition,
+    #[error("a loop allows 1 to 10 rounds, not {round_limit}")]
+    InvalidRoundLimit { round_limit: u32 },
+    #[error("the loop from {from} to {to} must point back to an earlier step")]
+    LoopPointsForward { from: String, to: String },
 }
 
 pub fn validate_workflow(workflow: &Workflow) -> Result<(), WorkflowProblem> {
@@ -32,22 +51,32 @@ pub fn validate_workflow(workflow: &Workflow) -> Result<(), WorkflowProblem> {
     for connection in &workflow.connections {
         validate_connection(connection, &workflow.agents)?;
     }
+    validate_conditions(workflow)?;
     if has_cycle(workflow) {
         return Err(WorkflowProblem::Cycle);
     }
-    Ok(())
+    validate_loops(workflow)
+}
+
+#[must_use]
+pub fn forward_connections(workflow: &Workflow) -> Vec<&AgentConnection> {
+    workflow
+        .connections
+        .iter()
+        .filter(|connection| !connection.is_loop())
+        .collect()
 }
 
 #[must_use]
 pub fn agents_in_order(workflow: &Workflow) -> Vec<&WorkflowAgent> {
     let mut remaining: Vec<&WorkflowAgent> = workflow.agents.iter().collect();
     remaining.sort_by(|first, second| compare_canvas_order(first, second));
+    let connections = forward_connections(workflow);
 
     let mut ordered: Vec<&WorkflowAgent> = Vec::new();
     while !remaining.is_empty() {
-        let ready_index =
-            find_ready_index(&remaining, &ordered, &workflow.connections)
-                .unwrap_or(EARLIEST_REMAINING_INDEX);
+        let ready_index = find_ready_index(&remaining, &ordered, &connections)
+            .unwrap_or(EARLIEST_REMAINING_INDEX);
         ordered.push(remaining.remove(ready_index));
     }
     ordered
@@ -58,14 +87,43 @@ pub fn upstream_agents(
     workflow: &Workflow,
     agent_id: WorkflowAgentId,
 ) -> Vec<&WorkflowAgent> {
+    let connections = forward_connections(workflow);
     agents_in_order(workflow)
         .into_iter()
         .filter(|candidate| {
-            workflow.connections.iter().any(|connection| {
+            connections.iter().any(|connection| {
                 connection.from == candidate.id && connection.to == agent_id
             })
         })
         .collect()
+}
+
+#[must_use]
+pub fn forward_reachable_agents(
+    workflow: &Workflow,
+    start: WorkflowAgentId,
+) -> BTreeSet<WorkflowAgentId> {
+    let connections = forward_connections(workflow);
+    let mut reached = BTreeSet::from([start]);
+    let mut frontier = vec![start];
+    while let Some(agent_id) = frontier.pop() {
+        for connection in &connections {
+            let is_new =
+                connection.from == agent_id && reached.insert(connection.to);
+            if is_new {
+                frontier.push(connection.to);
+            }
+        }
+    }
+    reached
+}
+
+#[must_use]
+pub fn find_agent_by_id(
+    workflow: &Workflow,
+    agent_id: WorkflowAgentId,
+) -> Option<&WorkflowAgent> {
+    workflow.agents.iter().find(|agent| agent.id == agent_id)
 }
 
 fn validate_unique_agents(
@@ -107,10 +165,11 @@ fn validate_connection(
 }
 
 fn has_cycle(workflow: &Workflow) -> bool {
+    let connections = forward_connections(workflow);
     let mut remaining: Vec<&WorkflowAgent> = workflow.agents.iter().collect();
     let mut placed: Vec<&WorkflowAgent> = Vec::new();
     while let Some(ready_index) =
-        find_ready_index(&remaining, &placed, &workflow.connections)
+        find_ready_index(&remaining, &placed, &connections)
     {
         placed.push(remaining.remove(ready_index));
     }
@@ -120,7 +179,7 @@ fn has_cycle(workflow: &Workflow) -> bool {
 fn find_ready_index(
     remaining: &[&WorkflowAgent],
     placed: &[&WorkflowAgent],
-    connections: &[AgentConnection],
+    connections: &[&AgentConnection],
 ) -> Option<usize> {
     remaining
         .iter()
@@ -130,7 +189,7 @@ fn find_ready_index(
 fn has_all_upstream_placed(
     agent: &WorkflowAgent,
     placed: &[&WorkflowAgent],
-    connections: &[AgentConnection],
+    connections: &[&AgentConnection],
 ) -> bool {
     connections
         .iter()

@@ -6,6 +6,7 @@ use orchestration_core::identifiers::{
 };
 use orchestration_core::run::{Run, RunStatus};
 use orchestration_core::run_lifecycle::create_run;
+use orchestration_core::run_routing::settle_waiting_steps;
 use orchestration_core::task::{Task, TaskDoer, TaskStatus};
 use orchestration_core::workflow::Workflow;
 use orchestration_core::workspace::Project;
@@ -36,7 +37,7 @@ pub fn start_run(
         }
     };
     let number = next_run_number(state, task_id);
-    let run = create_run(
+    let created_run = create_run(
         task,
         workflow,
         number,
@@ -44,6 +45,10 @@ pub fn start_run(
         started_by.clone(),
         now,
     )?;
+    let run = match workflow {
+        Some(workflow) => settle_waiting_steps(&created_run, workflow, now),
+        None => created_run,
+    };
 
     let record = RunRecord {
         run: run.clone(),
@@ -78,6 +83,14 @@ pub fn run_workflow<'state>(
         .and_then(|record| record.last_signed.as_ref())
 }
 
+pub fn find_run_workflow<'state>(
+    state: &'state StoredState,
+    run: &Run,
+) -> Option<&'state Workflow> {
+    let task = state.tasks.get(&run.task_id)?;
+    run_workflow(state, task)
+}
+
 pub fn describe_run_detail(state: &StoredState, run: &Run) -> String {
     let project = find_run_project(state, run);
     let place = project.map_or_else(String::new, describe_project_place);
@@ -105,7 +118,7 @@ fn describe_project_place(project: &Project) -> String {
 
 pub fn describe_run(state: &StoredState, run: &Run) -> String {
     let task = state.tasks.get(&run.task_id);
-    let workflow = task.and_then(|task| run_workflow(state, task));
+    let workflow = find_run_workflow(state, run);
     let name = match (workflow, task) {
         (Some(workflow), _) => workflow.name.clone(),
         (None, Some(task)) => task.title.clone(),

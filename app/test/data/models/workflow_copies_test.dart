@@ -75,9 +75,24 @@ void main() {
     for (int i = 0; i < propertyIterations; i += 1) {
       final WorkflowAgentId from = WorkflowAgentId('a${random.nextInt(4)}');
       final WorkflowAgentId to = WorkflowAgentId('a${random.nextInt(4)}');
-      final AgentConnection first = AgentConnection(from: from, to: to);
-      final AgentConnection second = AgentConnection(from: from, to: to);
-      final AgentConnection reversed = AgentConnection(from: to, to: from);
+      final AgentConnection first = AgentConnection(
+        from: from,
+        to: to,
+        condition: null,
+        roundLimit: null,
+      );
+      final AgentConnection second = AgentConnection(
+        from: from,
+        to: to,
+        condition: null,
+        roundLimit: null,
+      );
+      final AgentConnection reversed = AgentConnection(
+        from: to,
+        to: from,
+        condition: null,
+        roundLimit: null,
+      );
 
       expect(first, second);
       expect(first.hashCode, second.hashCode);

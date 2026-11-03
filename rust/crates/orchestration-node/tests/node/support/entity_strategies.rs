@@ -15,7 +15,7 @@ use orchestration_core::run::{
 use orchestration_core::scope::{Scope, WorkspaceScope};
 use orchestration_core::task::{Task, TaskDoer, TaskPlace, TaskStatus};
 use orchestration_core::workflow::{
-    AgentKind, CanvasPosition, Workflow, WorkflowAgent,
+    AgentKind, CanvasPosition, StepKind, Workflow, WorkflowAgent,
 };
 use orchestration_node::content_sealing::WorkspaceKeyring;
 use orchestration_security::sealing::WorkspaceKey;
@@ -91,6 +91,7 @@ pub fn sample_workflow(agent_tasks: &[String]) -> Workflow {
                 horizontal: f64::from(u8::try_from(position).unwrap_or(0)),
                 vertical: 0.0,
             },
+            step_kind: StepKind::Agent,
         });
     }
     Workflow {
@@ -154,6 +155,9 @@ pub fn sample_step_with_result(position: usize, result: &str) -> RunStep {
         started_at: None,
         finished_at: None,
         result: Some(result.to_owned()),
+        outcome: None,
+        loop_source: None,
+        earlier_rounds: Vec::new(),
     }
 }
 
@@ -174,5 +178,7 @@ pub fn sample_run(texts: &[String]) -> Run {
         started_by: DeviceId("device".to_owned()),
         started_at: sample_time(),
         finished_at: None,
+        loop_rounds: Vec::new(),
+        notes: Vec::new(),
     }
 }

@@ -25,23 +25,6 @@ const String _missingNameProblem = 'Give it a name';
 const List<String> _validNames = <String>['hand-made', 'release-2', 'ship'];
 const List<String> _invalidNames = <String>['', 'Hand Made', 'café', '  '];
 
-Future<AppNavigation> _openManualWorkflow(
-  WidgetTester tester,
-  AppDependencies dependencies,
-) async {
-  final AppNavigation navigation = await pumpApp(
-    tester,
-    size: tallDesktopSize,
-    route: workflowsSectionRoute,
-    dependencies: dependencies,
-  );
-  navigation.openRoute(const NewWorkflowRoute());
-  await pumpFrames(tester);
-  await tester.tap(find.widgetWithText(AppButton, addManuallyLabel));
-  await pumpFrames(tester);
-  return navigation;
-}
-
 Future<void> _addCompleteAgent(WidgetTester tester) async {
   await tester.tap(find.text('Add agent'));
   await pumpFrames(tester);
@@ -71,7 +54,7 @@ void main() {
   testWidgets('add manually opens the empty workflow builder', (
     WidgetTester tester,
   ) async {
-    final AppNavigation navigation = await _openManualWorkflow(
+    final AppNavigation navigation = await openManualWorkflow(
       tester,
       buildGalleryDependencies(),
     );
@@ -91,7 +74,7 @@ void main() {
   testWidgets('cancel and back return to New workflow', (
     WidgetTester tester,
   ) async {
-    final AppNavigation navigation = await _openManualWorkflow(
+    final AppNavigation navigation = await openManualWorkflow(
       tester,
       buildGalleryDependencies(),
     );
@@ -114,7 +97,7 @@ void main() {
     final int countBefore = dependencies.workflowRepository
         .listWorkflows()
         .length;
-    final AppNavigation navigation = await _openManualWorkflow(
+    final AppNavigation navigation = await openManualWorkflow(
       tester,
       dependencies,
     );
@@ -134,7 +117,7 @@ void main() {
     WidgetTester tester,
   ) async {
     final AppDependencies dependencies = buildGalleryDependencies();
-    final AppNavigation navigation = await _openManualWorkflow(
+    final AppNavigation navigation = await openManualWorkflow(
       tester,
       dependencies,
     );
@@ -166,7 +149,7 @@ void main() {
       final int countBefore = dependencies.workflowRepository
           .listWorkflows()
           .length;
-      await _openManualWorkflow(tester, dependencies);
+      await openManualWorkflow(tester, dependencies);
 
       await enterFieldText(tester, label: workflowNameLabel, text: name);
       await _addCompleteAgent(tester);

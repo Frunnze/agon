@@ -1,5 +1,7 @@
 use orchestration_api::work::{RunAssignment, RunEvent};
-use orchestration_core::run::{ChatMessage, LogLine, Run, RunStep};
+use orchestration_core::run::{
+    ChatMessage, EarlierStepRound, LogLine, Run, RunStep,
+};
 use orchestration_security::sealing::{WorkspaceKey, seal_text};
 
 use super::sealed_catalog::{open_rule, open_skill, open_task, open_workflow};
@@ -74,13 +76,28 @@ fn open_step_result(
     keyring: &WorkspaceKeyring,
     step: &RunStep,
 ) -> Result<RunStep, NodeError> {
-    let Some(sealed_result) = &step.result else {
-        return Ok(step.clone());
-    };
+    let mut opened_rounds = Vec::new();
+    for round in &step.earlier_rounds {
+        opened_rounds.push(EarlierStepRound {
+            result: open_optional_text(keyring, round.result.as_ref())?,
+            ..round.clone()
+        });
+    }
     Ok(RunStep {
-        result: Some(keyring.open_text(sealed_result)?),
+        result: open_optional_text(keyring, step.result.as_ref())?,
+        earlier_rounds: opened_rounds,
         ..step.clone()
     })
+}
+
+fn open_optional_text(
+    keyring: &WorkspaceKeyring,
+    sealed_text: Option<&String>,
+) -> Result<Option<String>, NodeError> {
+    let Some(sealed_text) = sealed_text else {
+        return Ok(None);
+    };
+    Ok(Some(keyring.open_text(sealed_text)?))
 }
 
 pub fn seal_run_event(
@@ -94,12 +111,15 @@ pub fn seal_run_event(
         RunEvent::ChatAppended { message } => RunEvent::ChatAppended {
             message: seal_chat_message(workspace_key, message)?,
         },
-        RunEvent::StepResultRecorded { step_name, result } => {
-            RunEvent::StepResultRecorded {
-                step_name: step_name.clone(),
-                result: seal_text(workspace_key, result)?,
-            }
-        }
+        RunEvent::StepResultRecorded {
+            step_name,
+            result,
+            outcome,
+        } => RunEvent::StepResultRecorded {
+            step_name: step_name.clone(),
+            result: seal_text(workspace_key, result)?,
+            outcome: outcome.clone(),
+        },
         other_event => other_event.clone(),
     };
     Ok(sealed_event)

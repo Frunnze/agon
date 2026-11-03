@@ -44,6 +44,8 @@ Run _withSteps(Run base, RunStatus status, List<RunStep> steps) {
     startedBy: base.startedBy,
     startedAt: base.startedAt,
     finishedAt: null,
+    loopRounds: const <LoopRounds>[],
+    notes: const <RunNote>[],
   );
 }
 
@@ -57,6 +59,10 @@ Run _waitingRun(Run base) {
         status: StepStatus.waiting,
         startedAt: null,
         finishedAt: null,
+        result: null,
+        outcome: null,
+        loopSource: null,
+        earlierRounds: const <EarlierRound>[],
       ),
   ]);
 }

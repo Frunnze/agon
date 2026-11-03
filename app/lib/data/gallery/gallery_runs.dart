@@ -43,6 +43,10 @@ final Run galleryRunningRun = Run(
       status: StepStatus.done,
       startedAt: galleryToday(14, 3, 30),
       finishedAt: galleryToday(14, 5, 40),
+      result: null,
+      outcome: null,
+      loopSource: null,
+      earlierRounds: const <EarlierRound>[],
     ),
     RunStep(
       name: _buildStepName,
@@ -51,6 +55,10 @@ final Run galleryRunningRun = Run(
       status: StepStatus.running,
       startedAt: galleryToday(14, 5, 40),
       finishedAt: null,
+      result: null,
+      outcome: null,
+      loopSource: null,
+      earlierRounds: const <EarlierRound>[],
     ),
     RunStep(
       name: 'train',
@@ -59,6 +67,10 @@ final Run galleryRunningRun = Run(
       status: StepStatus.waiting,
       startedAt: null,
       finishedAt: null,
+      result: null,
+      outcome: null,
+      loopSource: null,
+      earlierRounds: const <EarlierRound>[],
     ),
   ],
   log: <LogLine>[
@@ -86,6 +98,8 @@ final Run galleryRunningRun = Run(
   startedBy: GalleryDeviceIds.airLaptop,
   startedAt: galleryToday(14, 5, 40),
   finishedAt: null,
+  loopRounds: const <LoopRounds>[],
+  notes: const <RunNote>[],
 );
 
 final Run galleryFailedRun = Run(
@@ -101,6 +115,10 @@ final Run galleryFailedRun = Run(
       status: StepStatus.done,
       startedAt: galleryYesterday(18, 20),
       finishedAt: galleryYesterday(18, 22, 4),
+      result: null,
+      outcome: null,
+      loopSource: null,
+      earlierRounds: const <EarlierRound>[],
     ),
     RunStep(
       name: _buildStepName,
@@ -109,6 +127,10 @@ final Run galleryFailedRun = Run(
       status: StepStatus.failed,
       startedAt: galleryYesterday(18, 28, 2),
       finishedAt: galleryYesterday(18, 31, 14),
+      result: null,
+      outcome: null,
+      loopSource: null,
+      earlierRounds: const <EarlierRound>[],
     ),
     RunStep(
       name: 'train',
@@ -117,6 +139,10 @@ final Run galleryFailedRun = Run(
       status: StepStatus.skipped,
       startedAt: null,
       finishedAt: null,
+      result: null,
+      outcome: null,
+      loopSource: null,
+      earlierRounds: const <EarlierRound>[],
     ),
   ],
   log: <LogLine>[
@@ -150,6 +176,8 @@ final Run galleryFailedRun = Run(
   startedBy: GalleryDeviceIds.airLaptop,
   startedAt: galleryYesterday(18, 20),
   finishedAt: galleryYesterday(18, 31, 14),
+  loopRounds: const <LoopRounds>[],
+  notes: const <RunNote>[],
 );
 
 final Run galleryFinishedRun = Run(
@@ -165,6 +193,10 @@ final Run galleryFinishedRun = Run(
       status: StepStatus.done,
       startedAt: galleryYesterday(11, 40),
       finishedAt: galleryYesterday(11, 58),
+      result: null,
+      outcome: null,
+      loopSource: null,
+      earlierRounds: const <EarlierRound>[],
     ),
   ],
   log: const <LogLine>[],
@@ -177,6 +209,8 @@ final Run galleryFinishedRun = Run(
   startedBy: GalleryDeviceIds.airLaptop,
   startedAt: galleryYesterday(11, 40),
   finishedAt: galleryYesterday(11, 58),
+  loopRounds: const <LoopRounds>[],
+  notes: const <RunNote>[],
 );
 
 final Run galleryNotPushedRun = Run(
@@ -192,6 +226,10 @@ final Run galleryNotPushedRun = Run(
       status: StepStatus.done,
       startedAt: galleryTwoDaysAgo(14, 9, 40),
       finishedAt: galleryTwoDaysAgo(14, 25, 10),
+      result: null,
+      outcome: null,
+      loopSource: null,
+      earlierRounds: const <EarlierRound>[],
     ),
   ],
   log: <LogLine>[
@@ -217,6 +255,8 @@ final Run galleryNotPushedRun = Run(
   startedBy: GalleryDeviceIds.airLaptop,
   startedAt: galleryTwoDaysAgo(14, 9, 40),
   finishedAt: galleryTwoDaysAgo(14, 25, 10),
+  loopRounds: const <LoopRounds>[],
+  notes: const <RunNote>[],
 );
 
 final List<Run> galleryRuns = List<Run>.unmodifiable(<Run>[

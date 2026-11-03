@@ -185,7 +185,12 @@ void main() {
         );
         expect(
           changed.connections.contains(
-            AgentConnection(from: agent.id, to: added.id),
+            AgentConnection(
+              from: agent.id,
+              to: added.id,
+              condition: null,
+              roundLimit: null,
+            ),
           ),
           feedsNothing,
         );

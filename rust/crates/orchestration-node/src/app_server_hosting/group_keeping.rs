@@ -43,7 +43,7 @@ pub(crate) fn keep_server_group(node: &Node) -> Result<(), NodeError> {
             dialer: node.shared_server_dialer(),
             takeover_after: node.takeover_after(),
         };
-        hosted.attach_keeping(tokio::spawn(keep_group(context)));
+        hosted.start_keeping(keep_group(context));
     }
     drop(hosted_slot);
     node.reconnect_app_server()

@@ -22,6 +22,7 @@ Widget buildSectionScreen({
     case AppSection.approvals:
       return ApprovalsScreen(
         approvalRepository: dependencies.approvalRepository,
+        personStepRepository: dependencies.personStepRepository,
         taskRepository: dependencies.taskRepository,
         workflowRepository: dependencies.workflowRepository,
         deviceRepository: dependencies.deviceRepository,

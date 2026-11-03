@@ -185,6 +185,7 @@ fn a_recorded_step_result_reaches_the_downstream_assignment() {
         let recorded = RunEvent::StepResultRecorded {
             step_name: first.step_name.clone(),
             result: RECORDED_RESULT.to_owned(),
+            outcome: None,
         };
         let (status, _run) =
             post_events(&test, &runners[0], &first.run, vec![recorded]).await;
@@ -216,6 +217,7 @@ fn a_runner_cannot_record_a_result_for_a_step_it_does_not_hold() {
         let recorded = RunEvent::StepResultRecorded {
             step_name: first.step_name.clone(),
             result: RECORDED_RESULT.to_owned(),
+            outcome: None,
         };
         let (status, _run) =
             post_events(&test, &runners[1], &first.run, vec![recorded]).await;

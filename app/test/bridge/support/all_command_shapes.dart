@@ -7,6 +7,7 @@ import 'edit_command_shapes.dart';
 import 'file_command_shapes.dart';
 import 'item_draft_command_shapes.dart';
 import 'library_edit_command_shapes.dart';
+import 'person_step_command_shapes.dart';
 import 'work_command_shapes.dart';
 import 'workflow_command_shapes.dart';
 
@@ -21,6 +22,7 @@ const List<CommandShape> allCommandShapes = <CommandShape>[
   ...deletionCommandShapes,
   ...itemDraftCommandShapes,
   ...agentLoginCommandShapes,
+  ...personStepCommandShapes,
 ];
 
 const List<String> nodeCommandNames = <String>[
@@ -107,4 +109,6 @@ const List<String> nodeCommandNames = <String>[
   'stop_agent_login',
   'save_agent_api_key',
   'forget_agent_credential',
+  'list_person_steps',
+  'answer_person_step',
 ];

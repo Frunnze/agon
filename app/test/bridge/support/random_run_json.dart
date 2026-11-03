@@ -3,6 +3,7 @@ import 'dart:math';
 import '../../support/random_inputs.dart';
 import 'node_json_primitives.dart';
 import 'node_wire_names.dart';
+import 'random_branching_json.dart';
 import 'random_work_json.dart';
 
 Map<String, Object?> randomRunStepJson(Random random) {
@@ -14,6 +15,9 @@ Map<String, Object?> randomRunStepJson(Random random) {
     'started_at': randomOptional(random, randomMomentText),
     'finished_at': randomOptional(random, randomMomentText),
     'result': randomOptional(random, randomText),
+    'outcome': randomOptional(random, randomText),
+    'loop_source': randomOptional(random, randomText),
+    'earlier_rounds': randomListOf(random, randomEarlierRoundJson),
   };
 }
 
@@ -62,6 +66,8 @@ Map<String, Object?> randomRunJson(Random random) {
     'started_by': randomDeviceIdText(random),
     'started_at': randomMomentText(random),
     'finished_at': randomOptional(random, randomMomentText),
+    'loop_rounds': randomListOf(random, randomLoopRoundsJson),
+    'notes': randomListOf(random, randomRunNoteJson),
   };
 }
 

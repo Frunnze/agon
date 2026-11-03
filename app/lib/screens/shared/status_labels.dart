@@ -94,6 +94,12 @@ StatusLabel buildStepStatusLabel(StepStatus status) {
         tone: StatusTone.attention,
         icon: AppIconKind.approval,
       );
+    case StepStatus.waitingForPerson:
+      return const StatusLabel(
+        text: 'Waiting for you',
+        tone: StatusTone.attention,
+        icon: AppIconKind.person,
+      );
     case StepStatus.done:
       return const StatusLabel(
         text: 'Done',

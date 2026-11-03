@@ -7,6 +7,7 @@ use orchestration_core::identifiers::{DeviceId, RunId};
 use orchestration_core::run::{Run, RunFailure, StepStatus};
 use orchestration_core::run_lifecycle::apply_step_status;
 use orchestration_core::run_links::record_link_change;
+use orchestration_core::run_routing::advance_newly_done_steps;
 use orchestration_core::step_results::record_step_result;
 use uuid::Uuid;
 
@@ -16,7 +17,9 @@ use crate::error::ServerError;
 use crate::extractors::{PathValue, parse_json_body};
 use crate::follow_ups::append_chat_message;
 use crate::run_changes::is_step_finished;
-use crate::run_starts::{describe_run, describe_run_detail, sync_task_status};
+use crate::run_starts::{
+    describe_run, describe_run_detail, find_run_workflow, sync_task_status,
+};
 use crate::runs::{find_run, holds_step};
 use crate::server::SharedServer;
 use crate::stored_state::{RunRecord, StoredState};
@@ -51,9 +54,19 @@ fn record_run_events(
             "the runner holds no step of this run",
         ));
     }
+    let workflow = find_run_workflow(state, &record.run).cloned();
     let mut changed = record.clone();
     for event in &request.events {
+        let before = changed.run.clone();
         changed = apply_run_event(changed, event, runner_id, now)?;
+        if let Some(workflow) = &workflow {
+            changed.run = advance_newly_done_steps(
+                &before,
+                &changed.run,
+                workflow,
+                now,
+            )?;
+        }
     }
     let run = changed.run.clone();
     state.runs.insert(run_id, changed);
@@ -106,9 +119,13 @@ fn apply_run_event(
         RunEvent::Failed { failure } => {
             fail_step(&run, failure, runner_id, now)?
         }
-        RunEvent::StepResultRecorded { step_name, result } => {
+        RunEvent::StepResultRecorded {
+            step_name,
+            result,
+            outcome,
+        } => {
             require_held_step(&run, step_name, runner_id)?;
-            record_step_result(&run, step_name, result)?
+            record_step_result(&run, step_name, result, outcome.as_deref())?
         }
         RunEvent::Finished => finish_held_steps(run, runner_id, now)?,
     };
@@ -218,6 +235,7 @@ fn describe_step_status(status: StepStatus) -> &'static str {
         StepStatus::Waiting => "Queued",
         StepStatus::Running => "Started",
         StepStatus::WaitingForApproval => "Paused for approval",
+        StepStatus::WaitingForPerson => "Asked a person in",
         StepStatus::Done => "Finished",
         StepStatus::Failed => "Failed",
         StepStatus::Skipped => "Skipped",

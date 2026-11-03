@@ -9,7 +9,8 @@ use orchestration_core::identifiers::{
 use orchestration_core::scope::WorkspaceScope;
 use orchestration_core::task::{Task, TaskDoer};
 use orchestration_core::workflow::{
-    AgentConnection, AgentKind, CanvasPosition, Workflow, WorkflowAgent,
+    AgentConnection, AgentKind, CanvasPosition, StepKind, Workflow,
+    WorkflowAgent,
 };
 use orchestration_core::workflow_document::render_workflow_document;
 use orchestration_security::documents::sign_document;
@@ -39,6 +40,7 @@ pub fn workflow_agent(name: &str, runs_on: RunnerTarget) -> WorkflowAgent {
             horizontal: 0.0,
             vertical: 0.0,
         },
+        step_kind: StepKind::Agent,
     }
 }
 
@@ -46,10 +48,7 @@ pub fn release_workflow(
     first: WorkflowAgent,
     second: WorkflowAgent,
 ) -> Workflow {
-    let connection = AgentConnection {
-        from: first.id,
-        to: second.id,
-    };
+    let connection = AgentConnection::plain(first.id, second.id);
     Workflow {
         id: WorkflowId(Uuid::new_v4()),
         name: "release".to_owned(),
@@ -97,10 +96,8 @@ pub fn workflow_with_connections(
     }
     let mut agent_connections = Vec::new();
     for (from, to) in connections {
-        agent_connections.push(AgentConnection {
-            from: agents[*from].id,
-            to: agents[*to].id,
-        });
+        agent_connections
+            .push(AgentConnection::plain(agents[*from].id, agents[*to].id));
     }
     Workflow {
         id: WorkflowId(Uuid::new_v4()),

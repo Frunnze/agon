@@ -28,6 +28,8 @@ pub enum ServerError {
     Internal(&'static str),
     #[error("this app server is a backup")]
     NotActive,
+    #[error("the answer names none of the choices: {}", .0.join(", "))]
+    UnmatchedAnswer(Vec<String>),
 }
 
 impl ServerError {
@@ -39,6 +41,7 @@ impl ServerError {
             Self::Conflict(_) => StatusCode::CONFLICT,
             Self::Invalid(_) => StatusCode::UNPROCESSABLE_ENTITY,
             Self::NotActive => StatusCode::MISDIRECTED_REQUEST,
+            Self::UnmatchedAnswer(_) => StatusCode::BAD_REQUEST,
             Self::Storage(_) | Self::Internal(_) => {
                 StatusCode::INTERNAL_SERVER_ERROR
             }
@@ -49,8 +52,13 @@ impl ServerError {
 impl IntoResponse for ServerError {
     fn into_response(self) -> Response {
         let status = self.status();
+        let choices = match &self {
+            Self::UnmatchedAnswer(choices) => choices.clone(),
+            _ => Vec::new(),
+        };
         let error_body = ApiErrorBody {
             message: self.to_string(),
+            choices,
         };
         (status, Json(error_body)).into_response()
     }

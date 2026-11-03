@@ -6,6 +6,7 @@ use orchestration_api::updates::ChangeTopic;
 use orchestration_api::work::SendChatMessageRequest;
 use orchestration_core::identifiers::{DeviceId, RunId, TaskId};
 use orchestration_core::run::{ChatAuthor, Run};
+use orchestration_core::run_routing::settle_waiting_steps;
 use uuid::Uuid;
 
 use crate::authentication::{AuthenticatedDevice, SignedRequest};
@@ -15,7 +16,8 @@ use crate::extractors::{PathValue, parse_json_body};
 use crate::follow_ups::append_chat_message;
 use crate::run_changes::{cancel_run_record, retry_run_record};
 use crate::run_starts::{
-    describe_run, describe_run_detail, start_run, sync_task_status,
+    describe_run, describe_run_detail, find_run_workflow, start_run,
+    sync_task_status,
 };
 use crate::server::SharedServer;
 use crate::stored_state::{RunRecord, StoredState};
@@ -89,8 +91,8 @@ pub async fn retry_run(
 ) -> Result<Json<Run>, ServerError> {
     request.caller.require_client()?;
     let run_id = RunId(run_uuid);
-    let run = server.apply(&request.caller.device_id, |state, _now| {
-        retry_stored_run(state, run_id)
+    let run = server.apply(&request.caller.device_id, |state, now| {
+        retry_stored_run(state, run_id, now)
     })?;
     Ok(Json(run))
 }
@@ -190,9 +192,18 @@ fn cancel_stored_run(
 fn retry_stored_run(
     state: &mut StoredState,
     run_id: RunId,
+    now: DateTime<Utc>,
 ) -> Result<Change<Run>, ServerError> {
     let retried = retry_run_record(find_run(state, run_id)?)?;
-    Ok(store_changed_run(state, retried, "Retried"))
+    let settled_run = match find_run_workflow(state, &retried.run) {
+        Some(workflow) => settle_waiting_steps(&retried.run, workflow, now),
+        None => retried.run.clone(),
+    };
+    let settled = RunRecord {
+        run: settled_run,
+        ..retried
+    };
+    Ok(store_changed_run(state, settled, "Retried"))
 }
 
 fn store_changed_run(

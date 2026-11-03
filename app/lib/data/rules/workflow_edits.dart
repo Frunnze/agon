@@ -2,8 +2,10 @@ import 'package:agent_orchestration/data/models/approval.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/runner.dart';
 import 'package:agent_orchestration/data/models/workflow.dart';
+import 'package:agent_orchestration/data/rules/workflow_graph.dart';
 
 const String blankAgentName = 'new-agent';
+const String blankPersonStepName = 'new-person-step';
 const double _agentRowStep = 136;
 const String _numberedAgentIdPrefix = '00000000-0000-4000-8000-';
 const int _agentNumberDigitCount = 12;
@@ -69,10 +71,15 @@ CanvasPosition placeBelowAgents(List<WorkflowAgent> agents) {
   );
 }
 
-WorkflowAgent buildBlankAgent(Workflow workflow) {
+WorkflowAgent _buildBlankStep(
+  Workflow workflow, {
+  required String baseName,
+  required StepKind stepKind,
+}) {
   return WorkflowAgent(
     id: _findFreeAgentId(workflow),
-    name: findFreeAgentName(workflow, blankAgentName),
+    name: findFreeAgentName(workflow, baseName),
+    stepKind: stepKind,
     kind: null,
     task: '',
     runsOn: const AnyFreeRunner(),
@@ -80,6 +87,22 @@ WorkflowAgent buildBlankAgent(Workflow workflow) {
     usesAutomaticSkills: true,
     approvalPolicy: ApprovalPolicy.askBeforeRiskyActions,
     position: placeBelowAgents(workflow.agents),
+  );
+}
+
+WorkflowAgent buildBlankAgent(Workflow workflow) {
+  return _buildBlankStep(
+    workflow,
+    baseName: blankAgentName,
+    stepKind: StepKind.agent,
+  );
+}
+
+WorkflowAgent buildBlankPersonStep(Workflow workflow) {
+  return _buildBlankStep(
+    workflow,
+    baseName: blankPersonStepName,
+    stepKind: StepKind.person,
   );
 }
 
@@ -121,5 +144,46 @@ Workflow removeAgent(Workflow workflow, WorkflowAgentId agentId) {
       if (connection.from != agentId && connection.to != agentId) connection,
   ];
 
-  return workflow.withGraph(agents: agents, connections: connections);
+  return _dropLoopsNotPointingBack(
+    workflow.withGraph(agents: agents, connections: connections),
+  );
+}
+
+Workflow _dropLoopsNotPointingBack(Workflow workflow) {
+  final List<AgentConnection> kept = <AgentConnection>[
+    for (final AgentConnection connection in workflow.connections)
+      if (!connection.isLoop || pointsBack(workflow, connection)) connection,
+  ];
+  return workflow.withGraph(agents: workflow.agents, connections: kept);
+}
+
+AgentConnection findConnection(Workflow workflow, AgentConnection connection) {
+  for (final AgentConnection existing in workflow.connections) {
+    if (existing.joinsSameSteps(connection)) {
+      return existing;
+    }
+  }
+  throw StateError('Workflow ${workflow.name} has no such connection');
+}
+
+Workflow replaceConnection(Workflow workflow, AgentConnection replacement) {
+  findConnection(workflow, replacement);
+
+  final List<AgentConnection> connections = <AgentConnection>[
+    for (final AgentConnection connection in workflow.connections)
+      if (connection.joinsSameSteps(replacement)) replacement else connection,
+  ];
+  return workflow.withGraph(agents: workflow.agents, connections: connections);
+}
+
+Workflow removeConnection(Workflow workflow, AgentConnection removed) {
+  findConnection(workflow, removed);
+
+  final List<AgentConnection> connections = <AgentConnection>[
+    for (final AgentConnection connection in workflow.connections)
+      if (!connection.joinsSameSteps(removed)) connection,
+  ];
+  return _dropLoopsNotPointingBack(
+    workflow.withGraph(agents: workflow.agents, connections: connections),
+  );
 }

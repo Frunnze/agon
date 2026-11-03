@@ -29,6 +29,7 @@ mod pairing_sessions;
 mod pairing_transcripts;
 mod peer_addresses;
 mod persistence;
+mod person_steps;
 mod project_deletion;
 mod projects;
 mod replica_check;

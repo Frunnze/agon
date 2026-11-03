@@ -12,21 +12,38 @@ use crate::node_error::NodeError;
 const WORKFLOW_FORMAT_OPENING: &str = "Reply with one JSON object and \
 nothing else: the complete workflow in the orchestration workflow format, \
 with the fields id, name, availability, agents, connections and signature. \
-Every agent has id (a new UUID), name, kind (claude_code, codex or \
-gemini_cli), task, runs_on, skills (a list of skill ids listed above), \
-uses_automatic_skills (true or false), approval_policy and position.";
+Every agent has id (a new UUID), name, step_kind (agent, or person for a \
+step a person answers), kind (claude_code, codex or gemini_cli), task, \
+runs_on, skills (a list of skill ids listed above), uses_automatic_skills \
+(true or false), approval_policy and position.";
+const WORKFLOW_BRANCHING_RULES: &str = "A step with \"step_kind\": \
+\"person\" pauses the run until a person answers it: its task is the \
+question shown to the person, and its kind, runs_on and skills are \
+ignored. A connection may carry \"condition\": \"<outcome>\", 1 to 40 \
+lowercase letters, digits, spaces or dashes, unique among the connections \
+that leave one step: it is taken only when that step ends with that \
+outcome, while a connection without a condition is always taken. An agent \
+step with such connections ends its final message with a line OUTCOME: \
+<outcome>; a person answers with one of the outcomes, and approve or \
+approved picks an outcome named approved. A step runs once every step \
+connected into it has finished or been skipped and at least one taken \
+connection reaches it; otherwise it is skipped. To loop back, give a \
+connection a condition and \"round_limit\": 1 to 10, and point it at an \
+earlier step that leads to its source: when taken it reruns that step and \
+every step after it, at most round_limit times. Only such loop \
+connections may close a cycle.";
 const WORKFLOW_FORMAT_CLOSING: &str = "An agent's position is in canvas \
 pixels from the top left, {\"horizontal\": <pixels>, \"vertical\": \
-<pixels>}: put agents that run one after another in rows 136 apart \
-starting at vertical 16, and keep horizontal between 8 and 176. Each \
-connection is {\"from\": \"<agent id>\", \"to\": \"<agent id>\"}. Keep \
-the workflow id and set signature to null.";
+<pixels>}: any position will do, the steps are laid out for you. Each \
+connection is {\"from\": \"<agent id>\", \"to\": \"<agent id>\", \
+\"condition\": null, \"round_limit\": null}. Keep the workflow id and \
+set signature to null.";
 
 fn render_workflow_format_instructions() -> String {
     format!(
         "{WORKFLOW_FORMAT_OPENING} runs_on is {RUNS_ON_FORMS}. \
          approval_policy is {APPROVAL_POLICY_FORMS}. \
-         {WORKFLOW_FORMAT_CLOSING}"
+         {WORKFLOW_FORMAT_CLOSING} {WORKFLOW_BRANCHING_RULES}"
     )
 }
 

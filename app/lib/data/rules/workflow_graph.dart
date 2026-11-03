@@ -2,15 +2,25 @@ import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/workflow.dart';
 
 const int _firstRemainingIndex = 0;
+const String _loopPointsForwardProblem =
+    'A loop must go back to an earlier step';
+const String _backwardWithoutRoundsProblem =
+    'Going back to an earlier step needs a round limit';
 
 enum ConnectionProblem {
-  sameAgent("An agent can't feed into itself"),
-  alreadyConnected('These agents are already connected'),
-  wouldMakeLoop('That would make a loop');
+  sameAgent("A step can't feed into itself"),
+  alreadyConnected('These steps are already connected');
 
   const ConnectionProblem(this.message);
 
   final String message;
+}
+
+List<AgentConnection> listForwardConnections(Workflow workflow) {
+  return <AgentConnection>[
+    for (final AgentConnection connection in workflow.connections)
+      if (!connection.isLoop) connection,
+  ];
 }
 
 int _compareCanvasOrder(WorkflowAgent first, WorkflowAgent second) {
@@ -44,7 +54,7 @@ bool _isReady(
   return true;
 }
 
-int _findReadyIndex(
+int? findReadyIndex(
   List<WorkflowAgent> remaining,
   Set<WorkflowAgentId> orderedIds,
   List<AgentConnection> connections,
@@ -54,7 +64,7 @@ int _findReadyIndex(
       return index;
     }
   }
-  return _firstRemainingIndex;
+  return null;
 }
 
 List<WorkflowAgent> orderAgents(Workflow workflow) {
@@ -62,15 +72,13 @@ List<WorkflowAgent> orderAgents(Workflow workflow) {
     workflow.agents,
   );
   remaining.sort(_compareCanvasOrder);
+  final List<AgentConnection> forward = listForwardConnections(workflow);
   final List<WorkflowAgent> ordered = <WorkflowAgent>[];
   final Set<WorkflowAgentId> orderedIds = <WorkflowAgentId>{};
 
   while (remaining.isNotEmpty) {
-    final int readyIndex = _findReadyIndex(
-      remaining,
-      orderedIds,
-      workflow.connections,
-    );
+    final int readyIndex =
+        findReadyIndex(remaining, orderedIds, forward) ?? _firstRemainingIndex;
     final WorkflowAgent next = remaining.removeAt(readyIndex);
     ordered.add(next);
     orderedIds.add(next.id);
@@ -79,13 +87,14 @@ List<WorkflowAgent> orderAgents(Workflow workflow) {
   return ordered;
 }
 
-bool _reaches(
+bool reachesForward(
   Workflow workflow, {
   required WorkflowAgentId from,
   required WorkflowAgentId to,
 }) {
   final List<WorkflowAgentId> waiting = <WorkflowAgentId>[from];
   final Set<WorkflowAgentId> visited = <WorkflowAgentId>{};
+  final List<AgentConnection> forward = listForwardConnections(workflow);
 
   while (waiting.isNotEmpty) {
     final WorkflowAgentId current = waiting.removeLast();
@@ -95,7 +104,7 @@ bool _reaches(
     if (!visited.add(current)) {
       continue;
     }
-    for (final AgentConnection connection in workflow.connections) {
+    for (final AgentConnection connection in forward) {
       if (connection.from == current) {
         waiting.add(connection.to);
       }
@@ -105,6 +114,10 @@ bool _reaches(
   return false;
 }
 
+bool pointsBack(Workflow workflow, AgentConnection connection) {
+  return reachesForward(workflow, from: connection.to, to: connection.from);
+}
+
 ConnectionProblem? findConnectionProblem(
   Workflow workflow,
   AgentConnection connection,
@@ -112,11 +125,24 @@ ConnectionProblem? findConnectionProblem(
   if (connection.from == connection.to) {
     return ConnectionProblem.sameAgent;
   }
-  if (workflow.connections.contains(connection)) {
-    return ConnectionProblem.alreadyConnected;
+  for (final AgentConnection existing in workflow.connections) {
+    if (existing.joinsSameSteps(connection)) {
+      return ConnectionProblem.alreadyConnected;
+    }
   }
-  if (_reaches(workflow, from: connection.to, to: connection.from)) {
-    return ConnectionProblem.wouldMakeLoop;
+  return null;
+}
+
+String? _describeDirectionProblem(
+  Workflow workflow,
+  AgentConnection connection,
+) {
+  final bool isBackward = pointsBack(workflow, connection);
+  if (connection.isLoop && !isBackward) {
+    return _loopPointsForwardProblem;
+  }
+  if (!connection.isLoop && isBackward) {
+    return _backwardWithoutRoundsProblem;
   }
   return null;
 }
@@ -125,12 +151,11 @@ Workflow connectAgents(Workflow workflow, AgentConnection connection) {
   workflow.findAgent(connection.from);
   workflow.findAgent(connection.to);
 
-  final ConnectionProblem? problem = findConnectionProblem(
-    workflow,
-    connection,
-  );
+  final String? problem =
+      findConnectionProblem(workflow, connection)?.message ??
+      _describeDirectionProblem(workflow, connection);
   if (problem != null) {
-    throw ArgumentError.value(connection, 'connection', problem.message);
+    throw ArgumentError.value(connection, 'connection', problem);
   }
 
   return workflow.withGraph(

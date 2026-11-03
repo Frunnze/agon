@@ -35,6 +35,14 @@ pub enum RunProblem {
     UnknownStep { step_name: String },
     #[error("the run has already finished")]
     RunAlreadyFinished,
+    #[error(
+        "step {step_name} must end with one of the outcomes: {}",
+        .choices.join(", ")
+    )]
+    UnknownOutcome {
+        step_name: String,
+        choices: Vec<String>,
+    },
 }
 
 pub fn create_run(
@@ -62,6 +70,8 @@ pub fn create_run(
         started_by,
         started_at,
         finished_at: None,
+        loop_rounds: Vec::new(),
+        notes: Vec::new(),
     })
 }
 
@@ -184,6 +194,9 @@ fn waiting_step(name: String, agent_id: Option<WorkflowAgentId>) -> RunStep {
         started_at: None,
         finished_at: None,
         result: None,
+        outcome: None,
+        loop_source: None,
+        earlier_rounds: Vec::new(),
     }
 }
 

@@ -97,6 +97,9 @@ proptest! {
                 started_at: None,
                 finished_at: None,
                 result: None,
+                outcome: None,
+                loop_source: None,
+                earlier_rounds: Vec::new(),
             });
         }
 

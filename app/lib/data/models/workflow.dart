@@ -13,6 +13,8 @@ enum AgentKind {
   final String label;
 }
 
+enum StepKind { agent, person }
+
 final class CanvasPosition {
   const CanvasPosition({required this.horizontal, required this.vertical});
 
@@ -24,6 +26,7 @@ final class WorkflowAgent {
   WorkflowAgent({
     required this.id,
     required this.name,
+    required this.stepKind,
     required this.kind,
     required this.task,
     required this.runsOn,
@@ -35,6 +38,7 @@ final class WorkflowAgent {
 
   final WorkflowAgentId id;
   final String name;
+  final StepKind stepKind;
   final AgentKind? kind;
   final String task;
   final RunnerTarget runsOn;
@@ -56,6 +60,7 @@ final class WorkflowAgent {
     return WorkflowAgent(
       id: id,
       name: name ?? this.name,
+      stepKind: stepKind,
       kind: kind ?? this.kind,
       task: task ?? this.task,
       runsOn: runsOn ?? this.runsOn,
@@ -68,18 +73,52 @@ final class WorkflowAgent {
 }
 
 final class AgentConnection {
-  const AgentConnection({required this.from, required this.to});
+  const AgentConnection({
+    required this.from,
+    required this.to,
+    required this.condition,
+    required this.roundLimit,
+  });
 
   final WorkflowAgentId from;
   final WorkflowAgentId to;
+  final String? condition;
+  final int? roundLimit;
 
-  @override
-  bool operator ==(Object other) {
-    return other is AgentConnection && other.from == from && other.to == to;
+  bool get isLoop => roundLimit != null;
+
+  bool joinsSameSteps(AgentConnection other) {
+    return other.from == from && other.to == to;
+  }
+
+  AgentConnection withCondition(String? nextCondition) {
+    return AgentConnection(
+      from: from,
+      to: to,
+      condition: nextCondition,
+      roundLimit: roundLimit,
+    );
+  }
+
+  AgentConnection withRoundLimit(int? nextRoundLimit) {
+    return AgentConnection(
+      from: from,
+      to: to,
+      condition: condition,
+      roundLimit: nextRoundLimit,
+    );
   }
 
   @override
-  int get hashCode => Object.hash(from, to);
+  bool operator ==(Object other) {
+    return other is AgentConnection &&
+        joinsSameSteps(other) &&
+        other.condition == condition &&
+        other.roundLimit == roundLimit;
+  }
+
+  @override
+  int get hashCode => Object.hash(from, to, condition, roundLimit);
 }
 
 final class WorkflowSignature {

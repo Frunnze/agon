@@ -64,7 +64,14 @@ Workflow appendRequestedAgent(Workflow workflow, String request) {
       (AgentConnection connection) => connection.from != agent.id,
     );
     if (feedsNothing) {
-      connections.add(AgentConnection(from: agent.id, to: requested.id));
+      connections.add(
+        AgentConnection(
+          from: agent.id,
+          to: requested.id,
+          condition: null,
+          roundLimit: null,
+        ),
+      );
     }
   }
 

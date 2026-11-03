@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:agent_orchestration/shell/side_rail.dart';
+import 'package:agent_orchestration/widgets/compact_page_header.dart';
 import 'package:agent_orchestration/widgets/inline_link.dart';
 import 'package:agent_orchestration/widgets/page_header.dart';
 
@@ -16,9 +17,16 @@ Finder findRailLink(String label) {
   );
 }
 
+bool _isPageHeaderTitled(Widget widget, String title) {
+  if (widget is PageHeader) {
+    return widget.title == title;
+  }
+  return widget is CompactPageHeader && widget.title == title;
+}
+
 Finder findPageTitle(String title) {
   return find.byWidgetPredicate(
-    (Widget widget) => widget is PageHeader && widget.title == title,
+    (Widget widget) => _isPageHeaderTitled(widget, title),
   );
 }
 

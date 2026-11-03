@@ -33,7 +33,8 @@ bool _isWaitingForRunner(Run run) {
   for (final RunStep step in run.steps) {
     final bool isWorking =
         step.status == StepStatus.running ||
-        step.status == StepStatus.waitingForApproval;
+        step.status == StepStatus.waitingForApproval ||
+        step.status == StepStatus.waitingForPerson;
     if (isWorking) {
       return false;
     }

@@ -1,17 +1,45 @@
 import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/runner.dart';
 
-enum StepStatus { waiting, running, waitingForApproval, done, failed, skipped }
+enum StepStatus {
+  waiting,
+  running,
+  waitingForApproval,
+  waitingForPerson,
+  done,
+  failed,
+  skipped,
+}
+
+final class EarlierRound {
+  const EarlierRound({
+    required this.status,
+    required this.startedAt,
+    required this.finishedAt,
+    required this.result,
+    required this.outcome,
+  });
+
+  final StepStatus status;
+  final DateTime? startedAt;
+  final DateTime? finishedAt;
+  final String? result;
+  final String? outcome;
+}
 
 final class RunStep {
-  const RunStep({
+  RunStep({
     required this.name,
     required this.agentId,
     required this.runner,
     required this.status,
     required this.startedAt,
     required this.finishedAt,
-  });
+    required this.result,
+    required this.outcome,
+    required this.loopSource,
+    required List<EarlierRound> earlierRounds,
+  }) : earlierRounds = List<EarlierRound>.unmodifiable(earlierRounds);
 
   final String name;
   final WorkflowAgentId? agentId;
@@ -19,6 +47,10 @@ final class RunStep {
   final StepStatus status;
   final DateTime? startedAt;
   final DateTime? finishedAt;
+  final String? result;
+  final String? outcome;
+  final String? loopSource;
+  final List<EarlierRound> earlierRounds;
 
   RunStep withStatus(StepStatus nextStatus) {
     return RunStep(
@@ -28,8 +60,31 @@ final class RunStep {
       status: nextStatus,
       startedAt: startedAt,
       finishedAt: finishedAt,
+      result: result,
+      outcome: outcome,
+      loopSource: loopSource,
+      earlierRounds: earlierRounds,
     );
   }
+}
+
+final class LoopRounds {
+  const LoopRounds({
+    required this.from,
+    required this.to,
+    required this.rounds,
+  });
+
+  final String from;
+  final String to;
+  final int rounds;
+}
+
+final class RunNote {
+  const RunNote({required this.at, required this.text});
+
+  final DateTime at;
+  final String text;
 }
 
 enum RunStatus { queued, running, waitingForApproval, failed, cancelled, done }
@@ -97,9 +152,13 @@ final class Run {
     required this.startedBy,
     required this.startedAt,
     required this.finishedAt,
+    required List<LoopRounds> loopRounds,
+    required List<RunNote> notes,
   }) : steps = List<RunStep>.unmodifiable(steps),
        log = List<LogLine>.unmodifiable(log),
-       chat = List<ChatMessage>.unmodifiable(chat);
+       chat = List<ChatMessage>.unmodifiable(chat),
+       loopRounds = List<LoopRounds>.unmodifiable(loopRounds),
+       notes = List<RunNote>.unmodifiable(notes);
 
   final RunId id;
   final TaskId taskId;
@@ -116,6 +175,8 @@ final class Run {
   final DeviceId startedBy;
   final DateTime startedAt;
   final DateTime? finishedAt;
+  final List<LoopRounds> loopRounds;
+  final List<RunNote> notes;
 
   Run withProgress({
     required RunStatus nextStatus,
@@ -138,6 +199,8 @@ final class Run {
       startedBy: startedBy,
       startedAt: startedAt,
       finishedAt: nextFinishedAt,
+      loopRounds: loopRounds,
+      notes: notes,
     );
   }
 }

@@ -1,4 +1,3 @@
-use std::io;
 use std::net::TcpListener as StandardTcpListener;
 use std::path::Path;
 use std::sync::Arc;
@@ -9,9 +8,10 @@ use orchestration_server::{
     SystemClock, build_router, serve_app_server,
 };
 use tokio::net::TcpListener;
-use tokio::task::JoinHandle;
+use tokio::task::JoinSet;
 
 use super::HostedServerAccess;
+use super::hosting_logging::log_web_serving_problem;
 use super::peer_serving::serve_over_peer_link;
 use crate::local_network::ServerAnnouncement;
 use crate::node_error::NodeError;
@@ -24,11 +24,10 @@ const LOOPBACK_ADDRESS_PREFIX: &str = "http://127.0.0.1:";
 pub(crate) struct HostedAppServer {
     server: SharedServer,
     endpoint: Arc<ServiceEndpoint>,
-    web_serving: JoinHandle<io::Result<()>>,
-    peer_serving: JoinHandle<()>,
+    tasks: JoinSet<()>,
     announcement: ServerAnnouncement,
     local_address: String,
-    keeping: Option<JoinHandle<()>>,
+    is_keeping: bool,
 }
 
 impl HostedAppServer {
@@ -60,18 +59,16 @@ impl HostedAppServer {
 
         let endpoint = Arc::new(endpoint);
         let router = build_router(Arc::clone(&server));
-        let web_serving =
-            tokio::spawn(serve_app_server(listener, Arc::clone(&server)));
-        let peer_serving =
-            tokio::spawn(serve_over_peer_link(Arc::clone(&endpoint), router));
+        let mut tasks = JoinSet::new();
+        tasks.spawn(serve_on_loopback(listener, Arc::clone(&server)));
+        tasks.spawn(serve_over_peer_link(Arc::clone(&endpoint), router));
         Ok(Self {
             server,
             endpoint,
-            web_serving,
-            peer_serving,
+            tasks,
             announcement,
             local_address: format!("{LOOPBACK_ADDRESS_PREFIX}{local_port}"),
-            keeping: None,
+            is_keeping: false,
         })
     }
 
@@ -94,11 +91,15 @@ impl HostedAppServer {
     }
 
     pub(super) fn is_keeping(&self) -> bool {
-        self.keeping.is_some()
+        self.is_keeping
     }
 
-    pub(super) fn attach_keeping(&mut self, keeping: JoinHandle<()>) {
-        self.keeping = Some(keeping);
+    pub(super) fn start_keeping(
+        &mut self,
+        keeping: impl Future<Output = ()> + Send + 'static,
+    ) {
+        self.tasks.spawn(keeping);
+        self.is_keeping = true;
     }
 
     pub(super) fn describe_access(
@@ -118,19 +119,21 @@ impl HostedAppServer {
         ServerAddress::Peer(self.endpoint.peer_address())
     }
 
-    pub(super) async fn stop(self) {
+    pub(super) async fn stop(mut self) {
         self.endpoint.close().await;
+        self.tasks.shutdown().await;
     }
 }
 
 impl Drop for HostedAppServer {
     fn drop(&mut self) {
-        self.web_serving.abort();
-        self.peer_serving.abort();
-        if let Some(keeping) = &self.keeping {
-            keeping.abort();
-        }
         self.announcement.stop();
+    }
+}
+
+async fn serve_on_loopback(listener: TcpListener, server: SharedServer) {
+    if let Err(problem) = serve_app_server(listener, server).await {
+        log_web_serving_problem(&problem);
     }
 }
 

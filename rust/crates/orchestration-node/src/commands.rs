@@ -22,6 +22,7 @@ mod live_commands;
 pub(crate) mod local_folder_checks;
 mod pairing_approval;
 mod pairing_commands;
+mod person_answers;
 mod project_commands;
 mod repository_sources;
 mod run_commands;

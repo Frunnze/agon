@@ -8,6 +8,9 @@ import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/workflow.dart';
 import 'package:agent_orchestration/presentation/device_names.dart';
 import 'package:agent_orchestration/screens/workflow_builder.dart';
+import 'package:agent_orchestration/theme/app_spacing.dart';
+
+const double _surfaceSidePadding = AppSpacing.space5;
 
 typedef AgentMoved = void Function(
   WorkflowAgentId agentId,
@@ -39,9 +42,10 @@ final class _CanvasPan extends _CanvasDrag {
 class EditableWorkflowDiagram extends StatefulWidget {
   const EditableWorkflowDiagram({
     required this.workflow,
-    required this.selectedAgentId,
+    required this.selection,
     required this.deviceNames,
     required this.onAgentSelected,
+    required this.onConnectionSelected,
     required this.onSelectionCleared,
     required this.onAgentMoved,
     required this.onAgentsConnected,
@@ -49,9 +53,10 @@ class EditableWorkflowDiagram extends StatefulWidget {
   });
 
   final Workflow workflow;
-  final WorkflowAgentId? selectedAgentId;
+  final BuilderSelection? selection;
   final DeviceNames deviceNames;
   final ValueChanged<WorkflowAgentId> onAgentSelected;
+  final ValueChanged<AgentConnection> onConnectionSelected;
   final VoidCallback onSelectionCleared;
   final AgentMoved onAgentMoved;
   final ValueChanged<AgentConnection> onAgentsConnected;
@@ -101,11 +106,46 @@ class _EditableWorkflowDiagramState extends State<EditableWorkflowDiagram> {
           agent: agent,
           workflow: placed,
           deviceNames: widget.deviceNames,
-          look: agent.id == widget.selectedAgentId
+          look: agent.id == findSelectedStepId(widget.selection)
               ? NodeLook.selected
               : NodeLook.normal,
         ),
     ];
+    final List<DiagramEdge> edges = describeDiagramEdges(
+      agents: agents,
+      connections: placed.connections,
+      selected: findSelectedConnection(widget.selection),
+      drawnLoop: findDrawnLoop(widget.selection),
+    );
+
+    return LayoutBuilder(
+      builder: (BuildContext _, BoxConstraints limits) =>
+          _buildScrollingCanvas(
+            context: context,
+            agents: agents,
+            nodes: nodes,
+            edges: edges,
+            viewport: Size(
+              limits.maxWidth - _surfaceSidePadding * 2,
+              limits.maxHeight - _surfaceSidePadding * 2,
+            ),
+          ),
+    );
+  }
+
+  Widget _buildScrollingCanvas({
+    required BuildContext context,
+    required List<WorkflowAgent> agents,
+    required List<DiagramNode> nodes,
+    required List<DiagramEdge> edges,
+    required Size viewport,
+  }) {
+    final Size surface = measureDrawingSurface(
+      positions: <CanvasPosition>[
+        for (final DiagramNode node in nodes) node.position,
+      ],
+      viewport: viewport,
+    );
 
     return ScrollConfiguration(
       behavior: ScrollConfiguration.of(context)
@@ -113,20 +153,24 @@ class _EditableWorkflowDiagramState extends State<EditableWorkflowDiagram> {
       child: CanvasScrollArea(
         horizontalController: _horizontalController,
         verticalController: _verticalController,
-        child: GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          dragStartBehavior: DragStartBehavior.down,
-          onTapUp: (TapUpDetails details) =>
-              _selectAt(agents, details.localPosition),
-          onPanStart: (DragStartDetails details) =>
-              _startDrag(agents, details.localPosition),
-          onPanUpdate: _continueDrag,
-          onPanEnd: (DragEndDetails _) => _finishDrag(agents),
-          onPanCancel: () => setState(() => _drag = null),
-          child: WorkflowDiagram(
-            nodes: nodes,
-            edges: buildWorkflowEdges(agents, placed.connections),
-            drawnEdge: _buildDrawnEdge(agents),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: _surfaceSidePadding),
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            dragStartBehavior: DragStartBehavior.down,
+            onTapUp: (TapUpDetails details) =>
+                _selectAt(agents, edges, details.localPosition),
+            onPanStart: (DragStartDetails details) =>
+                _startDrag(agents, details.localPosition),
+            onPanUpdate: _continueDrag,
+            onPanEnd: (DragEndDetails _) => _finishDrag(agents),
+            onPanCancel: () => setState(() => _drag = null),
+            child: WorkflowDiagram(
+              size: surface,
+              nodes: nodes,
+              edges: edges,
+              drawnEdge: _buildDrawnEdge(agents),
+            ),
           ),
         ),
       ),
@@ -146,12 +190,26 @@ class _EditableWorkflowDiagramState extends State<EditableWorkflowDiagram> {
     return connectPoints(start: port, end: drag.pointer);
   }
 
-  void _selectAt(List<WorkflowAgent> agents, Offset point) {
+  void _selectAt(
+    List<WorkflowAgent> agents,
+    List<DiagramEdge> edges,
+    Offset point,
+  ) {
     final CanvasHit? hit = findCanvasHit(agents, point);
-    if (hit == null) {
+    if (hit != null) {
+      widget.onAgentSelected(hit.agentId);
+      return;
+    }
+
+    final List<DiagramEdge> savedEdges = <DiagramEdge>[
+      for (final DiagramEdge edge in edges)
+        if (widget.workflow.connections.contains(edge.connection)) edge,
+    ];
+    final DiagramEdge? edgeHit = findEdgeHit(savedEdges, point);
+    if (edgeHit == null) {
       widget.onSelectionCleared();
     } else {
-      widget.onAgentSelected(hit.agentId);
+      widget.onConnectionSelected(edgeHit.connection);
     }
   }
 

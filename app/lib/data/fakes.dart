@@ -7,6 +7,7 @@ export 'fakes/fake_file_repository.dart';
 export 'fakes/fake_item_draft_repository.dart';
 export 'fakes/fake_job_repository.dart';
 export 'fakes/fake_pairing_repository.dart';
+export 'fakes/fake_person_step_repository.dart';
 export 'fakes/fake_project_repository.dart';
 export 'fakes/fake_rule_repository.dart';
 export 'fakes/fake_runner_repository.dart';

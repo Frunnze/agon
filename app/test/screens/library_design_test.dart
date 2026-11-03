@@ -120,6 +120,7 @@ void main() {
         child: BuilderToolbar(
           askController: TextEditingController(),
           onAgentAdded: () {},
+          onPersonStepAdded: () {},
           onAsked: () {},
         ),
       );

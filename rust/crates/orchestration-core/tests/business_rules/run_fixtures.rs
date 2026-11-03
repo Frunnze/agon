@@ -32,6 +32,8 @@ pub fn run_with_steps(steps: Vec<RunStep>) -> Run {
         started_by: starter(),
         started_at: DateTime::UNIX_EPOCH,
         finished_at: None,
+        loop_rounds: Vec::new(),
+        notes: Vec::new(),
     }
 }
 

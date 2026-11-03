@@ -35,6 +35,8 @@ const List<String> nodeAgentKinds = <String>[
   'gemini_cli',
 ];
 
+const List<String> nodeStepKinds = <String>['agent', 'person'];
+
 const List<String> nodeSignatureStates = <String>[
   'signed',
   'not_signed_yet',
@@ -65,6 +67,7 @@ const List<String> nodeStepStatuses = <String>[
   'waiting',
   'running',
   'waiting_for_approval',
+  'waiting_for_person',
   'done',
   'failed',
   'skipped',

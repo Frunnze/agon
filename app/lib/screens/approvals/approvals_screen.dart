@@ -5,11 +5,13 @@ import 'package:flutter/widgets.dart';
 import 'package:agent_orchestration/data/clock.dart';
 import 'package:agent_orchestration/data/models/approval.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
+import 'package:agent_orchestration/data/models/person_step.dart';
 import 'package:agent_orchestration/data/models/run.dart';
 import 'package:agent_orchestration/data/models/task.dart';
 import 'package:agent_orchestration/data/models/workflow.dart';
 import 'package:agent_orchestration/data/repository/approval_repository.dart';
 import 'package:agent_orchestration/data/repository/device_repository.dart';
+import 'package:agent_orchestration/data/repository/person_step_repository.dart';
 import 'package:agent_orchestration/data/repository/task_repository.dart';
 import 'package:agent_orchestration/data/repository/workflow_repository.dart';
 import 'package:agent_orchestration/data/repository/record_not_found.dart';
@@ -19,6 +21,7 @@ import 'package:agent_orchestration/presentation/run_text.dart';
 import 'package:agent_orchestration/presentation/time_phrases.dart';
 import 'package:agent_orchestration/screens/approvals/approval_review.dart';
 import 'package:agent_orchestration/screens/approvals/approval_text.dart';
+import 'package:agent_orchestration/screens/shared/person_step_questions.dart';
 import 'package:agent_orchestration/shell/app_navigation.dart';
 import 'package:agent_orchestration/shell/app_route.dart';
 import 'package:agent_orchestration/widgets/app_page.dart';
@@ -29,12 +32,15 @@ import 'package:agent_orchestration/widgets/lists/list_row_main.dart';
 import 'package:agent_orchestration/widgets/lists/responsive_list.dart';
 import 'package:agent_orchestration/widgets/mixed_text.dart';
 import 'package:agent_orchestration/widgets/page_header.dart';
+import 'package:agent_orchestration/widgets/page_section.dart';
 
 const List<String> _columnLabels = <String>['Request', 'From', 'Asked', ''];
+const String questionsSectionTitle = 'Questions for you';
 
 class ApprovalsScreen extends StatelessWidget {
   const ApprovalsScreen({
     required this.approvalRepository,
+    required this.personStepRepository,
     required this.taskRepository,
     required this.workflowRepository,
     required this.deviceRepository,
@@ -44,6 +50,7 @@ class ApprovalsScreen extends StatelessWidget {
   });
 
   final ApprovalRepository approvalRepository;
+  final PersonStepRepository personStepRepository;
   final TaskRepository taskRepository;
   final WorkflowRepository workflowRepository;
   final DeviceRepository deviceRepository;
@@ -55,6 +62,7 @@ class ApprovalsScreen extends StatelessWidget {
     return ListenableBuilder(
       listenable: Listenable.merge(<Listenable>[
         approvalRepository,
+        personStepRepository,
         taskRepository,
         workflowRepository,
         deviceRepository,
@@ -66,7 +74,9 @@ class ApprovalsScreen extends StatelessWidget {
   Widget _buildPage(BuildContext context, Widget? _) {
     final List<ApprovalRequest> pending = approvalRepository
         .listPendingApprovals();
-    if (pending.isEmpty) {
+    final List<OpenPersonStep> questions = personStepRepository
+        .listOpenPersonSteps();
+    if (pending.isEmpty && questions.isEmpty) {
       return const AppPage(
         children: <Widget>[
           PageHeader(title: 'Approvals'),
@@ -90,16 +100,40 @@ class ApprovalsScreen extends StatelessWidget {
         PageHeader(
           title: 'Approvals',
           summary: <TextSegment>[
-            TextSegment(describeWaitingApprovals(pending.length)),
+            TextSegment(
+              describeWaitingWork(
+                approvalCount: pending.length,
+                questionCount: questions.length,
+              ),
+            ),
           ],
         ),
-        ResponsiveList(
-          columns: buildStandardColumns(_columnLabels),
-          rows: <ListRowData>[
-            for (final ApprovalRequest request in pending)
-              _buildRow(context, request, deviceNames),
-          ],
-        ),
+        if (questions.isNotEmpty) _buildQuestions(questions),
+        if (pending.isNotEmpty)
+          ResponsiveList(
+            columns: buildStandardColumns(_columnLabels),
+            rows: <ListRowData>[
+              for (final ApprovalRequest request in pending)
+                _buildRow(context, request, deviceNames),
+            ],
+          ),
+      ],
+    );
+  }
+
+  Widget _buildQuestions(List<OpenPersonStep> questions) {
+    final PersonStepQuestions builder = PersonStepQuestions(
+      taskRepository: taskRepository,
+      workflowRepository: workflowRepository,
+      personStepRepository: personStepRepository,
+    );
+    final DateTime now = clock.now();
+
+    return PageSection(
+      title: questionsSectionTitle,
+      children: <Widget>[
+        for (final OpenPersonStep question in questions)
+          builder.buildCardInApprovals(openStep: question, now: now),
       ],
     );
   }

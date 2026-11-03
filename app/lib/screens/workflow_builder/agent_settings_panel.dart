@@ -11,7 +11,6 @@ import 'package:agent_orchestration/screens/shared/approval_policy_field.dart';
 import 'package:agent_orchestration/screens/workflow_builder.dart';
 import 'package:agent_orchestration/theme/app_spacing.dart';
 import 'package:agent_orchestration/theme/field_padding.dart';
-import 'package:agent_orchestration/theme/app_typography.dart';
 import 'package:agent_orchestration/widgets/app_button.dart';
 import 'package:agent_orchestration/widgets/forms/check_field.dart';
 import 'package:agent_orchestration/widgets/forms/form_field_block.dart';
@@ -50,13 +49,9 @@ class AgentSettingsPanel extends StatefulWidget {
 }
 
 class _AgentSettingsPanelState extends State<AgentSettingsPanel> {
-  late final TextEditingController _nameController = TextEditingController(
-    text: widget.agent.name,
-  );
   late final TextEditingController _taskController = TextEditingController(
     text: widget.agent.task,
   );
-  String? _nameProblem;
 
   @override
   void didUpdateWidget(AgentSettingsPanel oldWidget) {
@@ -64,14 +59,10 @@ class _AgentSettingsPanelState extends State<AgentSettingsPanel> {
     if (_taskController.text != widget.agent.task) {
       _taskController.text = widget.agent.task;
     }
-    if (_nameProblem == null && _nameController.text != widget.agent.name) {
-      _nameController.text = widget.agent.name;
-    }
   }
 
   @override
   void dispose() {
-    _nameController.dispose();
     _taskController.dispose();
     super.dispose();
   }
@@ -84,20 +75,7 @@ class _AgentSettingsPanelState extends State<AgentSettingsPanel> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: spaceVertically(<Widget>[
-        Row(
-          children: <Widget>[
-            Expanded(
-              child: Semantics(
-                header: true,
-                child: const Text(
-                  'Agent settings',
-                  style: AppTextStyles.bodyBold,
-                ),
-              ),
-            ),
-            AppButton.secondary(label: 'Done', onPressed: widget.onDone),
-          ],
-        ),
+        PanelHeading(title: 'Agent settings', onDone: widget.onDone),
         if (fillIn != null)
           Align(
             alignment: Alignment.centerLeft,
@@ -107,17 +85,10 @@ class _AgentSettingsPanelState extends State<AgentSettingsPanel> {
               onPressed: fillIn,
             ),
           ),
-        FormFieldBlock(
-          label: 'Name',
-          children: <Widget>[
-            TextField(
-              controller: _nameController,
-              autocorrect: false,
-              style: AppTextStyles.body.merge(AppTextStyles.monospace),
-              decoration: InputDecoration(errorText: _nameProblem),
-              onChanged: _changeName,
-            ),
-          ],
+        StepNameField(
+          workflow: widget.workflow,
+          agent: agent,
+          onAgentChanged: widget.onAgentChanged,
         ),
         FormFieldBlock(
           label: 'Agent',
@@ -203,19 +174,6 @@ class _AgentSettingsPanelState extends State<AgentSettingsPanel> {
       onChanged: (ApprovalPolicy policy) =>
           widget.onAgentChanged(agent.copyWith(approvalPolicy: policy)),
     );
-  }
-
-  void _changeName(String name) {
-    final String? problem = describeAgentNameProblem(
-      workflow: widget.workflow,
-      agent: widget.agent,
-      name: name,
-    );
-
-    setState(() => _nameProblem = problem);
-    if (problem == null) {
-      widget.onAgentChanged(widget.agent.copyWith(name: name));
-    }
   }
 
   void _addSkill(WorkflowAgent agent, String skillName) {

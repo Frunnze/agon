@@ -6,18 +6,23 @@ use orchestration_core::run::{ChatAuthor, ChatMessage, Run};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
+use super::person_answers::{
+    AskedQuestion, answer_person_step, list_open_person_steps,
+};
 use crate::command_reply::encode_reply;
 use crate::content_sealing::{open_run, seal_chat_message};
 use crate::node::Node;
 use crate::node_error::NodeError;
 use crate::views::{RunProgress, describe_run_progress};
 
-pub(super) const RUN_COMMAND_NAMES: [&str; 5] = [
+pub(super) const RUN_COMMAND_NAMES: [&str; 7] = [
     "list_runs",
     "show_run",
     "cancel_run",
     "retry_run",
     "send_chat_message",
+    "list_person_steps",
+    "answer_person_step",
 ];
 
 #[derive(Debug, Deserialize)]
@@ -39,6 +44,12 @@ pub(super) enum RunCommand {
         workspace_id: WorkspaceId,
         run_id: RunId,
         text: String,
+    },
+    ListPersonSteps,
+    AnswerPersonStep {
+        run_id: RunId,
+        step_name: String,
+        answer: String,
     },
 }
 
@@ -113,6 +124,22 @@ pub(super) async fn handle_run_command(
             };
             client.send_chat_message(run_id, &request).await?;
             encode_reply(&message)
+        }
+        RunCommand::ListPersonSteps => {
+            encode_reply(&list_open_person_steps(&session).await?)
+        }
+        RunCommand::AnswerPersonStep {
+            run_id,
+            step_name,
+            answer,
+        } => {
+            let question = AskedQuestion {
+                run_id,
+                step_name: &step_name,
+            };
+            encode_reply(
+                &answer_person_step(&session, question, &answer).await?,
+            )
         }
     }
 }

@@ -92,6 +92,8 @@ pub enum NodeError {
     ProjectOutsideWorkspace { project: Uuid, workspace: Uuid },
     #[error("the {field} cannot be empty")]
     EmptyText { field: &'static str },
+    #[error("the answer names none of the choices: {}", .choices.join(", "))]
+    UnmatchedAnswer { choices: Vec<String> },
     #[error("a command must be a JSON object with a command name: {0}")]
     InvalidCommand(String),
     #[error("unknown command: {0}")]

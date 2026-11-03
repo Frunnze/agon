@@ -92,5 +92,7 @@ Run applyLiveRunView({required Run run, required node.WatchView view}) {
     startedBy: run.startedBy,
     startedAt: run.startedAt,
     finishedAt: run.finishedAt,
+    loopRounds: run.loopRounds,
+    notes: run.notes,
   );
 }

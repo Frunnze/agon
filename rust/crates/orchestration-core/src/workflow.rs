@@ -13,6 +13,16 @@ pub enum AgentKind {
     GeminiCli,
 }
 
+#[derive(
+    Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize,
+)]
+#[serde(rename_all = "snake_case")]
+pub enum StepKind {
+    #[default]
+    Agent,
+    Person,
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
 pub struct CanvasPosition {
     pub horizontal: f64,
@@ -23,6 +33,8 @@ pub struct CanvasPosition {
 pub struct WorkflowAgent {
     pub id: WorkflowAgentId,
     pub name: String,
+    #[serde(default)]
+    pub step_kind: StepKind,
     pub kind: Option<AgentKind>,
     pub task: String,
     pub runs_on: RunnerTarget,
@@ -32,10 +44,31 @@ pub struct WorkflowAgent {
     pub position: CanvasPosition,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AgentConnection {
     pub from: WorkflowAgentId,
     pub to: WorkflowAgentId,
+    #[serde(default)]
+    pub condition: Option<String>,
+    #[serde(default)]
+    pub round_limit: Option<u32>,
+}
+
+impl AgentConnection {
+    #[must_use]
+    pub fn plain(from: WorkflowAgentId, to: WorkflowAgentId) -> Self {
+        Self {
+            from,
+            to,
+            condition: None,
+            round_limit: None,
+        }
+    }
+
+    #[must_use]
+    pub fn is_loop(&self) -> bool {
+        self.round_limit.is_some()
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

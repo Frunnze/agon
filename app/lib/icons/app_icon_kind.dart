@@ -96,6 +96,10 @@ enum AppIconKind {
     ),
     IconPathShape('M8 11V8a4 4 0 0 1 8 0v3'),
   ]),
+  person(<IconShape>[
+    IconCircleShape(centerHorizontal: 12, centerVertical: 8, radius: 3.5),
+    IconPathShape('M5 20a7 7 0 0 1 14 0'),
+  ]),
   terminal(<IconShape>[IconPathShape('m5 7 5 5-5 5M12 17h7')]),
   edit(<IconShape>[
     IconPathShape('M4 20h4L19 9l-4-4L4 16z'),

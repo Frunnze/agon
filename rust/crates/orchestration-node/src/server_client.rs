@@ -5,6 +5,7 @@ mod group_routes;
 mod outgoing_request;
 mod peer_dialer;
 mod peer_link_route;
+mod person_step_routes;
 mod route_paths;
 mod runner_routes;
 mod signed_server_client;
@@ -36,7 +37,7 @@ use peer_link_route::PeerLinkRoute;
 use web_route::WebRoute;
 
 pub use peer_dialer::PeerDialer;
-pub use route_paths::fill_route;
+pub use route_paths::{encode_path_segment, fill_route};
 pub use signed_server_client::SignedServerClient;
 
 #[derive(Clone, Debug)]

@@ -82,6 +82,7 @@ fn a_step_result_event_uses_its_own_kind_tag() {
     let event = RunEvent::StepResultRecorded {
         step_name: "plan".to_owned(),
         result: "sealed:abc".to_owned(),
+        outcome: None,
     };
 
     let encoded_event =
@@ -96,8 +97,13 @@ proptest! {
     fn test_run_event_property_step_results_survive_json_round_trip(
         step_name in "\\PC{0,30}",
         result in "\\PC{0,200}",
+        outcome in proptest::option::of("[a-z][a-z0-9 -]{0,20}"),
     ) {
-        let event = RunEvent::StepResultRecorded { step_name, result };
+        let event = RunEvent::StepResultRecorded {
+            step_name,
+            result,
+            outcome,
+        };
 
         prop_assert_eq!(round_trip(&event), event);
     }

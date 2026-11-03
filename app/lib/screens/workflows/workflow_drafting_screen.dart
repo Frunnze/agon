@@ -17,7 +17,7 @@ import 'package:agent_orchestration/shell/app_navigation.dart';
 import 'package:agent_orchestration/shell/app_route.dart';
 import 'package:agent_orchestration/shell/app_section.dart';
 import 'package:agent_orchestration/widgets/app_button.dart';
-import 'package:agent_orchestration/widgets/mixed_text.dart';
+import 'package:agent_orchestration/widgets/compact_page_header.dart';
 import 'package:agent_orchestration/widgets/notice_banner.dart';
 import 'package:agent_orchestration/widgets/page_header.dart';
 import 'package:agent_orchestration/widgets/status_label.dart';
@@ -138,11 +138,9 @@ class _WorkflowDraftingScreenState extends State<WorkflowDraftingScreen> {
 
     return BuilderPageLayout(
       top: <Widget>[
-        PageHeader(
+        CompactPageHeader(
           title: newWorkflowTitle,
-          summary: const <TextSegment>[
-            TextSegment('Drafting from your description'),
-          ],
+          summary: 'Drafting from your description',
           backLink: BackLink(
             label: 'Workflows',
             onPressed: () => unawaited(_leaveDrafting()),
@@ -212,19 +210,28 @@ class _WorkflowDraftingScreenState extends State<WorkflowDraftingScreen> {
     }
 
     final Workflow workflow = progress.workflow;
+    final List<DiagramNode> nodes = <DiagramNode>[
+      for (final WorkflowAgent agent in workflow.agents)
+        describeAgentNode(
+          agent: agent,
+          workflow: workflow,
+          deviceNames: deviceNames,
+          look: NodeLook.normal,
+        ),
+      for (final PendingAgent pending in progress.pendingAgents)
+        describePendingNode(pending),
+    ];
     return WorkflowDiagram(
-      nodes: <DiagramNode>[
-        for (final WorkflowAgent agent in workflow.agents)
-          describeAgentNode(
-            agent: agent,
-            workflow: workflow,
-            deviceNames: deviceNames,
-            look: NodeLook.normal,
-          ),
-        for (final PendingAgent pending in progress.pendingAgents)
-          describePendingNode(pending),
-      ],
-      edges: buildWorkflowEdges(workflow.agents, workflow.connections),
+      size: measureCanvas(<CanvasPosition>[
+        for (final DiagramNode node in nodes) node.position,
+      ]),
+      nodes: nodes,
+      edges: describeDiagramEdges(
+        agents: workflow.agents,
+        connections: workflow.connections,
+        selected: null,
+        drawnLoop: null,
+      ),
       drawnEdge: null,
     );
   }

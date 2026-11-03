@@ -5,17 +5,15 @@ use orchestration_api::updates::ChangeTopic;
 use orchestration_api::work::{ClaimResponse, FollowUp, RunAssignment};
 use orchestration_core::agent_place::can_take_place;
 use orchestration_core::device::{Runner, RunnerTarget};
-use orchestration_core::identifiers::{
-    DeviceId, RunId, WorkflowAgentId, WorkspaceId,
-};
+use orchestration_core::identifiers::{DeviceId, RunId, WorkspaceId};
 use orchestration_core::library::{Rule, Skill};
 use orchestration_core::local_folders::find_folder_device;
-use orchestration_core::run::{Run, RunStatus, RunStep, StepStatus};
+use orchestration_core::run::{Run, RunStatus, RunStep};
+use orchestration_core::run_routing::is_step_claimable;
 use orchestration_core::runner_matching::choose_runner;
 use orchestration_core::scope_rules::applies_to;
 use orchestration_core::task::Task;
 use orchestration_core::workflow::{Workflow, WorkflowAgent};
-use orchestration_core::workflow_graph::upstream_agents;
 use orchestration_core::workspace::{Project, Repository};
 
 use crate::authentication::SignedRequest;
@@ -85,7 +83,10 @@ fn queued_run_ids(state: &StoredState) -> Vec<RunId> {
 }
 
 fn is_waiting_for_runners(status: RunStatus) -> bool {
-    matches!(status, RunStatus::Queued | RunStatus::Running)
+    matches!(
+        status,
+        RunStatus::Queued | RunStatus::Running | RunStatus::WaitingForApproval
+    )
 }
 
 fn find_claimable_step(
@@ -107,7 +108,7 @@ fn find_claimable_step(
         eligible_runners(state, runners, task, workspace_id, repositories);
 
     for step in &record.run.steps {
-        if !is_step_ready(&record.run, step, workflow) {
+        if !is_step_claimable(&record.run, step, workflow) {
             continue;
         }
         let target = target_for_step(record, step, task, workflow);
@@ -142,30 +143,6 @@ fn eligible_runners(
         }
     }
     eligible
-}
-
-fn is_step_ready(
-    run: &Run,
-    step: &RunStep,
-    workflow: Option<&Workflow>,
-) -> bool {
-    let is_unclaimed =
-        step.status == StepStatus::Waiting && step.runner.is_none();
-    if !is_unclaimed {
-        return false;
-    }
-    let (Some(agent_id), Some(workflow)) = (step.agent_id, workflow) else {
-        return true;
-    };
-    upstream_agents(workflow, agent_id)
-        .iter()
-        .all(|agent| is_agent_done(run, agent.id))
-}
-
-fn is_agent_done(run: &Run, agent_id: WorkflowAgentId) -> bool {
-    run.steps.iter().any(|step| {
-        step.agent_id == Some(agent_id) && step.status == StepStatus::Done
-    })
 }
 
 pub fn target_for_step(

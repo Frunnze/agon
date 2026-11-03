@@ -11,7 +11,6 @@ import 'package:agent_orchestration/data/rules/workflow_edits.dart';
 import 'package:agent_orchestration/data/rules/workflow_graph.dart';
 import 'package:agent_orchestration/icons/app_icon_kind.dart';
 import 'package:agent_orchestration/presentation/device_names.dart';
-import 'package:agent_orchestration/screens/task_form/task_form_options.dart';
 import 'package:agent_orchestration/screens/workflow_builder.dart';
 import 'package:agent_orchestration/screens/workflows.dart';
 import 'package:agent_orchestration/shell/app_navigation.dart';
@@ -50,7 +49,7 @@ class WorkflowBuilderScreen extends StatefulWidget {
 class _WorkflowBuilderScreenState extends State<WorkflowBuilderScreen> {
   final TextEditingController _askController = TextEditingController();
   late final Workflow _openedVersion;
-  WorkflowAgentId? _selectedAgentId;
+  BuilderSelection? _selection;
   String? _notice;
   bool _isAsking = false;
 
@@ -107,10 +106,12 @@ class _WorkflowBuilderScreenState extends State<WorkflowBuilderScreen> {
           onSigned: _signAndSave,
         ),
         if (widget.opening == BuilderOpening.afterDrafting)
-          const DraftedBanner(),
+          const DraftedNote(),
         BuilderToolbar(
           askController: _askController,
-          onAgentAdded: _addAgent,
+          onAgentAdded: () => _addStep(buildBlankAgent(_readWorkflow())),
+          onPersonStepAdded: () =>
+              _addStep(buildBlankPersonStep(_readWorkflow())),
           onAsked: _isAsking ? null : _askAgent,
         ),
         if (notice != null)
@@ -123,10 +124,13 @@ class _WorkflowBuilderScreenState extends State<WorkflowBuilderScreen> {
       builder: BuilderFrame(
         canvas: EditableWorkflowDiagram(
           workflow: workflow,
-          selectedAgentId: _selectedAgentId,
+          selection: _selection,
           deviceNames: deviceNames,
-          onAgentSelected: _selectAgent,
-          onSelectionCleared: () => setState(() => _selectedAgentId = null),
+          onAgentSelected: (WorkflowAgentId agentId) =>
+              _select(SelectedStep(agentId)),
+          onConnectionSelected: (AgentConnection connection) =>
+              _select(SelectedConnection(connection)),
+          onSelectionCleared: () => _select(null),
           onAgentMoved: _moveAgent,
           onAgentsConnected: _connectAgents,
         ),
@@ -136,48 +140,40 @@ class _WorkflowBuilderScreenState extends State<WorkflowBuilderScreen> {
   }
 
   Widget? _buildPanel(Workflow workflow, DeviceNames deviceNames) {
-    final WorkflowAgentId? selectedId = _selectedAgentId;
-    final bool isSelectedPresent = workflow.agents.any(
-      (WorkflowAgent agent) => agent.id == selectedId,
-    );
-    if (selectedId == null || !isSelectedPresent) {
-      return null;
-    }
-
-    final WorkflowAgent agent = workflow.findAgent(selectedId);
-    return AgentSettingsPanel(
-      key: ValueKey<WorkflowAgentId>(agent.id),
+    return buildBuilderPanel(
       workflow: workflow,
-      agent: agent,
-      runnerOptions: buildRunnerOptions(
+      selection: _selection,
+      sources: BuilderPanelSources(
         runners: widget.runnerRepository.listRunners(),
+        skills: widget.skillRepository.listSkills(),
         deviceNames: deviceNames,
-        chosenTarget: agent.runsOn,
       ),
-      skills: widget.skillRepository.listSkills(),
-      onAgentChanged: _changeAgent,
-      onFillInRequested: () => widget.workflowRepository.fillAgentSettings(
-        widget.workflowId,
-        agent.id,
+      actions: BuilderPanelActions(
+        onAgentChanged: _changeAgent,
+        onFillInRequested: (WorkflowAgentId agentId) => widget
+            .workflowRepository
+            .fillAgentSettings(widget.workflowId, agentId),
+        onAgentRemoved: _removeAgent,
+        onConnectionChanged: _changeConnection,
+        onConnectionRemoved: _removeConnection,
+        onLoopAdded: _addLoop,
+        onDone: () => _select(null),
       ),
-      onRemoved: () => _removeAgent(agent.id),
-      onDone: () => setState(() => _selectedAgentId = null),
     );
   }
 
-  void _selectAgent(WorkflowAgentId agentId) {
-    setState(() => _selectedAgentId = agentId);
+  void _select(BuilderSelection? selection) {
+    setState(() => _selection = selection);
   }
 
-  Future<void> _addAgent() async {
-    final Workflow workflow = _readWorkflow();
-    final WorkflowAgent blank = buildBlankAgent(workflow);
-
+  Future<void> _addStep(WorkflowAgent blank) async {
     setState(() {
-      _selectedAgentId = blank.id;
+      _selection = SelectedStep(blank.id);
       _notice = null;
     });
-    await widget.workflowRepository.saveWorkflow(addAgent(workflow, blank));
+    await widget.workflowRepository.saveWorkflow(
+      addAgent(_readWorkflow(), blank),
+    );
   }
 
   Future<void> _changeAgent(WorkflowAgent agent) async {
@@ -207,16 +203,42 @@ class _WorkflowBuilderScreenState extends State<WorkflowBuilderScreen> {
       connection,
     );
 
-    setState(() => _notice = problem?.message);
-    if (problem == null) {
+    final bool isLoop = problem == null && pointsBack(workflow, connection);
+    setState(() {
+      _notice = problem?.message;
+      if (isLoop) {
+        _selection = DrawnLoop(connection);
+      }
+    });
+    if (problem == null && !isLoop) {
       await widget.workflowRepository.saveWorkflow(
         connectAgents(workflow, connection),
       );
     }
   }
 
+  Future<void> _addLoop(AgentConnection loop) async {
+    _select(SelectedConnection(loop));
+    await widget.workflowRepository.saveWorkflow(
+      connectAgents(_readWorkflow(), loop),
+    );
+  }
+
+  Future<void> _changeConnection(AgentConnection connection) async {
+    await widget.workflowRepository.saveWorkflow(
+      replaceConnection(_readWorkflow(), connection),
+    );
+  }
+
+  Future<void> _removeConnection(AgentConnection connection) async {
+    _select(null);
+    await widget.workflowRepository.saveWorkflow(
+      removeConnection(_readWorkflow(), connection),
+    );
+  }
+
   Future<void> _removeAgent(WorkflowAgentId agentId) async {
-    setState(() => _selectedAgentId = null);
+    _select(null);
     await widget.workflowRepository.saveWorkflow(
       removeAgent(_readWorkflow(), agentId),
     );

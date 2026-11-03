@@ -73,6 +73,8 @@ NodeDependencies buildNodeDependencies({
       );
   final NodeBackedApprovalRepository approvalRepository =
       NodeBackedApprovalRepository(channel: channel);
+  final NodeBackedPersonStepRepository personStepRepository =
+      NodeBackedPersonStepRepository(channel: channel);
   final NodeBackedAuditRepository auditRepository = NodeBackedAuditRepository(
     channel: channel,
   );
@@ -87,6 +89,7 @@ NodeDependencies buildNodeDependencies({
       workspaceRepository: workspaceRepository,
     ),
     approvalRepository: approvalRepository,
+    personStepRepository: personStepRepository,
     projectRepository: projectRepository,
     workspaceRepository: workspaceRepository,
     workflowRepository: workflowRepository,
@@ -127,6 +130,7 @@ NodeDependencies buildNodeDependencies({
       jobRepository,
       runnerRepository,
       approvalRepository,
+      personStepRepository,
       auditRepository,
     ],
     retryDelay: _serverRetryInterval,

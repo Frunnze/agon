@@ -73,8 +73,13 @@ case "$prompt" in
     done
     ;;
 esac
+reply="finished $name"
+outcome=$(printf '%s\n' "$prompt" | sed -n 's/.*please-outcome-\([a-z]*\).*/\1/p' | head -n 1)
+if [ -n "$outcome" ]; then
+  reply="$reply\\nOUTCOME: $outcome"
+fi
 printf '{"type":"system","subtype":"init","session_id":"session-%s"}\n' \
   "$name"
 printf '{"type":"assistant","message":{"content":[%s]}}\n' \
-  "{\"type\":\"text\",\"text\":\"finished $name\"}"
+  "{\"type\":\"text\",\"text\":\"$reply\"}"
 printf '{"type":"result","subtype":"success","is_error":false}\n'

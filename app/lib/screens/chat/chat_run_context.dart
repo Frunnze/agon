@@ -6,6 +6,7 @@ import 'package:agent_orchestration/presentation/device_names.dart';
 import 'package:agent_orchestration/presentation/run_text.dart';
 
 const String _unassignedAgentName = 'Agent';
+const String _personStepName = 'You';
 
 final class ChatRunContext {
   ChatRunContext({
@@ -58,6 +59,10 @@ final class ChatRunContext {
     if (stepWorkflow == null || agentId == null) {
       return _unassignedAgentName;
     }
-    return stepWorkflow.findAgent(agentId).kind?.label ?? _unassignedAgentName;
+    final WorkflowAgent agent = stepWorkflow.findAgent(agentId);
+    if (agent.stepKind == StepKind.person) {
+      return _personStepName;
+    }
+    return agent.kind?.label ?? _unassignedAgentName;
   }
 }

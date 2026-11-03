@@ -1,4 +1,5 @@
 import 'package:agent_orchestration/data/models/workflow.dart';
+import 'package:agent_orchestration/data/rules/connection_rules.dart';
 import 'package:agent_orchestration/data/rules/naming.dart';
 import 'package:agent_orchestration/widgets/forms/select_entry.dart';
 
@@ -57,12 +58,23 @@ String? describeSigningProblem(Workflow workflow) {
   }
 
   for (final WorkflowAgent agent in workflow.agents) {
-    if (agent.kind == null) {
-      return 'Choose an agent for ${agent.name}';
-    }
-    if (agent.task.trim().isEmpty) {
-      return 'Write a task for ${agent.name}';
+    final String? problem = _describeStepProblem(agent);
+    if (problem != null) {
+      return problem;
     }
   }
-  return null;
+  return describeConnectionsProblem(workflow);
+}
+
+String? _describeStepProblem(WorkflowAgent agent) {
+  final bool isBlank = agent.task.trim().isEmpty;
+  switch (agent.stepKind) {
+    case StepKind.person:
+      return isBlank ? 'Write a question for ${agent.name}' : null;
+    case StepKind.agent:
+      if (agent.kind == null) {
+        return 'Choose an agent for ${agent.name}';
+      }
+      return isBlank ? 'Write a task for ${agent.name}' : null;
+  }
 }

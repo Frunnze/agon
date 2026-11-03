@@ -2,6 +2,7 @@ use orchestration_api::work::RunEvent;
 use orchestration_core::run::StepStatus;
 
 use crate::agent_invocation::AgentEnding;
+use crate::agent_transcript::AgentTranscript;
 use crate::branch_pusher::BranchPusher;
 use crate::commit_publishing::{Publishing, publish_commits};
 use crate::conversation::{StepProgress, answer_user_messages};
@@ -10,6 +11,7 @@ use crate::run_error::RunError;
 use crate::run_events::{post_run_events, step_status_changed};
 use crate::runner_server::RunnerServer;
 use crate::step_opening::{StepOpening, open_agent_conversation};
+use crate::step_outcome::{OutcomeProblem, read_reported_outcome};
 use crate::step_plan::StepPlan;
 use crate::uncommitted_changes::{
     commit_uncommitted_changes, compose_change_commit_subject,
@@ -57,6 +59,7 @@ async fn attempt_step<S: RunnerServer, P: BranchPusher>(
         }
     };
 
+    let outcome = read_step_outcome(step, &transcript)?;
     commit_agent_changes(context, step).await?;
     if publish_commits(context, step).await? == Publishing::Cancelled {
         return Ok(StepProgress {
@@ -70,6 +73,7 @@ async fn attempt_step<S: RunnerServer, P: BranchPusher>(
         finishing_events.push(RunEvent::StepResultRecorded {
             step_name: step.name.clone(),
             result: final_message.clone(),
+            outcome,
         });
     }
     finishing_events.push(step_status_changed(&step.name, StepStatus::Done));
@@ -78,6 +82,18 @@ async fn attempt_step<S: RunnerServer, P: BranchPusher>(
         ending: AgentEnding::Succeeded(transcript),
         answered_messages,
     })
+}
+
+fn read_step_outcome(
+    step: &StepPlan,
+    transcript: &AgentTranscript,
+) -> Result<Option<String>, OutcomeProblem> {
+    if step.outcome_choices.is_empty() {
+        return Ok(None);
+    }
+    let final_message = transcript.final_message.as_deref();
+    let outcome = read_reported_outcome(final_message, &step.outcome_choices)?;
+    Ok(Some(outcome))
 }
 
 async fn commit_agent_changes<S: RunnerServer, P: BranchPusher>(

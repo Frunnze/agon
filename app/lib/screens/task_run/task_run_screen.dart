@@ -4,11 +4,13 @@ import 'package:flutter/widgets.dart';
 
 import 'package:agent_orchestration/data/clock.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
+import 'package:agent_orchestration/data/models/person_step.dart';
 import 'package:agent_orchestration/data/models/run.dart';
 import 'package:agent_orchestration/data/models/task.dart';
 import 'package:agent_orchestration/data/models/workflow.dart';
 import 'package:agent_orchestration/data/repository/approval_repository.dart';
 import 'package:agent_orchestration/data/repository/device_repository.dart';
+import 'package:agent_orchestration/data/repository/person_step_repository.dart';
 import 'package:agent_orchestration/data/repository/project_repository.dart';
 import 'package:agent_orchestration/data/repository/runner_repository.dart';
 import 'package:agent_orchestration/data/repository/task_repository.dart';
@@ -24,6 +26,7 @@ import 'package:agent_orchestration/screens/shared/agent_login_pointer.dart';
 import 'package:agent_orchestration/screens/shared/deletion_prompts.dart';
 import 'package:agent_orchestration/screens/shared/deletion_review.dart';
 import 'package:agent_orchestration/screens/shared/live_run_watch.dart';
+import 'package:agent_orchestration/screens/shared/person_step_questions.dart';
 import 'package:agent_orchestration/screens/task_run/no_place_banner.dart';
 import 'package:agent_orchestration/screens/task_run/not_pushed_banner.dart';
 import 'package:agent_orchestration/screens/task_run/run_failure_banner.dart';
@@ -48,6 +51,7 @@ class TaskRunScreen extends StatelessWidget {
     required this.projectRepository,
     required this.deviceRepository,
     required this.approvalRepository,
+    required this.personStepRepository,
     required this.runnerRepository,
     required this.clock,
     required this.navigation,
@@ -60,6 +64,7 @@ class TaskRunScreen extends StatelessWidget {
   final ProjectRepository projectRepository;
   final DeviceRepository deviceRepository;
   final ApprovalRepository approvalRepository;
+  final PersonStepRepository personStepRepository;
   final RunnerRepository runnerRepository;
   final Clock clock;
   final AppNavigation navigation;
@@ -76,6 +81,7 @@ class TaskRunScreen extends StatelessWidget {
           projectRepository,
           deviceRepository,
           approvalRepository,
+          personStepRepository,
           runnerRepository,
         ]),
         builder: _buildPage,
@@ -131,6 +137,11 @@ class TaskRunScreen extends StatelessWidget {
             deviceNames: deviceNames,
             onBrowse: (KeptBranch kept) => _browseKeptBranch(task, kept),
           ),
+        for (final OpenPersonStep question in findQuestionsForRun(
+          personStepRepository.listOpenPersonSteps(),
+          run.id,
+        ))
+          _buildQuestionCard(question, run, workflow, now),
         SplitLayout(
           start: RunStepsSection(
             run: run,
@@ -146,6 +157,25 @@ class TaskRunScreen extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildQuestionCard(
+    OpenPersonStep question,
+    Run run,
+    Workflow? workflow,
+    DateTime now,
+  ) {
+    final PersonStepQuestions builder = PersonStepQuestions(
+      taskRepository: taskRepository,
+      workflowRepository: workflowRepository,
+      personStepRepository: personStepRepository,
+    );
+    return builder.buildCardOnRunPage(
+      openStep: question,
+      run: run,
+      workflow: workflow,
+      now: now,
     );
   }
 

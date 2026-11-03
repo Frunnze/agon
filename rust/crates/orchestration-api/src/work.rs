@@ -1,3 +1,4 @@
+use chrono::{DateTime, Utc};
 use orchestration_core::agent_place::AgentPlace;
 use orchestration_core::approval::{ApprovalAction, SignedDecision};
 use orchestration_core::device::{Runner, RunnerLink};
@@ -62,6 +63,8 @@ pub enum RunEvent {
     StepResultRecorded {
         step_name: String,
         result: String,
+        #[serde(default)]
+        outcome: Option<String>,
     },
     Finished,
 }
@@ -139,6 +142,24 @@ pub struct CreateApprovalRequest {
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DecideApprovalRequest {
     pub decision: SignedDecision,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AnswerPersonStepRequest {
+    pub answer: String,
+    #[serde(default)]
+    pub choice: Option<String>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct OpenPersonStep {
+    pub run_id: RunId,
+    pub task_id: TaskId,
+    pub workspace_id: WorkspaceId,
+    pub step_name: String,
+    pub question: String,
+    pub choices: Vec<String>,
+    pub asked_at: Option<DateTime<Utc>>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]

@@ -22,6 +22,7 @@ import 'package:agent_orchestration/data/repository/file_repository.dart';
 import 'package:agent_orchestration/data/repository/item_draft_repository.dart';
 import 'package:agent_orchestration/data/repository/job_repository.dart';
 import 'package:agent_orchestration/data/repository/pairing_repository.dart';
+import 'package:agent_orchestration/data/repository/person_step_repository.dart';
 import 'package:agent_orchestration/data/repository/project_repository.dart';
 import 'package:agent_orchestration/data/repository/rule_repository.dart';
 import 'package:agent_orchestration/data/repository/runner_repository.dart';
@@ -44,6 +45,7 @@ AppDependencies replaceRepositories(
   JobRepository? jobRepository,
   ChatRepository? chatRepository,
   ApprovalRepository? approvalRepository,
+  PersonStepRepository? personStepRepository,
   ProjectRepository? projectRepository,
   WorkspaceRepository? workspaceRepository,
   WorkflowRepository? workflowRepository,
@@ -65,6 +67,7 @@ AppDependencies replaceRepositories(
     jobRepository: jobRepository ?? base.jobRepository,
     chatRepository: chatRepository ?? base.chatRepository,
     approvalRepository: approvalRepository ?? base.approvalRepository,
+    personStepRepository: personStepRepository ?? base.personStepRepository,
     projectRepository: projectRepository ?? base.projectRepository,
     workspaceRepository: workspaceRepository ?? base.workspaceRepository,
     workflowRepository: workflowRepository ?? base.workflowRepository,

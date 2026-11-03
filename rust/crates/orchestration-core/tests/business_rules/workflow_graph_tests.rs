@@ -90,7 +90,7 @@ proptest! {
         let agent_id = workflow.agents[chosen.index(workflow.agents.len())].id;
         let looped = with_connection(
             &workflow,
-            AgentConnection { from: agent_id, to: agent_id },
+            AgentConnection::plain(agent_id, agent_id),
         );
 
         prop_assert_eq!(
@@ -108,7 +108,7 @@ proptest! {
         let unknown_id = agent_identifier(u128::MAX);
         let dangling = with_connection(
             &workflow,
-            AgentConnection { from: known_id, to: unknown_id },
+            AgentConnection::plain(known_id, unknown_id),
         );
 
         prop_assert_eq!(

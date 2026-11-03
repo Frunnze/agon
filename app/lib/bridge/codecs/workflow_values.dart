@@ -18,6 +18,18 @@ enum AgentKind implements WireNamed {
   static AgentKind decode(Object? json) => decodeWireName(values, json);
 }
 
+enum StepKind implements WireNamed {
+  agent('agent'),
+  person('person');
+
+  const StepKind(this.wireName);
+
+  @override
+  final String wireName;
+
+  static StepKind decode(Object? json) => decodeWireName(values, json);
+}
+
 final class CanvasPosition implements JsonEncodable {
   const CanvasPosition({required this.horizontal, required this.vertical});
 
@@ -42,6 +54,7 @@ final class WorkflowAgent implements JsonEncodable {
   WorkflowAgent({
     required this.id,
     required this.name,
+    required this.stepKind,
     required this.kind,
     required this.task,
     required this.runsOn,
@@ -56,6 +69,9 @@ final class WorkflowAgent implements JsonEncodable {
     return WorkflowAgent(
       id: readField(fields, 'id', decodeWorkflowAgentId),
       name: readField(fields, 'name', decodeText),
+      stepKind:
+          readOptionalField(fields, 'step_kind', StepKind.decode) ??
+          StepKind.agent,
       kind: readOptionalField(fields, 'kind', AgentKind.decode),
       task: readField(fields, 'task', decodeText),
       runsOn: readField(fields, 'runs_on', RunnerTarget.fromJson),
@@ -76,6 +92,7 @@ final class WorkflowAgent implements JsonEncodable {
 
   final WorkflowAgentId id;
   final String name;
+  final StepKind stepKind;
   final AgentKind? kind;
   final String task;
   final RunnerTarget runsOn;
@@ -89,6 +106,7 @@ final class WorkflowAgent implements JsonEncodable {
     return <String, Object?>{
       'id': id.value,
       'name': name,
+      'step_kind': stepKind.wireName,
       'kind': kind?.wireName,
       'task': task,
       'runs_on': runsOn.toJson(),
@@ -101,22 +119,36 @@ final class WorkflowAgent implements JsonEncodable {
 }
 
 final class AgentConnection implements JsonEncodable {
-  const AgentConnection({required this.from, required this.to});
+  const AgentConnection({
+    required this.from,
+    required this.to,
+    required this.condition,
+    required this.roundLimit,
+  });
 
   factory AgentConnection.fromJson(Object? json) {
     final JsonObject fields = decodeObject(json);
     return AgentConnection(
       from: readField(fields, 'from', decodeWorkflowAgentId),
       to: readField(fields, 'to', decodeWorkflowAgentId),
+      condition: readOptionalField(fields, 'condition', decodeText),
+      roundLimit: readOptionalField(fields, 'round_limit', decodeInteger),
     );
   }
 
   final WorkflowAgentId from;
   final WorkflowAgentId to;
+  final String? condition;
+  final int? roundLimit;
 
   @override
   JsonObject toJson() {
-    return <String, Object?>{'from': from.value, 'to': to.value};
+    return <String, Object?>{
+      'from': from.value,
+      'to': to.value,
+      'condition': condition,
+      'round_limit': roundLimit,
+    };
   }
 }
 

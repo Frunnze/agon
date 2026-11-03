@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/widgets.dart';
 
 import 'package:agent_orchestration/theme/app_colors.dart';
@@ -6,7 +8,8 @@ import 'package:agent_orchestration/theme/layout_size.dart';
 import 'package:agent_orchestration/theme/page_metrics.dart';
 import 'package:agent_orchestration/widgets/gaps.dart';
 
-const double _topShareOfPage = 0.5;
+const double _smallestCanvasShareOfPage = 0.5;
+const double _topGap = AppSpacing.space3;
 const double _sheetShareOfBuilder = 0.6;
 const double _sidePanelWidth = 320;
 
@@ -22,30 +25,35 @@ class BuilderPageLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final LayoutSize layoutSize = LayoutSize.of(context);
-    final double gap = pageGapFor(layoutSize);
+    return LayoutBuilder(builder: _buildPage);
+  }
+
+  Widget _buildPage(BuildContext context, BoxConstraints pageLimits) {
+    final EdgeInsets padding = pagePaddingFor(LayoutSize.of(context));
+    final double largestHeightOutsideCanvas =
+        pageLimits.maxHeight * (1 - _smallestCanvasShareOfPage);
+    final double topHeightLimit = max(
+      0,
+      largestHeightOutsideCanvas - padding.vertical - _topGap,
+    );
 
     return Padding(
-      padding: pagePaddingFor(layoutSize),
-      child: LayoutBuilder(
-        builder: (BuildContext _, BoxConstraints limits) => Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            ConstrainedBox(
-              constraints: BoxConstraints(
-                maxHeight: limits.maxHeight * _topShareOfPage,
-              ),
-              child: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: spaceVertically(top, gap),
-                ),
+      padding: padding,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          ConstrainedBox(
+            constraints: BoxConstraints(maxHeight: topHeightLimit),
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: spaceVertically(top, _topGap),
               ),
             ),
-            SizedBox(height: gap),
-            Expanded(child: builder),
-          ],
-        ),
+          ),
+          const SizedBox(height: _topGap),
+          Expanded(child: builder),
+        ],
       ),
     );
   }

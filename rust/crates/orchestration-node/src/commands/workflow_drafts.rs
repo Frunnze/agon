@@ -4,6 +4,7 @@ use orchestration_core::run::{ChatAuthor, Run, RunStatus};
 use orchestration_core::run_lifecycle::is_run_finished;
 use orchestration_core::scope_rules::workspace_scope_includes;
 use orchestration_core::workflow::Workflow;
+use orchestration_core::workflow_layout::lay_out_workflow;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
@@ -123,10 +124,11 @@ fn parse_drafted_workflow(
             found: drafted.id.0,
         });
     }
-    Ok(Workflow {
+    let unsigned = Workflow {
         signature: None,
         ..drafted
-    })
+    };
+    Ok(lay_out_workflow(&unsigned))
 }
 
 async fn save_draft(

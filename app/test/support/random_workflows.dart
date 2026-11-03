@@ -22,6 +22,7 @@ WorkflowAgent randomAgent(Random random, int index) {
   return WorkflowAgent(
     id: WorkflowAgentId('random-agent-$index'),
     name: 'agent-$index',
+    stepKind: StepKind.agent,
     kind: random.nextInt(4) == 0 ? null : pickOne(random, AgentKind.values),
     task: randomWordPhrase(random),
     runsOn: randomRunnerTarget(random),
@@ -53,7 +54,12 @@ Workflow randomAcyclicWorkflow(Random random) {
     for (int second = first + 1; second < shuffled.length; second += 1) {
       if (random.nextInt(3) == 0) {
         connections.add(
-          AgentConnection(from: shuffled[first].id, to: shuffled[second].id),
+          AgentConnection(
+            from: shuffled[first].id,
+            to: shuffled[second].id,
+            condition: null,
+            roundLimit: null,
+          ),
         );
       }
     }

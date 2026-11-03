@@ -7,6 +7,8 @@ import 'package:agent_orchestration/screens/workflows.dart';
 
 const String pendingKindText = 'Adding…';
 const String unconnectedTargetText = 'Connect it by dragging';
+const String personKindText = 'You';
+const String personTargetText = 'Waits for your answer';
 
 final class DiagramNode {
   const DiagramNode({
@@ -14,6 +16,7 @@ final class DiagramNode {
     required this.kindText,
     required this.name,
     required this.targetText,
+    required this.stepKind,
     required this.look,
   });
 
@@ -21,6 +24,7 @@ final class DiagramNode {
   final String kindText;
   final String name;
   final String? targetText;
+  final StepKind stepKind;
   final NodeLook look;
 }
 
@@ -33,6 +37,24 @@ bool isAgentUnconnected(Workflow workflow, WorkflowAgentId agentId) {
   return workflow.agents.length > 1;
 }
 
+String _describeNodeTarget(WorkflowAgent agent, DeviceNames deviceNames) {
+  switch (agent.stepKind) {
+    case StepKind.agent:
+      return describeAgentTarget(agent.runsOn, deviceNames);
+    case StepKind.person:
+      return personTargetText;
+  }
+}
+
+String _describeNodeKind(WorkflowAgent agent) {
+  switch (agent.stepKind) {
+    case StepKind.agent:
+      return describeAgentKind(agent.kind);
+    case StepKind.person:
+      return personKindText;
+  }
+}
+
 DiagramNode describeAgentNode({
   required WorkflowAgent agent,
   required Workflow workflow,
@@ -41,13 +63,14 @@ DiagramNode describeAgentNode({
 }) {
   final String target = isAgentUnconnected(workflow, agent.id)
       ? unconnectedTargetText
-      : describeAgentTarget(agent.runsOn, deviceNames);
+      : _describeNodeTarget(agent, deviceNames);
 
   return DiagramNode(
     position: agent.position,
-    kindText: describeAgentKind(agent.kind),
+    kindText: _describeNodeKind(agent),
     name: agent.name,
     targetText: target,
+    stepKind: agent.stepKind,
     look: look,
   );
 }
@@ -58,6 +81,7 @@ DiagramNode describePendingNode(PendingAgent pending) {
     kindText: pendingKindText,
     name: pending.name,
     targetText: null,
+    stepKind: StepKind.agent,
     look: NodeLook.pending,
   );
 }

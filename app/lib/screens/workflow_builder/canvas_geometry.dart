@@ -84,6 +84,19 @@ Size measureCanvas(List<CanvasPosition> positions) {
   );
 }
 
+Size measureDrawingSurface({
+  required List<CanvasPosition> positions,
+  required Size viewport,
+}) {
+  final Size nodes = measureCanvas(positions);
+  final double roomyWidth = nodes.width + CanvasMetrics.nodeWidth;
+  final double roomyHeight = nodes.height + CanvasMetrics.nodeHeight;
+  return Size(
+    max(viewport.width, roomyWidth),
+    max(viewport.height, roomyHeight),
+  );
+}
+
 EdgeCurve connectPoints({required Offset start, required Offset end}) {
   final double middle = (start.dy + end.dy) / 2;
 
@@ -105,27 +118,6 @@ EdgeCurve buildEdgeCurve({
       .translate(0, -(CanvasMetrics.portRadius + CanvasMetrics.arrowGap));
 
   return connectPoints(start: start, end: end);
-}
-
-List<EdgeCurve> buildWorkflowEdges(
-  List<WorkflowAgent> agents,
-  List<AgentConnection> connections,
-) {
-  final Map<WorkflowAgentId, CanvasPosition> positions =
-      <WorkflowAgentId, CanvasPosition>{
-        for (final WorkflowAgent agent in agents) agent.id: agent.position,
-      };
-  final List<EdgeCurve> edges = <EdgeCurve>[];
-
-  for (final AgentConnection connection in connections) {
-    final CanvasPosition? from = positions[connection.from];
-    final CanvasPosition? to = positions[connection.to];
-    if (from == null || to == null) {
-      throw StateError('A connection points to an agent that is not drawn');
-    }
-    edges.add(buildEdgeCurve(from: from, to: to));
-  }
-  return edges;
 }
 
 bool _isNearPort(Offset port, Offset point) {
@@ -161,9 +153,19 @@ AgentConnection? resolveDraggedConnection({
 
   switch (start.side) {
     case PortSide.output:
-      return AgentConnection(from: start.agentId, to: end.agentId);
+      return AgentConnection(
+        from: start.agentId,
+        to: end.agentId,
+        condition: null,
+        roundLimit: null,
+      );
     case PortSide.input:
-      return AgentConnection(from: end.agentId, to: start.agentId);
+      return AgentConnection(
+        from: end.agentId,
+        to: start.agentId,
+        condition: null,
+        roundLimit: null,
+      );
   }
 }
 

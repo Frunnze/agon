@@ -138,3 +138,23 @@ String describeWaitingApprovals(int count) {
   }
   return '$count waiting. Each one needs your approval.';
 }
+
+String _countWords(int count, String singular, String plural) {
+  return count == 1 ? '1 $singular' : '$count $plural';
+}
+
+String describeWaitingWork({
+  required int approvalCount,
+  required int questionCount,
+}) {
+  if (questionCount == 0) {
+    return describeWaitingApprovals(approvalCount);
+  }
+
+  final String questions = _countWords(questionCount, 'question', 'questions');
+  if (approvalCount == 0) {
+    return '$questions waiting for your answer';
+  }
+  final String approvals = _countWords(approvalCount, 'approval', 'approvals');
+  return '$questions and $approvals waiting';
+}

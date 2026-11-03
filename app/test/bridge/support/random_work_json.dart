@@ -19,6 +19,7 @@ Map<String, Object?> randomWorkflowAgentJson(Random random) {
   return <String, Object?>{
     'id': randomUuidText(random),
     'name': randomText(random),
+    'step_kind': pickOne(random, nodeStepKinds),
     'kind': randomOptional(random, _randomAgentKindName),
     'task': randomText(random),
     'runs_on': randomRunnerTargetJson(random),
@@ -33,6 +34,8 @@ Map<String, Object?> randomAgentConnectionJson(Random random) {
   return <String, Object?>{
     'from': randomUuidText(random),
     'to': randomUuidText(random),
+    'condition': randomOptional(random, randomText),
+    'round_limit': randomOptional(random, randomCount),
   };
 }
 

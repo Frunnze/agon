@@ -5,6 +5,7 @@ pub fn record_step_result(
     run: &Run,
     step_name: &str,
     result: &str,
+    outcome: Option<&str>,
 ) -> Result<Run, RunProblem> {
     if is_run_finished(run.status) {
         return Err(RunProblem::RunAlreadyFinished);
@@ -21,6 +22,7 @@ pub fn record_step_result(
         if step.name == step_name {
             recorded_steps.push(RunStep {
                 result: Some(result.to_owned()),
+                outcome: outcome.map(str::to_owned),
                 ..step.clone()
             });
         } else {

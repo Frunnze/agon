@@ -2,6 +2,8 @@ import 'package:agent_orchestration/bridge/codecs/run_chat_values.dart'
     as node;
 import 'package:agent_orchestration/bridge/codecs/run_progress_values.dart'
     as node;
+import 'package:agent_orchestration/bridge/codecs/run_round_values.dart'
+    as node;
 import 'package:agent_orchestration/bridge/codecs/run_values.dart' as node;
 import 'package:agent_orchestration/data/models/run.dart';
 import 'package:agent_orchestration/data/node_backed/mapping.dart';
@@ -11,6 +13,7 @@ StepStatus mapStepStatusFromNode(node.StepStatus status) {
     node.StepStatus.waiting => StepStatus.waiting,
     node.StepStatus.running => StepStatus.running,
     node.StepStatus.waitingForApproval => StepStatus.waitingForApproval,
+    node.StepStatus.waitingForPerson => StepStatus.waitingForPerson,
     node.StepStatus.done => StepStatus.done,
     node.StepStatus.failed => StepStatus.failed,
     node.StepStatus.skipped => StepStatus.skipped,
@@ -36,6 +39,16 @@ ChatAuthor mapChatAuthorFromNode(node.ChatAuthor author) {
   };
 }
 
+EarlierRound mapEarlierRoundFromNode(node.EarlierRound round) {
+  return EarlierRound(
+    status: mapStepStatusFromNode(round.status),
+    startedAt: round.startedAt,
+    finishedAt: round.finishedAt,
+    result: round.result,
+    outcome: round.outcome,
+  );
+}
+
 RunStep mapRunStepFromNode(node.RunStep step) {
   return RunStep(
     name: step.name,
@@ -44,7 +57,26 @@ RunStep mapRunStepFromNode(node.RunStep step) {
     status: mapStepStatusFromNode(step.status),
     startedAt: step.startedAt,
     finishedAt: step.finishedAt,
+    result: step.result,
+    outcome: step.outcome,
+    loopSource: step.loopSource,
+    earlierRounds: <EarlierRound>[
+      for (final node.EarlierRound round in step.earlierRounds)
+        mapEarlierRoundFromNode(round),
+    ],
   );
+}
+
+LoopRounds mapLoopRoundsFromNode(node.LoopRounds loopRounds) {
+  return LoopRounds(
+    from: loopRounds.from,
+    to: loopRounds.to,
+    rounds: loopRounds.rounds,
+  );
+}
+
+RunNote mapRunNoteFromNode(node.RunNote note) {
+  return RunNote(at: note.at, text: note.text);
 }
 
 LogLine mapLogLineFromNode(node.LogLine line) {
@@ -104,6 +136,13 @@ Run mapRunFromNode(node.Run run) {
     startedBy: run.startedBy,
     startedAt: run.startedAt,
     finishedAt: run.finishedAt,
+    loopRounds: <LoopRounds>[
+      for (final node.LoopRounds loopRounds in run.loopRounds)
+        mapLoopRoundsFromNode(loopRounds),
+    ],
+    notes: <RunNote>[
+      for (final node.RunNote note in run.notes) mapRunNoteFromNode(note),
+    ],
   );
 }
 
@@ -125,5 +164,7 @@ Run mapRunViewFromNode(node.RunView view) {
     startedBy: run.startedBy,
     startedAt: run.startedAt,
     finishedAt: run.finishedAt,
+    loopRounds: run.loopRounds,
+    notes: run.notes,
   );
 }

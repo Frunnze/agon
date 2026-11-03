@@ -33,6 +33,36 @@ void main() {
     }
   });
 
+  test('test_measure_drawing_surface_property_fills_view_and_leaves_room', () {
+    final Random random = seededRandom(8802);
+
+    for (int i = 0; i < propertyIterations; i += 1) {
+      final List<WorkflowAgent> agents = randomAgents(random);
+      final List<CanvasPosition> positions = _positionsOf(agents);
+      final Size viewport = Size(
+        random.nextDouble() * 1600,
+        random.nextDouble() * 1000,
+      );
+
+      final Size surface = measureDrawingSurface(
+        positions: positions,
+        viewport: viewport,
+      );
+
+      final Size nodes = measureCanvas(positions);
+      expect(surface.width, greaterThanOrEqualTo(viewport.width));
+      expect(surface.height, greaterThanOrEqualTo(viewport.height));
+      expect(
+        surface.width,
+        greaterThanOrEqualTo(nodes.width + CanvasMetrics.nodeWidth),
+      );
+      expect(
+        surface.height,
+        greaterThanOrEqualTo(nodes.height + CanvasMetrics.nodeHeight),
+      );
+    }
+  });
+
   test('measure canvas matches the gallery feature pipeline', () {
     final Size size = measureCanvas(_positionsOf(galleryWorkflows[2].agents));
 
@@ -130,9 +160,25 @@ void main() {
       );
 
       if (side == PortSide.output) {
-        expect(connection, AgentConnection(from: first, to: second));
+        expect(
+          connection,
+          AgentConnection(
+            from: first,
+            to: second,
+            condition: null,
+            roundLimit: null,
+          ),
+        );
       } else {
-        expect(connection, AgentConnection(from: second, to: first));
+        expect(
+          connection,
+          AgentConnection(
+            from: second,
+            to: first,
+            condition: null,
+            roundLimit: null,
+          ),
+        );
       }
       expect(
         resolveDraggedConnection(start: PortHit(first, side), end: null),
@@ -157,20 +203,6 @@ void main() {
       if (start.horizontal + delta.dx >= 0) {
         expect(moved.horizontal, closeTo(start.horizontal + delta.dx, 1e-9));
       }
-    }
-  });
-
-  test('test_build_workflow_edges_property_one_curve_per_connection', () {
-    final Random random = seededRandom(8807);
-
-    for (int i = 0; i < propertyIterations; i += 1) {
-      final Workflow workflow = randomAcyclicWorkflow(random);
-      final List<EdgeCurve> edges = buildWorkflowEdges(
-        workflow.agents,
-        workflow.connections,
-      );
-
-      expect(edges.length, workflow.connections.length);
     }
   });
 }

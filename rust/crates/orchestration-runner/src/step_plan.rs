@@ -1,8 +1,11 @@
 use orchestration_api::work::RunAssignment;
 use orchestration_core::approval::ApprovalPolicy;
 use orchestration_core::identifiers::{SkillId, WorkflowId};
+use orchestration_core::step_outcomes::list_step_choices;
 use orchestration_core::task::TaskDoer;
-use orchestration_core::workflow::{AgentKind, Workflow, WorkflowAgent};
+use orchestration_core::workflow::{
+    AgentKind, StepKind, Workflow, WorkflowAgent,
+};
 use orchestration_core::workflow_graph::{
     WorkflowProblem, upstream_agents, validate_workflow,
 };
@@ -17,6 +20,7 @@ pub struct StepPlan {
     pub uses_automatic_skills: bool,
     pub approval_policy: ApprovalPolicy,
     pub upstream_step_names: Vec<String>,
+    pub outcome_choices: Vec<String>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Error)]
@@ -35,6 +39,8 @@ pub enum AssignmentProblem {
     MissingAgentKind(String),
     #[error("the run has no step named {0} to carry out")]
     UnknownStep(String),
+    #[error("the step {0} is answered by a person, not run by an agent")]
+    PersonStep(String),
 }
 
 pub fn plan_assigned_step(
@@ -78,6 +84,7 @@ fn plan_one_agent_step(
         uses_automatic_skills: task.uses_automatic_skills,
         approval_policy: task.approval_policy,
         upstream_step_names: Vec::new(),
+        outcome_choices: Vec::new(),
     })
 }
 
@@ -102,6 +109,9 @@ fn plan_agent_step(
     workflow: &Workflow,
     agent: &WorkflowAgent,
 ) -> Result<StepPlan, AssignmentProblem> {
+    if agent.step_kind == StepKind::Person {
+        return Err(AssignmentProblem::PersonStep(agent.name.clone()));
+    }
     let Some(kind) = agent.kind else {
         return Err(AssignmentProblem::MissingAgentKind(agent.name.clone()));
     };
@@ -118,5 +128,6 @@ fn plan_agent_step(
         uses_automatic_skills: agent.uses_automatic_skills,
         approval_policy: agent.approval_policy,
         upstream_step_names,
+        outcome_choices: list_step_choices(workflow, agent.id),
     })
 }

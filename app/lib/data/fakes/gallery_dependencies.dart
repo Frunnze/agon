@@ -20,6 +20,7 @@ import 'package:agent_orchestration/data/models/agent_login.dart';
 import 'package:agent_orchestration/data/models/approval.dart';
 import 'package:agent_orchestration/data/models/audit.dart';
 import 'package:agent_orchestration/data/models/conversation.dart';
+import 'package:agent_orchestration/data/models/person_step.dart';
 import 'package:agent_orchestration/data/models/task.dart';
 import 'package:agent_orchestration/folders/platform_folder_picker.dart';
 import 'package:agent_orchestration/scanning/camera_qr_code_scanner.dart';
@@ -72,6 +73,9 @@ AppDependencies buildGalleryDependencies() {
       ],
       clock: clock,
       currentDeviceId: GalleryDeviceIds.airLaptop,
+    ),
+    personStepRepository: FakePersonStepRepository(
+      openSteps: const <OpenPersonStep>[],
     ),
     projectRepository: FakeProjectRepository(projects: galleryProjects),
     workspaceRepository: FakeWorkspaceRepository(

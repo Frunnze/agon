@@ -152,10 +152,10 @@ fn workflows_with_cycles_are_rejected() {
     let status = block_on(async {
         let account = create_account(&test).await;
         let mut workflow = sample_workflow();
-        let backwards = AgentConnection {
-            from: workflow.agents[1].id,
-            to: workflow.agents[0].id,
-        };
+        let backwards = AgentConnection::plain(
+            workflow.agents[1].id,
+            workflow.agents[0].id,
+        );
         workflow.connections.push(backwards);
         let request = SaveWorkflowRequest { workflow };
         test.post(&account.owner, "/workflows", &request)

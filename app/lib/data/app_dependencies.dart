@@ -10,6 +10,7 @@ import 'package:agent_orchestration/data/repository/file_repository.dart';
 import 'package:agent_orchestration/data/repository/item_draft_repository.dart';
 import 'package:agent_orchestration/data/repository/job_repository.dart';
 import 'package:agent_orchestration/data/repository/pairing_repository.dart';
+import 'package:agent_orchestration/data/repository/person_step_repository.dart';
 import 'package:agent_orchestration/data/repository/project_repository.dart';
 import 'package:agent_orchestration/data/repository/rule_repository.dart';
 import 'package:agent_orchestration/data/repository/runner_repository.dart';
@@ -25,6 +26,7 @@ final class AppDependencies {
     required this.jobRepository,
     required this.chatRepository,
     required this.approvalRepository,
+    required this.personStepRepository,
     required this.projectRepository,
     required this.workspaceRepository,
     required this.workflowRepository,
@@ -46,6 +48,7 @@ final class AppDependencies {
   final JobRepository jobRepository;
   final ChatRepository chatRepository;
   final ApprovalRepository approvalRepository;
+  final PersonStepRepository personStepRepository;
   final ProjectRepository projectRepository;
   final WorkspaceRepository workspaceRepository;
   final WorkflowRepository workflowRepository;

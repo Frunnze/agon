@@ -89,6 +89,7 @@ async fn replays_a_claude_session_into_run_events() -> TestResult<()> {
         RunEvent::StepResultRecorded {
             step_name: STEP_NAME.to_string(),
             result: last_message,
+            outcome: None,
         },
         RunEvent::StepStatusChanged {
             step_name: STEP_NAME.to_string(),

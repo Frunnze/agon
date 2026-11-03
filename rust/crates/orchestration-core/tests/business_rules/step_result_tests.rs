@@ -11,12 +11,14 @@ proptest! {
         steps in run_steps(),
         chosen in any::<prop::sample::Index>(),
         result in "\\PC{0,80}",
+        outcome in proptest::option::of("[a-z]{1,8}"),
     ) {
         let run = run_with_steps(steps);
         prop_assume!(!run.steps.is_empty() && !is_run_finished(run.status));
         let step_name = run.steps[chosen.index(run.steps.len())].name.clone();
 
-        let recorded = record_step_result(&run, &step_name, &result);
+        let recorded =
+            record_step_result(&run, &step_name, &result, outcome.as_deref());
 
         let Ok(recorded) = recorded else {
             return Err(TestCaseError::fail("the result is recorded"));
@@ -26,6 +28,7 @@ proptest! {
             if before.name == step_name {
                 let stored_result = after.result.as_deref();
                 prop_assert_eq!(stored_result, Some(result.as_str()));
+                prop_assert_eq!(&after.outcome, &outcome);
                 prop_assert_eq!(after.status, before.status);
                 prop_assert_eq!(&after.runner, &before.runner);
             } else {
@@ -43,7 +46,7 @@ proptest! {
         let run = run_with_steps(steps);
         prop_assume!(!is_run_finished(run.status));
 
-        let recorded = record_step_result(&run, &unknown_name, &result);
+        let recorded = record_step_result(&run, &unknown_name, &result, None);
 
         let expected = RunProblem::UnknownStep {
             step_name: unknown_name,
@@ -61,7 +64,7 @@ proptest! {
         prop_assume!(!run.steps.is_empty() && is_run_finished(run.status));
         let step_name = run.steps[chosen.index(run.steps.len())].name.clone();
 
-        let recorded = record_step_result(&run, &step_name, &result);
+        let recorded = record_step_result(&run, &step_name, &result, None);
 
         prop_assert_eq!(recorded, Err(RunProblem::RunAlreadyFinished));
     }

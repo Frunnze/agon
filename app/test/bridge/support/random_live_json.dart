@@ -40,6 +40,7 @@ Map<String, Object?> randomRunEventJson(Random random) {
       'kind': 'step_result_recorded',
       'step_name': randomText(random),
       'result': randomText(random),
+      'outcome': randomOptional(random, randomText),
     },
     <String, Object?>{'kind': 'finished'},
   ];

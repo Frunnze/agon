@@ -5,7 +5,7 @@ use orchestration_core::identifiers::{
 };
 use orchestration_core::scope::WorkspaceScope;
 use orchestration_core::workflow::{
-    AgentKind, CanvasPosition, Workflow, WorkflowAgent,
+    AgentKind, CanvasPosition, StepKind, Workflow, WorkflowAgent,
 };
 use orchestration_node::item_drafting::check_new_workflow_draft;
 use proptest::collection::vec;
@@ -51,6 +51,7 @@ fn drafted_workflow(name: String, availability: WorkspaceScope) -> Workflow {
                 horizontal: 0.0,
                 vertical: 0.0,
             },
+            step_kind: StepKind::Agent,
         }],
         connections: Vec::new(),
         signature: None,

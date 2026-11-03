@@ -5,10 +5,12 @@ import 'package:agent_orchestration/data/app_dependencies.dart';
 import 'package:agent_orchestration/data/gallery/gallery_identifiers.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/workflow.dart';
+import 'package:agent_orchestration/screens/new_items/item_request_view.dart';
 import 'package:agent_orchestration/screens/workflow_builder.dart';
 import 'package:agent_orchestration/shell/app_navigation.dart';
 import 'package:agent_orchestration/shell/app_route.dart';
 import 'package:agent_orchestration/shell/app_section.dart';
+import 'package:agent_orchestration/widgets/app_button.dart';
 
 import 'app_harness.dart';
 
@@ -69,4 +71,21 @@ Future<void> dragBetween(
 }) async {
   await tester.dragFrom(start, end - start);
   await pumpFrames(tester);
+}
+
+Future<AppNavigation> openManualWorkflow(
+  WidgetTester tester,
+  AppDependencies dependencies,
+) async {
+  final AppNavigation navigation = await pumpApp(
+    tester,
+    size: tallDesktopSize,
+    route: workflowsSectionRoute,
+    dependencies: dependencies,
+  );
+  navigation.openRoute(const NewWorkflowRoute());
+  await pumpFrames(tester);
+  await tester.tap(find.widgetWithText(AppButton, addManuallyLabel));
+  await pumpFrames(tester);
+  return navigation;
 }

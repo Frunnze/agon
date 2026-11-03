@@ -38,6 +38,7 @@ class _AppShellState extends State<AppShell> {
       listenable: Listenable.merge(<Listenable>[
         widget.navigation,
         dependencies.approvalRepository,
+        dependencies.personStepRepository,
         dependencies.workspaceRepository,
         dependencies.deviceRepository,
       ]),
@@ -53,9 +54,13 @@ class _AppShellState extends State<AppShell> {
     }
 
     final AppSection currentSection = widget.navigation.currentRoute.section;
-    final int pendingCount = dependencies.approvalRepository
+    final int pendingApprovalCount = dependencies.approvalRepository
         .listPendingApprovals()
         .length;
+    final int openQuestionCount = dependencies.personStepRepository
+        .listOpenPersonSteps()
+        .length;
+    final int pendingCount = pendingApprovalCount + openQuestionCount;
     final Widget content = NavigatorPopHandler<Object?>(
       onPopWithResult: _popContentPage,
       child: Navigator(

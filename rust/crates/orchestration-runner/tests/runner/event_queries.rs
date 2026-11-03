@@ -72,7 +72,10 @@ pub fn failures(events: &[RunEvent]) -> Vec<RunFailure> {
 pub fn step_results(events: &[RunEvent]) -> Vec<(String, String)> {
     let mut results = Vec::new();
     for event in events {
-        if let RunEvent::StepResultRecorded { step_name, result } = event {
+        if let RunEvent::StepResultRecorded {
+            step_name, result, ..
+        } = event
+        {
             results.push((step_name.clone(), result.clone()));
         }
     }

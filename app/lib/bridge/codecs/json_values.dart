@@ -136,6 +136,17 @@ List<Value> readListField<Value>(
   return decodeList(json, decodeElement);
 }
 
+List<Value> readListFieldWhenPresent<Value>(
+  JsonObject fields,
+  String field,
+  JsonValueDecoder<Value> decodeElement,
+) {
+  if (!fields.containsKey(field)) {
+    return List<Value>.unmodifiable(<Value>[]);
+  }
+  return decodeList(fields[field], decodeElement);
+}
+
 Object? _readPresentField(JsonObject fields, String field) {
   if (!fields.containsKey(field)) {
     throw FormatException('the field $field is missing');

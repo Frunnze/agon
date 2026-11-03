@@ -75,6 +75,7 @@ elif [ "$kind" = "watch" ]; then
 elif [ "$kind" = "plan" ]; then
   session="plan-$$"
   printf '%s' "$prompt" > "$AGENT_RECORDS/plan-prompt.txt"
+  printf '%s\n----\n' "$prompt" >> "$AGENT_RECORDS/plan-prompts.txt"
   reply="the plan is to touch the readme"
 else
   session="session-$$"

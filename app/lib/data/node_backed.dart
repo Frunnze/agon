@@ -12,6 +12,7 @@ export 'node_backed/node_backed_file_repository.dart';
 export 'node_backed/node_backed_item_draft_repository.dart';
 export 'node_backed/node_backed_job_repository.dart';
 export 'node_backed/node_backed_pairing_repository.dart';
+export 'node_backed/node_backed_person_step_repository.dart';
 export 'node_backed/node_backed_project_repository.dart';
 export 'node_backed/node_backed_rule_repository.dart';
 export 'node_backed/node_backed_runner_repository.dart';

@@ -169,6 +169,7 @@ proptest! {
             RunEvent::StepResultRecorded {
                 step_name: run.step_name.clone(),
                 result: own_result,
+                outcome: None,
             },
             RunEvent::StepStatusChanged {
                 step_name: run.step_name.clone(),

@@ -3,7 +3,8 @@ use orchestration_core::device::RunnerTarget;
 use orchestration_core::identifiers::{WorkflowAgentId, WorkflowId};
 use orchestration_core::scope::WorkspaceScope;
 use orchestration_core::workflow::{
-    AgentConnection, AgentKind, CanvasPosition, Workflow, WorkflowAgent,
+    AgentConnection, AgentKind, CanvasPosition, StepKind, Workflow,
+    WorkflowAgent,
 };
 use proptest::collection::vec;
 use proptest::prelude::*;
@@ -92,15 +93,14 @@ pub fn build_workflow(shape: &WorkflowShape) -> Workflow {
                 horizontal: f64::from(horizontal),
                 vertical: f64::from(vertical),
             },
+            step_kind: StepKind::Agent,
         });
     }
 
     let mut connections = Vec::new();
     for (from, to) in &shape.connections {
-        connections.push(AgentConnection {
-            from: agent_id(*from),
-            to: agent_id(*to),
-        });
+        connections
+            .push(AgentConnection::plain(agent_id(*from), agent_id(*to)));
     }
     Workflow {
         id: WorkflowId(Uuid::from_u128(WORKFLOW_NUMBER)),

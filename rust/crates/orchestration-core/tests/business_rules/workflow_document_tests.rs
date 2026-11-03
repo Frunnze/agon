@@ -2,7 +2,8 @@ use orchestration_core::approval::ApprovalPolicy;
 use orchestration_core::device::RunnerTarget;
 use orchestration_core::identifiers::{DeviceId, SkillId};
 use orchestration_core::workflow::{
-    AgentConnection, AgentKind, CanvasPosition, Workflow, WorkflowAgent,
+    AgentConnection, AgentKind, CanvasPosition, StepKind, Workflow,
+    WorkflowAgent,
 };
 use orchestration_core::workflow_document::render_workflow_document;
 use orchestration_core::workflow_graph::agents_in_order;
@@ -38,6 +39,7 @@ fn design_agent(
             horizontal: 0.0,
             vertical,
         },
+        step_kind: StepKind::Agent,
     }
 }
 
@@ -90,10 +92,7 @@ fn test_render_workflow_document_matches_the_release_layout() {
             1.0,
         )
     };
-    let connection = AgentConnection {
-        from: plan.id,
-        to: train.id,
-    };
+    let connection = AgentConnection::plain(plan.id, train.id);
     let workflow = Workflow {
         name: "release".to_owned(),
         ..workflow_from_parts(vec![train, plan], vec![connection])
@@ -219,7 +218,7 @@ proptest! {
     ) {
         let mut chain = Vec::new();
         for pair in workflow.agents.windows(2) {
-            chain.push(AgentConnection { from: pair[0].id, to: pair[1].id });
+            chain.push(AgentConnection::plain(pair[0].id, pair[1].id));
         }
         let chained = Workflow { connections: chain, ..workflow.clone() };
         let moved = with_first_agent(&chained, |agent| WorkflowAgent {

@@ -11,8 +11,11 @@ use crate::runner_server::RunnerServer;
 use crate::skill_selection::select_step_skills;
 use crate::step_execution::execute_step;
 use crate::step_opening::{choose_step_opening, count_answered_messages};
+use crate::step_outcome::compose_outcome_request;
 use crate::step_plan::StepPlan;
 use crate::step_prompt::{UpstreamResult, compose_step_prompt};
+
+const OUTCOME_SEPARATOR: &str = "\n\n";
 
 pub(crate) async fn run_assigned_step<S: RunnerServer, P: BranchPusher>(
     context: &RunContext<S, P>,
@@ -63,13 +66,18 @@ fn prompt_for_step(
         None => Vec::new(),
     };
     let upstream_results = collect_upstream_results(step, &assignment.run);
-    compose_step_prompt(
+    let prompt = compose_step_prompt(
         &step.instruction,
         &assignment.task.details,
         repository_folders,
         &skills,
         &upstream_results,
-    )
+    );
+    if step.outcome_choices.is_empty() {
+        return prompt;
+    }
+    let outcome_request = compose_outcome_request(&step.outcome_choices);
+    format!("{prompt}{OUTCOME_SEPARATOR}{outcome_request}")
 }
 
 fn collect_upstream_results(
@@ -86,5 +94,24 @@ fn collect_upstream_results(
             });
         }
     }
+    if let Some(looped_result) = find_looped_result(step, run) {
+        upstream_results.push(looped_result);
+    }
     upstream_results
+}
+
+fn find_looped_result(step: &StepPlan, run: &Run) -> Option<UpstreamResult> {
+    let own_step =
+        run.steps.iter().find(|run_step| run_step.name == step.name);
+    let loop_source = own_step?.loop_source.as_ref()?;
+    let source_step = run
+        .steps
+        .iter()
+        .find(|run_step| &run_step.name == loop_source)?;
+    let last_round = source_step.earlier_rounds.last()?;
+    let final_message = last_round.result.clone()?;
+    Some(UpstreamResult {
+        step_name: loop_source.clone(),
+        final_message,
+    })
 }

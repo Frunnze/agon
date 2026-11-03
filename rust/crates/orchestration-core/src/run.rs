@@ -10,6 +10,7 @@ pub enum StepStatus {
     Waiting,
     Running,
     WaitingForApproval,
+    WaitingForPerson,
     Done,
     Failed,
     Skipped,
@@ -24,6 +25,34 @@ pub struct RunStep {
     pub started_at: Option<DateTime<Utc>>,
     pub finished_at: Option<DateTime<Utc>>,
     pub result: Option<String>,
+    #[serde(default)]
+    pub outcome: Option<String>,
+    #[serde(default)]
+    pub loop_source: Option<String>,
+    #[serde(default)]
+    pub earlier_rounds: Vec<EarlierStepRound>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct EarlierStepRound {
+    pub status: StepStatus,
+    pub started_at: Option<DateTime<Utc>>,
+    pub finished_at: Option<DateTime<Utc>>,
+    pub result: Option<String>,
+    pub outcome: Option<String>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct LoopRounds {
+    pub from: String,
+    pub to: String,
+    pub rounds: u32,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RunNote {
+    pub at: DateTime<Utc>,
+    pub text: String,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -87,4 +116,8 @@ pub struct Run {
     pub started_by: DeviceId,
     pub started_at: DateTime<Utc>,
     pub finished_at: Option<DateTime<Utc>>,
+    #[serde(default)]
+    pub loop_rounds: Vec<LoopRounds>,
+    #[serde(default)]
+    pub notes: Vec<RunNote>,
 }

@@ -1,7 +1,7 @@
 use orchestration_api::routes::{
     PAIRING_SESSION, PROJECT_REPOSITORIES, WORKSPACE_DEVICE,
 };
-use orchestration_node::server_client::fill_route;
+use orchestration_node::server_client::{encode_path_segment, fill_route};
 use proptest::prelude::*;
 
 use crate::support::test_device::fail;
@@ -66,5 +66,32 @@ proptest! {
                 .all(|character| character.is_ascii_alphanumeric()
                     || character == '-');
         prop_assert_eq!(filled_path.is_ok(), is_safe);
+    }
+
+    #[test]
+    fn test_encode_path_segment_property_keeps_one_reversible_segment(
+        step_name in "\\PC{0,40}",
+    ) {
+        let encoded = encode_path_segment(&step_name);
+
+        let is_one_segment = encoded.chars().all(|character| {
+            character.is_ascii_alphanumeric()
+                || character == '-'
+                || character == '%'
+        });
+        prop_assert!(is_one_segment, "{}", encoded);
+        let mut decoded_bytes = Vec::new();
+        let mut remaining = encoded.as_str();
+        while let Some(character) = remaining.chars().next() {
+            if character == '%' {
+                let byte = u8::from_str_radix(&remaining[1..3], 16)?;
+                decoded_bytes.push(byte);
+                remaining = &remaining[3..];
+            } else {
+                decoded_bytes.push(u8::try_from(character)?);
+                remaining = &remaining[1..];
+            }
+        }
+        prop_assert_eq!(String::from_utf8(decoded_bytes)?, step_name);
     }
 }

@@ -25,6 +25,23 @@ pub fn start_server_backup(device: &TestDevice) -> Result<Value, String> {
     device.run(&json!({ "command": "start_server_backup" }))
 }
 
+pub fn stop_server_backup(device: &TestDevice) -> Result<Value, String> {
+    device.run(&json!({ "command": "stop_server_backup" }))
+}
+
+pub fn create_project(
+    device: &TestDevice,
+    workspace_id: &str,
+    name: &str,
+) -> Result<Value, String> {
+    device.run(&json!({
+        "command": "create_project",
+        "workspace_id": workspace_id,
+        "name": name,
+        "repositories": [],
+    }))
+}
+
 pub fn pair_client_at(
     hosting: &TestDevice,
     joining: &TestDevice,

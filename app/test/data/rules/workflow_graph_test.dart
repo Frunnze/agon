@@ -7,39 +7,16 @@ import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/workflow.dart';
 import 'package:agent_orchestration/data/rules/workflow_graph.dart';
 
+import '../../support/random_branching_workflows.dart';
 import '../../support/random_inputs.dart';
 import '../../support/random_workflows.dart';
-
-bool _hasPath(
-  Workflow workflow, {
-  required WorkflowAgentId from,
-  required WorkflowAgentId to,
-}) {
-  final List<WorkflowAgentId> waiting = <WorkflowAgentId>[from];
-  final Set<WorkflowAgentId> seen = <WorkflowAgentId>{};
-
-  while (waiting.isNotEmpty) {
-    final WorkflowAgentId current = waiting.removeLast();
-    if (current == to) {
-      return true;
-    }
-    if (seen.add(current)) {
-      for (final AgentConnection connection in workflow.connections) {
-        if (connection.from == current) {
-          waiting.add(connection.to);
-        }
-      }
-    }
-  }
-  return false;
-}
 
 void main() {
   test('test_order_agents_property_upstream_comes_first', () {
     final Random random = seededRandom(8101);
 
     for (int i = 0; i < propertyIterations; i += 1) {
-      final Workflow workflow = randomAcyclicWorkflow(random);
+      final Workflow workflow = randomBranchingWorkflow(random);
       final List<WorkflowAgent> ordered = orderAgents(workflow);
       final List<WorkflowAgentId> orderedIds = <WorkflowAgentId>[
         for (final WorkflowAgent agent in ordered) agent.id,
@@ -47,6 +24,9 @@ void main() {
 
       expect(orderedIds.toSet().length, workflow.agents.length);
       for (final AgentConnection connection in workflow.connections) {
+        if (connection.isLoop) {
+          continue;
+        }
         expect(
           orderedIds.indexOf(connection.from),
           lessThan(orderedIds.indexOf(connection.to)),
@@ -79,11 +59,11 @@ void main() {
     expect(names, <String>['plan', 'backend', 'ios', 'review', 'ship']);
   });
 
-  test('test_find_connection_problem_property_never_allows_a_loop', () {
+  test('test_find_connection_problem_property_refuses_self_and_repeats', () {
     final Random random = seededRandom(8103);
 
     for (int i = 0; i < propertyIterations; i += 1) {
-      final Workflow workflow = randomAcyclicWorkflow(random);
+      final Workflow workflow = randomBranchingWorkflow(random);
       if (workflow.agents.isEmpty) {
         continue;
       }
@@ -92,7 +72,14 @@ void main() {
       final AgentConnection connection = AgentConnection(
         from: from.id,
         to: to.id,
+        condition: null,
+        roundLimit: null,
       );
+      final bool isJoined = workflow.connections.any(
+        (AgentConnection existing) =>
+            existing.from == from.id && existing.to == to.id,
+      );
+
       final ConnectionProblem? problem = findConnectionProblem(
         workflow,
         connection,
@@ -100,45 +87,74 @@ void main() {
 
       if (from.id == to.id) {
         expect(problem, ConnectionProblem.sameAgent);
-      } else if (workflow.connections.contains(connection)) {
+      } else if (isJoined) {
         expect(problem, ConnectionProblem.alreadyConnected);
-      } else if (_hasPath(workflow, from: to.id, to: from.id)) {
-        expect(problem, ConnectionProblem.wouldMakeLoop);
       } else {
         expect(problem, isNull);
       }
     }
   });
 
-  test('test_connect_agents_property_result_stays_acyclic', () {
+  test('test_points_back_property_matches_a_forward_path', () {
+    final Random random = seededRandom(8105);
+
+    for (int i = 0; i < propertyIterations; i += 1) {
+      final Workflow workflow = randomBranchingWorkflow(random);
+      if (workflow.agents.isEmpty) {
+        continue;
+      }
+      final AgentConnection connection = AgentConnection(
+        from: pickOne(random, workflow.agents).id,
+        to: pickOne(random, workflow.agents).id,
+        condition: null,
+        roundLimit: null,
+      );
+
+      expect(
+        pointsBack(workflow, connection),
+        hasForwardPath(workflow, from: connection.to, to: connection.from),
+      );
+    }
+  });
+
+  test('test_connect_agents_property_only_loops_close_a_cycle', () {
     final Random random = seededRandom(8104);
 
     for (int i = 0; i < propertyIterations; i += 1) {
-      Workflow workflow = randomAcyclicWorkflow(random);
+      Workflow workflow = randomBranchingWorkflow(random);
       if (workflow.agents.isEmpty) {
         continue;
       }
       for (int attempt = 0; attempt < 10; attempt += 1) {
-        final AgentConnection connection = AgentConnection(
+        final AgentConnection plain = AgentConnection(
           from: pickOne(random, workflow.agents).id,
           to: pickOne(random, workflow.agents).id,
+          condition: null,
+          roundLimit: null,
         );
-        if (findConnectionProblem(workflow, connection) == null) {
-          workflow = connectAgents(workflow, connection);
-          expect(workflow.connections, contains(connection));
-        } else {
-          expect(
-            () => connectAgents(workflow, connection),
-            throwsArgumentError,
-          );
+        final AgentConnection loop = plain
+            .withCondition(pickOne(random, sampleOutcomes))
+            .withRoundLimit(1 + random.nextInt(mostRoundsInATest));
+        if (findConnectionProblem(workflow, plain) != null) {
+          expect(() => connectAgents(workflow, plain), throwsArgumentError);
+          continue;
         }
+
+        final bool isBackward = pointsBack(workflow, plain);
+        final AgentConnection accepted = isBackward ? loop : plain;
+        final AgentConnection refused = isBackward ? plain : loop;
+        expect(() => connectAgents(workflow, refused), throwsArgumentError);
+        workflow = connectAgents(workflow, accepted);
+        expect(workflow.connections, contains(accepted));
       }
 
       for (final AgentConnection connection in workflow.connections) {
-        expect(
-          _hasPath(workflow, from: connection.to, to: connection.from),
-          isFalse,
+        final bool closesCycle = hasForwardPath(
+          workflow,
+          from: connection.to,
+          to: connection.from,
         );
+        expect(closesCycle, connection.isLoop);
       }
     }
   });
@@ -152,6 +168,8 @@ void main() {
         AgentConnection(
           from: release.agents.first.id,
           to: const WorkflowAgentId('missing'),
+          condition: null,
+          roundLimit: null,
         ),
       ),
       throwsStateError,
@@ -165,6 +183,9 @@ void main() {
     };
 
     expect(messages.length, ConnectionProblem.values.length);
-    expect(ConnectionProblem.wouldMakeLoop.message, 'That would make a loop');
+    expect(
+      ConnectionProblem.alreadyConnected.message,
+      'These steps are already connected',
+    );
   });
 }

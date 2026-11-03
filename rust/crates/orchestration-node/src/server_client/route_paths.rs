@@ -3,6 +3,7 @@ use crate::node_error::NodeError;
 const PLACEHOLDER_START: char = '{';
 const PLACEHOLDER_END: char = '}';
 const ALLOWED_PUNCTUATION: char = '-';
+const PERCENT_SIGN: char = '%';
 
 pub fn fill_route(
     template: &str,
@@ -29,4 +30,21 @@ fn is_path_segment(value: &str) -> bool {
         character.is_ascii_alphanumeric() || character == ALLOWED_PUNCTUATION
     });
     !value.is_empty() && has_only_safe_characters
+}
+
+#[must_use]
+pub fn encode_path_segment(text: &str) -> String {
+    let mut encoded = String::new();
+    for byte in text.bytes() {
+        let character = char::from(byte);
+        let is_kept = character.is_ascii_alphanumeric()
+            || character == ALLOWED_PUNCTUATION;
+        if is_kept {
+            encoded.push(character);
+        } else {
+            let escape = format!("{PERCENT_SIGN}{byte:02X}");
+            encoded.push_str(&escape);
+        }
+    }
+    encoded
 }

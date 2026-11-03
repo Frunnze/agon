@@ -50,6 +50,8 @@ Run _failRun({required DeviceId runner, required String reason}) {
     startedBy: base.startedBy,
     startedAt: base.startedAt,
     finishedAt: base.finishedAt,
+    loopRounds: const <LoopRounds>[],
+    notes: const <RunNote>[],
   );
 }
 

@@ -197,6 +197,7 @@ node.WorkflowAgent findNodeAgentNamed(
 
 node.WorkflowAgent _rewriteTask(node.WorkflowAgent agent, String task) {
   return node.WorkflowAgent(
+    stepKind: node.StepKind.agent,
     id: agent.id,
     name: agent.name,
     kind: agent.kind,

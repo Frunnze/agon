@@ -71,7 +71,7 @@ void main() {
     expect(find.text('Agent settings'), findsNothing);
   });
 
-  testWidgets('dragging between dots connects and refuses loops', (
+  testWidgets('dragging between dots connects or starts a loop', (
     WidgetTester tester,
   ) async {
     final AppDependencies dependencies = buildGalleryDependencies();
@@ -84,6 +84,8 @@ void main() {
     final AgentConnection backendToIos = AgentConnection(
       from: findAgentNamed(before, 'backend').id,
       to: findAgentNamed(before, 'ios').id,
+      condition: null,
+      roundLimit: null,
     );
 
     await dragBetween(
@@ -98,14 +100,15 @@ void main() {
       start: tester.getRect(findDiagramNode('review')).bottomCenter,
       end: tester.getCenter(findDiagramNode('plan')),
     );
-    expect(find.text('That would make a loop'), findsOneWidget);
+    expect(find.text('New loop'), findsOneWidget);
+    expect(find.text('review → plan'), findsOneWidget);
 
     await dragBetween(
       tester,
       start: tester.getRect(findDiagramNode('ship')).topCenter,
       end: tester.getCenter(findDiagramNode('ship')),
     );
-    expect(find.text("An agent can't feed into itself"), findsOneWidget);
+    expect(find.text("A step can't feed into itself"), findsOneWidget);
     expect(
       readPipeline(dependencies).connections.length,
       before.connections.length + 1,

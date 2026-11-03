@@ -17,12 +17,27 @@ node.CanvasPosition mapCanvasPositionToNode(CanvasPosition position) {
   );
 }
 
+StepKind mapStepKindFromNode(node.StepKind stepKind) {
+  return switch (stepKind) {
+    node.StepKind.agent => StepKind.agent,
+    node.StepKind.person => StepKind.person,
+  };
+}
+
+node.StepKind mapStepKindToNode(StepKind stepKind) {
+  return switch (stepKind) {
+    StepKind.agent => node.StepKind.agent,
+    StepKind.person => node.StepKind.person,
+  };
+}
+
 WorkflowAgent mapWorkflowAgentFromNode(node.WorkflowAgent agent) {
   final node.AgentKind? kind = agent.kind;
 
   return WorkflowAgent(
     id: agent.id,
     name: agent.name,
+    stepKind: mapStepKindFromNode(agent.stepKind),
     kind: kind == null ? null : mapAgentKindFromNode(kind),
     task: agent.task,
     runsOn: mapRunnerTargetFromNode(agent.runsOn),
@@ -39,6 +54,7 @@ node.WorkflowAgent mapWorkflowAgentToNode(WorkflowAgent agent) {
   return node.WorkflowAgent(
     id: agent.id,
     name: agent.name,
+    stepKind: mapStepKindToNode(agent.stepKind),
     kind: kind == null ? null : mapAgentKindToNode(kind),
     task: agent.task,
     runsOn: mapRunnerTargetToNode(agent.runsOn),
@@ -50,9 +66,19 @@ node.WorkflowAgent mapWorkflowAgentToNode(WorkflowAgent agent) {
 }
 
 AgentConnection mapAgentConnectionFromNode(node.AgentConnection connection) {
-  return AgentConnection(from: connection.from, to: connection.to);
+  return AgentConnection(
+    from: connection.from,
+    to: connection.to,
+    condition: connection.condition,
+    roundLimit: connection.roundLimit,
+  );
 }
 
 node.AgentConnection mapAgentConnectionToNode(AgentConnection connection) {
-  return node.AgentConnection(from: connection.from, to: connection.to);
+  return node.AgentConnection(
+    from: connection.from,
+    to: connection.to,
+    condition: connection.condition,
+    roundLimit: connection.roundLimit,
+  );
 }

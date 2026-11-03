@@ -9,6 +9,7 @@ const int _fewestStepsWorthCounting = 2;
 const Set<StepStatus> _currentStepStatuses = <StepStatus>{
   StepStatus.running,
   StepStatus.waitingForApproval,
+  StepStatus.waitingForPerson,
   StepStatus.failed,
 };
 
