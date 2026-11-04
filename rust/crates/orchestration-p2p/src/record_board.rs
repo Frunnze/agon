@@ -5,7 +5,6 @@ use iroh::SecretKey;
 use iroh_dns::pkarr::SignedPacket;
 use reqwest::{Client, StatusCode};
 
-use crate::board_retry::retry_transient_board_problems;
 use crate::peer_configuration::SECRET_KEY_LENGTH;
 use crate::peer_error::PeerError;
 
@@ -16,7 +15,6 @@ const BOARD_REQUEST_TIMEOUT: Duration = Duration::from_secs(15);
 const PATH_SEPARATOR: char = '/';
 
 pub type RecordFields = Vec<String>;
-type RelayPayload = Vec<u8>;
 
 #[derive(Clone, Debug)]
 pub struct RecordBoard {
@@ -50,44 +48,10 @@ impl RecordBoard {
         .map_err(|problem| PeerError::RecordNotBuilt(problem.to_string()))?;
 
         let board_address = locate_record(&secret_key);
-        let payload = packet.to_relay_payload();
-        retry_transient_board_problems(|| {
-            self.put_payload(&board_address, payload.clone())
-        })
-        .await
-    }
-
-    pub async fn read(
-        &self,
-        record_secret: &[u8; SECRET_KEY_LENGTH],
-    ) -> Result<RecordFields, PeerError> {
-        let secret_key = SecretKey::from_bytes(record_secret);
-        let board_address = locate_record(&secret_key);
-        let published_payload = retry_transient_board_problems(|| {
-            self.fetch_published_payload(&board_address)
-        })
-        .await?;
-        let Some(payload) = published_payload else {
-            return Ok(Vec::new());
-        };
-
-        let packet =
-            SignedPacket::from_relay_payload(&secret_key.public(), &payload)
-                .map_err(|problem| {
-                PeerError::UnreadableRecord(problem.to_string())
-            })?;
-        Ok(packet.txt_records(RECORD_NAME))
-    }
-
-    async fn put_payload(
-        &self,
-        board_address: &str,
-        payload: RelayPayload,
-    ) -> Result<(), PeerError> {
         let response = self
             .http_client
             .put(board_address)
-            .body(payload)
+            .body(packet.to_relay_payload())
             .send()
             .await
             .map_err(|problem| describe_board_problem(&problem))?;
@@ -98,10 +62,12 @@ impl RecordBoard {
         Ok(())
     }
 
-    async fn fetch_published_payload(
+    pub async fn read(
         &self,
-        board_address: &str,
-    ) -> Result<Option<RelayPayload>, PeerError> {
+        record_secret: &[u8; SECRET_KEY_LENGTH],
+    ) -> Result<RecordFields, PeerError> {
+        let secret_key = SecretKey::from_bytes(record_secret);
+        let board_address = locate_record(&secret_key);
         let response = self
             .http_client
             .get(board_address)
@@ -110,7 +76,7 @@ impl RecordBoard {
             .map_err(|problem| describe_board_problem(&problem))?;
         let status = response.status();
         if status == StatusCode::NOT_FOUND {
-            return Ok(None);
+            return Ok(Vec::new());
         }
         if !status.is_success() {
             return Err(PeerError::RecordRefused(status.as_u16()));
@@ -120,7 +86,12 @@ impl RecordBoard {
             .bytes()
             .await
             .map_err(|problem| describe_board_problem(&problem))?;
-        Ok(Some(payload.to_vec()))
+        let packet =
+            SignedPacket::from_relay_payload(&secret_key.public(), &payload)
+                .map_err(|problem| {
+                PeerError::UnreadableRecord(problem.to_string())
+            })?;
+        Ok(packet.txt_records(RECORD_NAME))
     }
 }
 
