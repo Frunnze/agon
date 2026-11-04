@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import 'package:agent_orchestration/data/models/approval.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/runner.dart';
@@ -20,6 +22,16 @@ final class CanvasPosition {
 
   final double horizontal;
   final double vertical;
+
+  @override
+  bool operator ==(Object other) {
+    return other is CanvasPosition &&
+        other.horizontal == horizontal &&
+        other.vertical == vertical;
+  }
+
+  @override
+  int get hashCode => Object.hash(horizontal, vertical);
 }
 
 final class WorkflowAgent {
@@ -84,6 +96,35 @@ final class WorkflowAgent {
       position: position,
     );
   }
+
+  @override
+  bool operator ==(Object other) {
+    return other is WorkflowAgent &&
+        other.id == id &&
+        other.name == name &&
+        other.stepKind == stepKind &&
+        other.kind == kind &&
+        other.task == task &&
+        other.runsOn == runsOn &&
+        listEquals(other.skills, skills) &&
+        other.usesAutomaticSkills == usesAutomaticSkills &&
+        other.approvalPolicy == approvalPolicy &&
+        other.position == position;
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    name,
+    stepKind,
+    kind,
+    task,
+    runsOn,
+    Object.hashAll(skills),
+    usesAutomaticSkills,
+    approvalPolicy,
+    position,
+  );
 }
 
 final class AgentConnection {

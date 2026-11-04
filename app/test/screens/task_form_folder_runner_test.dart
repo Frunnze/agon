@@ -23,6 +23,7 @@ import 'package:agent_orchestration/shell/app_route.dart';
 
 import '../support/app_harness.dart';
 import '../support/random_inputs.dart';
+import '../support/workflow_repositories.dart';
 
 const List<String> _folderNames = <String>['billing-ui', 'app', 'site'];
 const ProjectId _folderProjectId = ProjectId('folder-project');
@@ -72,6 +73,8 @@ void main() {
         final TaskFormOptions options = buildTaskFormOptions(
           projects: <Project>[project, ...galleryProjects],
           workflows: galleryWorkflows,
+          findPendingChange:
+              buildGalleryWorkflowRepository().findPendingChange,
           runners: galleryRunners,
           deviceNames: DeviceNames(galleryDevices),
           skills: gallerySkills,

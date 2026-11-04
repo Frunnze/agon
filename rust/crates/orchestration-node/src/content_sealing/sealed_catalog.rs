@@ -1,7 +1,7 @@
 use orchestration_core::library::{Rule, Skill, SkillChange};
 use orchestration_core::task::Task;
 use orchestration_core::workflow::{Workflow, WorkflowAgent};
-use orchestration_security::sealing::{WorkspaceKey, seal_text};
+use orchestration_security::sealing::{WorkspaceKey, open_text, seal_text};
 
 use super::workspace_keyring::WorkspaceKeyring;
 use crate::node_error::NodeError;
@@ -99,6 +99,53 @@ pub fn seal_workflow(
         agents: sealed_agents,
         ..workflow.clone()
     })
+}
+
+pub fn reseal_workflow(
+    workspace_key: &WorkspaceKey,
+    workflow: &Workflow,
+    stored_workflow: &Workflow,
+) -> Result<Workflow, NodeError> {
+    let mut sealed_agents = Vec::new();
+    for agent in &workflow.agents {
+        let task = reseal_step_task(workspace_key, agent, stored_workflow)?;
+        sealed_agents.push(WorkflowAgent {
+            task,
+            ..agent.clone()
+        });
+    }
+    Ok(Workflow {
+        agents: sealed_agents,
+        ..workflow.clone()
+    })
+}
+
+fn reseal_step_task(
+    workspace_key: &WorkspaceKey,
+    agent: &WorkflowAgent,
+    stored_workflow: &Workflow,
+) -> Result<String, NodeError> {
+    let stored_agent = stored_workflow
+        .agents
+        .iter()
+        .find(|stored_agent| stored_agent.id == agent.id);
+    if let Some(stored_agent) = stored_agent
+        && seals_same_text(workspace_key, &stored_agent.task, &agent.task)
+    {
+        return Ok(stored_agent.task.clone());
+    }
+    Ok(seal_text(workspace_key, &agent.task)?)
+}
+
+fn seals_same_text(
+    workspace_key: &WorkspaceKey,
+    sealed_text: &str,
+    plain_text: &str,
+) -> bool {
+    match open_text(workspace_key, sealed_text) {
+        Ok(opened_text) => opened_text == plain_text,
+        Err(_) => false,
+    }
 }
 
 pub fn open_workflow(

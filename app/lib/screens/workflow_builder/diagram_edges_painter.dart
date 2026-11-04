@@ -6,7 +6,6 @@ import 'package:agent_orchestration/screens/workflow_builder.dart';
 import 'package:agent_orchestration/theme/app_colors.dart';
 import 'package:agent_orchestration/theme/app_spacing.dart';
 
-const double _arrowHalfWidth = CanvasMetrics.arrowLength / 2;
 const double _dashLength = AppSpacing.space2;
 const double _dashGap = AppSpacing.space1;
 
@@ -22,7 +21,7 @@ class DiagramEdgesPainter extends CustomPainter {
       final Color color = edge.look == EdgeLook.selected
           ? AppColors.action
           : AppColors.lineStrong;
-      _paintEdge(canvas, edge.curve, color, edge.line);
+      _paintEdge(canvas, edge.route, color, edge.line);
     }
 
     final EdgeCurve? drawn = drawnEdge;
@@ -31,36 +30,27 @@ class DiagramEdgesPainter extends CustomPainter {
     }
   }
 
-  void _paintEdge(Canvas canvas, EdgeCurve edge, Color color, EdgeLine line) {
+  void _paintEdge(Canvas canvas, EdgeRoute route, Color color, EdgeLine line) {
     final Paint stroke = Paint();
     stroke.color = color;
     stroke.style = PaintingStyle.stroke;
     stroke.strokeWidth = AppBorders.selected;
 
-    final Path curve = Path();
-    curve.moveTo(edge.start.dx, edge.start.dy);
-    curve.cubicTo(
-      edge.controlStart.dx,
-      edge.controlStart.dy,
-      edge.controlEnd.dx,
-      edge.controlEnd.dy,
-      edge.end.dx,
-      edge.end.dy,
-    );
+    final Path path = buildEdgePath(route);
     switch (line) {
       case EdgeLine.solid:
-        canvas.drawPath(curve, stroke);
+        canvas.drawPath(path, stroke);
       case EdgeLine.dashed:
-        _paintDashes(canvas, curve, stroke);
+        _paintDashes(canvas, path, stroke);
     }
 
     final Paint fill = Paint();
     fill.color = color;
-    canvas.drawPath(_buildArrowhead(edge), fill);
+    canvas.drawPath(buildArrowhead(route), fill);
   }
 
-  void _paintDashes(Canvas canvas, Path curve, Paint stroke) {
-    for (final PathMetric metric in curve.computeMetrics()) {
+  void _paintDashes(Canvas canvas, Path path, Paint stroke) {
+    for (final PathMetric metric in path.computeMetrics()) {
       double distance = 0;
       while (distance < metric.length) {
         final Path dash = metric.extractPath(distance, distance + _dashLength);
@@ -68,18 +58,6 @@ class DiagramEdgesPainter extends CustomPainter {
         distance += _dashLength + _dashGap;
       }
     }
-  }
-
-  Path _buildArrowhead(EdgeCurve edge) {
-    final double direction = edge.pointsDown ? 1 : -1;
-    final double baseY = edge.end.dy - direction * CanvasMetrics.arrowLength;
-
-    final Path arrowhead = Path();
-    arrowhead.moveTo(edge.end.dx, edge.end.dy);
-    arrowhead.lineTo(edge.end.dx - _arrowHalfWidth, baseY);
-    arrowhead.lineTo(edge.end.dx + _arrowHalfWidth, baseY);
-    arrowhead.close();
-    return arrowhead;
   }
 
   @override

@@ -160,6 +160,57 @@ void main() {
     }
   });
 
+  test('test_has_same_design_property_rebuilt_unsigned_copies_match', () {
+    final Random random = seededRandom(8208);
+    final List<Workflow> workflows = <Workflow>[
+      galleryWorkflows.first,
+      for (int i = 0; i < propertyIterations; i += 1)
+        randomAcyclicWorkflow(random),
+    ];
+
+    for (final Workflow workflow in workflows) {
+      final Workflow rebuilt = Workflow(
+        id: workflow.id,
+        name: workflow.name,
+        availability: workflow.availability,
+        agents: <WorkflowAgent>[
+          for (final WorkflowAgent agent in workflow.agents)
+            agent.copyWith(position: copyPosition(agent.position)),
+        ],
+        connections: List<AgentConnection>.of(workflow.connections),
+        signature: null,
+      );
+
+      expect(hasSameDesign(rebuilt, workflow), isTrue);
+    }
+  });
+
+  test('test_has_same_design_property_every_edit_differs', () {
+    final Random random = seededRandom(8209);
+
+    for (int i = 0; i < propertyIterations; i += 1) {
+      final Workflow workflow = randomAcyclicWorkflow(random);
+      final Workflow withBlank = addAgent(workflow, buildBlankAgent(workflow));
+      final Workflow renamed = workflow.withName('${workflow.name}-renamed');
+
+      expect(hasSameDesign(withBlank, workflow), isFalse);
+      expect(hasSameDesign(renamed, workflow), isFalse);
+      if (workflow.agents.isEmpty) {
+        continue;
+      }
+      final WorkflowAgent chosen = pickOne(random, workflow.agents);
+      final CanvasPosition shifted = CanvasPosition(
+        horizontal: chosen.position.horizontal + 1,
+        vertical: chosen.position.vertical,
+      );
+      final Workflow moved = replaceAgent(
+        workflow,
+        chosen.copyWith(position: shifted),
+      );
+      expect(hasSameDesign(moved, workflow), isFalse);
+    }
+  });
+
   test('edits reject agents the workflow does not have', () {
     final Workflow release = galleryWorkflows.first;
     final WorkflowAgent stranger = release.agents.first.copyWith();

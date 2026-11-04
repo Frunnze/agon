@@ -24,11 +24,13 @@ import 'package:agent_orchestration/widgets/forms/select_entry.dart';
 
 import '../support/random_inputs.dart';
 import '../support/sample_records.dart';
+import '../support/workflow_repositories.dart';
 
 TaskFormOptions buildGalleryOptions(RunnerTarget chosenTarget) {
   return buildTaskFormOptions(
     projects: galleryProjects.take(3).toList(),
     workflows: galleryWorkflows,
+    findPendingChange: buildGalleryWorkflowRepository().findPendingChange,
     runners: galleryRunners,
     deviceNames: DeviceNames(galleryDevices),
     skills: gallerySkills,
@@ -69,33 +71,27 @@ void main() {
     }
   });
 
-  test(
-    'test_build_task_form_options_property_unsigned_workflows_disabled',
-    () {
-      final TaskFormOptions options = buildGalleryOptions(
-        const AnyFreeRunner(),
-      );
-      final List<String> labels = <String>[];
+  test('test_build_task_form_options_property_unsigned_workflows_marked', () {
+    final TaskFormOptions options = buildGalleryOptions(const AnyFreeRunner());
+    final List<String> labels = <String>[];
 
-      for (final SelectEntry<TaskDoer> entry in options.doers) {
-        if (entry is SelectOption<TaskDoer>) {
-          labels.add(entry.label);
-          final bool isUnsigned = entry.label.endsWith('not signed yet');
-          expect(entry.isEnabled, !isUnsigned);
-        }
+    for (final SelectEntry<TaskDoer> entry in options.doers) {
+      if (entry is SelectOption<TaskDoer>) {
+        labels.add(entry.label);
+        expect(entry.isEnabled, isTrue);
       }
-      expect(labels, <String>[
-        'Claude Code',
-        'Codex',
-        'Gemini CLI',
-        'release',
-        'nightly-tests',
-        'feature-pipeline, not signed yet',
-        'train-ranker',
-        'docs-sync',
-      ]);
-    },
-  );
+    }
+    expect(labels, <String>[
+      'Claude Code',
+      'Codex',
+      'Gemini CLI',
+      'release',
+      'nightly-tests',
+      'feature-pipeline, not signed',
+      'train-ranker, not signed',
+      'docs-sync',
+    ]);
+  });
 
   test('test_describe_skills_property_round_trips_through_find_skill_id', () {
     final Random random = seededRandom(5003);
@@ -119,6 +115,7 @@ void main() {
     final TaskFormOptions empty = buildTaskFormOptions(
       projects: const <Project>[],
       workflows: galleryWorkflows,
+      findPendingChange: buildGalleryWorkflowRepository().findPendingChange,
       runners: galleryRunners,
       deviceNames: DeviceNames(galleryDevices),
       skills: gallerySkills,

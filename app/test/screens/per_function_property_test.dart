@@ -23,6 +23,7 @@ import 'package:agent_orchestration/widgets/gaps.dart';
 import 'package:agent_orchestration/widgets/status_label.dart';
 
 import '../support/random_inputs.dart';
+import '../support/workflow_repositories.dart';
 import '../support/sample_records.dart';
 import '../support/widget_harness.dart';
 
@@ -67,6 +68,7 @@ void main() {
     final TaskFormOptions options = buildTaskFormOptions(
       projects: galleryProjects,
       workflows: galleryWorkflows,
+      findPendingChange: buildGalleryWorkflowRepository().findPendingChange,
       runners: galleryRunners,
       deviceNames: DeviceNames(galleryDevices),
       skills: gallerySkills,

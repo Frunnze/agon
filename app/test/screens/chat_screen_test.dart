@@ -5,9 +5,11 @@ import 'package:agent_orchestration/data/app_dependencies.dart';
 import 'package:agent_orchestration/data/fakes.dart';
 import 'package:agent_orchestration/data/gallery/gallery_chat.dart';
 import 'package:agent_orchestration/data/gallery/gallery_identifiers.dart';
+import 'package:agent_orchestration/data/gallery/gallery_moments.dart';
 import 'package:agent_orchestration/data/models/approval.dart';
 import 'package:agent_orchestration/data/models/conversation.dart';
 import 'package:agent_orchestration/data/models/run.dart';
+import 'package:agent_orchestration/data/models/runner.dart';
 import 'package:agent_orchestration/screens/chat/conversation_view.dart';
 import 'package:agent_orchestration/shell/app_navigation.dart';
 import 'package:agent_orchestration/shell/app_route.dart';
@@ -17,6 +19,7 @@ import 'package:agent_orchestration/widgets/route_line.dart';
 import 'package:agent_orchestration/widgets/route_line_painter.dart';
 
 import '../support/app_harness.dart';
+import '../support/person_step_dependencies.dart';
 
 const ChatRoute _chatRoute = ChatRoute(GalleryRunIds.release42);
 
@@ -61,6 +64,16 @@ void expectContextPanel(Size size) {
     shown,
   );
   expect(find.text('Open run'), shown);
+}
+
+Conversation _finishedRunConversation() {
+  return Conversation(
+    runId: GalleryRunIds.writeApiDocs1,
+    messages: const <ChatMessage>[],
+    link: RunnerLink.unreachable,
+    linkLostAt: galleryToday(14, 9, 5),
+    agentActivity: AgentActivity.idle,
+  );
 }
 
 void main() {
@@ -112,6 +125,36 @@ void main() {
       } else {
         expect(dialog.center.dx, closeTo(size.width / 2, 1));
       }
+    });
+
+    testWidgets('a step waiting for you shows no link at ${size.width}', (
+      WidgetTester tester,
+    ) async {
+      await pumpApp(
+        tester,
+        size: size,
+        route: _chatRoute,
+        dependencies: buildDependenciesWithQuestion(notes: const <RunNote>[]),
+      );
+
+      expect(find.text('Reconnecting'), findsNothing);
+      expect(find.byType(RouteLine), findsNothing);
+    });
+
+    testWidgets('a finished run shows no link at ${size.width}', (
+      WidgetTester tester,
+    ) async {
+      await pumpApp(
+        tester,
+        size: size,
+        route: const ChatRoute(GalleryRunIds.writeApiDocs1),
+        dependencies: buildDependenciesWithConversation(
+          _finishedRunConversation(),
+        ),
+      );
+
+      expect(find.text('Reconnecting'), findsNothing);
+      expect(find.byType(RouteLine), findsNothing);
     });
 
     testWidgets('reconnecting matches the gallery at ${size.width}', (

@@ -16,7 +16,7 @@ use super::workflow_view::{
     WorkflowView, build_workflow_view, read_stored_workflow,
 };
 use crate::command_reply::encode_reply;
-use crate::content_sealing::{open_workflow, seal_workflow};
+use crate::content_sealing::{open_workflow, reseal_workflow, seal_workflow};
 use crate::node::{DeviceSession, Node};
 use crate::node_error::NodeError;
 use crate::server_client::SignedServerClient;
@@ -103,8 +103,13 @@ pub(super) async fn handle_workflow_command(
             workspace_id,
             workflow,
         } => {
-            let request =
-                prepare_workflow_upload(&session, workspace_id, &workflow)?;
+            let stored = read_stored_workflow(&client, workflow.id).await?;
+            let request = prepare_workflow_resave(
+                &session,
+                workspace_id,
+                &workflow,
+                &stored.workflow,
+            )?;
             client.update_workflow(workflow.id, &request).await?;
             encode_reply(&show_workflow(&session, &client, workflow.id).await?)
         }
@@ -134,12 +139,30 @@ pub(super) fn prepare_workflow_upload(
     workspace_id: WorkspaceId,
     workflow: &Workflow,
 ) -> Result<SaveWorkflowRequest, NodeError> {
-    validate_name(&workflow.name)?;
-    validate_workflow(workflow)?;
+    check_workflow_upload(workflow)?;
     let workspace_key = session.keyring.key_for(workspace_id)?;
     Ok(SaveWorkflowRequest {
         workflow: seal_workflow(workspace_key, workflow)?,
     })
+}
+
+pub(super) fn prepare_workflow_resave(
+    session: &DeviceSession,
+    workspace_id: WorkspaceId,
+    workflow: &Workflow,
+    stored_workflow: &Workflow,
+) -> Result<SaveWorkflowRequest, NodeError> {
+    check_workflow_upload(workflow)?;
+    let workspace_key = session.keyring.key_for(workspace_id)?;
+    Ok(SaveWorkflowRequest {
+        workflow: reseal_workflow(workspace_key, workflow, stored_workflow)?,
+    })
+}
+
+fn check_workflow_upload(workflow: &Workflow) -> Result<(), NodeError> {
+    validate_name(&workflow.name)?;
+    validate_workflow(workflow)?;
+    Ok(())
 }
 
 pub(super) async fn sign_workflow(

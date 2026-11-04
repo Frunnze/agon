@@ -9,6 +9,20 @@ import '../../support/random_branching_workflows.dart';
 import '../../support/random_inputs.dart';
 import '../../support/random_workflows.dart';
 
+Offset _pickPointOnRoute(Random random, EdgeRoute route) {
+  switch (route) {
+    case EdgeCurve():
+      return findCurvePoint(route, random.nextDouble());
+    case LoopRoute():
+      final int segmentEnd = 1 + random.nextInt(route.corners.length - 1);
+      return Offset.lerp(
+        route.corners[segmentEnd - 1],
+        route.corners[segmentEnd],
+        random.nextDouble(),
+      )!;
+  }
+}
+
 void main() {
   test('test_describe_diagram_edges_property_one_edge_per_connection', () {
     final Random random = seededRandom(9801);
@@ -32,6 +46,7 @@ void main() {
             selected != null && edge.connection.joinsSameSteps(selected);
         expect(edge.look == EdgeLook.selected, isSelected);
         expect(edge.line == EdgeLine.dashed, edge.connection.isLoop);
+        expect(edge.route is LoopRoute, edge.connection.isLoop);
       }
     }
   });
@@ -82,25 +97,7 @@ void main() {
       expect(edges.last.connection, drawnLoop);
       expect(edges.last.line, EdgeLine.dashed);
       expect(edges.last.look, EdgeLook.selected);
-    }
-  });
-
-  test('test_build_loop_curve_property_leaves_bottom_and_enters_top', () {
-    final Random random = seededRandom(9804);
-
-    for (int i = 0; i < propertyIterations; i += 1) {
-      final CanvasPosition from = randomCanvasPosition(random);
-      final CanvasPosition to = randomCanvasPosition(random);
-
-      final EdgeCurve curve = buildLoopCurve(from: from, to: to);
-
-      expect(curve.start.dx, findOutputPort(from).dx);
-      expect(curve.start.dy, greaterThan(findOutputPort(from).dy));
-      expect(curve.end.dx, findInputPort(to).dx);
-      expect(curve.end.dy, lessThan(findInputPort(to).dy));
-      expect(curve.pointsDown, isTrue);
-      final double portsMiddle = (curve.start.dx + curve.end.dx) / 2;
-      expect(findCurvePoint(curve, 0.5).dx, greaterThan(portsMiddle));
+      expect(edges.last.route, isA<LoopRoute>());
     }
   });
 
@@ -115,6 +112,31 @@ void main() {
 
       expect(findCurvePoint(curve, 0), curve.start);
       expect(findCurvePoint(curve, 1), curve.end);
+    }
+  });
+
+  test('test_find_label_centre_property_loops_label_their_outer_part', () {
+    final Random random = seededRandom(9808);
+
+    for (int i = 0; i < propertyIterations; i += 1) {
+      final Workflow workflow = randomBranchingWorkflow(random);
+      final List<DiagramEdge> edges = describeDiagramEdges(
+        agents: workflow.agents,
+        connections: workflow.connections,
+        selected: null,
+        drawnLoop: null,
+      );
+
+      for (final DiagramEdge edge in edges) {
+        final EdgeRoute route = edge.route;
+        final Offset centre = findLabelCentre(route);
+        switch (route) {
+          case EdgeCurve():
+            expect(centre, findCurvePoint(route, 0.5));
+          case LoopRoute():
+            expect(centre, route.labelArea.center);
+        }
+      }
     }
   });
 
@@ -133,7 +155,7 @@ void main() {
         drawnLoop: null,
       );
       final DiagramEdge edge = pickOne(random, edges);
-      final Offset point = findCurvePoint(edge.curve, random.nextDouble());
+      final Offset point = _pickPointOnRoute(random, edge.route);
 
       expect(findEdgeHit(edges, point), isNotNull);
     }

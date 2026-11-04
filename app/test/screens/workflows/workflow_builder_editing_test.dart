@@ -3,8 +3,11 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:agent_orchestration/data/app_dependencies.dart';
 import 'package:agent_orchestration/data/fakes.dart';
+import 'package:agent_orchestration/data/gallery/gallery_identifiers.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/workflow.dart';
+import 'package:agent_orchestration/data/repository/workflow_repository.dart';
+import 'package:agent_orchestration/screens/workflow_builder.dart';
 import 'package:agent_orchestration/shell/app_navigation.dart';
 import 'package:agent_orchestration/shell/app_route.dart';
 
@@ -13,6 +16,7 @@ import '../../support/builder_harness.dart';
 import '../../support/form_finders.dart';
 
 const String _askHint = 'Ask the agent, e.g. add a test step after ios';
+const WorkflowId _signedWorkflowId = GalleryWorkflowIds.release;
 
 void main() {
   testWidgets('asking the agent changes the workflow', (
@@ -186,6 +190,40 @@ void main() {
     await pumpFrames(tester);
 
     expect(readPipeline(dependencies).agents.length, 5);
+    expect(navigation.routes, <AppRoute>[workflowsSectionRoute]);
+  });
+
+  testWidgets('cancel without a change saves nothing and stays signed', (
+    WidgetTester tester,
+  ) async {
+    final AppDependencies dependencies = buildGalleryDependencies();
+    final WorkflowRepository repository = dependencies.workflowRepository;
+    final AppNavigation navigation = await pumpApp(
+      tester,
+      size: tallDesktopSize,
+      route: workflowsSectionRoute,
+      dependencies: dependencies,
+    );
+    navigation.openRoute(
+      const WorkflowBuilderRoute(
+        _signedWorkflowId,
+        opening: BuilderOpening.forEditing,
+      ),
+    );
+    await pumpFrames(tester);
+    final Workflow opened = repository.findWorkflow(_signedWorkflowId);
+    int savedCount = 0;
+    repository.addListener(() => savedCount += 1);
+
+    await tapVisible(tester, find.text(fitLabel));
+    await pumpFrames(tester);
+    await tapVisible(tester, find.text('Cancel'));
+    await pumpFrames(tester);
+
+    final Workflow afterCancel = repository.findWorkflow(_signedWorkflowId);
+    expect(savedCount, 0);
+    expect(afterCancel, same(opened));
+    expect(afterCancel.signature, isNotNull);
     expect(navigation.routes, <AppRoute>[workflowsSectionRoute]);
   });
 }

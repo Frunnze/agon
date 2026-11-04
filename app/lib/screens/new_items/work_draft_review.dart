@@ -53,6 +53,7 @@ final class WorkDraftReview implements DraftReview {
       options: options,
       repeatChoices: _isJob ? jobRepeatChoices : RepeatChoice.values,
       repeatHint: _isJob ? null : taskRepeatHint,
+      onRouteOpened: navigation.openRoute,
       onChanged: (TaskFormValues values) =>
           _reportReadableWork(values, callbacks),
       actions: buildReviewActions<TaskFormValues>(

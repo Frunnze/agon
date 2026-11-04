@@ -68,6 +68,7 @@ class TaskFormScreen extends StatelessWidget {
           options: options,
           repeatChoices: RepeatChoice.values,
           repeatHint: taskRepeatHint,
+          onRouteOpened: navigation.openRoute,
           actions: <FormAction<TaskFormValues>>[
             SubmitFormAction<TaskFormValues>(
               label: 'Save for later',

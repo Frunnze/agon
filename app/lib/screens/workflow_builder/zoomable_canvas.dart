@@ -4,7 +4,6 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
-import 'package:agent_orchestration/data/models/workflow.dart';
 import 'package:agent_orchestration/screens/workflow_builder.dart';
 import 'package:agent_orchestration/theme/app_spacing.dart';
 
@@ -23,13 +22,13 @@ const Set<PointerDeviceKind> canvasDragDevices = <PointerDeviceKind>{
 class ZoomableCanvas extends StatefulWidget {
   const ZoomableCanvas({
     required this.view,
-    required this.nodePositions,
+    required this.diagramBounds,
     required this.child,
     super.key,
   });
 
   final ValueNotifier<CanvasView> view;
-  final List<CanvasPosition> nodePositions;
+  final Rect diagramBounds;
   final Widget child;
 
   @override
@@ -164,7 +163,7 @@ class _ZoomableCanvasState extends State<ZoomableCanvas> {
 
   void _fitNodes(Size viewport) {
     widget.view.value = fitCanvasView(
-      positions: widget.nodePositions,
+      diagramBounds: widget.diagramBounds,
       viewport: viewport,
     );
   }

@@ -7,18 +7,22 @@ import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/runner.dart';
 import 'package:agent_orchestration/data/models/task.dart';
 import 'package:agent_orchestration/presentation/approval_policy_text.dart';
+import 'package:agent_orchestration/presentation/problem_text.dart';
 import 'package:agent_orchestration/screens/shared/approval_policy_field.dart';
 import 'package:agent_orchestration/screens/task_form/agent_place_field.dart';
 import 'package:agent_orchestration/screens/task_form/folder_runner_notice.dart';
 import 'package:agent_orchestration/screens/task_form/schedule_fields.dart';
+import 'package:agent_orchestration/screens/task_form/sign_workflow_notice.dart';
+import 'package:agent_orchestration/screens/task_form/submit_refusal.dart';
 import 'package:agent_orchestration/screens/task_form/task_form_options.dart';
 import 'package:agent_orchestration/screens/task_form/task_form_values.dart';
+import 'package:agent_orchestration/screens/task_form/task_skills_field.dart';
+import 'package:agent_orchestration/screens/task_form/workflow_to_sign.dart';
+import 'package:agent_orchestration/shell/app_route.dart';
 import 'package:agent_orchestration/theme/field_padding.dart';
-import 'package:agent_orchestration/widgets/forms/check_field.dart';
 import 'package:agent_orchestration/widgets/forms/form_action.dart';
 import 'package:agent_orchestration/widgets/forms/form_field_block.dart';
 import 'package:agent_orchestration/widgets/forms/select_field.dart';
-import 'package:agent_orchestration/widgets/forms/tag_input_field.dart';
 
 const int _detailsMinimumLines = 3;
 const int _detailsMaximumLines = 8;
@@ -29,6 +33,7 @@ class TaskForm extends StatefulWidget {
     required this.options,
     required this.repeatChoices,
     required this.actions,
+    required this.onRouteOpened,
     super.key,
     this.repeatHint,
     this.onChanged,
@@ -38,6 +43,7 @@ class TaskForm extends StatefulWidget {
   final TaskFormOptions options;
   final List<RepeatChoice> repeatChoices;
   final List<FormAction<TaskFormValues>> actions;
+  final ValueChanged<AppRoute> onRouteOpened;
   final String? repeatHint;
   final ValueChanged<TaskFormValues>? onChanged;
 
@@ -58,7 +64,9 @@ class _TaskFormState extends State<TaskForm> {
   );
   String? _titleProblem;
   String? _timeProblem;
+  SubmitRefusal? _refusal;
   bool _isSubmitting = false;
+  final GlobalKey _signNoticeKey = GlobalKey();
 
   @override
   void dispose() {
@@ -99,6 +107,10 @@ class _TaskFormState extends State<TaskForm> {
   Widget build(BuildContext context) {
     final MissingFolderRunner? missingFolderRunner =
         widget.options.missingFolderRunners[_values.projectId];
+    final WorkflowToSign? workflowToSign = widget.options.findWorkflowToSign(
+      _values.doer,
+    );
+    final SubmitRefusal? refusal = _refusal;
 
     return FormColumn(
       children: <Widget>[
@@ -148,6 +160,12 @@ class _TaskFormState extends State<TaskForm> {
               onChanged: (TaskDoer doer) =>
                   _updateValues(_readValues().copyWith(doer: doer)),
             ),
+            if (workflowToSign != null)
+              SignWorkflowNotice(
+                key: _signNoticeKey,
+                workflow: workflowToSign,
+                onOpened: () => widget.onRouteOpened(workflowToSign.signRoute),
+              ),
           ],
         ),
         FormFieldBlock(
@@ -167,7 +185,19 @@ class _TaskFormState extends State<TaskForm> {
           onChanged: (AgentPlace place) =>
               _updateValues(_readValues().copyWith(agentPlace: place)),
         ),
-        _buildSkillsField(),
+        TaskSkillsField(
+          skillIds: _values.skillIds,
+          usesAutomaticSkills: _values.usesAutomaticSkills,
+          options: widget.options,
+          onSkillsChanged: (List<SkillId> skillIds) =>
+              _updateValues(_readValues().copyWith(skillIds: skillIds)),
+          onAutomaticSkillsChanged: (bool usesAutomaticSkills) =>
+              _updateValues(
+                _readValues().copyWith(
+                  usesAutomaticSkills: usesAutomaticSkills,
+                ),
+              ),
+        ),
         _buildApprovalField(),
         ScheduleFields(
           repeat: _values.repeat,
@@ -182,40 +212,12 @@ class _TaskFormState extends State<TaskForm> {
           onWeekdayChanged: (weekday) =>
               _updateValues(_readValues().copyWith(weekday: weekday)),
         ),
+        if (refusal != null) SubmitRefusalBanner(refusal: refusal),
         FormActionButtons<TaskFormValues>(
           actions: widget.actions,
           isSubmitting: _isSubmitting,
           onSubmit: (SubmitFormAction<TaskFormValues> action) =>
               unawaited(_submit(action)),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSkillsField() {
-    final List<String> chosenNames = widget.options.describeSkills(
-      _values.skillIds,
-    );
-
-    return FormFieldBlock(
-      label: 'Skills to use',
-      hint: 'A workflow sets the skills of each of its agents.',
-      children: <Widget>[
-        TagInputField(
-          tags: chosenNames,
-          suggestions: <String>[
-            for (final skill in widget.options.skills) skill.name,
-          ],
-          placeholder: 'Add a skill',
-          onTagAdded: _addSkill,
-          onTagRemoved: _removeSkill,
-        ),
-        CheckField(
-          label: 'Also let the agent pick automatic skills',
-          value: _values.usesAutomaticSkills,
-          onChanged: (bool usesAutomaticSkills) => _updateValues(
-            _readValues().copyWith(usesAutomaticSkills: usesAutomaticSkills),
-          ),
         ),
       ],
     );
@@ -230,38 +232,37 @@ class _TaskFormState extends State<TaskForm> {
     );
   }
 
-  void _addSkill(String skillName) {
-    final SkillId skillId = widget.options.findSkillId(skillName);
-
-    _updateValues(
-      _readValues().copyWith(
-        skillIds: <SkillId>[..._values.skillIds, skillId],
-      ),
-    );
-  }
-
-  void _removeSkill(String skillName) {
-    final SkillId skillId = widget.options.findSkillId(skillName);
-    final List<SkillId> remaining = _values.skillIds
-        .where((SkillId candidate) => candidate != skillId)
-        .toList();
-
-    _updateValues(_readValues().copyWith(skillIds: remaining));
-  }
-
   Future<void> _submit(SubmitFormAction<TaskFormValues> action) async {
     final TaskFormValues values = _readValues();
     setState(() {
       _titleProblem = values.describeTitleProblem();
       _timeProblem = values.describeTimeProblem();
+      _refusal = null;
     });
     if (!values.isValid) {
+      return;
+    }
+    if (widget.options.findWorkflowToSign(values.doer) != null) {
+      unawaited(Scrollable.ensureVisible(_signNoticeKey.currentContext!));
       return;
     }
 
     setState(() => _isSubmitting = true);
     try {
       await action.onSubmitted(values);
+    } on Object catch (problem) {
+      final String? explanation = describeProblemForPeople(problem);
+      if (explanation == null) {
+        rethrow;
+      }
+      if (mounted) {
+        setState(
+          () => _refusal = SubmitRefusal(
+            actionLabel: action.label,
+            explanation: explanation,
+          ),
+        );
+      }
     } finally {
       if (mounted) {
         setState(() => _isSubmitting = false);

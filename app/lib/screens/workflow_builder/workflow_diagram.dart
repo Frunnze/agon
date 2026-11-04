@@ -1,16 +1,8 @@
 import 'package:flutter/widgets.dart';
 
 import 'package:agent_orchestration/screens/workflow_builder.dart';
-import 'package:agent_orchestration/theme/app_colors.dart';
-import 'package:agent_orchestration/theme/app_spacing.dart';
-import 'package:agent_orchestration/theme/app_typography.dart';
 
 const Offset _centeredOnPoint = Offset(-0.5, -0.5);
-const double _labelMiddle = 0.5;
-
-final TextStyle _labelStyle = AppTextStyles.caption
-    .merge(AppTextStyles.monospace)
-    .copyWith(color: AppColors.inkMuted);
 
 class WorkflowDiagram extends StatelessWidget {
   const WorkflowDiagram({
@@ -62,31 +54,15 @@ class WorkflowDiagram extends StatelessWidget {
       return const <Widget>[];
     }
 
-    final Offset middle = findCurvePoint(edge.curve, _labelMiddle);
-    final Color border = edge.look == EdgeLook.selected
-        ? AppColors.action
-        : AppColors.line;
+    final Offset centre = findLabelCentre(edge.route);
     return <Widget>[
       Positioned(
-        left: middle.dx,
-        top: middle.dy,
+        left: centre.dx,
+        top: centre.dy,
         child: FractionalTranslation(
           translation: _centeredOnPoint,
           child: IgnorePointer(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: AppColors.sunken,
-                border: Border.all(color: border),
-                borderRadius: BorderRadius.circular(AppRadii.control),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.space2,
-                  vertical: AppSpacing.space1,
-                ),
-                child: Text(label, style: _labelStyle, maxLines: 1),
-              ),
-            ),
+            child: EdgeLabelBox(label: label, look: edge.look),
           ),
         ),
       ),

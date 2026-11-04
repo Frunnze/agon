@@ -35,6 +35,42 @@ void main() {
     }
   });
 
+  test('test_canvas_position_equals_property_only_same_offsets_match', () {
+    final Random random = seededRandom(9411);
+
+    for (int i = 0; i < propertyIterations; i += 1) {
+      final CanvasPosition position = randomCanvasPosition(random);
+      final CanvasPosition copy = copyPosition(position);
+      final CanvasPosition lowered = CanvasPosition(
+        horizontal: position.horizontal,
+        vertical: position.vertical + 1,
+      );
+
+      expect(copy, position);
+      expect(copy.hashCode, position.hashCode);
+      expect(lowered, isNot(position));
+    }
+  });
+
+  test('test_workflow_agent_equals_property_only_same_fields_match', () {
+    final Random random = seededRandom(9412);
+
+    for (int i = 0; i < propertyIterations; i += 1) {
+      final WorkflowAgent agent = randomAgent(random, i);
+      final WorkflowAgent copy = agent.copyWith(
+        skills: List<SkillId>.of(agent.skills),
+        position: copyPosition(agent.position),
+      );
+      final WorkflowAgent retasked = agent.copyWith(
+        task: '${agent.task} again',
+      );
+
+      expect(copy, agent);
+      expect(copy.hashCode, agent.hashCode);
+      expect(retasked, isNot(agent));
+    }
+  });
+
   test('test_with_approval_policy_property_changes_only_the_policy', () {
     final Random random = seededRandom(9409);
 

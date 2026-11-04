@@ -32,9 +32,12 @@ class _ReadOnlyWorkflowDiagramState extends State<ReadOnlyWorkflowDiagram> {
 
   @override
   Widget build(BuildContext context) {
-    final List<CanvasPosition> positions = <CanvasPosition>[
-      for (final DiagramNode node in widget.nodes) node.position,
-    ];
+    final Rect diagramBounds = findDiagramBounds(
+      positions: <CanvasPosition>[
+        for (final DiagramNode node in widget.nodes) node.position,
+      ],
+      edges: widget.edges,
+    );
 
     return GestureDetector(
       dragStartBehavior: DragStartBehavior.down,
@@ -42,9 +45,9 @@ class _ReadOnlyWorkflowDiagramState extends State<ReadOnlyWorkflowDiagram> {
       onPanUpdate: _panView,
       child: ZoomableCanvas(
         view: _view,
-        nodePositions: positions,
+        diagramBounds: diagramBounds,
         child: WorkflowDiagram(
-          size: measureCanvas(positions),
+          size: measureCanvas(diagramBounds),
           nodes: widget.nodes,
           edges: widget.edges,
           drawnEdge: null,

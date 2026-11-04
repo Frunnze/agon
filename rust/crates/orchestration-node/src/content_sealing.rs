@@ -4,8 +4,8 @@ mod sealed_work;
 mod workspace_keyring;
 
 pub use sealed_catalog::{
-    open_rule, open_skill, open_task, open_workflow, seal_rule, seal_skill,
-    seal_task, seal_workflow,
+    open_rule, open_skill, open_task, open_workflow, reseal_workflow,
+    seal_rule, seal_skill, seal_task, seal_workflow,
 };
 pub use sealed_document::open_sealed_document;
 pub use sealed_work::{

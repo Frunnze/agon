@@ -35,7 +35,11 @@ final class NodeHit extends CanvasHit {
   const NodeHit(super.agentId);
 }
 
-final class EdgeCurve {
+sealed class EdgeRoute {
+  const EdgeRoute();
+}
+
+final class EdgeCurve extends EdgeRoute {
   const EdgeCurve({
     required this.start,
     required this.controlStart,
@@ -49,6 +53,13 @@ final class EdgeCurve {
   final Offset end;
 
   bool get pointsDown => end.dy >= controlEnd.dy;
+}
+
+final class LoopRoute extends EdgeRoute {
+  const LoopRoute({required this.corners, required this.labelArea});
+
+  final List<Offset> corners;
+  final Rect labelArea;
 }
 
 Rect findNodeRect(CanvasPosition position) {
@@ -68,19 +79,10 @@ Offset findOutputPort(CanvasPosition position) {
   return findNodeRect(position).bottomCenter;
 }
 
-Size measureCanvas(List<CanvasPosition> positions) {
-  double right = 0;
-  double bottom = 0;
-
-  for (final CanvasPosition position in positions) {
-    final Rect node = findNodeRect(position);
-    right = max(right, node.right);
-    bottom = max(bottom, node.bottom);
-  }
-
+Size measureCanvas(Rect diagramBounds) {
   return Size(
-    right + CanvasMetrics.endMarginHorizontal,
-    bottom + CanvasMetrics.endMarginVertical,
+    diagramBounds.right + CanvasMetrics.endMarginHorizontal,
+    diagramBounds.bottom + CanvasMetrics.endMarginVertical,
   );
 }
 

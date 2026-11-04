@@ -1,8 +1,10 @@
 import 'package:flutter/widgets.dart';
 
 import 'package:agent_orchestration/data/models/device.dart';
+import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/conversation.dart';
 import 'package:agent_orchestration/data/models/runner.dart';
+import 'package:agent_orchestration/data/rules/run_lifecycle.dart';
 import 'package:agent_orchestration/presentation/identifier_text.dart';
 import 'package:agent_orchestration/screens/chat/chat_composer.dart';
 import 'package:agent_orchestration/screens/chat/chat_context_panel.dart';
@@ -67,7 +69,7 @@ class ChatPageLayout extends StatelessWidget {
                 onPressed: onBack,
               ),
             ),
-            if (runContext.currentStep.runner != thisDevice.id)
+            if (_showsRunnerLink())
               buildRunnerLinkRoute(
                 startName: thisDevice.name,
                 endName: runContext.runnerName,
@@ -90,6 +92,14 @@ class ChatPageLayout extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  bool _showsRunnerLink() {
+    final DeviceId? stepRunner = runContext.currentStep.runner;
+    if (stepRunner == null || stepRunner == thisDevice.id) {
+      return false;
+    }
+    return isRunActive(runContext.run);
   }
 
   List<Fact> _buildFacts() {

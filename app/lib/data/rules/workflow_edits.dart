@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/runner.dart';
 import 'package:agent_orchestration/data/models/workflow.dart';
@@ -185,4 +187,10 @@ Workflow removeConnection(Workflow workflow, AgentConnection removed) {
   return _dropLoopsNotPointingBack(
     workflow.withGraph(agents: workflow.agents, connections: connections),
   );
+}
+
+bool hasSameDesign(Workflow first, Workflow second) {
+  return first.name == second.name &&
+      listEquals(first.agents, second.agents) &&
+      listEquals(first.connections, second.connections);
 }

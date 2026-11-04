@@ -8,6 +8,7 @@ import 'package:agent_orchestration/presentation/device_names.dart';
 import 'package:agent_orchestration/presentation/runner_target_text.dart';
 import 'package:agent_orchestration/presentation/skill_names.dart';
 import 'package:agent_orchestration/screens/task_form/folder_runner_notice.dart';
+import 'package:agent_orchestration/screens/task_form/workflow_to_sign.dart';
 import 'package:agent_orchestration/widgets/forms/select_entry.dart';
 import 'package:agent_orchestration/widgets/mixed_text.dart';
 
@@ -21,12 +22,16 @@ final class TaskFormOptions {
     required List<SelectOption<RunnerTarget>> runners,
     required List<Skill> skills,
     required Map<ProjectId, MissingFolderRunner> missingFolderRunners,
+    required Map<WorkflowId, WorkflowToSign> workflowsToSign,
   }) : projects = List<SelectOption<ProjectId>>.unmodifiable(projects),
        doers = List<SelectEntry<TaskDoer>>.unmodifiable(doers),
        runners = List<SelectOption<RunnerTarget>>.unmodifiable(runners),
        skills = List<Skill>.unmodifiable(skills),
        missingFolderRunners = Map<ProjectId, MissingFolderRunner>.unmodifiable(
          missingFolderRunners,
+       ),
+       workflowsToSign = Map<WorkflowId, WorkflowToSign>.unmodifiable(
+         workflowsToSign,
        );
 
   final List<SelectOption<ProjectId>> projects;
@@ -34,12 +39,20 @@ final class TaskFormOptions {
   final List<SelectOption<RunnerTarget>> runners;
   final List<Skill> skills;
   final Map<ProjectId, MissingFolderRunner> missingFolderRunners;
+  final Map<WorkflowId, WorkflowToSign> workflowsToSign;
 
   ProjectId get firstProjectId {
     if (projects.isEmpty) {
       throw StateError('Create a project before adding tasks');
     }
     return projects.first.value;
+  }
+
+  WorkflowToSign? findWorkflowToSign(TaskDoer doer) {
+    if (doer is WorkflowDoer) {
+      return workflowsToSign[doer.workflowId];
+    }
+    return null;
   }
 
   List<String> describeSkills(List<SkillId> skillIds) {
@@ -69,23 +82,30 @@ final class TaskFormOptions {
   }
 }
 
-List<SelectEntry<TaskDoer>> _buildDoerEntries(List<Workflow> workflows) {
+String _describeWorkflowChoice(
+  Workflow workflow,
+  Map<WorkflowId, WorkflowToSign> workflowsToSign,
+) {
+  if (workflowsToSign.containsKey(workflow.id)) {
+    return '${workflow.name}, not signed';
+  }
+  return workflow.name;
+}
+
+List<SelectEntry<TaskDoer>> _buildDoerEntries(
+  List<Workflow> workflows,
+  Map<WorkflowId, WorkflowToSign> workflowsToSign,
+) {
   return <SelectEntry<TaskDoer>>[
     const SelectGroupHeading<TaskDoer>('One agent'),
     for (final AgentKind agent in AgentKind.values)
       SelectOption<TaskDoer>(value: OneAgentDoer(agent), label: agent.label),
     const SelectGroupHeading<TaskDoer>('A workflow'),
     for (final Workflow workflow in workflows)
-      if (workflow.signature == null)
-        SelectOption<TaskDoer>.disabled(
-          value: WorkflowDoer(workflow.id),
-          label: '${workflow.name}, not signed yet',
-        )
-      else
-        SelectOption<TaskDoer>(
-          value: WorkflowDoer(workflow.id),
-          label: workflow.name,
-        ),
+      SelectOption<TaskDoer>(
+        value: WorkflowDoer(workflow.id),
+        label: _describeWorkflowChoice(workflow, workflowsToSign),
+      ),
   ];
 }
 
@@ -125,17 +145,23 @@ List<SelectOption<RunnerTarget>> buildRunnerOptions({
 TaskFormOptions buildTaskFormOptions({
   required List<Project> projects,
   required List<Workflow> workflows,
+  required PendingChangeFinder findPendingChange,
   required List<Runner> runners,
   required DeviceNames deviceNames,
   required List<Skill> skills,
   required RunnerTarget chosenTarget,
 }) {
+  final Map<WorkflowId, WorkflowToSign> workflowsToSign = findWorkflowsToSign(
+    workflows: workflows,
+    findPendingChange: findPendingChange,
+  );
+
   return TaskFormOptions(
     projects: <SelectOption<ProjectId>>[
       for (final Project project in projects)
         SelectOption<ProjectId>(value: project.id, label: project.name),
     ],
-    doers: _buildDoerEntries(workflows),
+    doers: _buildDoerEntries(workflows, workflowsToSign),
     runners: buildRunnerOptions(
       runners: runners,
       deviceNames: deviceNames,
@@ -147,6 +173,7 @@ TaskFormOptions buildTaskFormOptions({
       runners: runners,
       deviceNames: deviceNames,
     ),
+    workflowsToSign: workflowsToSign,
   );
 }
 

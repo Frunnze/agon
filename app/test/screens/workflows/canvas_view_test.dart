@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:agent_orchestration/data/models/workflow.dart';
 import 'package:agent_orchestration/screens/workflow_builder.dart';
 
+import '../../support/random_branching_workflows.dart';
 import '../../support/random_inputs.dart';
 import '../../support/random_workflows.dart';
 
@@ -164,7 +165,7 @@ void main() {
       final Size viewport = _randomRoomyViewport(random, nodesBounds);
 
       final CanvasView fitted = fitCanvasView(
-        positions: positions,
+        diagramBounds: findNodesBounds(positions),
         viewport: viewport,
       );
 
@@ -190,7 +191,7 @@ void main() {
       );
 
       final CanvasView fitted = fitCanvasView(
-        positions: _randomPositions(random),
+        diagramBounds: findNodesBounds(_randomPositions(random)),
         viewport: viewport,
       );
 
@@ -208,7 +209,7 @@ void main() {
       final Size viewport = _randomRoomyViewport(random, nodesBounds);
 
       final CanvasView fitted = fitCanvasView(
-        positions: positions,
+        diagramBounds: findNodesBounds(positions),
         viewport: viewport,
       );
 
@@ -216,6 +217,49 @@ void main() {
         fitted.findViewportPoint(nodesBounds.center),
         viewport.center(Offset.zero),
       );
+    }
+  });
+
+  test('test_fit_canvas_view_property_every_loop_part_inside_viewport', () {
+    final Random random = seededRandom(9110);
+
+    for (int i = 0; i < propertyIterations; i += 1) {
+      final Workflow workflow = randomBranchingWorkflow(random);
+      final List<DiagramEdge> edges = describeDiagramEdges(
+        agents: workflow.agents,
+        connections: workflow.connections,
+        selected: null,
+        drawnLoop: null,
+      );
+      final Rect diagramBounds = findDiagramBounds(
+        positions: <CanvasPosition>[
+          for (final WorkflowAgent agent in workflow.agents) agent.position,
+        ],
+        edges: edges,
+      );
+      final Size viewport = _randomRoomyViewport(random, diagramBounds);
+
+      final CanvasView fitted = fitCanvasView(
+        diagramBounds: diagramBounds,
+        viewport: viewport,
+      );
+
+      final Rect visible = (Offset.zero & viewport).inflate(_tolerance);
+      for (final DiagramEdge edge in edges) {
+        final EdgeRoute route = edge.route;
+        if (route is! LoopRoute) {
+          continue;
+        }
+        final List<Offset> loopPoints = <Offset>[
+          ...route.corners,
+          route.labelArea.topLeft,
+          route.labelArea.bottomRight,
+        ];
+        for (final Offset point in loopPoints) {
+          final Offset shown = fitted.findViewportPoint(point);
+          expect(visible.contains(shown), isTrue, reason: '$shown');
+        }
+      }
     }
   });
 

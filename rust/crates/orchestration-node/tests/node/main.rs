@@ -85,4 +85,6 @@ mod workflow_draft_check_properties;
 mod workflow_draft_layout_tests;
 mod workflow_draft_naming_tests;
 mod workflow_draft_tests;
+mod workflow_resave_flow_tests;
+mod workflow_resealing_properties;
 mod workspace_membership_tests;

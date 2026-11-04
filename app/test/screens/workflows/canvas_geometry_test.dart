@@ -23,7 +23,7 @@ void main() {
 
     for (int i = 0; i < propertyIterations; i += 1) {
       final List<WorkflowAgent> agents = randomAgents(random);
-      final Size size = measureCanvas(_positionsOf(agents));
+      final Size size = measureCanvas(findNodesBounds(_positionsOf(agents)));
 
       for (final WorkflowAgent agent in agents) {
         final Rect node = findNodeRect(agent.position);
@@ -34,7 +34,10 @@ void main() {
   });
 
   test('measure canvas matches the gallery feature pipeline', () {
-    final Size size = measureCanvas(_positionsOf(galleryWorkflows[2].agents));
+    final List<CanvasPosition> positions = _positionsOf(
+      galleryWorkflows[2].agents,
+    );
+    final Size size = measureCanvas(findNodesBounds(positions));
 
     expect(size, const Size(344, 528));
   });
@@ -110,7 +113,7 @@ void main() {
 
     for (int i = 0; i < propertyIterations; i += 1) {
       final List<WorkflowAgent> agents = randomAgents(random);
-      final Size size = measureCanvas(_positionsOf(agents));
+      final Size size = measureCanvas(findNodesBounds(_positionsOf(agents)));
       final Offset farAway = Offset(size.width + 100, size.height + 100);
 
       expect(findCanvasHit(agents, farAway), isNull);

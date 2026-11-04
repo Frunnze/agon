@@ -8,7 +8,9 @@ use orchestration_core::workflow_layout::lay_out_workflow;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use super::workflow_commands::{prepare_workflow_upload, show_workflow};
+use super::workflow_commands::{
+    prepare_workflow_resave, prepare_workflow_upload, show_workflow,
+};
 use super::workflow_view::WorkflowView;
 use crate::command_reply::encode_reply;
 use crate::content_sealing::{WorkspaceKeyring, open_run, open_workflow};
@@ -156,7 +158,12 @@ async fn save_draft(
     if opened_without_signature == *drafted {
         return Ok(());
     }
-    let request = prepare_workflow_upload(session, workspace_id, drafted)?;
+    let request = prepare_workflow_resave(
+        session,
+        workspace_id,
+        drafted,
+        &stored.workflow,
+    )?;
     client.update_workflow(drafted.id, &request).await
 }
 

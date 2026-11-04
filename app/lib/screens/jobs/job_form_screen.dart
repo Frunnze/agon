@@ -60,6 +60,7 @@ class JobFormScreen extends StatelessWidget {
           initialValues: initialValues,
           options: options,
           repeatChoices: jobRepeatChoices,
+          onRouteOpened: navigation.openRoute,
           actions: <FormAction<TaskFormValues>>[
             LeaveFormAction<TaskFormValues>(
               label: 'Cancel',

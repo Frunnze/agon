@@ -1,8 +1,6 @@
 import 'dart:math';
 import 'dart:ui';
 
-import 'package:agent_orchestration/data/models/workflow.dart';
-import 'package:agent_orchestration/screens/workflow_builder.dart';
 import 'package:agent_orchestration/theme/app_spacing.dart';
 
 abstract final class CanvasZoom {
@@ -56,11 +54,10 @@ CanvasView panCanvasView({required CanvasView view, required Offset delta}) {
 }
 
 CanvasView fitCanvasView({
-  required List<CanvasPosition> positions,
+  required Rect diagramBounds,
   required Size viewport,
 }) {
-  final Rect nodesBounds = findNodesBounds(positions);
-  final Rect withMargin = nodesBounds.inflate(CanvasZoom.fitMargin);
+  final Rect withMargin = diagramBounds.inflate(CanvasZoom.fitMargin);
   final double fittingScale = min(
     viewport.width / withMargin.width,
     viewport.height / withMargin.height,
@@ -74,6 +71,6 @@ CanvasView fitCanvasView({
   final Offset viewportCentre = viewport.center(Offset.zero);
   return CanvasView(
     scale: scale,
-    offset: viewportCentre - nodesBounds.center * scale,
+    offset: viewportCentre - diagramBounds.center * scale,
   );
 }

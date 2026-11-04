@@ -34,6 +34,7 @@ TaskFormOptions _buildGalleryOptions(AppDependencies dependencies) {
       dependencies.workspaceRepository.currentWorkspace().id,
     ),
     workflows: dependencies.workflowRepository.listWorkflows(),
+    findPendingChange: dependencies.workflowRepository.findPendingChange,
     runners: dependencies.runnerRepository.listRunners(),
     deviceNames: DeviceNames(dependencies.deviceRepository.listDevices()),
     skills: dependencies.skillRepository.listSkills(),

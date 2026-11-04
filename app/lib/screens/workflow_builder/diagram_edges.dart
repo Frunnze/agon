@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'dart:ui';
 
 import 'package:agent_orchestration/data/models/identifiers.dart';
@@ -5,9 +6,8 @@ import 'package:agent_orchestration/data/models/workflow.dart';
 import 'package:agent_orchestration/screens/workflow_builder.dart';
 
 const double edgeHitDistance = CanvasMetrics.portHitRadius;
-const double _loopBulge = CanvasMetrics.nodeWidth;
-const double _loopDrop = CanvasMetrics.nodeHeight;
 const int _hitSampleCount = 48;
+const double _curveMiddle = 0.5;
 const String _roundLimitSymbol = '≤';
 const String _labelSeparator = ' · ';
 
@@ -18,34 +18,17 @@ enum EdgeLook { normal, selected }
 final class DiagramEdge {
   const DiagramEdge({
     required this.connection,
-    required this.curve,
+    required this.route,
     required this.label,
     required this.line,
     required this.look,
   });
 
   final AgentConnection connection;
-  final EdgeCurve curve;
+  final EdgeRoute route;
   final String? label;
   final EdgeLine line;
   final EdgeLook look;
-}
-
-EdgeCurve buildLoopCurve({
-  required CanvasPosition from,
-  required CanvasPosition to,
-}) {
-  final Offset start = findOutputPort(from)
-      .translate(0, CanvasMetrics.portRadius);
-  final Offset end = findInputPort(to)
-      .translate(0, -(CanvasMetrics.portRadius + CanvasMetrics.arrowGap));
-
-  return EdgeCurve(
-    start: start,
-    controlStart: start.translate(_loopBulge, _loopDrop),
-    controlEnd: end.translate(_loopBulge, -_loopDrop),
-    end: end,
-  );
 }
 
 Offset findCurvePoint(EdgeCurve curve, double progress) {
@@ -75,6 +58,34 @@ String? describeConnectionLabel(AgentConnection connection) {
   return '$condition$_labelSeparator$limit';
 }
 
+Offset findLabelCentre(EdgeRoute route) {
+  switch (route) {
+    case EdgeCurve():
+      return findCurvePoint(route, _curveMiddle);
+    case LoopRoute():
+      return route.labelArea.center;
+  }
+}
+
+LoopRoute _routeLoop({
+  required CanvasPosition from,
+  required CanvasPosition to,
+  required Map<WorkflowAgentId, CanvasPosition> positions,
+  required String? label,
+}) {
+  final Size labelSize = label == null ? Size.zero : measureEdgeLabel(label);
+
+  return routeLoopEdge(
+    source: findNodeRect(from),
+    target: findNodeRect(to),
+    nodes: <Rect>[
+      for (final CanvasPosition position in positions.values)
+        findNodeRect(position),
+    ],
+    labelSize: labelSize,
+  );
+}
+
 DiagramEdge _describeEdge({
   required AgentConnection connection,
   required Map<WorkflowAgentId, CanvasPosition> positions,
@@ -87,13 +98,14 @@ DiagramEdge _describeEdge({
     throw StateError('A connection points to an agent that is not drawn');
   }
 
-  final EdgeCurve curve = line == EdgeLine.dashed
-      ? buildLoopCurve(from: from, to: to)
+  final String? label = describeConnectionLabel(connection);
+  final EdgeRoute route = line == EdgeLine.dashed
+      ? _routeLoop(from: from, to: to, positions: positions, label: label)
       : buildEdgeCurve(from: from, to: to);
   return DiagramEdge(
     connection: connection,
-    curve: curve,
-    label: describeConnectionLabel(connection),
+    route: route,
+    label: label,
     line: line,
     look: look,
   );
@@ -149,12 +161,34 @@ double _measureDistanceToCurve(EdgeCurve curve, Offset point) {
   return nearest;
 }
 
+double _measureDistanceToCorners(List<Offset> corners, Offset point) {
+  double nearest = double.infinity;
+  for (int i = 1; i < corners.length; i += 1) {
+    final Rect segment = Rect.fromPoints(corners[i - 1], corners[i]);
+    final Offset onSegment = Offset(
+      clampDouble(point.dx, segment.left, segment.right),
+      clampDouble(point.dy, segment.top, segment.bottom),
+    );
+    nearest = min(nearest, (onSegment - point).distance);
+  }
+  return nearest;
+}
+
+double _measureDistanceToRoute(EdgeRoute route, Offset point) {
+  switch (route) {
+    case EdgeCurve():
+      return _measureDistanceToCurve(route, point);
+    case LoopRoute():
+      return _measureDistanceToCorners(route.corners, point);
+  }
+}
+
 DiagramEdge? findEdgeHit(List<DiagramEdge> edges, Offset point) {
   DiagramEdge? nearestEdge;
   double nearestDistance = edgeHitDistance;
 
   for (final DiagramEdge edge in edges) {
-    final double distance = _measureDistanceToCurve(edge.curve, point);
+    final double distance = _measureDistanceToRoute(edge.route, point);
     if (distance <= nearestDistance) {
       nearestEdge = edge;
       nearestDistance = distance;

@@ -110,6 +110,58 @@ void main() {
     }
   });
 
+  test('test_find_current_step_property_skips_branches_not_taken', () {
+    final Random random = seededRandom(4011);
+    const Set<StepStatus> openStatuses = <StepStatus>{
+      StepStatus.waiting,
+      StepStatus.running,
+      StepStatus.waitingForApproval,
+      StepStatus.waitingForPerson,
+      StepStatus.failed,
+    };
+
+    for (int i = 0; i < propertyIterations; i += 1) {
+      final Run run = randomRunWithStatuses(random);
+      final RunStep current = findCurrentStep(run);
+      final bool hasOpenStep = run.steps.any(
+        (RunStep step) => openStatuses.contains(step.status),
+      );
+
+      if (hasOpenStep) {
+        expect(current.status, isNot(StepStatus.skipped));
+      }
+    }
+  });
+
+  test('test_find_current_step_property_finished_run_picks_last_that_ran', () {
+    final Random random = seededRandom(4012);
+    const List<StepStatus> finishedStatuses = <StepStatus>[
+      StepStatus.done,
+      StepStatus.skipped,
+    ];
+
+    for (int i = 0; i < propertyIterations; i += 1) {
+      final Run base = randomRunWithStatuses(random);
+      final List<RunStep> steps = <RunStep>[
+        for (final RunStep step in base.steps)
+          step.withStatus(pickOne(random, finishedStatuses)),
+      ];
+      final Run finished = base.withProgress(
+        nextStatus: RunStatus.done,
+        nextSteps: steps,
+        nextFinishedAt: galleryNow,
+      );
+      final Iterable<RunStep> stepsThatRan = steps.where(
+        (RunStep step) => step.status == StepStatus.done,
+      );
+      if (stepsThatRan.isEmpty) {
+        continue;
+      }
+
+      expect(findCurrentStep(finished), same(stepsThatRan.last));
+    }
+  });
+
   test('test_describe_step_progress_property_position_within_bounds', () {
     final Random random = seededRandom(4005);
     final RegExp progressPattern = RegExp(r'^step (\d+) of (\d+)$');

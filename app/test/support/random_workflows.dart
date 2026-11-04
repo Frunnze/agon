@@ -17,6 +17,13 @@ CanvasPosition randomCanvasPosition(Random random) {
   );
 }
 
+CanvasPosition copyPosition(CanvasPosition position) {
+  return CanvasPosition(
+    horizontal: position.horizontal,
+    vertical: position.vertical,
+  );
+}
+
 WorkflowAgent randomAgent(Random random, int index) {
   return WorkflowAgent(
     id: WorkflowAgentId('random-agent-$index'),

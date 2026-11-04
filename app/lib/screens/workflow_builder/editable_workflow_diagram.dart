@@ -112,9 +112,12 @@ class _EditableWorkflowDiagramState extends State<EditableWorkflowDiagram> {
       drawnLoop: findDrawnLoop(widget.selection),
     );
 
-    final List<CanvasPosition> positions = <CanvasPosition>[
-      for (final DiagramNode node in nodes) node.position,
-    ];
+    final Rect diagramBounds = findDiagramBounds(
+      positions: <CanvasPosition>[
+        for (final DiagramNode node in nodes) node.position,
+      ],
+      edges: edges,
+    );
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
@@ -129,9 +132,9 @@ class _EditableWorkflowDiagramState extends State<EditableWorkflowDiagram> {
       onPanCancel: () => setState(() => _drag = null),
       child: ZoomableCanvas(
         view: _view,
-        nodePositions: positions,
+        diagramBounds: diagramBounds,
         child: WorkflowDiagram(
-          size: measureCanvas(positions),
+          size: measureCanvas(diagramBounds),
           nodes: nodes,
           edges: edges,
           drawnEdge: _buildDrawnEdge(agents),

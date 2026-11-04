@@ -263,7 +263,10 @@ class _WorkflowBuilderScreenState extends State<WorkflowBuilderScreen> {
   }
 
   Future<void> _cancel() async {
-    await widget.workflowRepository.saveWorkflow(_openedVersion);
+    final bool isEdited = !hasSameDesign(_readWorkflow(), _openedVersion);
+    if (isEdited) {
+      await widget.workflowRepository.saveWorkflow(_openedVersion);
+    }
     widget.navigation.closeRoute();
   }
 

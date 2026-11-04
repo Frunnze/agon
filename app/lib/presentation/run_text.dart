@@ -24,6 +24,20 @@ RunStep findCurrentStep(Run run) {
     }
   }
 
+  if (run.status == RunStatus.done) {
+    for (final RunStep step in run.steps.reversed) {
+      if (step.status != StepStatus.skipped) {
+        return step;
+      }
+    }
+  }
+
+  for (final RunStep step in run.steps) {
+    if (step.status == StepStatus.waiting) {
+      return step;
+    }
+  }
+
   for (final RunStep step in run.steps) {
     if (step.status != StepStatus.done) {
       return step;
