@@ -18,6 +18,7 @@ use crate::agents_file_reset::restore_project_agents_file;
 use crate::run_error::RunError;
 use crate::runner_configuration::WorktreeRoots;
 use crate::runner_log::log_task_folder_removal_failure;
+use crate::worktree_locks::{SharedWorkingSteps, WorktreeLocks};
 use crate::worktree_request::describe_worktree_request;
 
 pub(crate) struct RepositoryCheckout {
@@ -25,10 +26,18 @@ pub(crate) struct RepositoryCheckout {
     pub(crate) repository: Repository,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum TaskFolderKeeping {
+    KeptForTheProject,
+    RemovedOnceIdle,
+}
+
 pub(crate) struct RunWorkspace {
     pub(crate) branch: String,
     pub(crate) mounts: WorkspaceMounts,
     pub(crate) checkouts: Vec<RepositoryCheckout>,
+    pub(crate) working_steps: SharedWorkingSteps,
+    pub(crate) task_folder_keeping: TaskFolderKeeping,
 }
 
 pub(crate) async fn prepare_run_workspace(
@@ -36,10 +45,13 @@ pub(crate) async fn prepare_run_workspace(
     worktree_roots: &WorktreeRoots,
     clone_source: &CloneSource,
     clone_locks: Arc<CloneLocks>,
+    worktree_locks: &WorktreeLocks,
 ) -> Result<RunWorkspace, RunError> {
     let request =
         describe_worktree_request(assignment, worktree_roots, clone_source);
     let plan = plan_worktree(&request)?;
+    let working_steps = worktree_locks.working_steps_for(&plan.task_folder);
+    let mut steps_in_folder = working_steps.lock().await;
     let prepared =
         create_worktrees_in_background(plan.clone(), clone_locks).await?;
 
@@ -60,25 +72,35 @@ pub(crate) async fn prepare_run_workspace(
             repository: repository.clone(),
         });
     }
+    steps_in_folder.enter();
+    drop(steps_in_folder);
 
     Ok(RunWorkspace {
         branch: plan.branch,
         mounts: prepared.mounts,
         checkouts,
+        working_steps,
+        task_folder_keeping: choose_task_folder_keeping(assignment),
     })
 }
 
-pub(crate) fn remove_workspace_task_folder(
-    assignment: &RunAssignment,
-    workspace: &RunWorkspace,
-) {
-    if assignment.project.is_some() {
+pub(crate) fn remove_idle_task_folder(workspace: &RunWorkspace) {
+    if workspace.task_folder_keeping == TaskFolderKeeping::KeptForTheProject {
         return;
     }
     let removal = std::fs::remove_dir_all(&workspace.mounts.task_folder);
     if let Err(problem) = removal {
         log_task_folder_removal_failure(&problem);
     }
+}
+
+fn choose_task_folder_keeping(
+    assignment: &RunAssignment,
+) -> TaskFolderKeeping {
+    if assignment.project.is_some() {
+        return TaskFolderKeeping::KeptForTheProject;
+    }
+    TaskFolderKeeping::RemovedOnceIdle
 }
 
 fn render_project_rules(assignment: &RunAssignment) -> String {

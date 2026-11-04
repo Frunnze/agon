@@ -14,6 +14,7 @@ import 'package:agent_orchestration/screens/setup/server_hosting.dart';
 import 'package:agent_orchestration/shell/app_navigation.dart';
 import 'package:agent_orchestration/shell/app_route.dart';
 import 'package:agent_orchestration/theme/app_typography.dart';
+import 'package:agent_orchestration/theme/code_tracking.dart';
 import 'package:agent_orchestration/widgets/app_button.dart';
 import 'package:agent_orchestration/widgets/forms/labelled_text_field.dart';
 import 'package:agent_orchestration/widgets/setup_panel.dart';
@@ -25,11 +26,6 @@ const String makeThisComputerTheServerLabel = 'Make this computer the server';
 const String _compareWordsText =
     'Your other device shows four words while it asks to approve this one. '
     'Approve there only if they match these, in this order.';
-const double _codeLetterSpacing = AppFontSizes.title * AppTracking.codeEm;
-final TextStyle _codeInputStyle = AppTextStyles.monospace.copyWith(
-  fontSize: AppFontSizes.title,
-  letterSpacing: _codeLetterSpacing,
-);
 
 class PairingCodeEntryScreen extends StatefulWidget {
   const PairingCodeEntryScreen({
@@ -83,6 +79,13 @@ class _PairingCodeEntryScreenState extends State<PairingCodeEntryScreen> {
     final String? hostingProblem = _hostingProblem;
     final WaitingJoin? waitingJoin = widget.pairingRepository
         .findWaitingJoin();
+    final TextStyle codeInputStyle = AppTextStyles.monospace.copyWith(
+      fontSize: AppFontSizes.title,
+      letterSpacing: codeLetterSpacingFor(
+        textScaler: MediaQuery.textScalerOf(context),
+        fontSize: AppFontSizes.title,
+      ),
+    );
 
     return SetupPanel(
       step: 'Step 2 of 2',
@@ -99,7 +102,7 @@ class _PairingCodeEntryScreenState extends State<PairingCodeEntryScreen> {
           controller: _codeController,
           problem: _codeProblem,
           onChanged: (String _) => setState(() => _codeProblem = null),
-          style: _codeInputStyle,
+          style: codeInputStyle,
           textAlign: TextAlign.center,
         ),
         if (waitingJoin != null) ...<Widget>[

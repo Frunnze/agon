@@ -27,6 +27,7 @@ use crate::support::{TestResult, to_case_error};
 const ASKING_TITLE: &str = "check-tests\nplease-ask";
 const AGENT_NAME: &str = "check-tests";
 const ASKED_COMMAND: &str = "npm test";
+const ASKED_SUMMARY: &str = "Run the tests";
 const DENIED_MESSAGE: &str = "The person denied this command.";
 
 struct PermissionScenario {
@@ -39,7 +40,7 @@ fn prepare_scenario(
 ) -> TestResult<PermissionScenario> {
     let folders = prepare_agent_folders()?;
     let task = Task {
-        approval_policy,
+        approval_policy: Some(approval_policy),
         ..claude_task(RUN_NUMBER, ASKING_TITLE)
     };
     let assignment = assignment_for(task, None, Vec::new(), RUN_NUMBER)?;
@@ -75,6 +76,7 @@ fn expected_command_request(
         run_id: Some(scenario.assignment.run.id),
         action: ApprovalAction::RunCommand {
             tool: "Bash".to_string(),
+            summary: ASKED_SUMMARY.to_string(),
             command: ASKED_COMMAND.to_string(),
         },
     }]

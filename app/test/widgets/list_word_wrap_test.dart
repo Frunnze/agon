@@ -14,7 +14,7 @@ import '../support/random_inputs.dart';
 import '../support/widget_harness.dart';
 
 const List<String> _longCellTexts = <String>[
-  'Read, push once approved',
+  'Read and push',
   'Everywhere except experiments',
   'Yesterday 18:20',
   'office-server',

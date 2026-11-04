@@ -88,7 +88,7 @@ pub fn build_workflow(shape: &WorkflowShape) -> Workflow {
             runs_on: RunnerTarget::AnyFreeRunner,
             skills: Vec::new(),
             uses_automatic_skills: false,
-            approval_policy: ApprovalPolicy::NeverAsk,
+            approval_policy: Some(ApprovalPolicy::NeverAsk),
             position: CanvasPosition {
                 horizontal: f64::from(horizontal),
                 vertical: f64::from(vertical),

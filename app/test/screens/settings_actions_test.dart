@@ -15,6 +15,7 @@ import 'package:agent_orchestration/shell/app_section.dart';
 import '../support/app_harness.dart';
 import '../support/form_finders.dart';
 import '../support/random_inputs.dart';
+import '../support/settings_finders.dart';
 
 Future<void> openSettingsTab(WidgetTester tester, String tab) async {
   await tester.tap(find.text(tab));
@@ -34,10 +35,11 @@ void main() {
       dependencies: dependencies,
     );
 
+    final Finder removeButtons = findWorkspaceDeviceRemoveButtons('acme');
     for (int i = 0; i < 3; i += 1) {
-      final int buttonCount = tester.widgetList(find.text('Remove')).length;
+      final int buttonCount = tester.widgetList(removeButtons).length;
       final int chosen = random.nextInt(buttonCount);
-      await tapVisible(tester, find.text('Remove').at(chosen));
+      await tapVisible(tester, removeButtons.at(chosen));
       await pumpFrames(tester);
 
       final int members = dependencies.deviceRepository
@@ -47,7 +49,7 @@ void main() {
                 device.workspaces.contains(GalleryWorkspaceIds.acme),
           )
           .length;
-      expect(find.text('Remove'), findsNWidgets(buttonCount - 1));
+      expect(removeButtons, findsNWidgets(buttonCount - 1));
       expect(members, buttonCount);
     }
   });

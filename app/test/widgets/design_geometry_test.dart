@@ -17,9 +17,9 @@ import 'package:agent_orchestration/widgets/route_line_painter.dart';
 import 'package:agent_orchestration/widgets/status_label.dart';
 
 import '../support/random_inputs.dart';
+import '../support/shown_text_metrics.dart';
 import '../support/widget_harness.dart';
 
-const double _singleLineHeight = AppFontSizes.small * AppLineHeights.body;
 const List<String> _deviceNames = <String>[
   'air-laptop',
   'mac-studio',
@@ -42,15 +42,16 @@ ResponsiveList _buildPlainList(List<String> statuses) {
 }
 
 void main() {
-  testWidgets('test_select_field_property_control_height_is_44', (
+  testWidgets('test_select_field_property_control_height_follows_layout', (
     WidgetTester tester,
   ) async {
     final Random random = seededRandom(2601);
 
     for (int i = 0; i < widgetPropertyIterations; i += 1) {
+      final double width = randomWidth(random, least: 320, most: 1600);
       await pumpScrollableAtWidth(
         tester,
-        width: randomWidth(random, least: 320, most: 1600),
+        width: width,
         child: SelectField<int>(
           value: 0,
           entries: <SelectEntry<int>>[
@@ -61,26 +62,33 @@ void main() {
       );
 
       final Size size = tester.getSize(find.byType(SelectField<int>));
-      expect(size.height, AppSizes.controlHeight);
+      final double controlHeight = AppSizes.controlHeightFor(
+        densityMeantByWidth(width),
+      );
+      expect(size.height, controlHeight, reason: 'width $width');
     }
   });
 
-  testWidgets('test_text_field_property_control_height_is_44', (
+  testWidgets('test_text_field_property_control_height_follows_layout', (
     WidgetTester tester,
   ) async {
     final Random random = seededRandom(2602);
 
     for (int i = 0; i < widgetPropertyIterations; i += 1) {
+      final double width = randomWidth(random, least: 320, most: 1600);
       await pumpScrollableAtWidth(
         tester,
-        width: randomWidth(random, least: 320, most: 1600),
+        width: width,
         child: TextField(
           decoration: InputDecoration(hintText: randomWordPhrase(random)),
         ),
       );
 
       final Size size = tester.getSize(find.byType(TextField));
-      expect(size.height, AppSizes.controlHeight);
+      final double controlHeight = AppSizes.controlHeightFor(
+        densityMeantByWidth(width),
+      );
+      expect(size.height, controlHeight, reason: 'width $width');
     }
   });
 
@@ -92,9 +100,10 @@ void main() {
     for (int i = 0; i < widgetPropertyIterations; i += 1) {
       final String startName = pickOne(random, _deviceNames);
       final String endName = pickOne(random, _deviceNames);
+      final double width = randomWidth(random, least: 320, most: 1600);
       await pumpScrollableAtWidth(
         tester,
-        width: randomWidth(random, least: 320, most: 1600),
+        width: width,
         child: RouteLine(
           startName: startName,
           endName: endName,
@@ -104,11 +113,15 @@ void main() {
         ),
       );
 
+      final double singleLineHeight = shownLineHeightAtWidth(
+        style: AppTextStyles.small,
+        windowWidth: width,
+      );
       for (final String name in <String>[startName, endName]) {
         final Finder nodes = find.text(name);
         expect(nodes, findsWidgets);
         for (final Element node in nodes.evaluate()) {
-          expect(node.size!.height, _singleLineHeight);
+          expect(node.size!.height, singleLineHeight, reason: 'width $width');
         }
       }
     }

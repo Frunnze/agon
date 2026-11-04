@@ -72,7 +72,7 @@ final class WorkItemDraft extends ItemDraft {
         'uses_automatic_skills',
         decodeFlag,
       ),
-      approvalPolicy: readField(
+      approvalPolicy: readOptionalField(
         fields,
         'approval_policy',
         ApprovalPolicy.decode,
@@ -90,7 +90,7 @@ final class WorkItemDraft extends ItemDraft {
   final AgentPlace agentPlace;
   final List<SkillId> skills;
   final bool usesAutomaticSkills;
-  final ApprovalPolicy approvalPolicy;
+  final ApprovalPolicy? approvalPolicy;
   final Schedule? schedule;
 
   @override
@@ -105,7 +105,7 @@ final class WorkItemDraft extends ItemDraft {
       'agent_place': agentPlace.wireName,
       'skills': <String>[for (final SkillId skill in skills) skill.value],
       'uses_automatic_skills': usesAutomaticSkills,
-      'approval_policy': approvalPolicy.wireName,
+      'approval_policy': approvalPolicy?.wireName,
       'schedule': schedule?.toJson(),
     };
   }
@@ -142,6 +142,7 @@ final class ProjectItemDraft extends ItemDraft {
     required this.name,
     required List<DraftedRepository> repositories,
     required this.agentAccess,
+    required this.approvalPolicy,
   }) : repositories = List<DraftedRepository>.unmodifiable(repositories);
 
   factory ProjectItemDraft.fromFields(JsonObject fields) {
@@ -153,12 +154,18 @@ final class ProjectItemDraft extends ItemDraft {
         DraftedRepository.fromJson,
       ),
       agentAccess: readField(fields, 'agent_access', AgentAccess.decode),
+      approvalPolicy: readOptionalField(
+        fields,
+        'approval_policy',
+        ApprovalPolicy.decode,
+      ),
     );
   }
 
   final String name;
   final List<DraftedRepository> repositories;
   final AgentAccess agentAccess;
+  final ApprovalPolicy? approvalPolicy;
 
   @override
   JsonObject toJson() {
@@ -167,6 +174,7 @@ final class ProjectItemDraft extends ItemDraft {
       'name': name,
       'repositories': encodeList(repositories),
       'agent_access': agentAccess.wireName,
+      'approval_policy': approvalPolicy?.wireName,
     };
   }
 }

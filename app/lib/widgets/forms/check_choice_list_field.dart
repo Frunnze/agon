@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:agent_orchestration/icons/app_icon_kind.dart';
 import 'package:agent_orchestration/theme/app_colors.dart';
 import 'package:agent_orchestration/theme/app_spacing.dart';
+import 'package:agent_orchestration/theme/layout_density.dart';
 import 'package:agent_orchestration/widgets/forms/choice_tile_frame.dart';
 import 'package:agent_orchestration/widgets/gaps.dart';
 import 'package:agent_orchestration/widgets/status_label.dart';
@@ -78,7 +79,7 @@ class _CheckMark extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox.square(
-      dimension: AppSizes.icon,
+      dimension: AppSizes.iconFor(LayoutDensity.of(context)),
       child: Checkbox(
         value: isSelected,
         onChanged: null,

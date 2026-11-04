@@ -6,7 +6,10 @@ use orchestration_core::identifiers::RunId;
 use orchestration_core::workflow::AgentKind;
 use orchestration_hub::agent_output::AgentOutputReader;
 use orchestration_hub::workspace_mounts::CONTAINER_WORKSPACE_DIRECTORY;
-use orchestration_runner::output_relay::{RelayEnding, relay_agent_output};
+use orchestration_runner::output_relay::{
+    RelayEnding, RelayedOutput, relay_agent_output,
+};
+use orchestration_runner::user_message_watch::NewUserMessages;
 use proptest::collection::vec;
 use proptest::prelude::*;
 use serde_json::json;
@@ -148,9 +151,10 @@ fn relay_agent_lines(
         &server,
         run_id,
         STEP_NAME,
-        read_in_container(agent),
+        RelayedOutput::new(read_in_container(agent), 0),
         &mut receiver,
         pending(),
+        pending::<NewUserMessages>(),
     ))?;
     Ok((ending, server.events_of(run_id)))
 }
@@ -166,9 +170,10 @@ async fn stops_relaying_as_soon_as_the_run_is_cancelled() -> TestResult<()> {
         &server,
         run_id,
         STEP_NAME,
-        read_in_container(AgentKind::ClaudeCode),
+        RelayedOutput::new(read_in_container(AgentKind::ClaudeCode), 0),
         &mut receiver,
         ready(()),
+        pending::<NewUserMessages>(),
     )
     .await?;
 

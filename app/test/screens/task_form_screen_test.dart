@@ -66,9 +66,10 @@ void expectGalleryTaskForm() {
     find.text('Also let the agent pick automatic skills'),
     findsOneWidget,
   );
-  expect(find.text('Commands'), findsOneWidget);
-  expect(find.text('Ask for approval'), findsOneWidget);
+  expect(find.text('Commands and pushes'), findsOneWidget);
+  expect(find.text('Same as the project'), findsOneWidget);
   expect(find.text('Auto'), findsOneWidget);
+  expect(find.text('Ask me'), findsOneWidget);
   expect(find.text("Don't repeat"), findsOneWidget);
   expect(find.text('A task that repeats becomes a job.'), findsOneWidget);
   expect(find.text('Save for later'), findsOneWidget);

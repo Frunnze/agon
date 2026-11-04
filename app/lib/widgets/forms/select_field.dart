@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 
 import 'package:agent_orchestration/icons/app_icon.dart';
@@ -5,13 +7,11 @@ import 'package:agent_orchestration/icons/app_icon_kind.dart';
 import 'package:agent_orchestration/theme/app_colors.dart';
 import 'package:agent_orchestration/theme/app_spacing.dart';
 import 'package:agent_orchestration/theme/app_typography.dart';
+import 'package:agent_orchestration/theme/dense_font_size.dart';
+import 'package:agent_orchestration/theme/layout_density.dart';
 import 'package:agent_orchestration/widgets/forms/select_entry.dart';
 
-const double _fieldVerticalPadding =
-    (AppSizes.controlHeight -
-        AppFontSizes.body * AppLineHeights.body -
-        AppBorders.thin * 2) /
-    2;
+const double _denseDropdownMinimumHeight = 24;
 
 class SelectField<T> extends StatelessWidget {
   const SelectField({
@@ -29,11 +29,23 @@ class SelectField<T> extends StatelessWidget {
   Widget build(BuildContext context) {
     final TextStyle valueStyle = DefaultTextStyle.of(context).style
         .merge(AppTextStyles.body);
+    final LayoutDensity layoutDensity = LayoutDensity.of(context);
+    final double bodyFontSize = fontSizeForDensity(
+      regularFontSize: AppFontSizes.body,
+      layoutDensity: layoutDensity,
+    );
+    final double valueHeight = max(
+      bodyFontSize * AppLineHeights.body,
+      _denseDropdownMinimumHeight,
+    );
+    final double controlHeight = AppSizes.controlHeightFor(layoutDensity);
+    final double insideBorderPadding =
+        (controlHeight - valueHeight) / 2 - AppBorders.thin;
 
     return Container(
-      padding: const EdgeInsets.symmetric(
+      padding: EdgeInsets.symmetric(
         horizontal: AppSpacing.space3,
-        vertical: _fieldVerticalPadding,
+        vertical: insideBorderPadding,
       ),
       decoration: BoxDecoration(
         color: AppColors.raised,

@@ -11,13 +11,14 @@ use tokio::task::spawn_blocking;
 use crate::agent_transcript::AgentTranscript;
 use crate::branch_pusher::BranchPusher;
 use crate::cancellation_watch::wait_until_cancelled;
-use crate::output_relay::{RelayEnding, relay_agent_output};
+use crate::output_relay::{RelayEnding, RelayedOutput, relay_agent_output};
 use crate::permission_relay::relay_answering_permissions;
 use crate::run_context::RunContext;
 use crate::run_error::RunError;
 use crate::runner_server::RunnerServer;
 use crate::step_command::{StepCommand, build_step_command};
 use crate::step_plan::StepPlan;
+use crate::user_message_watch::wait_for_new_user_messages;
 
 pub(crate) enum AgentEnding {
     Succeeded(AgentTranscript),
@@ -30,12 +31,14 @@ pub(crate) async fn invoke_agent<S: RunnerServer, P: BranchPusher>(
     step: &StepPlan,
     prompt: &str,
     session: Option<&str>,
+    answered_messages: usize,
 ) -> Result<AgentEnding, RunError> {
     let step_command = build_step_command(
         &context.sandbox,
         &context.workspace.mounts,
         step.agent,
         step.approval_policy,
+        &context.protected_files,
         prompt,
         session,
     )?;
@@ -44,13 +47,14 @@ pub(crate) async fn invoke_agent<S: RunnerServer, P: BranchPusher>(
         &context.workspace.mounts,
     );
     let output_reader = AgentOutputReader::new(step.agent, &task_folder);
+    let relayed = RelayedOutput::new(output_reader, answered_messages);
 
     match step_command {
         StepCommand::PromptInArguments(command) => {
-            run_deciding_by_flags(context, step, &command, output_reader).await
+            run_deciding_by_flags(context, step, &command, relayed).await
         }
         StepCommand::PromptOnInput(control) => {
-            run_asking_the_person(context, step, control, output_reader).await
+            run_asking_the_person(context, step, control, relayed).await
         }
     }
 }
@@ -59,22 +63,28 @@ async fn run_deciding_by_flags<S: RunnerServer, P: BranchPusher>(
     context: &RunContext<S, P>,
     step: &StepPlan,
     command: &CommandSpecification,
-    output_reader: AgentOutputReader,
+    relayed: RelayedOutput,
 ) -> Result<AgentEnding, RunError> {
     let mut process = start_process(command)?;
     let server = context.server.as_ref();
-    let cancellation = wait_until_cancelled(
+    let run_id = context.run_id;
+    let check_interval = context.cancellation_check_interval;
+    let cancellation = wait_until_cancelled(server, run_id, check_interval);
+    let answered_messages = relayed.transcript.answered_messages;
+    let new_user_messages = wait_for_new_user_messages(
         server,
-        context.run_id,
-        context.cancellation_check_interval,
+        run_id,
+        answered_messages,
+        check_interval,
     );
     let relayed = relay_agent_output(
         server,
-        context.run_id,
+        run_id,
         &step.name,
-        output_reader,
+        relayed,
         &mut process.output_lines,
         cancellation,
+        new_user_messages,
     )
     .await
     .map_err(RunError::from);
@@ -85,7 +95,7 @@ async fn run_asking_the_person<S: RunnerServer, P: BranchPusher>(
     context: &RunContext<S, P>,
     step: &StepPlan,
     control: ClaudeControlCommand,
-    output_reader: AgentOutputReader,
+    relayed: RelayedOutput,
 ) -> Result<AgentEnding, RunError> {
     let PipedProcess {
         mut process,
@@ -94,7 +104,7 @@ async fn run_asking_the_person<S: RunnerServer, P: BranchPusher>(
     let relayed = relay_answering_permissions(
         context,
         step,
-        output_reader,
+        relayed,
         &mut process.output_lines,
         input_lines,
         control.prompt_line,
@@ -115,6 +125,10 @@ async fn finish_agent(
         Ok(RelayEnding::Cancelled) => {
             stop_and_reap(process).await?;
             Ok(AgentEnding::Cancelled)
+        }
+        Ok(RelayEnding::NewUserMessages(transcript_so_far)) => {
+            stop_and_reap(process).await?;
+            Ok(AgentEnding::Succeeded(transcript_so_far))
         }
         Err(problem) => {
             stop_and_reap(process).await?;

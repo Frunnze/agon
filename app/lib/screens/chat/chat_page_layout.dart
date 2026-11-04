@@ -73,8 +73,8 @@ class ChatPageLayout extends StatelessWidget {
                 endName: runContext.runnerName,
                 link: conversation.link,
               ),
-          ], pageGapFor(layoutSize)),
-          SizedBox(height: pageGapFor(layoutSize)),
+          ], pageGap),
+          const SizedBox(height: pageGap),
           Expanded(
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,

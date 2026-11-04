@@ -76,6 +76,7 @@ Future<DraftingStage> prepareDraftingStage(
         agentAccess: node.AgentAccess.readOnly,
       ),
     ],
+    approvalPolicy: null,
   );
   final node.Project project = await askNode(
     tester,

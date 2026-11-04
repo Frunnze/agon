@@ -60,7 +60,7 @@ Map<String, Object?> _randomWorkDraftJson(Random random, String kind) {
     'agent_place': pickOne(random, nodeAgentPlaces),
     'skills': randomUuidTexts(random),
     'uses_automatic_skills': random.nextBool(),
-    'approval_policy': pickOne(random, nodeApprovalPolicies),
+    'approval_policy': randomOptionalApprovalPolicyJson(random),
     'schedule': randomOptional(random, randomScheduleJson),
   };
 }
@@ -80,6 +80,7 @@ Map<String, Object?> randomItemDraftJson(Random random) {
       'name': randomText(random),
       'repositories': randomListOf(random, _randomDraftedRepositoryJson),
       'agent_access': pickOne(random, nodeAgentAccesses),
+      'approval_policy': randomOptionalApprovalPolicyJson(random),
     },
     'skill' => <String, Object?>{
       'kind': kind,

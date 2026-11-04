@@ -160,6 +160,7 @@ void main() {
         routes: routes,
         dependencies: buildGalleryDependencies(),
         navigation: AppNavigation(initialRoute: routes.first),
+        runWindowOpener: null,
       );
 
       expect(pages.length, routes.length);
@@ -184,6 +185,7 @@ void main() {
           routes: routes,
           dependencies: buildGalleryDependencies(),
           navigation: AppNavigation(initialRoute: routes.first),
+          runWindowOpener: null,
         );
 
         for (final Page<Object?> page in pages) {

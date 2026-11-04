@@ -2,7 +2,9 @@ import 'package:flutter/foundation.dart';
 
 import 'package:agent_orchestration/data/clock.dart';
 import 'package:agent_orchestration/data/fakes.dart';
+import 'package:agent_orchestration/data/gallery/gallery_workspaces.dart';
 import 'package:agent_orchestration/data/models/app_server_group.dart';
+import 'package:agent_orchestration/data/models/approval.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/workspace.dart';
 import 'package:agent_orchestration/data/repository/record_not_found.dart';
@@ -71,11 +73,68 @@ final class FakeWorkspaceRepository extends ChangeNotifier
       id: WorkspaceId('created-workspace-$_createdWorkspaceCount'),
       name: name.trim(),
       appServerAddress: _appServerStatus.address,
+      protectedFiles: galleryDefaultProtectedFiles,
+      approvalPolicy: ApprovalPolicy.neverAsk,
     );
 
     _workspaces = appendRecord(_workspaces, workspace);
     notifyListeners();
     return workspace;
+  }
+
+  @override
+  Future<Workspace> saveProtectedFiles({
+    required WorkspaceId workspaceId,
+    required List<String> patterns,
+  }) async {
+    return _replaceProtectedFiles(
+      workspaceId: workspaceId,
+      patterns: patterns,
+    );
+  }
+
+  @override
+  Future<Workspace> resetProtectedFiles(WorkspaceId workspaceId) async {
+    return _replaceProtectedFiles(
+      workspaceId: workspaceId,
+      patterns: galleryDefaultProtectedFiles,
+    );
+  }
+
+  Workspace _replaceProtectedFiles({
+    required WorkspaceId workspaceId,
+    required List<String> patterns,
+  }) {
+    final Workspace stored = _findWorkspace(workspaceId);
+    final Workspace changed = Workspace(
+      id: stored.id,
+      name: stored.name,
+      appServerAddress: stored.appServerAddress,
+      protectedFiles: patterns,
+      approvalPolicy: stored.approvalPolicy,
+    );
+
+    return _storeChangedWorkspace(changed);
+  }
+
+  @override
+  Future<Workspace> changeApprovalPolicy({
+    required WorkspaceId workspaceId,
+    required ApprovalPolicy approvalPolicy,
+  }) async {
+    final Workspace stored = _findWorkspace(workspaceId);
+
+    return _storeChangedWorkspace(stored.withApprovalPolicy(approvalPolicy));
+  }
+
+  Workspace _storeChangedWorkspace(Workspace changed) {
+    _workspaces = replaceRecord(
+      _workspaces,
+      matches: (Workspace workspace) => workspace.id == changed.id,
+      replacement: changed,
+    );
+    notifyListeners();
+    return changed;
   }
 
   @override

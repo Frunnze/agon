@@ -9,6 +9,7 @@ import 'package:agent_orchestration/screens/files/repository_file_paths.dart';
 import 'package:agent_orchestration/theme/app_colors.dart';
 import 'package:agent_orchestration/theme/app_spacing.dart';
 import 'package:agent_orchestration/theme/app_typography.dart';
+import 'package:agent_orchestration/theme/layout_density.dart';
 import 'package:agent_orchestration/widgets/lists/list_row_data.dart';
 
 const String _rootFolder = '';
@@ -126,6 +127,9 @@ class FileTreeRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final LayoutDensity layoutDensity = LayoutDensity.of(context);
+    final double controlHeight = AppSizes.controlHeightFor(layoutDensity);
+
     final int? fileSize = size;
     final double indent = AppSpacing.space3 + depth * AppSpacing.space5;
 
@@ -135,7 +139,7 @@ class FileTreeRow extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: Container(
-          constraints: const BoxConstraints(minHeight: AppSizes.controlHeight),
+          constraints: BoxConstraints(minHeight: controlHeight),
           decoration: buildRowDecoration(emphasis),
           padding: EdgeInsets.fromLTRB(
             indent,

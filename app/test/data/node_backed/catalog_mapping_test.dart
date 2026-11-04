@@ -135,6 +135,25 @@ void main() {
       expect(workspace.id, wire.id);
       expect(workspace.name, wire.name);
       expect(workspace.appServerAddress, wire.appServerAddress);
+      expect(
+        mapApprovalPolicyToNode(workspace.approvalPolicy),
+        wire.approvalPolicy,
+      );
+      expect(workspace.protectedFiles, wire.protectedFiles);
+    }
+  });
+
+  test('test_map_workspace_from_node_property_patterns_are_frozen', () {
+    final Random random = seededRandom(9130);
+    for (int i = 0; i < propertyIterations; i += 1) {
+      final node.Workspace wire = node.Workspace.fromJson(
+        randomWorkspaceJson(random),
+      );
+      final Workspace workspace = mapWorkspaceFromNode(wire);
+      expect(
+        () => workspace.protectedFiles.add(randomText(random)),
+        throwsUnsupportedError,
+      );
     }
   });
 
@@ -185,6 +204,10 @@ void main() {
       expect(project.id, wire.id);
       expect(project.workspaceId, wire.workspaceId);
       expect(project.name, wire.name);
+      expect(
+        mapOptionalApprovalPolicyToNode(project.approvalPolicy),
+        wire.approvalPolicy,
+      );
       final List<Object?> repositories = <Object?>[
         for (final Repository repository in project.repositories)
           mapRepositoryToNode(repository).toJson(),

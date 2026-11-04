@@ -23,7 +23,12 @@ const List<CommandShape> catalogCommandShapes = <CommandShape>[
   ),
   CommandShape(
     commandName: 'create_project',
-    argumentFields: <String>{'workspace_id', 'name', 'repositories'},
+    argumentFields: <String>{
+      'workspace_id',
+      'name',
+      'repositories',
+      'approval_policy',
+    },
     buildCommand: _buildCreateProject,
     buildReplyJson: randomProjectJson,
     encodeReply: encodeValueReply,
@@ -107,6 +112,7 @@ NodeCommand<Object?> _buildCreateProject(Random random) {
     workspaceId: randomWorkspaceId(random),
     projectName: randomText(random),
     repositories: repositories,
+    approvalPolicy: randomOptionalApprovalPolicy(random),
   );
 }
 

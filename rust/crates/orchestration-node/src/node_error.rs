@@ -1,5 +1,6 @@
 use orchestration_core::local_folders::LocalFolderProblem;
 use orchestration_core::naming::NameProblem;
+use orchestration_core::protected_files::ProtectedPatternProblem;
 use orchestration_core::repository_address::AddressProblem;
 use orchestration_core::repository_paths::RepositoryPathProblem;
 use orchestration_core::schedule_rules::ScheduleProblem;
@@ -23,6 +24,8 @@ pub enum NodeError {
     Json(#[from] serde_json::Error),
     #[error(transparent)]
     Name(#[from] NameProblem),
+    #[error(transparent)]
+    ProtectedPattern(#[from] ProtectedPatternProblem),
     #[error(transparent)]
     RepositoryAddress(#[from] AddressProblem),
     #[error(transparent)]

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:agent_orchestration/icons/app_icon_kind.dart';
 import 'package:agent_orchestration/theme/app_spacing.dart';
 import 'package:agent_orchestration/widgets/app_button.dart';
+import 'package:agent_orchestration/widgets/forms/message_field.dart';
 
 const double _sideBySideMinimumWidth = 720;
 const String addAgentLabel = 'Add agent';
@@ -32,31 +33,24 @@ class BuilderToolbar extends StatelessWidget {
       onAgentAdded: onAgentAdded,
       onPersonStepAdded: onPersonStepAdded,
     );
-    final Widget askRow = IntrinsicHeight(
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Expanded(
-            child: Semantics(
-              label: 'Ask the agent to change the workflow',
-              child: TextField(
-                controller: askController,
-                onSubmitted: (String _) => onAsked?.call(),
-                decoration: const InputDecoration(
-                  hintText: 'Ask the agent, e.g. add a test step after ios',
-                  hintMaxLines: 1,
-                ),
-              ),
-            ),
+    final Widget askRow = Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: <Widget>[
+        Expanded(
+          child: MessageField(
+            controller: askController,
+            hintText: 'Ask the agent, e.g. add a test step after ios',
+            fieldLabel: 'Ask the agent to change the workflow',
+            onSend: onAsked,
           ),
-          const SizedBox(width: AppSpacing.space2),
-          AppButton.secondary(
-            label: 'Ask',
-            icon: AppIconKind.draft,
-            onPressed: onAsked,
-          ),
-        ],
-      ),
+        ),
+        const SizedBox(width: AppSpacing.space2),
+        AppButton.secondary(
+          label: 'Ask',
+          icon: AppIconKind.draft,
+          onPressed: onAsked,
+        ),
+      ],
     );
 
     if (limits.maxWidth >= _sideBySideMinimumWidth) {

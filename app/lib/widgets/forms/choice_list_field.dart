@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 
 import 'package:agent_orchestration/theme/app_colors.dart';
 import 'package:agent_orchestration/theme/app_spacing.dart';
+import 'package:agent_orchestration/theme/layout_density.dart';
 import 'package:agent_orchestration/widgets/forms/choice_tile_frame.dart';
 import 'package:agent_orchestration/widgets/gaps.dart';
 
-const double _radioDotExtent = AppSizes.icon / 2;
+const double _radioDotShareOfMark = 0.5;
 
 final class ChoiceOption<T> {
   const ChoiceOption({
@@ -86,9 +87,12 @@ class _RadioMark extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final double markExtent = AppSizes.iconFor(LayoutDensity.of(context));
+    final double dotExtent = markExtent * _radioDotShareOfMark;
+
     return Container(
-      width: AppSizes.icon,
-      height: AppSizes.icon,
+      width: markExtent,
+      height: markExtent,
       alignment: Alignment.center,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
@@ -99,8 +103,8 @@ class _RadioMark extends StatelessWidget {
       ),
       child: isSelected
           ? Container(
-              width: _radioDotExtent,
-              height: _radioDotExtent,
+              width: dotExtent,
+              height: dotExtent,
               decoration: const BoxDecoration(
                 color: AppColors.action,
                 shape: BoxShape.circle,

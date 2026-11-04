@@ -48,6 +48,7 @@ void main() {
             workflows: const [],
             deviceNames: DeviceNames(galleryDevices),
           ),
+          platform: desktopPlatform,
         ),
       );
 

@@ -32,7 +32,7 @@ final class TaskArguments implements JsonEncodable {
   final AgentPlace agentPlace;
   final List<SkillId> skills;
   final bool usesAutomaticSkills;
-  final ApprovalPolicy approvalPolicy;
+  final ApprovalPolicy? approvalPolicy;
 
   @override
   JsonObject toJson() {
@@ -46,7 +46,7 @@ final class TaskArguments implements JsonEncodable {
       'agent_place': agentPlace.wireName,
       'skills': skills,
       'uses_automatic_skills': usesAutomaticSkills,
-      'approval_policy': approvalPolicy.wireName,
+      'approval_policy': approvalPolicy?.wireName,
     };
   }
 }

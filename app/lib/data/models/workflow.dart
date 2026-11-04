@@ -44,7 +44,7 @@ final class WorkflowAgent {
   final RunnerTarget runsOn;
   final List<SkillId> skills;
   final bool usesAutomaticSkills;
-  final ApprovalPolicy approvalPolicy;
+  final ApprovalPolicy? approvalPolicy;
   final CanvasPosition position;
 
   WorkflowAgent copyWith({
@@ -54,7 +54,6 @@ final class WorkflowAgent {
     RunnerTarget? runsOn,
     List<SkillId>? skills,
     bool? usesAutomaticSkills,
-    ApprovalPolicy? approvalPolicy,
     CanvasPosition? position,
   }) {
     return WorkflowAgent(
@@ -66,8 +65,23 @@ final class WorkflowAgent {
       runsOn: runsOn ?? this.runsOn,
       skills: skills ?? this.skills,
       usesAutomaticSkills: usesAutomaticSkills ?? this.usesAutomaticSkills,
-      approvalPolicy: approvalPolicy ?? this.approvalPolicy,
+      approvalPolicy: approvalPolicy,
       position: position ?? this.position,
+    );
+  }
+
+  WorkflowAgent withApprovalPolicy(ApprovalPolicy? nextApprovalPolicy) {
+    return WorkflowAgent(
+      id: id,
+      name: name,
+      stepKind: stepKind,
+      kind: kind,
+      task: task,
+      runsOn: runsOn,
+      skills: skills,
+      usesAutomaticSkills: usesAutomaticSkills,
+      approvalPolicy: nextApprovalPolicy,
+      position: position,
     );
   }
 }

@@ -164,6 +164,7 @@ void main() {
             title: randomText(random),
             children: <Widget>[Text(randomText(random))],
           ),
+          platform: platformMeantByWidth(width),
         ),
       );
 
@@ -182,6 +183,7 @@ void main() {
           title: 'How will this Mac be used?',
           children: <Widget>[Text('Body')],
         ),
+        platform: phonePlatform,
       ),
     );
 

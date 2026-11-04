@@ -26,6 +26,15 @@ abstract final class AppFontSizes {
   static const double hero = 40;
 }
 
+abstract final class AppDenseFontSizes {
+  static const double caption = 12;
+  static const double small = 13;
+  static const double body = 14;
+  static const double heading = 17;
+  static const double title = 22;
+  static const double hero = 40;
+}
+
 abstract final class AppLineHeights {
   static const double body = 1.5;
   static const double display = 1.1;

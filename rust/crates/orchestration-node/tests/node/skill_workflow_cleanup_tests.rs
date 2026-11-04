@@ -88,15 +88,18 @@ fn test_delete_skill_property_signed_workflows_drop_it_and_stay_signed() {
 
     let outcome = runner.run(&secret_text_strategy(), |instructions| {
         let skill_id = create_skill(&prepared, &instructions).map_err(fail)?;
-        let signed =
-            create_signed_workflow_using(&prepared, &skill_id).map_err(fail)?;
+        let signed = create_signed_workflow_using(&prepared, &skill_id)
+            .map_err(fail)?;
         let workflow_id = signed["workflow"]["id"].clone();
 
         delete_skill(&prepared, &skill_id).map_err(fail)?;
         let listed =
             find_listed_workflow(&prepared, &workflow_id).map_err(fail)?;
 
-        prop_assert_eq!(&listed["workflow"]["agents"][0]["skills"], &json!([]));
+        prop_assert_eq!(
+            &listed["workflow"]["agents"][0]["skills"],
+            &json!([])
+        );
         prop_assert_eq!(&listed["signature_state"], "signed");
         Ok(())
     });
@@ -111,8 +114,8 @@ fn test_delete_skill_property_unsigned_changes_are_never_signed_for_you() {
 
     let outcome = runner.run(&secret_text_strategy(), |instructions| {
         let skill_id = create_skill(&prepared, &instructions).map_err(fail)?;
-        let signed =
-            create_signed_workflow_using(&prepared, &skill_id).map_err(fail)?;
+        let signed = create_signed_workflow_using(&prepared, &skill_id)
+            .map_err(fail)?;
         let workflow_id = signed["workflow"]["id"].clone();
         save_unsigned_change(&prepared, &signed).map_err(fail)?;
 
@@ -120,8 +123,14 @@ fn test_delete_skill_property_unsigned_changes_are_never_signed_for_you() {
         let listed =
             find_listed_workflow(&prepared, &workflow_id).map_err(fail)?;
 
-        prop_assert_eq!(&listed["workflow"]["agents"][0]["skills"], &json!([]));
-        prop_assert_eq!(&listed["workflow"]["agents"][0]["task"], CHANGED_TASK);
+        prop_assert_eq!(
+            &listed["workflow"]["agents"][0]["skills"],
+            &json!([])
+        );
+        prop_assert_eq!(
+            &listed["workflow"]["agents"][0]["task"],
+            CHANGED_TASK
+        );
         prop_assert_eq!(&listed["signature_state"], "changed_not_signed");
         Ok(())
     });

@@ -1,3 +1,4 @@
+import 'package:agent_orchestration/bridge/codecs/approval_values.dart';
 import 'package:agent_orchestration/bridge/codecs/catalog_views.dart';
 import 'package:agent_orchestration/bridge/codecs/json_values.dart';
 import 'package:agent_orchestration/bridge/codecs/workspace_values.dart';
@@ -28,11 +29,13 @@ final class CreateProjectCommand implements NodeCommand<Project> {
     required this.workspaceId,
     required this.projectName,
     required List<Repository> repositories,
+    required this.approvalPolicy,
   }) : repositories = List<Repository>.unmodifiable(repositories);
 
   final WorkspaceId workspaceId;
   final String projectName;
   final List<Repository> repositories;
+  final ApprovalPolicy? approvalPolicy;
 
   @override
   String get name => 'create_project';
@@ -43,6 +46,7 @@ final class CreateProjectCommand implements NodeCommand<Project> {
       'workspace_id': workspaceId.value,
       'name': projectName,
       'repositories': encodeList(repositories),
+      'approval_policy': approvalPolicy?.wireName,
     };
   }
 

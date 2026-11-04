@@ -59,7 +59,7 @@ Task mapTaskFromNode(node.Task task) {
     agentPlace: mapAgentPlaceFromNode(task.agentPlace),
     skills: task.skills,
     usesAutomaticSkills: task.usesAutomaticSkills,
-    approvalPolicy: mapApprovalPolicyFromNode(task.approvalPolicy),
+    approvalPolicy: mapOptionalApprovalPolicyFromNode(task.approvalPolicy),
     schedule: schedule,
     status: mapTaskStatusFromNode(task.status),
     createdAt: task.createdAt,
@@ -80,6 +80,6 @@ node.TaskArguments mapTaskDraftToNode({
     agentPlace: mapAgentPlaceToNode(draft.agentPlace),
     skills: draft.skills,
     usesAutomaticSkills: draft.usesAutomaticSkills,
-    approvalPolicy: mapApprovalPolicyToNode(draft.approvalPolicy),
+    approvalPolicy: mapOptionalApprovalPolicyToNode(draft.approvalPolicy),
   );
 }

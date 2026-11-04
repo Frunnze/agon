@@ -9,6 +9,13 @@ pub const GIT_DIRECTORY_NAME: &str = ".git";
 pub struct WorkspaceMounts {
     pub task_folder: PathBuf,
     pub git_directories: Vec<PathBuf>,
+    pub placeholder_mounts: Vec<PlaceholderMount>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PlaceholderMount {
+    pub covered_path: PathBuf,
+    pub placeholder: PathBuf,
 }
 
 #[must_use]

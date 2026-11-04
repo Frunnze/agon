@@ -6,17 +6,16 @@ import 'package:agent_orchestration/data/models/approval.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/runner.dart';
 import 'package:agent_orchestration/data/models/task.dart';
+import 'package:agent_orchestration/presentation/approval_policy_text.dart';
 import 'package:agent_orchestration/screens/shared/approval_policy_field.dart';
 import 'package:agent_orchestration/screens/task_form/agent_place_field.dart';
 import 'package:agent_orchestration/screens/task_form/folder_runner_notice.dart';
 import 'package:agent_orchestration/screens/task_form/schedule_fields.dart';
-import 'package:agent_orchestration/screens/task_form/task_form_action.dart';
 import 'package:agent_orchestration/screens/task_form/task_form_options.dart';
 import 'package:agent_orchestration/screens/task_form/task_form_values.dart';
-import 'package:agent_orchestration/theme/app_spacing.dart';
 import 'package:agent_orchestration/theme/field_padding.dart';
-import 'package:agent_orchestration/widgets/app_button.dart';
 import 'package:agent_orchestration/widgets/forms/check_field.dart';
+import 'package:agent_orchestration/widgets/forms/form_action.dart';
 import 'package:agent_orchestration/widgets/forms/form_field_block.dart';
 import 'package:agent_orchestration/widgets/forms/select_field.dart';
 import 'package:agent_orchestration/widgets/forms/tag_input_field.dart';
@@ -32,13 +31,15 @@ class TaskForm extends StatefulWidget {
     required this.actions,
     super.key,
     this.repeatHint,
+    this.onChanged,
   });
 
   final TaskFormValues initialValues;
   final TaskFormOptions options;
   final List<RepeatChoice> repeatChoices;
-  final List<TaskFormAction> actions;
+  final List<FormAction<TaskFormValues>> actions;
   final String? repeatHint;
+  final ValueChanged<TaskFormValues>? onChanged;
 
   @override
   State<TaskForm> createState() => _TaskFormState();
@@ -77,6 +78,21 @@ class _TaskFormState extends State<TaskForm> {
 
   void _updateValues(TaskFormValues nextValues) {
     setState(() => _values = nextValues);
+    widget.onChanged?.call(nextValues);
+  }
+
+  void _reportTypedValues() {
+    widget.onChanged?.call(_readValues());
+  }
+
+  void _changeTitle(String _) {
+    setState(() => _titleProblem = null);
+    _reportTypedValues();
+  }
+
+  void _changeTime(String _) {
+    setState(() => _timeProblem = null);
+    _reportTypedValues();
   }
 
   @override
@@ -92,7 +108,7 @@ class _TaskFormState extends State<TaskForm> {
             TextField(
               controller: _titleController,
               decoration: InputDecoration(errorText: _titleProblem),
-              onChanged: (String _) => setState(() => _titleProblem = null),
+              onChanged: _changeTitle,
             ),
           ],
         ),
@@ -106,6 +122,7 @@ class _TaskFormState extends State<TaskForm> {
               decoration: const InputDecoration(
                 contentPadding: multiLineFieldPadding,
               ),
+              onChanged: (String _) => _reportTypedValues(),
             ),
           ],
         ),
@@ -159,24 +176,17 @@ class _TaskFormState extends State<TaskForm> {
           weekday: _values.weekday,
           timeController: _timeController,
           timeProblem: _timeProblem,
-          onTimeChanged: (String _) => setState(() => _timeProblem = null),
+          onTimeChanged: _changeTime,
           onRepeatChanged: (RepeatChoice repeat) =>
               _updateValues(_readValues().copyWith(repeat: repeat)),
           onWeekdayChanged: (weekday) =>
               _updateValues(_readValues().copyWith(weekday: weekday)),
         ),
-        Wrap(
-          spacing: AppSpacing.space2,
-          runSpacing: AppSpacing.space2,
-          children: <Widget>[
-            for (final TaskFormAction action in widget.actions)
-              AppButton(
-                label: action.label,
-                tone: action.tone,
-                icon: action.icon,
-                onPressed: _isSubmitting ? null : () => _runAction(action),
-              ),
-          ],
+        FormActionButtons<TaskFormValues>(
+          actions: widget.actions,
+          isSubmitting: _isSubmitting,
+          onSubmit: (SubmitFormAction<TaskFormValues> action) =>
+              unawaited(_submit(action)),
         ),
       ],
     );
@@ -213,9 +223,10 @@ class _TaskFormState extends State<TaskForm> {
 
   Widget _buildApprovalField() {
     return ApprovalPolicyField(
+      fallback: ApprovalPolicyFallback.project,
       selected: _values.approvalPolicy,
-      onChanged: (ApprovalPolicy policy) =>
-          _updateValues(_readValues().copyWith(approvalPolicy: policy)),
+      onChanged: (ApprovalPolicy? policy) =>
+          _updateValues(_readValues().withApprovalPolicy(policy)),
     );
   }
 
@@ -238,16 +249,7 @@ class _TaskFormState extends State<TaskForm> {
     _updateValues(_readValues().copyWith(skillIds: remaining));
   }
 
-  void _runAction(TaskFormAction action) {
-    switch (action) {
-      case LeaveFormAction(:final VoidCallback onPressed):
-        onPressed();
-      case SubmitFormAction():
-        unawaited(_submit(action));
-    }
-  }
-
-  Future<void> _submit(SubmitFormAction action) async {
+  Future<void> _submit(SubmitFormAction<TaskFormValues> action) async {
     final TaskFormValues values = _readValues();
     setState(() {
       _titleProblem = values.describeTitleProblem();

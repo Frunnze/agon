@@ -31,6 +31,15 @@ const List<SkillId> sampleSkillIds = <SkillId>[
   GallerySkillIds.writeTests,
 ];
 
+const List<ApprovalPolicy?> inheritableApprovalPolicies = <ApprovalPolicy?>[
+  null,
+  ...ApprovalPolicy.values,
+];
+
+ApprovalPolicy? randomInheritableApprovalPolicy(Random random) {
+  return pickOne(random, inheritableApprovalPolicies);
+}
+
 TaskDoer randomTaskDoer(Random random) {
   if (random.nextBool()) {
     return OneAgentDoer(pickOne(random, AgentKind.values));
@@ -63,7 +72,7 @@ TaskDraft randomTaskDraft(Random random) {
     agentPlace: pickOne(random, AgentPlace.values),
     skills: skills,
     usesAutomaticSkills: random.nextBool(),
-    approvalPolicy: pickOne(random, ApprovalPolicy.values),
+    approvalPolicy: randomInheritableApprovalPolicy(random),
   );
 }
 

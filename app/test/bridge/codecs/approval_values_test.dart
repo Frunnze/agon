@@ -11,7 +11,8 @@ import '../../support/random_inputs.dart';
 import '../support/random_run_json.dart';
 
 const String _backendRunCommandText =
-    '{"kind":"run_command","tool":"Bash","command":"npm test"}';
+    '{"kind":"run_command","tool":"Bash","summary":"Run the tests",'
+    '"command":"npm test"}';
 const String _backendImproveSkillText =
     '{"kind":"improve_skill",'
     '"skill_id":"0b7c6a52-1d4e-4f0a-9b1e-2c3d4e5f6a7b",'
@@ -44,8 +45,27 @@ void main() {
     expect(decoded, isA<RunCommand>());
     final RunCommand command = decoded as RunCommand;
     expect(command.tool, 'Bash');
+    expect(command.summary, 'Run the tests');
     expect(command.command, 'npm test');
     expect(jsonEncode(command.toJson()), _backendRunCommandText);
+  });
+
+  test('test_run_command_from_json_property_reads_a_stored_command', () {
+    final Random random = seededRandom(4305);
+
+    for (int i = 0; i < propertyIterations; i += 1) {
+      final Map<String, Object?> wireJson = randomRunCommandJson(random);
+      wireJson.remove('summary');
+
+      final ApprovalAction decodedAction = ApprovalAction.fromJson(wireJson);
+      final RunCommand decoded = decodedAction as RunCommand;
+      final Map<String, Object?> encoded = decoded.toJson();
+
+      expect(decoded.summary, unlabelledCommandSummary);
+      expect(decoded.command, wireJson['command']);
+      expect(encoded['summary'], unlabelledCommandSummary);
+      expect(ApprovalAction.fromJson(encoded).toJson(), equals(encoded));
+    }
   });
 
   test('test_approval_action_from_json_property_command_needs_both_texts', () {

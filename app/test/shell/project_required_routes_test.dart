@@ -51,11 +51,13 @@ void main() {
         route: route,
         dependencies: withoutProjects,
         navigation: navigation,
+        runWindowOpener: null,
       );
       final Widget screenWithProjects = buildRouteScreen(
         route: route,
         dependencies: withProjects,
         navigation: navigation,
+        runWindowOpener: null,
       );
 
       expect(_isNewProjectChat(screenWithoutProjects), isTrue);

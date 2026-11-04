@@ -40,6 +40,7 @@ fn project_with(workspace_id: WorkspaceId, addresses: &[&str]) -> Project {
         workspace_id,
         name: format!("project-{}", Uuid::new_v4().simple()),
         repositories,
+        approval_policy: None,
     }
 }
 

@@ -17,7 +17,7 @@ use crate::node_error::NodeError;
 use crate::server_address::ServerAddress;
 use crate::server_client::ServerClient;
 
-const LOCAL_NETWORK_SEARCH_LIMIT: Duration = Duration::from_secs(5);
+const LOCAL_NETWORK_QUIET_LIMIT: Duration = Duration::from_secs(5);
 
 type AcceptingServer = (ServerClient, JoinAccepted);
 
@@ -103,19 +103,7 @@ async fn join_server_on_local_network(
     join_request: &JoinRequest,
 ) -> Result<AcceptingServer, NodeError> {
     let mut search = LocalNetworkSearch::start()?;
-    let trying = try_each_announced_server(node, &mut search, join_request);
-    match timeout(LOCAL_NETWORK_SEARCH_LIMIT, trying).await {
-        Ok(joined) => joined,
-        Err(_elapsed) => Err(NodeError::NoServerAcceptedCode),
-    }
-}
-
-async fn try_each_announced_server(
-    node: &Node,
-    search: &mut LocalNetworkSearch,
-    join_request: &JoinRequest,
-) -> Result<AcceptingServer, NodeError> {
-    while let Some(server_address) = search.next_server_address().await {
+    while let Some(server_address) = wait_for_next_server(&mut search).await {
         let attempt =
             join_server_at(node, &server_address, join_request).await;
         if let Ok(joined) = attempt {
@@ -123,6 +111,14 @@ async fn try_each_announced_server(
         }
     }
     Err(NodeError::NoServerAcceptedCode)
+}
+
+async fn wait_for_next_server(
+    search: &mut LocalNetworkSearch,
+) -> Option<ServerAddress> {
+    let announcing = search.next_server_address();
+    let announced = timeout(LOCAL_NETWORK_QUIET_LIMIT, announcing).await;
+    announced.unwrap_or_default()
 }
 
 async fn join_server_through_rendezvous(

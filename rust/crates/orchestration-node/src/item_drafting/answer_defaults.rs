@@ -1,6 +1,6 @@
 use orchestration_core::agent_place::AgentPlace;
-use orchestration_core::approval::ApprovalPolicy;
 use orchestration_core::device::RunnerTarget;
+use orchestration_core::library::SkillImprovement;
 use orchestration_core::naming::convert_to_project_name;
 use orchestration_core::task::TaskDoer;
 use orchestration_core::workflow::AgentKind;
@@ -28,8 +28,8 @@ pub(super) const fn pick_form_automatic_skills_choice() -> bool {
     true
 }
 
-pub(super) const fn pick_form_approval_policy() -> ApprovalPolicy {
-    ApprovalPolicy::AskBeforeRiskyActions
+pub(super) const fn pick_form_skill_improvement() -> SkillImprovement {
+    SkillImprovement::Auto
 }
 
 pub(super) const fn pick_form_agent_access() -> AgentAccess {

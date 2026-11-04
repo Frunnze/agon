@@ -79,7 +79,7 @@ fn push_approval_text_matches_the_design() {
 
     let description = describe_approval_action(&action, &BTreeMap::new());
 
-    assert_eq!(description, "Push 3 commits to acme/app");
+    assert_eq!(description, "Push 3 commits to release");
 }
 
 proptest! {
@@ -172,18 +172,20 @@ proptest! {
     }
 
     #[test]
-    fn test_describe_approval_action_property_names_the_tool_and_command(
+    fn test_describe_approval_action_property_leads_with_the_summary(
         tool in "[A-Za-z]{1,12}",
+        summary in "[A-Z][a-z ]{0,40}",
         command in "[a-z ./-]{1,40}",
     ) {
         let action = ApprovalAction::RunCommand {
-            tool: tool.clone(),
-            command: command.clone(),
+            tool,
+            summary: summary.clone(),
+            command,
         };
 
         let description = describe_approval_action(&action, &BTreeMap::new());
 
-        prop_assert_eq!(description, format!("Use {tool}: {command}"));
+        prop_assert_eq!(description, summary);
     }
 
     #[test]

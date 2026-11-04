@@ -34,7 +34,7 @@ fn design_agent(
         runs_on,
         skills: Vec::new(),
         uses_automatic_skills: false,
-        approval_policy: ApprovalPolicy::NeverAsk,
+        approval_policy: Some(ApprovalPolicy::NeverAsk),
         position: CanvasPosition {
             horizontal: 0.0,
             vertical,
@@ -71,7 +71,7 @@ fn test_render_workflow_document_matches_the_release_layout() {
         task: "Write the plan.\nKeep it \"short\".\u{2028}".to_owned(),
         skills: vec![SkillId(Uuid::from_u128(1))],
         uses_automatic_skills: true,
-        approval_policy: ApprovalPolicy::AskBeforeRiskyActions,
+        approval_policy: Some(ApprovalPolicy::AskBeforeRiskyActions),
         ..design_agent(
             1,
             "plan",
@@ -122,7 +122,52 @@ fn test_render_workflow_document_matches_the_release_layout() {
     assert_eq!(document, expected);
 }
 
+fn approval_line(workflow: &Workflow) -> Option<String> {
+    let document = render_workflow_document(workflow);
+    document
+        .lines()
+        .find(|line| line.trim_start().starts_with("asks_for_approval:"))
+        .map(|line| line.trim().to_owned())
+}
+
 proptest! {
+    #[test]
+    fn test_render_workflow_document_property_a_following_step_says_so(
+        number in any::<u128>(),
+    ) {
+        let agent = WorkflowAgent {
+            approval_policy: None,
+            ..design_agent(number, "plan", RunnerTarget::AnyFreeRunner, 0.0)
+        };
+        let workflow = workflow_from_parts(vec![agent], Vec::new());
+
+        let line = approval_line(&workflow);
+
+        let expected = "asks_for_approval: same as the project";
+        prop_assert_eq!(line.as_deref(), Some(expected));
+    }
+
+    #[test]
+    fn test_render_workflow_document_property_stored_choices_keep_lines(
+        asks in any::<bool>(),
+    ) {
+        let policy = if asks {
+            ApprovalPolicy::AskBeforeRiskyActions
+        } else {
+            ApprovalPolicy::NeverAsk
+        };
+        let agent = WorkflowAgent {
+            approval_policy: Some(policy),
+            ..design_agent(1, "plan", RunnerTarget::AnyFreeRunner, 0.0)
+        };
+        let workflow = workflow_from_parts(vec![agent], Vec::new());
+
+        let line = approval_line(&workflow);
+
+        let expected = format!("asks_for_approval: {asks}");
+        prop_assert_eq!(line, Some(expected));
+    }
+
     #[test]
     fn test_render_workflow_document_property_steps_follow_agent_order(
         workflow in acyclic_workflow(),

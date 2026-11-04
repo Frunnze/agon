@@ -9,6 +9,7 @@ use crate::support::test_device::{describe, fail};
 
 const APPROVAL_CASES: u32 = 4;
 const REPOSITORY: &str = "github.com/acme/app";
+const BRANCH: &str = "release";
 const COMMIT_TEXT: &str = "a41f2c0 Use CI signing profile";
 const UNKNOWN_APPROVAL_ID: &str = "00000000-0000-0000-0000-000000000042";
 
@@ -22,7 +23,7 @@ fn create_push_approval(
         "action": {
             "kind": "push_commits",
             "repository": REPOSITORY,
-            "branch": "release",
+            "branch": BRANCH,
             "commits": vec![COMMIT_TEXT; commit_count],
         },
     }))?;
@@ -84,7 +85,7 @@ proptest! {
 
         let commit_word = if commit_count == 1 { "commit" } else { "commits" };
         let expected_description =
-            format!("Push {commit_count} {commit_word} to {REPOSITORY}");
+            format!("Push {commit_count} {commit_word} to {BRANCH}");
         prop_assert_eq!(&approvals["waiting_count"], &json!(1));
         prop_assert_eq!(
             &approvals["approvals"][0]["description"],

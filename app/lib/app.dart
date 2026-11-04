@@ -5,18 +5,22 @@ import 'package:agent_orchestration/product_name.dart';
 import 'package:agent_orchestration/shell/app_navigation.dart';
 import 'package:agent_orchestration/shell/app_shell.dart';
 import 'package:agent_orchestration/theme/app_theme.dart';
+import 'package:agent_orchestration/theme/apply_layout_density.dart';
+import 'package:agent_orchestration/windows/run_window_opener.dart';
 
 class AgentOrchestrationApp extends StatelessWidget {
   const AgentOrchestrationApp({
     required this.dependencies,
     required this.navigation,
     required this.messengerKey,
+    required this.runWindowOpener,
     super.key,
   });
 
   final AppDependencies dependencies;
   final AppNavigation navigation;
   final GlobalKey<ScaffoldMessengerState> messengerKey;
+  final RunWindowOpener? runWindowOpener;
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +29,12 @@ class AgentOrchestrationApp extends StatelessWidget {
       scaffoldMessengerKey: messengerKey,
       debugShowCheckedModeBanner: false,
       theme: buildAppTheme(),
-      home: AppShell(dependencies: dependencies, navigation: navigation),
+      builder: applyLayoutDensity,
+      home: AppShell(
+        dependencies: dependencies,
+        navigation: navigation,
+        runWindowOpener: runWindowOpener,
+      ),
     );
   }
 }

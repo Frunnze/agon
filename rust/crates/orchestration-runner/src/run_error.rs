@@ -43,4 +43,6 @@ pub(crate) enum RunError {
     PlaceNotOffered,
     #[error("the agent stopped reading what the runner sends it")]
     AgentInputClosed,
+    #[error("could not hide the files agents can't read: {0}")]
+    ProtectedFilesNotHidden(std::io::Error),
 }

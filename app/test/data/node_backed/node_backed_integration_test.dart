@@ -101,6 +101,7 @@ void main() {
               agentAccess: AgentAccess.readOnly,
             ),
           ],
+          approvalPolicy: null,
         ),
       );
       await projects.load();

@@ -11,6 +11,7 @@ pub const COMMITTER_EMAIL: &str = "runner@agents-orchestration.invalid";
 
 const CONFIGURATION_OPTION: &str = "-c";
 const SIGNING_DISABLED_SETTING: &str = "commit.gpgsign=false";
+const STEP_SUBJECT_SEPARATOR: &str = "; ";
 
 #[must_use]
 pub fn compose_change_commit_subject(
@@ -19,6 +20,11 @@ pub fn compose_change_commit_subject(
 ) -> String {
     let agent_name = describe_agent_kind(agent);
     format!("{step_name}: changes from {agent_name}")
+}
+
+#[must_use]
+pub fn combine_change_commit_subjects(step_subjects: &[String]) -> String {
+    step_subjects.join(STEP_SUBJECT_SEPARATOR)
 }
 
 pub async fn commit_uncommitted_changes(

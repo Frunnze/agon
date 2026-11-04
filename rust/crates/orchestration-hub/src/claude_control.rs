@@ -4,7 +4,9 @@ use serde_json::{Value, json};
 
 const USER_LINE_TYPE: &str = "user";
 const USER_ROLE: &str = "user";
+const CONTROL_REQUEST_TYPE: &str = "control_request";
 const CONTROL_RESPONSE_TYPE: &str = "control_response";
+const INTERRUPT_SUBTYPE: &str = "interrupt";
 const SUCCESS_SUBTYPE: &str = "success";
 const ALLOW_BEHAVIOR: &str = "allow";
 const DENY_BEHAVIOR: &str = "deny";
@@ -20,6 +22,7 @@ pub struct ToolPermissionRequest {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ClaudeControlLine {
     PermissionRequest(ToolPermissionRequest),
+    RequestAnswered(String),
     TurnEnded,
     Other,
 }
@@ -31,7 +34,15 @@ enum ClaudeOutputLine {
         request_id: String,
         request: ClaudeControlRequest,
     },
+    ControlResponse {
+        response: ClaudeControlAnswer,
+    },
     Result {},
+}
+
+#[derive(Deserialize)]
+struct ClaudeControlAnswer {
+    request_id: String,
 }
 
 #[derive(Deserialize)]
@@ -60,8 +71,21 @@ pub fn read_control_line(line: &str) -> ClaudeControlLine {
             tool_name,
             input,
         }),
+        ClaudeOutputLine::ControlResponse { response } => {
+            ClaudeControlLine::RequestAnswered(response.request_id)
+        }
         ClaudeOutputLine::Result {} => ClaudeControlLine::TurnEnded,
     }
+}
+
+#[must_use]
+pub fn write_interrupt_request(request_id: &str) -> String {
+    let request = json!({
+        "type": CONTROL_REQUEST_TYPE,
+        "request_id": request_id,
+        "request": {"subtype": INTERRUPT_SUBTYPE},
+    });
+    request.to_string()
 }
 
 #[must_use]

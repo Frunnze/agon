@@ -9,6 +9,7 @@ import 'package:agent_orchestration/data/gallery/gallery_runners.dart';
 import 'package:agent_orchestration/data/gallery/gallery_tasks.dart';
 import 'package:agent_orchestration/data/gallery/gallery_workflows.dart';
 import 'package:agent_orchestration/data/gallery/gallery_workspaces.dart';
+import 'package:agent_orchestration/data/models/approval.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/library.dart';
 import 'package:agent_orchestration/data/models/project.dart';
@@ -162,6 +163,41 @@ void main() {
       expect(changed.title, title);
       expect(changed.details, values.details);
       expect(changed.repeat, values.repeat);
+      expect(changed.skillIds, values.skillIds);
+    }
+  });
+
+  test('test_blank_property_new_work_follows_the_project', () {
+    final Random random = seededRandom(5011);
+
+    for (int i = 0; i < propertyIterations; i += 1) {
+      final TaskFormValues blank = TaskFormValues.blank(
+        projectId: pickOne(random, sampleProjectIds),
+        doer: randomTaskDoer(random),
+        repeat: pickOne(random, RepeatChoice.values),
+      );
+
+      expect(blank.approvalPolicy, isNull);
+      expect(blank.toDraftedWork().approvalPolicy, isNull);
+    }
+  });
+
+  test('test_with_approval_policy_property_changes_only_the_policy', () {
+    final Random random = seededRandom(5012);
+
+    for (int i = 0; i < propertyIterations; i += 1) {
+      final TaskFormValues values = randomFormValues(random);
+      final ApprovalPolicy? chosen = randomInheritableApprovalPolicy(random);
+
+      final TaskFormValues changed = values.withApprovalPolicy(chosen);
+
+      expect(changed.approvalPolicy, chosen);
+      expect(changed.title, values.title);
+      expect(changed.details, values.details);
+      expect(changed.projectId, values.projectId);
+      expect(changed.doer, values.doer);
+      expect(changed.repeat, values.repeat);
+      expect(changed.timeText, values.timeText);
       expect(changed.skillIds, values.skillIds);
     }
   });

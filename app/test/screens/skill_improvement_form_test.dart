@@ -72,7 +72,7 @@ void main() {
     expect(settingTop, greaterThan(usageTop));
   });
 
-  testWidgets('a new skill saved untouched may never be improved', (
+  testWidgets('a new skill saved untouched is improved automatically', (
     WidgetTester tester,
   ) async {
     final AppDependencies dependencies = buildGalleryDependencies();
@@ -88,7 +88,7 @@ void main() {
 
     final Skill saved = dependencies.skillRepository.listSkills().last;
     expect(saved.name, 'untouched');
-    expect(saved.improvement, SkillImprovement.never);
+    expect(saved.improvement, SkillImprovement.auto);
   });
 
   for (final SkillImprovement improvement in SkillImprovement.values) {

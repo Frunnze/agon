@@ -42,6 +42,7 @@ pub struct FakeServer {
     approval_answer: ApprovalAnswer,
     cancellation_rule: CancellationRule,
     user_messages: Vec<ChatMessage>,
+    messages_shown_once_logged: Option<String>,
     forgotten_work: ForgottenWork,
     is_refusing_skill_proposals: bool,
     state: Mutex<RecordedState>,
@@ -59,6 +60,7 @@ impl FakeServer {
             ),
             cancellation_rule: CancellationRule::Never,
             user_messages: Vec::new(),
+            messages_shown_once_logged: None,
             forgotten_work: ForgottenWork::default(),
             is_refusing_skill_proposals: false,
             state: Mutex::new(state),
@@ -93,6 +95,17 @@ impl FakeServer {
         Self {
             user_messages,
             ..self
+        }
+    }
+
+    pub fn with_user_messages_once_logged(
+        self,
+        log_text: &str,
+        texts: &[&str],
+    ) -> Self {
+        Self {
+            messages_shown_once_logged: Some(log_text.to_string()),
+            ..self.with_user_messages(texts)
         }
     }
 
@@ -136,16 +149,30 @@ impl FakeServer {
         hold(&self.state).queued_assignments.len()
     }
 
-    fn is_cancelled_now(&self, run_id: RunId) -> bool {
+    fn has_logged(&self, run_id: RunId, text: &str) -> bool {
         let state = hold(&self.state);
+        state.events.iter().any(|(event_run_id, event)| {
+            *event_run_id == run_id && logs_text(event, text)
+        })
+    }
+
+    fn show_user_messages(&self, run_id: RunId) -> Vec<ChatMessage> {
+        let Some(log_text) = &self.messages_shown_once_logged else {
+            return self.user_messages.clone();
+        };
+        if !self.has_logged(run_id, log_text) {
+            return Vec::new();
+        }
+        self.user_messages.clone()
+    }
+
+    fn is_cancelled_now(&self, run_id: RunId) -> bool {
         match &self.cancellation_rule {
             CancellationRule::Never => false,
             CancellationRule::WhenLogContains(text) => {
-                state.events.iter().any(|(event_run_id, event)| {
-                    *event_run_id == run_id && logs_text(event, text)
-                })
+                self.has_logged(run_id, text)
             }
-            CancellationRule::WhenApprovalRequested => state
+            CancellationRule::WhenApprovalRequested => hold(&self.state)
                 .approval_requests
                 .iter()
                 .any(|request| request.run_id == Some(run_id)),
@@ -215,10 +242,10 @@ impl RunnerServer for FakeServer {
 
     fn read_user_messages(
         &self,
-        _run_id: RunId,
+        run_id: RunId,
     ) -> impl Future<Output = Result<Vec<ChatMessage>, ServerError>> + Send
     {
-        ready(Ok(self.user_messages.clone()))
+        ready(Ok(self.show_user_messages(run_id)))
     }
 
     fn is_run_cancelled(

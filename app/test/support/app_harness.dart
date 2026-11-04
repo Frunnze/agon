@@ -32,12 +32,24 @@ import 'package:agent_orchestration/data/repository/workflow_repository.dart';
 import 'package:agent_orchestration/data/repository/workspace_repository.dart';
 import 'package:agent_orchestration/shell/app_navigation.dart';
 import 'package:agent_orchestration/shell/app_route.dart';
+import 'package:agent_orchestration/theme/layout_density.dart';
 
 import 'widget_harness.dart';
 
 const Size phoneSize = Size(phoneWidth, phoneHeight);
 const Size desktopSize = Size(desktopWidth, desktopHeight);
 const Duration settleTime = Duration(milliseconds: 600);
+
+const TargetPlatformVariant onPhoneAndDesktop = TargetPlatformVariant(
+  <TargetPlatform>{phonePlatform, desktopPlatform},
+);
+
+Size windowSizeOn(TargetPlatform platform) {
+  if (LayoutDensity.forPlatform(platform).isTouch) {
+    return phoneSize;
+  }
+  return desktopSize;
+}
 
 AppDependencies replaceRepositories(
   AppDependencies base, {
@@ -136,6 +148,7 @@ Future<AppNavigation> pumpApp(
       dependencies: dependencies,
       navigation: navigation,
       messengerKey: GlobalKey<ScaffoldMessengerState>(),
+      runWindowOpener: null,
     ),
   );
   await tester.pump();

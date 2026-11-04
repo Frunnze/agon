@@ -3,6 +3,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::identifiers::{ApprovalId, DeviceId, RunId, SkillId, WorkflowId};
 
+pub const UNLABELLED_COMMAND_SUMMARY: &str = "Use a tool";
+
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum ApprovalAction {
@@ -23,6 +25,8 @@ pub enum ApprovalAction {
     },
     RunCommand {
         tool: String,
+        #[serde(default = "name_unlabelled_command")]
+        summary: String,
         command: String,
     },
     ImproveSkill {
@@ -32,10 +36,17 @@ pub enum ApprovalAction {
     },
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+fn name_unlabelled_command() -> String {
+    UNLABELLED_COMMAND_SUMMARY.to_owned()
+}
+
+#[derive(
+    Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize,
+)]
 #[serde(rename_all = "snake_case")]
 pub enum ApprovalPolicy {
     AskBeforeRiskyActions,
+    #[default]
     NeverAsk,
 }
 

@@ -138,6 +138,7 @@ void main() {
             deviceNames: deviceNames,
             onBrowse: browsed.add,
           ),
+          platform: desktopPlatform,
         ),
       );
 

@@ -9,9 +9,9 @@ use orchestration_core::workspace::AgentAccess;
 use serde::{Deserialize, Serialize};
 
 use super::answer_defaults::{
-    pick_form_agent_access, pick_form_agent_place, pick_form_approval_policy,
+    pick_form_agent_access, pick_form_agent_place,
     pick_form_automatic_skills_choice, pick_form_doer,
-    pick_form_runner_target,
+    pick_form_runner_target, pick_form_skill_improvement,
 };
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
@@ -40,8 +40,8 @@ pub struct WorkDraft {
     pub skills: Vec<SkillId>,
     #[serde(default = "pick_form_automatic_skills_choice")]
     pub uses_automatic_skills: bool,
-    #[serde(default = "pick_form_approval_policy")]
-    pub approval_policy: ApprovalPolicy,
+    #[serde(default)]
+    pub approval_policy: Option<ApprovalPolicy>,
     pub schedule: Option<Schedule>,
 }
 
@@ -52,6 +52,8 @@ pub struct ProjectDraft {
     pub repositories: Vec<RepositoryDraft>,
     #[serde(default = "pick_form_agent_access")]
     pub agent_access: AgentAccess,
+    #[serde(default)]
+    pub approval_policy: Option<ApprovalPolicy>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -67,7 +69,7 @@ pub struct SkillDraft {
     pub instructions: String,
     pub scope: Scope,
     pub usage: SkillUsage,
-    #[serde(default)]
+    #[serde(default = "pick_form_skill_improvement")]
     pub improvement: SkillImprovement,
 }
 

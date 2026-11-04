@@ -8,8 +8,10 @@ import 'file_command_shapes.dart';
 import 'item_draft_command_shapes.dart';
 import 'library_edit_command_shapes.dart';
 import 'person_step_command_shapes.dart';
+import 'protected_files_command_shapes.dart';
 import 'work_command_shapes.dart';
 import 'workflow_command_shapes.dart';
+import 'workspace_setting_command_shapes.dart';
 
 const List<CommandShape> allCommandShapes = <CommandShape>[
   ...accountCommandShapes,
@@ -23,6 +25,8 @@ const List<CommandShape> allCommandShapes = <CommandShape>[
   ...itemDraftCommandShapes,
   ...agentLoginCommandShapes,
   ...personStepCommandShapes,
+  ...protectedFilesCommandShapes,
+  ...workspaceSettingCommandShapes,
 ];
 
 const List<String> nodeCommandNames = <String>[
@@ -48,6 +52,8 @@ const List<String> nodeCommandNames = <String>[
   'add_device_to_workspace',
   'remove_device_from_workspace',
   'list_audit',
+  'set_protected_files',
+  'reset_protected_files',
   'list_projects',
   'create_project',
   'list_repositories',
@@ -112,4 +118,5 @@ const List<String> nodeCommandNames = <String>[
   'forget_agent_credential',
   'list_person_steps',
   'answer_person_step',
+  'change_workspace_approval_policy',
 ];

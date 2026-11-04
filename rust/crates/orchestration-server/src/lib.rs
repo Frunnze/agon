@@ -60,7 +60,9 @@ mod work_removal;
 mod workflow_deletion;
 mod workflow_listings;
 mod workflows;
+mod workspace_approvals;
 mod workspace_deletion;
+mod workspace_protected_files;
 mod workspaces;
 
 pub use abandoned_steps::{ABANDONED_STEP_TIMEOUT, requeue_abandoned_steps};

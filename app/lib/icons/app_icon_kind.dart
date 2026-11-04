@@ -108,7 +108,12 @@ enum AppIconKind {
   retry(<IconShape>[
     IconPathShape('M19.5 12a7.5 7.5 0 1 1-2.2-5.3'),
     IconPathShape('M19.5 4.5V9H15'),
-  ]);
+  ]),
+  newWindow(<IconShape>[
+    IconPathShape('M10 5H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2v-4'),
+    IconPathShape('M14 4h6v6M20 4l-8 8'),
+  ]),
+  pin(<IconShape>[IconPathShape('M9 4h6M10 4v6l-3 4h10l-3-4V4M12 14v6')]);
 
   const AppIconKind(this.shapes);
 

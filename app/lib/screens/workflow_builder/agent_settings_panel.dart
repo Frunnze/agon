@@ -6,6 +6,7 @@ import 'package:agent_orchestration/data/models/library.dart';
 import 'package:agent_orchestration/data/models/runner.dart';
 import 'package:agent_orchestration/data/models/workflow.dart';
 import 'package:agent_orchestration/icons/app_icon_kind.dart';
+import 'package:agent_orchestration/presentation/approval_policy_text.dart';
 import 'package:agent_orchestration/presentation/skill_names.dart';
 import 'package:agent_orchestration/screens/shared/approval_policy_field.dart';
 import 'package:agent_orchestration/screens/workflow_builder.dart';
@@ -170,9 +171,10 @@ class _AgentSettingsPanelState extends State<AgentSettingsPanel> {
 
   Widget _buildApprovalField(WorkflowAgent agent) {
     return ApprovalPolicyField(
+      fallback: ApprovalPolicyFallback.project,
       selected: agent.approvalPolicy,
-      onChanged: (ApprovalPolicy policy) =>
-          widget.onAgentChanged(agent.copyWith(approvalPolicy: policy)),
+      onChanged: (ApprovalPolicy? policy) =>
+          widget.onAgentChanged(agent.withApprovalPolicy(policy)),
     );
   }
 

@@ -49,38 +49,3 @@ class DotGridPainter extends CustomPainter {
   @override
   bool shouldRepaint(DotGridPainter oldDelegate) => false;
 }
-
-class CanvasScrollArea extends StatelessWidget {
-  const CanvasScrollArea({
-    required this.child,
-    super.key,
-    this.horizontalController,
-    this.verticalController,
-  });
-
-  final Widget child;
-  final ScrollController? horizontalController;
-  final ScrollController? verticalController;
-
-  @override
-  Widget build(BuildContext context) {
-    return CanvasFrame(child: LayoutBuilder(builder: _buildScrolling));
-  }
-
-  Widget _buildScrolling(BuildContext context, BoxConstraints limits) {
-    return SingleChildScrollView(
-      controller: verticalController,
-      child: SingleChildScrollView(
-        controller: horizontalController,
-        scrollDirection: Axis.horizontal,
-        child: ConstrainedBox(
-          constraints: BoxConstraints(minWidth: limits.maxWidth),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: AppSpacing.space5),
-            child: Align(alignment: Alignment.topCenter, child: child),
-          ),
-        ),
-      ),
-    );
-  }
-}

@@ -43,7 +43,8 @@ pub(super) struct TaskArguments {
     agent_place: AgentPlace,
     skills: Vec<SkillId>,
     uses_automatic_skills: bool,
-    approval_policy: ApprovalPolicy,
+    #[serde(default)]
+    approval_policy: Option<ApprovalPolicy>,
 }
 
 #[derive(Debug, Deserialize)]

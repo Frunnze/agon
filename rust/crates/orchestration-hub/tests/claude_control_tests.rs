@@ -1,7 +1,7 @@
 use orchestration_core::approval::ApprovalDecision;
 use orchestration_hub::claude_control::{
     ClaudeControlLine, ToolPermissionRequest, read_control_line,
-    write_permission_answer, write_user_message,
+    write_interrupt_request, write_permission_answer, write_user_message,
 };
 use proptest::prelude::*;
 use serde_json::{Value, json};
@@ -19,6 +19,31 @@ const OBSERVED_RESULT: &str = concat!(
     r#""is_error":false,"result":"hi"}"#,
 );
 const DENIED_MESSAGE: &str = "The person denied this command.";
+const OBSERVED_INTERRUPT_ANSWER: &str = concat!(
+    r#"{"type":"control_response","response":{"subtype":"success","#,
+    r#""request_id":"interrupt-1","response":{"still_queued":[]}}}"#,
+);
+const INTERRUPTED_RESULT: &str = concat!(
+    r#"{"duration_api_ms":0,"stop_reason":null,"is_error":true,"#,
+    r#""num_turns":2,"subtype":"error_during_execution","type":"result"}"#,
+);
+
+fn any_request_id() -> impl Strategy<Value = String> {
+    "[A-Za-z0-9_-]{1,40}"
+}
+
+fn answer_control_request(request_line: &str, subtype: &str) -> String {
+    let request = parse_json(request_line);
+    json!({
+        "type": "control_response",
+        "response": {
+            "subtype": subtype,
+            "request_id": request["request_id"],
+            "response": {},
+        },
+    })
+    .to_string()
+}
 
 fn any_input() -> impl Strategy<Value = Value> {
     prop_oneof![
@@ -90,6 +115,88 @@ fn ignores_control_requests_that_ask_for_something_else() {
     .to_string();
 
     assert_eq!(read_control_line(&line), ClaudeControlLine::Other);
+}
+
+#[test]
+fn reads_the_interrupt_answer_claude_code_sends() {
+    let line = read_control_line(OBSERVED_INTERRUPT_ANSWER);
+
+    let expected = ClaudeControlLine::RequestAnswered("interrupt-1".into());
+    assert_eq!(line, expected);
+}
+
+#[test]
+fn reads_the_interrupted_turns_result_as_the_end_of_the_turn() {
+    let line = read_control_line(INTERRUPTED_RESULT);
+
+    assert_eq!(line, ClaudeControlLine::TurnEnded);
+}
+
+#[test]
+fn writes_the_interrupt_request_claude_code_answers() {
+    let request = write_interrupt_request("interrupt-1");
+
+    let expected = json!({
+        "type": "control_request",
+        "request_id": "interrupt-1",
+        "request": {"subtype": "interrupt"},
+    });
+    assert_eq!(parse_json(&request), expected);
+}
+
+proptest! {
+    #[test]
+    fn test_write_interrupt_request_property_asks_to_interrupt_with_the_id(
+        request_id in any_request_id(),
+    ) {
+        let request = write_interrupt_request(&request_id);
+
+        let expected = json!({
+            "type": "control_request",
+            "request_id": request_id,
+            "request": {"subtype": "interrupt"},
+        });
+        prop_assert!(!request.contains('\n'));
+        prop_assert_eq!(parse_json(&request), expected);
+    }
+
+    #[test]
+    fn test_write_interrupt_request_property_answer_reads_back_the_same_id(
+        request_id in any_request_id(),
+        subtype in prop_oneof![Just("success"), Just("error")],
+    ) {
+        let request = write_interrupt_request(&request_id);
+        let answer = answer_control_request(&request, subtype);
+
+        let line = read_control_line(&answer);
+
+        prop_assert_eq!(line, ClaudeControlLine::RequestAnswered(request_id));
+    }
+
+    #[test]
+    fn test_write_interrupt_request_property_is_never_read_as_a_request(
+        request_id in any_request_id(),
+    ) {
+        let request = write_interrupt_request(&request_id);
+
+        prop_assert_eq!(read_control_line(&request), ClaudeControlLine::Other);
+    }
+
+    #[test]
+    fn test_read_control_line_property_answers_keep_their_request_id(
+        request_id in any_request_id(),
+        subtype in prop_oneof![Just("success"), Just("error")],
+    ) {
+        let answer = json!({
+            "type": "control_response",
+            "response": {"subtype": subtype, "request_id": request_id},
+        })
+        .to_string();
+
+        let line = read_control_line(&answer);
+
+        prop_assert_eq!(line, ClaudeControlLine::RequestAnswered(request_id));
+    }
 }
 
 proptest! {

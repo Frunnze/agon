@@ -115,7 +115,7 @@ proptest! {
         prop_assert!(is_workspace_task(&desk, &assignment));
         prop_assert_eq!(
             assignment.task.approval_policy,
-            ApprovalPolicy::NeverAsk
+            Some(ApprovalPolicy::NeverAsk)
         );
         let recorded = desk.prepared.server.recorded_requests();
         let task_upload = recorded.iter().find(|request| {
@@ -157,7 +157,7 @@ proptest! {
         prop_assert!(is_workspace_task(&desk, &assignment));
         prop_assert_eq!(
             assignment.task.approval_policy,
-            ApprovalPolicy::NeverAsk
+            Some(ApprovalPolicy::NeverAsk)
         );
     }
 }
@@ -181,7 +181,10 @@ fn fill_agent_settings_queues_a_workspace_task_naming_the_agent() {
     };
     assert_eq!(assignment.task.title, "Fill in agent plan of release");
     assert!(is_workspace_task(&desk, &assignment), "{assignment:?}");
-    assert_eq!(assignment.task.approval_policy, ApprovalPolicy::NeverAsk);
+    assert_eq!(
+        assignment.task.approval_policy,
+        Some(ApprovalPolicy::NeverAsk)
+    );
 }
 
 #[test]

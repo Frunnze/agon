@@ -69,7 +69,21 @@ Map<String, Object?> randomWorkspaceJson(Random random) {
     'id': randomUuidText(random),
     'name': randomText(random),
     'app_server_address': randomText(random),
+    'approval_policy': pickOne(random, nodeApprovalPolicies),
+    'protected_files': randomProtectedFilesJson(random),
   };
+}
+
+Map<String, Object?> randomProtectedFilesJson(Random random) {
+  return <String, Object?>{'patterns': randomTexts(random)};
+}
+
+Object? randomOptionalApprovalPolicyJson(Random random) {
+  return randomOptional(random, _randomApprovalPolicyName);
+}
+
+String _randomApprovalPolicyName(Random random) {
+  return pickOne(random, nodeApprovalPolicies);
 }
 
 Map<String, Object?> randomRepositoryJson(Random random) {
@@ -86,6 +100,7 @@ Map<String, Object?> randomProjectJson(Random random) {
     'workspace_id': randomUuidText(random),
     'name': randomText(random),
     'repositories': randomListOf(random, randomRepositoryJson),
+    'approval_policy': randomOptionalApprovalPolicyJson(random),
   };
 }
 

@@ -7,6 +7,7 @@ import 'package:agent_orchestration/data/gallery/gallery_library.dart';
 import 'package:agent_orchestration/data/gallery/gallery_tasks.dart';
 import 'package:agent_orchestration/data/gallery/gallery_workflows.dart';
 import 'package:agent_orchestration/data/gallery/gallery_workspaces.dart';
+import 'package:agent_orchestration/data/models/approval.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/library.dart';
 import 'package:agent_orchestration/data/models/project.dart';
@@ -25,6 +26,7 @@ Project _randomProject(Random random) {
     workspaceId: GalleryWorkspaceIds.acme,
     name: randomWordPhrase(random),
     repositories: const <Repository>[],
+    approvalPolicy: null,
   );
 }
 
@@ -33,6 +35,8 @@ Workspace _randomWorkspace(Random random) {
     id: WorkspaceId('workspace-${random.nextInt(1000)}'),
     name: randomWordPhrase(random),
     appServerAddress: 'peer://example',
+    protectedFiles: const <String>[],
+    approvalPolicy: ApprovalPolicy.neverAsk,
   );
 }
 

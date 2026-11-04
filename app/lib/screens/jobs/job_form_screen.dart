@@ -8,7 +8,6 @@ import 'package:agent_orchestration/data/repository/job_repository.dart';
 import 'package:agent_orchestration/screens/shared/deletion_prompts.dart';
 import 'package:agent_orchestration/screens/shared/deletion_review.dart';
 import 'package:agent_orchestration/screens/task_form/task_form.dart';
-import 'package:agent_orchestration/screens/task_form/task_form_action.dart';
 import 'package:agent_orchestration/screens/task_form/task_form_options.dart';
 import 'package:agent_orchestration/screens/task_form/task_form_values.dart';
 import 'package:agent_orchestration/shell/app_navigation.dart';
@@ -16,13 +15,8 @@ import 'package:agent_orchestration/shell/app_route.dart';
 import 'package:agent_orchestration/shell/app_section.dart';
 import 'package:agent_orchestration/widgets/app_button.dart';
 import 'package:agent_orchestration/widgets/app_page.dart';
+import 'package:agent_orchestration/widgets/forms/form_action.dart';
 import 'package:agent_orchestration/widgets/page_header.dart';
-
-const List<RepeatChoice> _jobRepeatChoices = <RepeatChoice>[
-  RepeatChoice.hourly,
-  RepeatChoice.daily,
-  RepeatChoice.weekly,
-];
 
 class JobFormScreen extends StatelessWidget {
   const JobFormScreen({
@@ -65,10 +59,13 @@ class JobFormScreen extends StatelessWidget {
         TaskForm(
           initialValues: initialValues,
           options: options,
-          repeatChoices: _jobRepeatChoices,
-          actions: <TaskFormAction>[
-            LeaveFormAction(label: 'Cancel', onPressed: navigation.closeRoute),
-            SubmitFormAction(
+          repeatChoices: jobRepeatChoices,
+          actions: <FormAction<TaskFormValues>>[
+            LeaveFormAction<TaskFormValues>(
+              label: 'Cancel',
+              onPressed: navigation.closeRoute,
+            ),
+            SubmitFormAction<TaskFormValues>(
               label: job == null ? 'Create job' : 'Save job',
               tone: ButtonTone.primary,
               onSubmitted: _saveJob,

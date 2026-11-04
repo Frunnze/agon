@@ -96,7 +96,7 @@ void main() {
       await pumpFrames(tester);
 
       expect(find.byType(AppDialog), findsOneWidget);
-      expect(find.text('Approve push to GitHub?'), findsOneWidget);
+      expect(find.text('Push 3 commits to release?'), findsOneWidget);
       expect(
         find.text('The agent in release #42 wants to push 3 commits.'),
         findsOneWidget,

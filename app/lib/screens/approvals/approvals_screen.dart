@@ -25,6 +25,7 @@ import 'package:agent_orchestration/widgets/empty_state.dart';
 import 'package:agent_orchestration/widgets/lists/list_column.dart';
 import 'package:agent_orchestration/widgets/lists/list_row_data.dart';
 import 'package:agent_orchestration/widgets/lists/list_row_main.dart';
+import 'package:agent_orchestration/widgets/lists/long_word_breaking_box.dart';
 import 'package:agent_orchestration/widgets/lists/responsive_list.dart';
 import 'package:agent_orchestration/widgets/mixed_text.dart';
 import 'package:agent_orchestration/widgets/page_header.dart';
@@ -147,12 +148,14 @@ class ApprovalsScreen extends StatelessWidget {
 
     return ListRowData(
       key: ValueKey<ApprovalId>(request.id),
-      main: MixedListRowMain(
-        title: describeApprovalTitleSegments(action, workflows),
-        subtitle: describeApprovalContext(
-          action: action,
-          runLabel: _describeRunLabel(request.runId, workflows),
-          change: change,
+      main: LongWordBreakingBox(
+        child: ListRowMain(
+          title: describeApprovalTitle(action, workflows),
+          subtitle: describeApprovalContext(
+            action: action,
+            runLabel: _describeRunLabel(request.runId, workflows),
+            change: change,
+          ),
         ),
       ),
       meta: <Widget>[

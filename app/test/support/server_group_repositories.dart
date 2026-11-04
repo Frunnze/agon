@@ -8,6 +8,7 @@ import 'package:agent_orchestration/data/gallery/gallery_identifiers.dart';
 import 'package:agent_orchestration/data/gallery/gallery_moments.dart';
 import 'package:agent_orchestration/data/gallery/gallery_workspaces.dart';
 import 'package:agent_orchestration/data/models/app_server_group.dart';
+import 'package:agent_orchestration/data/models/approval.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/workspace.dart';
 import 'package:agent_orchestration/data/repository/workspace_repository.dart';
@@ -103,6 +104,33 @@ final class ScriptedServerBackupRepository implements WorkspaceRepository {
   @override
   Future<void> deleteWorkspace(WorkspaceId workspaceId) {
     return _inner.deleteWorkspace(workspaceId);
+  }
+
+  @override
+  Future<Workspace> saveProtectedFiles({
+    required WorkspaceId workspaceId,
+    required List<String> patterns,
+  }) {
+    return _inner.saveProtectedFiles(
+      workspaceId: workspaceId,
+      patterns: patterns,
+    );
+  }
+
+  @override
+  Future<Workspace> resetProtectedFiles(WorkspaceId workspaceId) {
+    return _inner.resetProtectedFiles(workspaceId);
+  }
+
+  @override
+  Future<Workspace> changeApprovalPolicy({
+    required WorkspaceId workspaceId,
+    required ApprovalPolicy approvalPolicy,
+  }) {
+    return _inner.changeApprovalPolicy(
+      workspaceId: workspaceId,
+      approvalPolicy: approvalPolicy,
+    );
   }
 
   @override

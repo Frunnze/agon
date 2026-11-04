@@ -15,6 +15,7 @@ import 'package:agent_orchestration/shell/app_route.dart';
 import 'package:agent_orchestration/theme/app_colors.dart';
 import 'package:agent_orchestration/theme/app_spacing.dart';
 import 'package:agent_orchestration/theme/app_typography.dart';
+import 'package:agent_orchestration/theme/code_tracking.dart';
 import 'package:agent_orchestration/widgets/app_button.dart';
 import 'package:agent_orchestration/widgets/app_page.dart';
 import 'package:agent_orchestration/widgets/gaps.dart';
@@ -24,8 +25,6 @@ import 'package:agent_orchestration/widgets/page_header.dart';
 import 'package:agent_orchestration/widgets/page_section.dart';
 import 'package:agent_orchestration/widgets/split_layout.dart';
 import 'package:agent_orchestration/widgets/status_label.dart';
-
-const double _codeLetterSpacing = AppFontSizes.title * AppTracking.codeEm;
 
 const List<String> _newDeviceSteps = <String>[
   'Open the app and choose how the device will be used.',
@@ -80,7 +79,7 @@ class PairingCodeScreen extends StatelessWidget {
           ],
         ),
         SplitLayout(
-          start: _buildCodeCard(),
+          start: _buildCodeCard(context),
           end: PageSection(
             title: 'On the new device',
             children: <Widget>[
@@ -100,7 +99,7 @@ class PairingCodeScreen extends StatelessWidget {
     navigation.closeRoute();
   }
 
-  Widget _buildCodeCard() {
+  Widget _buildCodeCard(BuildContext context) {
     final PairingSession? session = pairingRepository.findActiveSession();
     final String serverAddress = workspaceRepository
         .currentWorkspace()
@@ -129,7 +128,10 @@ class PairingCodeScreen extends StatelessWidget {
                   color: AppColors.ink,
                   fontSize: AppFontSizes.title,
                   fontWeight: FontWeight.w700,
-                  letterSpacing: _codeLetterSpacing,
+                  letterSpacing: codeLetterSpacingFor(
+                    textScaler: MediaQuery.textScalerOf(context),
+                    fontSize: AppFontSizes.title,
+                  ),
                 ),
               ),
             ),

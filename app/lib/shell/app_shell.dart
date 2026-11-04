@@ -9,6 +9,7 @@ import 'package:agent_orchestration/shell/bottom_tabs.dart';
 import 'package:agent_orchestration/shell/route_pages.dart';
 import 'package:agent_orchestration/shell/side_rail.dart';
 import 'package:agent_orchestration/theme/layout_size.dart';
+import 'package:agent_orchestration/windows/run_window_opener.dart';
 
 const String accountLoadingText = 'Loading your account…';
 
@@ -16,11 +17,13 @@ class AppShell extends StatefulWidget {
   const AppShell({
     required this.dependencies,
     required this.navigation,
+    required this.runWindowOpener,
     super.key,
   });
 
   final AppDependencies dependencies;
   final AppNavigation navigation;
+  final RunWindowOpener? runWindowOpener;
 
   @override
   State<AppShell> createState() => _AppShellState();
@@ -69,6 +72,7 @@ class _AppShellState extends State<AppShell> {
           routes: widget.navigation.routes,
           dependencies: dependencies,
           navigation: widget.navigation,
+          runWindowOpener: widget.runWindowOpener,
         ),
         onDidRemovePage: _handleRemovedPage,
       ),

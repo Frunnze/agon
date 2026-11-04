@@ -10,34 +10,42 @@ import 'package:agent_orchestration/widgets/forms/choice_list_field.dart';
 
 import '../../support/app_harness.dart';
 
-const String _pushDetail = 'The hub pushes for the agent after you approve.';
+const String _pushTitle = 'Read and push';
+const String _pushDetail = 'Agents push their branch when their work is done.';
 
 void main() {
-  test('test_build_agent_access_choices_property_push_waits_for_approval', () {
-    final List<ChoiceOption<AgentAccess>> choices = buildAgentAccessChoices();
+  test(
+    'test_build_agent_access_choices_property_push_reads_read_and_push',
+    () {
+      final List<ChoiceOption<AgentAccess>> choices =
+          buildAgentAccessChoices();
 
-    expect(
-      choices.map((ChoiceOption<AgentAccess> choice) => choice.value),
-      AgentAccess.values,
-    );
-    for (final ChoiceOption<AgentAccess> choice in choices) {
-      expect(choice.title, describeAgentAccessChoiceTitle(choice.value));
-    }
-    expect(choices.last.detail, _pushDetail);
-  });
-
-  testWidgets('test_new_project_form_property_push_waits_for_approval', (
-    WidgetTester tester,
-  ) async {
-    for (final Size size in <Size>[phoneSize, desktopSize]) {
-      await pumpApp(
-        tester,
-        size: size,
-        route: NewItemFormRoute(DraftKind.project),
-        dependencies: buildGalleryDependencies(),
+      expect(
+        choices.map((ChoiceOption<AgentAccess> choice) => choice.value),
+        AgentAccess.values,
       );
+      for (final ChoiceOption<AgentAccess> choice in choices) {
+        expect(choice.title, describeAgentAccessChoiceTitle(choice.value));
+      }
+      expect(choices.last.title, _pushTitle);
+      expect(choices.last.detail, _pushDetail);
+    },
+  );
 
-      expect(find.text(_pushDetail), findsOneWidget, reason: '$size');
-    }
-  });
+  testWidgets(
+    'test_new_project_form_property_push_choice_reads_read_and_push',
+    (WidgetTester tester) async {
+      for (final Size size in <Size>[phoneSize, desktopSize]) {
+        await pumpApp(
+          tester,
+          size: size,
+          route: NewItemFormRoute(DraftKind.project),
+          dependencies: buildGalleryDependencies(),
+        );
+
+        expect(find.text(_pushTitle), findsOneWidget, reason: '$size');
+        expect(find.text(_pushDetail), findsOneWidget, reason: '$size');
+      }
+    },
+  );
 }

@@ -48,8 +48,8 @@ final class EditTaskRoute extends AppRoute {
   String get identity => taskId.value;
 }
 
-final class TaskRunRoute extends AppRoute {
-  const TaskRunRoute(this.runId) : super(AppSection.tasks);
+sealed class RunPageRoute extends AppRoute {
+  const RunPageRoute(this.runId) : super(AppSection.tasks);
 
   final RunId runId;
 
@@ -57,13 +57,12 @@ final class TaskRunRoute extends AppRoute {
   String get identity => runId.value;
 }
 
-final class ChatRoute extends AppRoute {
-  const ChatRoute(this.runId) : super(AppSection.tasks);
+final class TaskRunRoute extends RunPageRoute {
+  const TaskRunRoute(super.runId);
+}
 
-  final RunId runId;
-
-  @override
-  String get identity => runId.value;
+final class ChatRoute extends RunPageRoute {
+  const ChatRoute(super.runId);
 }
 
 final class NewJobRoute extends NewPageRoute {

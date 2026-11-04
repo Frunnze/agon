@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import 'package:agent_orchestration/data/models/app_server_group.dart';
+import 'package:agent_orchestration/data/models/approval.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/workspace.dart';
 
@@ -14,6 +15,18 @@ abstract interface class WorkspaceRepository implements Listenable {
   Future<Workspace> createWorkspace({required String name});
 
   Future<void> deleteWorkspace(WorkspaceId workspaceId);
+
+  Future<Workspace> saveProtectedFiles({
+    required WorkspaceId workspaceId,
+    required List<String> patterns,
+  });
+
+  Future<Workspace> resetProtectedFiles(WorkspaceId workspaceId);
+
+  Future<Workspace> changeApprovalPolicy({
+    required WorkspaceId workspaceId,
+    required ApprovalPolicy approvalPolicy,
+  });
 
   AppServerStatus findAppServerStatus();
 

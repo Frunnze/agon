@@ -84,6 +84,7 @@ void main() {
             agentAccess: AgentAccess.readOnly,
           ),
         ],
+        approvalPolicy: null,
       );
 
       expect(
@@ -164,7 +165,7 @@ void main() {
     }
     expect(
       describeAgentAccess(AgentAccess.pushAfterApproval),
-      'Read, push once approved',
+      'Read and push',
     );
     expect(describeAgentAccess(AgentAccess.readOnly), 'Read only');
   });

@@ -25,6 +25,13 @@ pub(crate) fn log_cancellation_check_failure(
     warn!(run = %run_id.0, %problem, "could not check for cancellation");
 }
 
+pub(crate) fn log_user_message_check_failure(
+    run_id: RunId,
+    problem: &ServerError,
+) {
+    warn!(run = %run_id.0, %problem, "could not check for new messages");
+}
+
 pub(crate) fn log_report_failure(run_id: RunId, problem: &ServerError) {
     warn!(run = %run_id.0, %problem, "could not report the run result");
 }

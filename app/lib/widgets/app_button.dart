@@ -5,10 +5,25 @@ import 'package:agent_orchestration/icons/app_icon_kind.dart';
 import 'package:agent_orchestration/theme/app_colors.dart';
 import 'package:agent_orchestration/theme/app_spacing.dart';
 import 'package:agent_orchestration/theme/app_typography.dart';
-import 'package:agent_orchestration/theme/layout_size.dart';
+import 'package:agent_orchestration/theme/layout_density.dart';
 
 const double _pressedFillDarkening = 0.1;
 const Color _darkeningColor = Color(0xFF000000);
+const EdgeInsets _touchButtonPadding = EdgeInsets.symmetric(
+  horizontal: AppSpacing.space4 + AppBorders.thin,
+  vertical: AppSpacing.space2 + AppBorders.thin,
+);
+const EdgeInsets _denseButtonPadding = EdgeInsets.symmetric(
+  horizontal: AppSpacing.space3 + AppBorders.thin,
+  vertical: AppSpacing.space1 + AppBorders.thin,
+);
+
+EdgeInsets _buttonPaddingFor(LayoutDensity layoutDensity) {
+  if (layoutDensity.isTouch) {
+    return _touchButtonPadding;
+  }
+  return _denseButtonPadding;
+}
 
 enum ButtonTone {
   secondary(AppColors.raised, AppColors.lineStrong, AppColors.ink),
@@ -66,19 +81,15 @@ class AppButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final double minimumHeight = LayoutSize.of(context).isLarge
-        ? AppSizes.controlHeightCompact
-        : AppSizes.controlHeight;
+    final LayoutDensity layoutDensity = LayoutDensity.of(context);
+    final double minimumHeight = AppSizes.controlHeightFor(layoutDensity);
     final AppIconKind? iconKind = icon;
     final TextStyle labelStyle = DefaultTextStyle.of(context).style
         .merge(AppTextStyles.bodyBold);
     final ButtonStyle style = ButtonStyle(
       minimumSize: WidgetStatePropertyAll<Size>(Size(0, minimumHeight)),
-      padding: const WidgetStatePropertyAll<EdgeInsets>(
-        EdgeInsets.symmetric(
-          horizontal: AppSpacing.space4 + AppBorders.thin,
-          vertical: AppSpacing.space2 + AppBorders.thin,
-        ),
+      padding: WidgetStatePropertyAll<EdgeInsets>(
+        _buttonPaddingFor(layoutDensity),
       ),
       backgroundColor: WidgetStateProperty<Color>.fromMap(
         <WidgetStatesConstraint, Color>{

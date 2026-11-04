@@ -1,0 +1,27 @@
+#!/bin/sh
+session=none
+previous=
+for argument in "$@"; do
+  if [ "$previous" = "resume" ]; then
+    session="$argument"
+  fi
+  previous="$argument"
+  prompt="$argument"
+done
+name=$(printf '%s\n' "$prompt" | head -n 1 | tr -cd 'a-z0-9-')
+printf '%s %s\n' "$name" "$session" >> "$AGENT_RECORDS/calls.txt"
+
+say() {
+  item="{\"type\":\"agent_message\",\"text\":\"$1\"}"
+  printf '{"type":"item.completed","item":%s}\n' "$item"
+}
+
+printf '{"type":"thread.started","thread_id":"thread-%s"}\n' "$name"
+case "$prompt" in
+  *please-work*)
+    say "working on $name"
+    sleep 10
+    ;;
+esac
+say "finished $name"
+printf '{"type":"turn.completed","usage":{}}\n'

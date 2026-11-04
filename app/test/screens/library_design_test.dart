@@ -16,6 +16,7 @@ import 'package:agent_orchestration/widgets/label_chip.dart';
 
 import '../support/app_harness.dart';
 import '../support/random_inputs.dart';
+import '../support/shown_text_metrics.dart';
 import '../support/widget_harness.dart';
 
 const String _skillsNote =
@@ -137,7 +138,10 @@ void main() {
     WidgetTester tester,
   ) async {
     final Random random = seededRandom(9505);
-    const double lineHeight = AppFontSizes.body * AppLineHeights.body;
+    final double lineHeight = shownLineHeightAtWidth(
+      style: AppTextStyles.body,
+      windowWidth: desktopWidth,
+    );
     const double frame = 2 * (AppSpacing.space2 + AppBorders.thin);
 
     for (int i = 0; i < widgetPropertyIterations; i += 1) {

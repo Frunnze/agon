@@ -8,7 +8,7 @@ String describeAgentAccessChoiceTitle(AgentAccess access) {
     case AgentAccess.readOnly:
       return 'Read only';
     case AgentAccess.pushAfterApproval:
-      return 'Read, and push once you approve';
+      return 'Read and push';
   }
 }
 
@@ -23,7 +23,7 @@ List<ChoiceOption<AgentAccess>> buildAgentAccessChoices() {
     ChoiceOption<AgentAccess>(
       value: AgentAccess.pushAfterApproval,
       title: describeAgentAccessChoiceTitle(AgentAccess.pushAfterApproval),
-      detail: 'The hub pushes for the agent after you approve.',
+      detail: 'Agents push their branch when their work is done.',
     ),
   ];
 }

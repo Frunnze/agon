@@ -37,6 +37,7 @@ pub fn project() -> Project {
             default_branch: "main".to_owned(),
             agent_access: AgentAccess::ReadOnly,
         }],
+        approval_policy: None,
     }
 }
 

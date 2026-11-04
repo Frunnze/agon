@@ -31,9 +31,13 @@ fn approval_action() -> impl Strategy<Value = ApprovalAction> {
 }
 
 fn run_command_action() -> impl Strategy<Value = ApprovalAction> {
-    (any::<String>(), any::<String>()).prop_map(|(tool, command)| {
-        ApprovalAction::RunCommand { tool, command }
-    })
+    (any::<String>(), any::<String>(), any::<String>()).prop_map(
+        |(tool, summary, command)| ApprovalAction::RunCommand {
+            tool,
+            summary,
+            command,
+        },
+    )
 }
 
 fn approval_policy() -> impl Strategy<Value = ApprovalPolicy> {

@@ -117,6 +117,7 @@ void main() {
           route: route,
           dependencies: dependencies,
           navigation: navigation,
+          runWindowOpener: null,
         ),
         isA<Widget>(),
       );

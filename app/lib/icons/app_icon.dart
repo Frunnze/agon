@@ -5,14 +5,18 @@ import 'package:agent_orchestration/icons/app_icon_painter.dart';
 import 'package:agent_orchestration/icons/spinning_box.dart';
 import 'package:agent_orchestration/theme/app_colors.dart';
 import 'package:agent_orchestration/theme/app_spacing.dart';
+import 'package:agent_orchestration/theme/layout_density.dart';
 
 enum AppIconSize {
-  regular(AppSizes.icon),
-  small(AppSizes.iconSmall);
+  regular,
+  small;
 
-  const AppIconSize(this.extent);
-
-  final double extent;
+  double extentFor(LayoutDensity layoutDensity) {
+    if (this == AppIconSize.small) {
+      return AppSizes.iconSmall;
+    }
+    return AppSizes.iconFor(layoutDensity);
+  }
 }
 
 class AppIcon extends StatelessWidget {
@@ -31,8 +35,9 @@ class AppIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     final Color inheritedColor =
         DefaultTextStyle.of(context).style.color ?? AppColors.ink;
+    final double extent = size.extentFor(LayoutDensity.of(context));
     final Widget paintedIcon = CustomPaint(
-      size: Size.square(size.extent),
+      size: Size.square(extent),
       painter: AppIconPainter(kind: kind, color: color ?? inheritedColor),
     );
 

@@ -4,6 +4,7 @@ use axum::response::{IntoResponse, Response};
 use orchestration_api::updates::ApiErrorBody;
 use orchestration_core::local_folders::LocalFolderProblem;
 use orchestration_core::naming::NameProblem;
+use orchestration_core::protected_files::ProtectedPatternProblem;
 use orchestration_core::repository_address::AddressProblem;
 use orchestration_core::run_lifecycle::RunProblem;
 use orchestration_core::schedule_rules::ScheduleProblem;
@@ -66,6 +67,12 @@ impl IntoResponse for ServerError {
 
 impl From<NameProblem> for ServerError {
     fn from(problem: NameProblem) -> Self {
+        Self::Invalid(problem.to_string())
+    }
+}
+
+impl From<ProtectedPatternProblem> for ServerError {
+    fn from(problem: ProtectedPatternProblem) -> Self {
         Self::Invalid(problem.to_string())
     }
 }

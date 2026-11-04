@@ -20,7 +20,7 @@ pub fn routing_agent(number: u128, step_kind: StepKind) -> WorkflowAgent {
         runs_on: RunnerTarget::AnyFreeRunner,
         skills: Vec::new(),
         uses_automatic_skills: false,
-        approval_policy: ApprovalPolicy::NeverAsk,
+        approval_policy: Some(ApprovalPolicy::NeverAsk),
         position: CanvasPosition {
             horizontal: 0.0,
             vertical: 0.0,

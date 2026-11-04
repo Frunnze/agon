@@ -40,4 +40,28 @@ void main() {
     };
     expect(policies, ApprovalPolicy.values.toSet());
   });
+
+  test('test_map_optional_approval_policy_from_node_property_keeps_null', () {
+    expect(mapOptionalApprovalPolicyFromNode(null), isNull);
+    for (final node.ApprovalPolicy wire in node.ApprovalPolicy.values) {
+      expect(
+        mapOptionalApprovalPolicyFromNode(wire),
+        mapApprovalPolicyFromNode(wire),
+      );
+    }
+  });
+
+  test('test_map_optional_approval_policy_to_node_property_round_trips', () {
+    final List<ApprovalPolicy?> choices = <ApprovalPolicy?>[
+      null,
+      ...ApprovalPolicy.values,
+    ];
+    for (final ApprovalPolicy? policy in choices) {
+      final node.ApprovalPolicy? wire = mapOptionalApprovalPolicyToNode(
+        policy,
+      );
+      expect(mapOptionalApprovalPolicyFromNode(wire), policy);
+      expect(wire?.name, policy?.name);
+    }
+  });
 }

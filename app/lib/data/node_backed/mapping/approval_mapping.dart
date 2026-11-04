@@ -62,6 +62,7 @@ ApprovalAction mapApprovalActionFromNode(
     node.SignWorkflow() => SignWorkflowAction(workflowId: action.workflowId),
     node.RunCommand() => RunCommandAction(
       tool: action.tool,
+      summary: action.summary,
       command: action.command,
     ),
     node.ImproveSkill() => ImproveSkillAction(

@@ -164,6 +164,7 @@ proptest! {
         let mounts = WorkspaceMounts {
             task_folder: PathBuf::from(&task_folder),
             git_directories: Vec::new(),
+            placeholder_mounts: Vec::new(),
         };
 
         let seen_folder = locate_task_folder_seen_by_agent(sandbox, &mounts);

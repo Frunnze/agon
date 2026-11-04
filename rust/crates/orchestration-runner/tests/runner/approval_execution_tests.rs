@@ -66,7 +66,7 @@ fn prepare_push_scenario(
     let origin = create_bare_origin(folders.temporary.path(), "app", &[])?;
     let repository = repository_at(&origin, agent_access);
     let task = Task {
-        approval_policy,
+        approval_policy: Some(approval_policy),
         ..claude_task(RUN_NUMBER, title)
     };
     let assignment = assignment_for(task, None, vec![repository], RUN_NUMBER)?;

@@ -5,6 +5,7 @@ import 'package:agent_orchestration/data/app_dependencies.dart';
 import 'package:agent_orchestration/data/folder_picker.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/item_draft.dart';
+import 'package:agent_orchestration/data/models/runner.dart';
 import 'package:agent_orchestration/screens/new_items/draft_review.dart';
 import 'package:agent_orchestration/screens/new_items/library_draft_reviews.dart';
 import 'package:agent_orchestration/screens/new_items/new_item_screen.dart';
@@ -35,11 +36,10 @@ DraftReview _buildDraftReview({
   return switch (kind) {
     DraftKind.task || DraftKind.job => WorkDraftReview(
       kind: kind,
-      projectRepository: dependencies.projectRepository,
-      workspaceRepository: dependencies.workspaceRepository,
-      workflowRepository: dependencies.workflowRepository,
-      skillRepository: dependencies.skillRepository,
-      deviceRepository: dependencies.deviceRepository,
+      buildOptions: (RunnerTarget chosenTarget) => buildTaskFormOptionsFor(
+        dependencies: dependencies,
+        chosenTarget: chosenTarget,
+      ),
       taskRepository: dependencies.taskRepository,
       jobRepository: dependencies.jobRepository,
       navigation: navigation,
@@ -48,6 +48,10 @@ DraftReview _buildDraftReview({
       projectRepository: dependencies.projectRepository,
       workspaceRepository: dependencies.workspaceRepository,
       deviceRepository: dependencies.deviceRepository,
+      folderPicker: _findDraftFolderPicker(
+        kind: kind,
+        dependencies: dependencies,
+      ),
       navigation: navigation,
     ),
     DraftKind.skill => SkillDraftReview(

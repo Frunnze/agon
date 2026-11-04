@@ -49,7 +49,6 @@ void main() {
       final ItemDraft draft = mapItemDraftFromNode(done);
 
       expect(draft.problems, equals(problems));
-      expect(draft.canBeApproved, problems.isEmpty);
     }
   });
 

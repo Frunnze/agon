@@ -18,6 +18,7 @@ import 'package:agent_orchestration/bridge/node/node_command_channel.dart';
 import 'package:agent_orchestration/data/clock.dart';
 import 'package:agent_orchestration/data/fakes.dart';
 import 'package:agent_orchestration/data/models/app_server_group.dart';
+import 'package:agent_orchestration/data/models/approval.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/workspace.dart';
 import 'package:agent_orchestration/data/node_backed.dart';
@@ -108,12 +109,7 @@ final class NodeBackedWorkspaceRepository extends ChangeNotifier
 
   @override
   Future<Workspace> switchWorkspace(WorkspaceId workspaceId) async {
-    final Workspace workspace = findRecord(
-      _workspaces,
-      matches: (Workspace candidate) => candidate.id == workspaceId,
-      kind: _workspaceKind,
-      identifier: workspaceId.value,
-    );
+    final Workspace workspace = _findWorkspace(workspaceId);
 
     await _choiceStore.saveChosenWorkspaceId(workspace.id);
     _chosenWorkspaceId = workspace.id;
@@ -129,11 +125,60 @@ final class NodeBackedWorkspaceRepository extends ChangeNotifier
       throw ArgumentError.value(name, 'name', nameProblem);
     }
 
-    final node.Workspace created = await executeNodeCommand(
-      _channel,
+    return _storeWorkspaceFromNode(
       node.CreateWorkspaceCommand(workspaceName: trimmedName),
     );
-    final Workspace workspace = mapWorkspaceFromNode(created);
+  }
+
+  @override
+  Future<Workspace> saveProtectedFiles({
+    required WorkspaceId workspaceId,
+    required List<String> patterns,
+  }) {
+    return _storeWorkspaceFromNode(
+      node.SetProtectedFilesCommand(
+        workspaceId: workspaceId,
+        patterns: patterns,
+      ),
+    );
+  }
+
+  @override
+  Future<Workspace> resetProtectedFiles(WorkspaceId workspaceId) {
+    return _storeWorkspaceFromNode(
+      node.ResetProtectedFilesCommand(workspaceId: workspaceId),
+    );
+  }
+
+  @override
+  Future<Workspace> changeApprovalPolicy({
+    required WorkspaceId workspaceId,
+    required ApprovalPolicy approvalPolicy,
+  }) async {
+    final Workspace known = _findWorkspace(workspaceId);
+
+    return _storeWorkspaceFromNode(
+      node.ChangeWorkspaceApprovalPolicyCommand(
+        workspaceId: known.id,
+        approvalPolicy: mapApprovalPolicyToNode(approvalPolicy),
+      ),
+    );
+  }
+
+  Workspace _findWorkspace(WorkspaceId workspaceId) {
+    return findRecord(
+      _workspaces,
+      matches: (Workspace candidate) => candidate.id == workspaceId,
+      kind: _workspaceKind,
+      identifier: workspaceId.value,
+    );
+  }
+
+  Future<Workspace> _storeWorkspaceFromNode(
+    NodeCommand<node.Workspace> command,
+  ) async {
+    final node.Workspace stored = await executeNodeCommand(_channel, command);
+    final Workspace workspace = mapWorkspaceFromNode(stored);
 
     _fetches.recordLocalChange();
     _workspaces = replaceOrAppendRecord(

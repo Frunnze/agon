@@ -40,9 +40,14 @@ final class SignWorkflowAction extends ApprovalAction {
 }
 
 final class RunCommandAction extends ApprovalAction {
-  const RunCommandAction({required this.tool, required this.command});
+  const RunCommandAction({
+    required this.tool,
+    required this.summary,
+    required this.command,
+  });
 
   final String tool;
+  final String summary;
   final String command;
 }
 

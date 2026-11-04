@@ -146,10 +146,12 @@ pub fn open_run_assignment(
         run: open_run(keyring, &assignment.run)?,
         task: open_task(keyring, &assignment.task)?,
         workspace_id: assignment.workspace_id,
+        workspace_approval_policy: assignment.workspace_approval_policy,
         project: assignment.project.clone(),
         workflow: opened_workflow,
         skills: opened_skills,
         rules: opened_rules,
         follow_up: assignment.follow_up,
+        protected_files: assignment.protected_files.clone(),
     })
 }

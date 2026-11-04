@@ -18,7 +18,6 @@ import 'package:agent_orchestration/shell/app_navigation.dart';
 import 'package:agent_orchestration/shell/app_route.dart';
 import 'package:agent_orchestration/theme/app_spacing.dart';
 import 'package:agent_orchestration/theme/app_typography.dart';
-import 'package:agent_orchestration/theme/layout_size.dart';
 import 'package:agent_orchestration/theme/page_metrics.dart';
 import 'package:agent_orchestration/widgets/app_button.dart';
 import 'package:agent_orchestration/widgets/empty_state.dart';
@@ -78,8 +77,6 @@ class RunnersSettingsTab extends StatelessWidget {
     final String countSummary = isServerDown
         ? describeReachableRunners(runners)
         : describeRunnerFleet(runners);
-
-    final double pageGap = pageGapFor(LayoutSize.of(context));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,

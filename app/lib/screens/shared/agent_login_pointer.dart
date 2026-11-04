@@ -30,7 +30,7 @@ AgentLoginPointer? pointToAgentLogin({
   if (runner == thisDevice) {
     return AgentLoginPointer(
       hint: thisComputerLoginHint,
-      onConnect: () => navigation.openRoute(RunnerDetailRoute(thisDevice)),
+      onConnect: _offerRunnerPage(navigation, RunnerDetailRoute(thisDevice)),
     );
   }
   final DeviceNames deviceNames = DeviceNames(deviceRepository.listDevices());
@@ -38,6 +38,16 @@ AgentLoginPointer? pointToAgentLogin({
     hint: describeOtherRunnerLoginHint(deviceNames.describeDevice(runner)),
     onConnect: null,
   );
+}
+
+VoidCallback? _offerRunnerPage(
+  AppNavigation navigation,
+  RunnerDetailRoute runnerPage,
+) {
+  if (!navigation.canOpen(runnerPage)) {
+    return null;
+  }
+  return () => navigation.openRoute(runnerPage);
 }
 
 List<Widget> describeAgentLoginPointer(AgentLoginPointer? pointer) {

@@ -35,7 +35,7 @@ pub fn workflow_agent(name: &str, runs_on: RunnerTarget) -> WorkflowAgent {
         runs_on,
         skills: Vec::new(),
         uses_automatic_skills: true,
-        approval_policy: ApprovalPolicy::AskBeforeRiskyActions,
+        approval_policy: Some(ApprovalPolicy::AskBeforeRiskyActions),
         position: CanvasPosition {
             horizontal: 0.0,
             vertical: 0.0,

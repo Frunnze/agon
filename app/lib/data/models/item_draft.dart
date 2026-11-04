@@ -35,7 +35,7 @@ final class DraftedWork extends DraftedItem {
   final AgentPlace agentPlace;
   final List<SkillId> skills;
   final bool usesAutomaticSkills;
-  final ApprovalPolicy approvalPolicy;
+  final ApprovalPolicy? approvalPolicy;
   final Schedule? schedule;
 
   TaskDraft toTaskDraft() {
@@ -63,11 +63,13 @@ final class DraftedProject extends DraftedItem {
     required this.name,
     required List<RepositoryDraft> repositories,
     required this.agentAccess,
+    required this.approvalPolicy,
   }) : repositories = List<RepositoryDraft>.unmodifiable(repositories);
 
   final String name;
   final List<RepositoryDraft> repositories;
   final AgentAccess agentAccess;
+  final ApprovalPolicy? approvalPolicy;
 
   ProjectDraft toProjectDraft(WorkspaceId workspaceId) {
     return ProjectDraft(
@@ -81,6 +83,7 @@ final class DraftedProject extends DraftedItem {
             agentAccess: agentAccess,
           ),
       ],
+      approvalPolicy: approvalPolicy,
     );
   }
 }

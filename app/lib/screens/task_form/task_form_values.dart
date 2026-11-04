@@ -1,14 +1,14 @@
 import 'package:agent_orchestration/data/models/approval.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
+import 'package:agent_orchestration/data/models/item_draft.dart';
 import 'package:agent_orchestration/data/models/runner.dart';
 import 'package:agent_orchestration/data/models/schedule.dart';
 import 'package:agent_orchestration/data/models/task.dart';
-import 'package:agent_orchestration/data/models/workflow.dart';
 import 'package:agent_orchestration/data/rules/schedule_rules.dart';
+import 'package:agent_orchestration/screens/task_form/task_form_options.dart';
 
 const String defaultScheduleTimeText = '09:00';
-const TaskDoer defaultTaskDoer = OneAgentDoer(AgentKind.claudeCode);
-const int _hourlyRunMinute = 0;
+const int _defaultHourlyMinute = 0;
 
 RepeatChoice _findRepeatChoice(Schedule? schedule) {
   switch (schedule) {
@@ -40,6 +40,13 @@ String _findTimeText(Schedule? schedule) {
   return defaultScheduleTimeText;
 }
 
+int _findHourlyMinute(Schedule? schedule) {
+  if (schedule is HourlySchedule) {
+    return schedule.minute;
+  }
+  return _defaultHourlyMinute;
+}
+
 enum RepeatChoice {
   none("Don't repeat"),
   hourly('Every hour'),
@@ -52,6 +59,13 @@ enum RepeatChoice {
 
   bool get needsTime => this == daily || this == weekly;
 }
+
+const List<RepeatChoice> jobRepeatChoices = <RepeatChoice>[
+  RepeatChoice.hourly,
+  RepeatChoice.daily,
+  RepeatChoice.weekly,
+];
+const String taskRepeatHint = 'A task that repeats becomes a job.';
 
 final class TaskFormValues {
   TaskFormValues({
@@ -67,6 +81,7 @@ final class TaskFormValues {
     required this.repeat,
     required this.weekday,
     required this.timeText,
+    required this.hourlyMinute,
   }) : skillIds = List<SkillId>.unmodifiable(skillIds);
 
   factory TaskFormValues.blank({
@@ -83,10 +98,11 @@ final class TaskFormValues {
       agentPlace: defaultAgentPlace,
       skillIds: const <SkillId>[],
       usesAutomaticSkills: true,
-      approvalPolicy: ApprovalPolicy.askBeforeRiskyActions,
+      approvalPolicy: null,
       repeat: repeat,
       weekday: Weekday.monday,
       timeText: defaultScheduleTimeText,
+      hourlyMinute: _defaultHourlyMinute,
     );
   }
 
@@ -106,6 +122,34 @@ final class TaskFormValues {
       repeat: _findRepeatChoice(schedule),
       weekday: _findWeekday(schedule),
       timeText: _findTimeText(schedule),
+      hourlyMinute: _findHourlyMinute(schedule),
+    );
+  }
+
+  factory TaskFormValues.fromDraftedWork({
+    required DraftedWork work,
+    required TaskFormOptions options,
+    required RepeatChoice unscheduledRepeat,
+  }) {
+    final Schedule? schedule = work.schedule;
+    final RepeatChoice repeat = schedule == null
+        ? unscheduledRepeat
+        : _findRepeatChoice(schedule);
+
+    return TaskFormValues(
+      title: work.title,
+      details: work.details,
+      projectId: options.pickShownProject(work.projectId),
+      doer: options.pickShownDoer(work.doer),
+      runsOn: work.runsOn,
+      agentPlace: work.agentPlace,
+      skillIds: work.skills,
+      usesAutomaticSkills: work.usesAutomaticSkills,
+      approvalPolicy: work.approvalPolicy,
+      repeat: repeat,
+      weekday: _findWeekday(schedule),
+      timeText: _findTimeText(schedule),
+      hourlyMinute: _findHourlyMinute(schedule),
     );
   }
 
@@ -117,10 +161,11 @@ final class TaskFormValues {
   final AgentPlace agentPlace;
   final List<SkillId> skillIds;
   final bool usesAutomaticSkills;
-  final ApprovalPolicy approvalPolicy;
+  final ApprovalPolicy? approvalPolicy;
   final RepeatChoice repeat;
   final Weekday weekday;
   final String timeText;
+  final int hourlyMinute;
 
   TaskFormValues copyWith({
     String? title,
@@ -131,7 +176,6 @@ final class TaskFormValues {
     AgentPlace? agentPlace,
     List<SkillId>? skillIds,
     bool? usesAutomaticSkills,
-    ApprovalPolicy? approvalPolicy,
     RepeatChoice? repeat,
     Weekday? weekday,
     String? timeText,
@@ -145,10 +189,29 @@ final class TaskFormValues {
       agentPlace: agentPlace ?? this.agentPlace,
       skillIds: skillIds ?? this.skillIds,
       usesAutomaticSkills: usesAutomaticSkills ?? this.usesAutomaticSkills,
-      approvalPolicy: approvalPolicy ?? this.approvalPolicy,
+      approvalPolicy: approvalPolicy,
       repeat: repeat ?? this.repeat,
       weekday: weekday ?? this.weekday,
       timeText: timeText ?? this.timeText,
+      hourlyMinute: hourlyMinute,
+    );
+  }
+
+  TaskFormValues withApprovalPolicy(ApprovalPolicy? nextApprovalPolicy) {
+    return TaskFormValues(
+      title: title,
+      details: details,
+      projectId: projectId,
+      doer: doer,
+      runsOn: runsOn,
+      agentPlace: agentPlace,
+      skillIds: skillIds,
+      usesAutomaticSkills: usesAutomaticSkills,
+      approvalPolicy: nextApprovalPolicy,
+      repeat: repeat,
+      weekday: weekday,
+      timeText: timeText,
+      hourlyMinute: hourlyMinute,
     );
   }
 
@@ -171,7 +234,11 @@ final class TaskFormValues {
   }
 
   TaskDraft toTaskDraft() {
-    return TaskDraft(
+    return toDraftedWork().toTaskDraft();
+  }
+
+  DraftedWork toDraftedWork() {
+    return DraftedWork(
       title: title.trim(),
       details: details.trim(),
       projectId: projectId,
@@ -181,6 +248,7 @@ final class TaskFormValues {
       skills: skillIds,
       usesAutomaticSkills: usesAutomaticSkills,
       approvalPolicy: approvalPolicy,
+      schedule: toSchedule(),
     );
   }
 
@@ -189,7 +257,7 @@ final class TaskFormValues {
       case RepeatChoice.none:
         return null;
       case RepeatChoice.hourly:
-        return HourlySchedule(minute: _hourlyRunMinute);
+        return HourlySchedule(minute: hourlyMinute);
       case RepeatChoice.daily:
         return DailySchedule(at: _requireScheduleTime());
       case RepeatChoice.weekly:

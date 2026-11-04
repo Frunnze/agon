@@ -34,12 +34,11 @@ void main() {
       final Rect field = tester.getRect(find.byType(TextField));
       final Rect send = tester.getRect(find.byType(AppButton));
       final String reason = 'width $width';
-      expect(
-        field.height,
-        greaterThanOrEqualTo(AppSizes.controlHeight),
-        reason: reason,
+      final double controlHeight = AppSizes.controlHeightFor(
+        densityMeantByWidth(width),
       );
-      expect(send.height, AppSizes.controlHeight, reason: reason);
+      expect(field.height, controlHeight, reason: reason);
+      expect(send.height, controlHeight, reason: reason);
       expect(send.bottom, field.bottom, reason: reason);
     }
   });

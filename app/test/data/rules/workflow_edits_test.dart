@@ -34,6 +34,7 @@ void main() {
         expect(blank.kind, isNull);
         expect(blank.task, isEmpty);
         expect(blank.runsOn, const AnyFreeRunner());
+        expect(blank.approvalPolicy, isNull);
         workflow = addAgent(workflow, blank);
       }
     }

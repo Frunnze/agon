@@ -81,7 +81,7 @@ final class WorkflowAgent implements JsonEncodable {
         'uses_automatic_skills',
         decodeFlag,
       ),
-      approvalPolicy: readField(
+      approvalPolicy: readOptionalField(
         fields,
         'approval_policy',
         ApprovalPolicy.decode,
@@ -98,7 +98,7 @@ final class WorkflowAgent implements JsonEncodable {
   final RunnerTarget runsOn;
   final List<SkillId> skills;
   final bool usesAutomaticSkills;
-  final ApprovalPolicy approvalPolicy;
+  final ApprovalPolicy? approvalPolicy;
   final CanvasPosition position;
 
   @override
@@ -112,7 +112,7 @@ final class WorkflowAgent implements JsonEncodable {
       'runs_on': runsOn.toJson(),
       'skills': skills,
       'uses_automatic_skills': usesAutomaticSkills,
-      'approval_policy': approvalPolicy.wireName,
+      'approval_policy': approvalPolicy?.wireName,
       'position': position.toJson(),
     };
   }

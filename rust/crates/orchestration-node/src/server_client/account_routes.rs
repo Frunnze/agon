@@ -6,13 +6,15 @@ use orchestration_api::accounts::{
     PairingSessionCreated, PublishPeerAddressRequest, RevokeDeviceRequest,
 };
 use orchestration_api::catalog::{
-    AddWorkspaceDeviceRequest, CreateWorkspaceRequest,
+    AddWorkspaceDeviceRequest, ChangeWorkspaceApprovalPolicyRequest,
+    CreateWorkspaceRequest,
 };
 use orchestration_api::routes::{
     ACCOUNTS, AUDIT, DEVICE_PEER_ADDRESS, DEVICE_REVOKE, DEVICES, EVENTS,
     PAIRING_APPROVE, PAIRING_APPROVER_NONCE, PAIRING_CANCEL,
     PAIRING_COMMITMENT, PAIRING_REJECT, PAIRING_SESSION, PAIRING_SESSIONS,
-    WORKSPACE_DEVICE, WORKSPACE_DEVICES, WORKSPACES,
+    WORKSPACE_APPROVAL_POLICY, WORKSPACE_DEVICE, WORKSPACE_DEVICES,
+    WORKSPACES,
 };
 use orchestration_api::updates::{AuditView, EventsResponse};
 use orchestration_core::device::Device;
@@ -122,6 +124,19 @@ impl SignedServerClient<'_> {
         request: &CreateWorkspaceRequest,
     ) -> Result<(), NodeError> {
         self.submit(Method::POST, WORKSPACES, request).await
+    }
+
+    pub async fn change_workspace_approval_policy(
+        &self,
+        workspace_id: WorkspaceId,
+        request: &ChangeWorkspaceApprovalPolicyRequest,
+    ) -> Result<Workspace, NodeError> {
+        let workspace_text = workspace_id.0.to_string();
+        let path = fill_route(
+            WORKSPACE_APPROVAL_POLICY,
+            &[("workspace_id", &workspace_text)],
+        )?;
+        self.exchange(Method::PUT, &path, request).await
     }
 
     pub async fn add_workspace_device(

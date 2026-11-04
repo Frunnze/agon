@@ -1,115 +1,66 @@
-import 'package:agent_orchestration/data/models/approval.dart';
-import 'package:agent_orchestration/data/models/identifiers.dart';
+import 'package:flutter/widgets.dart';
+
 import 'package:agent_orchestration/data/models/item_draft.dart';
-import 'package:agent_orchestration/data/models/project.dart';
 import 'package:agent_orchestration/data/models/run.dart';
 import 'package:agent_orchestration/data/models/runner.dart';
 import 'package:agent_orchestration/data/models/schedule.dart';
 import 'package:agent_orchestration/data/models/task.dart';
-import 'package:agent_orchestration/data/models/workflow.dart';
-import 'package:agent_orchestration/data/repository/device_repository.dart';
 import 'package:agent_orchestration/data/repository/job_repository.dart';
-import 'package:agent_orchestration/data/repository/project_repository.dart';
-import 'package:agent_orchestration/data/repository/skill_repository.dart';
 import 'package:agent_orchestration/data/repository/task_repository.dart';
-import 'package:agent_orchestration/data/repository/workflow_repository.dart';
-import 'package:agent_orchestration/data/repository/workspace_repository.dart';
-import 'package:agent_orchestration/data/rules/schedule_rules.dart';
-import 'package:agent_orchestration/presentation/agent_place_text.dart';
-import 'package:agent_orchestration/presentation/approval_policy_text.dart';
-import 'package:agent_orchestration/presentation/device_names.dart';
-import 'package:agent_orchestration/presentation/skill_names.dart';
 import 'package:agent_orchestration/screens/new_items/draft_review.dart';
+import 'package:agent_orchestration/screens/task_form/task_form.dart';
+import 'package:agent_orchestration/screens/task_form/task_form_options.dart';
+import 'package:agent_orchestration/screens/task_form/task_form_values.dart';
 import 'package:agent_orchestration/shell/app_navigation.dart';
 import 'package:agent_orchestration/shell/app_route.dart';
 import 'package:agent_orchestration/shell/app_section.dart';
-import 'package:agent_orchestration/widgets/fact_list.dart';
 
-const String unknownProjectText = 'Unknown project';
-const String unknownWorkflowText = 'Unknown workflow';
-const String anyFreeRunnerText = 'Any free runner';
-const String automaticSkillsOnText = 'The agent may also pick them';
-const String automaticSkillsOffText = 'Off';
-const String startsAtOnceText = 'As soon as you approve';
-
-String describeRunsOn(RunnerTarget target, DeviceNames deviceNames) {
-  return switch (target) {
-    AnyFreeRunner() => anyFreeRunnerText,
-    SpecificRunner(:final DeviceId deviceId) => deviceNames.describeDevice(
-      deviceId,
-    ),
-    RunnerWithLabels(:final List<String> labels) =>
-      'Any runner with ${labels.join(', ')}',
-  };
-}
-
-String describeApprovalPolicy(ApprovalPolicy policy) {
-  final String title = describeApprovalPolicyTitle(policy);
-  final String detail = describeApprovalPolicyDetail(policy);
-  return '$title. $detail';
-}
-
-String describeRepeatingTask(Schedule schedule) {
-  return '${describeSchedule(schedule)}, so it becomes a job';
-}
+typedef TaskFormOptionsBuilder = TaskFormOptions Function(
+  RunnerTarget chosenTarget,
+);
 
 final class WorkDraftReview implements DraftReview {
   const WorkDraftReview({
     required this.kind,
-    required this.projectRepository,
-    required this.workspaceRepository,
-    required this.workflowRepository,
-    required this.skillRepository,
-    required this.deviceRepository,
+    required this.buildOptions,
     required this.taskRepository,
     required this.jobRepository,
     required this.navigation,
   });
 
   final DraftKind kind;
-  final ProjectRepository projectRepository;
-  final WorkspaceRepository workspaceRepository;
-  final WorkflowRepository workflowRepository;
-  final SkillRepository skillRepository;
-  final DeviceRepository deviceRepository;
+  final TaskFormOptionsBuilder buildOptions;
   final TaskRepository taskRepository;
   final JobRepository jobRepository;
   final AppNavigation navigation;
 
-  @override
-  List<Fact> describeFacts(DraftedItem item) {
-    final DraftedWork work = _requireWork(item);
-    final DeviceNames deviceNames = DeviceNames(
-      deviceRepository.listDevices(),
-    );
-    final List<String> skillNames = describeSkillNames(
-      skills: skillRepository.listSkills(),
-      skillIds: work.skills,
-    );
+  bool get _isJob => kind == DraftKind.job;
 
-    return <Fact>[
-      describeTextFact('What should be done', work.title),
-      describeOptionalTextFact('Details', work.details),
-      _describeProjectFact(work.projectId),
-      describeTextFact('Who does it', _describeDoer(work.doer)),
-      describeTextFact('Runs on', describeRunsOn(work.runsOn, deviceNames)),
-      describeTextFact(agentPlaceTitle, describeTaskPlace(work.agentPlace)),
-      if (skillNames.isEmpty)
-        describeMutedFact('Skills to use', noneChosenText)
-      else
-        Fact.chips(term: 'Skills to use', chips: skillNames),
-      describeTextFact(
-        'Automatic skills',
-        work.usesAutomaticSkills
-            ? automaticSkillsOnText
-            : automaticSkillsOffText,
+  @override
+  Widget buildForm(DraftedItem item, DraftFormCallbacks callbacks) {
+    final DraftedWork work = _requireWork(item);
+    final TaskFormOptions options = buildOptions(work.runsOn);
+    final RepeatChoice unscheduledRepeat = _isJob
+        ? RepeatChoice.weekly
+        : RepeatChoice.none;
+
+    return TaskForm(
+      initialValues: TaskFormValues.fromDraftedWork(
+        work: work,
+        options: options,
+        unscheduledRepeat: unscheduledRepeat,
       ),
-      describeTextFact(
-        approvalPolicyLabel,
-        describeApprovalPolicy(work.approvalPolicy),
+      options: options,
+      repeatChoices: _isJob ? jobRepeatChoices : RepeatChoice.values,
+      repeatHint: _isJob ? null : taskRepeatHint,
+      onChanged: (TaskFormValues values) =>
+          _reportReadableWork(values, callbacks),
+      actions: buildReviewActions<TaskFormValues>(
+        onCancelled: callbacks.onCancelled,
+        onApproved: (TaskFormValues values) =>
+            callbacks.onApproved(values.toDraftedWork()),
       ),
-      _describeTimingFact(work.schedule),
-    ];
+    );
   }
 
   @override
@@ -123,7 +74,7 @@ final class WorkDraftReview implements DraftReview {
       _openJobs();
       return;
     }
-    if (kind == DraftKind.job) {
+    if (_isJob) {
       throw StateError('The job ${work.title} has no schedule');
     }
 
@@ -132,8 +83,18 @@ final class WorkDraftReview implements DraftReview {
     navigation.replaceRoute(TaskRunRoute(run.id));
   }
 
+  void _reportReadableWork(
+    TaskFormValues values,
+    DraftFormCallbacks callbacks,
+  ) {
+    final bool isTimeReadable = values.describeTimeProblem() == null;
+    if (isTimeReadable) {
+      callbacks.onChanged(values.toDraftedWork());
+    }
+  }
+
   void _openJobs() {
-    if (kind == DraftKind.job) {
+    if (_isJob) {
       navigation.closeRoute();
       return;
     }
@@ -145,48 +106,5 @@ final class WorkDraftReview implements DraftReview {
       throw ArgumentError.value(item, 'item', 'Not a task or job draft');
     }
     return item;
-  }
-
-  Fact _describeProjectFact(ProjectId? projectId) {
-    if (projectId == null) {
-      return describeMutedFact('Project', notChosenText);
-    }
-
-    final WorkspaceId workspaceId = workspaceRepository.currentWorkspace().id;
-    for (final Project project in projectRepository.listProjects(
-      workspaceId,
-    )) {
-      if (project.id == projectId) {
-        return describeTextFact('Project', project.name);
-      }
-    }
-    return describeMutedFact('Project', unknownProjectText);
-  }
-
-  String _describeDoer(TaskDoer doer) {
-    switch (doer) {
-      case OneAgentDoer(:final AgentKind agent):
-        return agent.label;
-      case WorkflowDoer(:final WorkflowId workflowId):
-        for (final Workflow workflow in workflowRepository.listWorkflows()) {
-          if (workflow.id == workflowId) {
-            return workflow.name;
-          }
-        }
-        return unknownWorkflowText;
-    }
-  }
-
-  Fact _describeTimingFact(Schedule? schedule) {
-    if (schedule == null && kind == DraftKind.job) {
-      return describeMutedFact('Repeats', notChosenText);
-    }
-    if (schedule == null) {
-      return describeTextFact('Starts', startsAtOnceText);
-    }
-    if (kind == DraftKind.job) {
-      return describeTextFact('Repeats', describeSchedule(schedule));
-    }
-    return describeTextFact('Repeats', describeRepeatingTask(schedule));
   }
 }

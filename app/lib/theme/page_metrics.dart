@@ -17,9 +17,4 @@ EdgeInsets pagePaddingFor(LayoutSize layoutSize) {
   }
 }
 
-double pageGapFor(LayoutSize layoutSize) {
-  if (layoutSize.isCompact) {
-    return AppSpacing.space5;
-  }
-  return AppSpacing.space6;
-}
+const double pageGap = AppSpacing.space5;

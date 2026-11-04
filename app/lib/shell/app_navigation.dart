@@ -1,11 +1,34 @@
 import 'package:flutter/foundation.dart';
 
+import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/shell/app_route.dart';
+
+typedef RouteAdmission = bool Function(AppRoute route);
+
+bool _admitEveryRoute(AppRoute route) {
+  return true;
+}
+
+bool _admitRunPages(AppRoute route) {
+  return route is RunPageRoute;
+}
 
 final class AppNavigation extends ChangeNotifier {
   AppNavigation({required AppRoute initialRoute})
-    : _routes = List<AppRoute>.unmodifiable(<AppRoute>[initialRoute]);
+    : this._admitting(initialRoute: initialRoute, canOpen: _admitEveryRoute);
 
+  AppNavigation.limitedToRunPages({required RunId runId})
+    : this._admitting(
+        initialRoute: TaskRunRoute(runId),
+        canOpen: _admitRunPages,
+      );
+
+  AppNavigation._admitting({
+    required AppRoute initialRoute,
+    required this.canOpen,
+  }) : _routes = List<AppRoute>.unmodifiable(<AppRoute>[initialRoute]);
+
+  final RouteAdmission canOpen;
   List<AppRoute> _routes;
 
   List<AppRoute> get routes => _routes;
@@ -13,16 +36,19 @@ final class AppNavigation extends ChangeNotifier {
   AppRoute get currentRoute => _routes.last;
 
   void openRoute(AppRoute route) {
+    _requireOpenable(route);
     _routes = List<AppRoute>.unmodifiable(<AppRoute>[..._routes, route]);
     notifyListeners();
   }
 
   void openSection(AppRoute sectionRoute) {
+    _requireOpenable(sectionRoute);
     _routes = List<AppRoute>.unmodifiable(<AppRoute>[sectionRoute]);
     notifyListeners();
   }
 
   void replaceRoute(AppRoute route) {
+    _requireOpenable(route);
     final List<AppRoute> below = _routes.sublist(0, _routes.length - 1);
 
     _routes = List<AppRoute>.unmodifiable(<AppRoute>[...below, route]);
@@ -35,6 +61,7 @@ final class AppNavigation extends ChangeNotifier {
   }
 
   void replaceSavedForm(AppRoute destination) {
+    _requireOpenable(destination);
     _routes = List<AppRoute>.unmodifiable(<AppRoute>[
       ..._listRoutesBelowSavedForm(),
       destination,
@@ -51,6 +78,12 @@ final class AppNavigation extends ChangeNotifier {
       _routes.sublist(0, _routes.length - 1),
     );
     notifyListeners();
+  }
+
+  void _requireOpenable(AppRoute route) {
+    if (!canOpen(route)) {
+      throw StateError('This window cannot open ${route.runtimeType}');
+    }
   }
 
   List<AppRoute> _listRoutesBelowSavedForm() {

@@ -11,7 +11,6 @@ import 'package:agent_orchestration/icons/app_icon_kind.dart';
 import 'package:agent_orchestration/screens/shared/deletion_prompts.dart';
 import 'package:agent_orchestration/screens/shared/deletion_review.dart';
 import 'package:agent_orchestration/screens/task_form/task_form.dart';
-import 'package:agent_orchestration/screens/task_form/task_form_action.dart';
 import 'package:agent_orchestration/screens/task_form/task_form_options.dart';
 import 'package:agent_orchestration/screens/task_form/task_form_values.dart';
 import 'package:agent_orchestration/shell/app_navigation.dart';
@@ -19,9 +18,8 @@ import 'package:agent_orchestration/shell/app_route.dart';
 import 'package:agent_orchestration/shell/app_section.dart';
 import 'package:agent_orchestration/widgets/app_button.dart';
 import 'package:agent_orchestration/widgets/app_page.dart';
+import 'package:agent_orchestration/widgets/forms/form_action.dart';
 import 'package:agent_orchestration/widgets/page_header.dart';
-
-const List<RepeatChoice> _taskRepeatChoices = RepeatChoice.values;
 
 class TaskFormScreen extends StatelessWidget {
   const TaskFormScreen({
@@ -68,15 +66,15 @@ class TaskFormScreen extends StatelessWidget {
         TaskForm(
           initialValues: initialValues,
           options: options,
-          repeatChoices: _taskRepeatChoices,
-          repeatHint: 'A task that repeats becomes a job.',
-          actions: <TaskFormAction>[
-            SubmitFormAction(
+          repeatChoices: RepeatChoice.values,
+          repeatHint: taskRepeatHint,
+          actions: <FormAction<TaskFormValues>>[
+            SubmitFormAction<TaskFormValues>(
               label: 'Save for later',
               tone: ButtonTone.secondary,
               onSubmitted: _saveForLater,
             ),
-            SubmitFormAction(
+            SubmitFormAction<TaskFormValues>(
               label: 'Start now',
               tone: ButtonTone.primary,
               icon: AppIconKind.play,

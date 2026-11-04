@@ -8,10 +8,14 @@ import 'package:agent_orchestration/widgets/app_button.dart';
 import 'package:agent_orchestration/widgets/empty_state.dart';
 
 import '../support/random_inputs.dart';
+import '../support/shown_text_metrics.dart';
 import '../support/widget_harness.dart';
 
 const String _actionLabel = 'New skill';
-const double _titleLineHeight = AppFontSizes.heading * AppLineHeights.body;
+const TextStyle _titleLeading = TextStyle(
+  fontSize: AppFontSizes.heading,
+  height: AppLineHeights.body,
+);
 const List<String> _shortTitles = <String>[
   'No runners yet',
   'Nothing logged yet',
@@ -38,7 +42,10 @@ void main() {
       final Widget? action = _buildRandomAction(random);
 
       await tester.pumpWidget(
-        wrapInApp(EmptyState(title: title, message: message, action: action)),
+        wrapInApp(
+          EmptyState(title: title, message: message, action: action),
+          platform: desktopPlatform,
+        ),
       );
 
       expect(find.text(title), findsOneWidget);
@@ -71,9 +78,14 @@ void main() {
 
     for (int i = 0; i < widgetPropertyIterations; i += 1) {
       final String title = pickOne(random, _shortTitles);
+      final double width = randomWidth(
+        random,
+        least: narrowestWidth,
+        most: widestWidth,
+      );
       await pumpScrollableAtWidth(
         tester,
-        width: randomWidth(random, least: narrowestWidth, most: widestWidth),
+        width: width,
         child: EmptyState(
           title: title,
           message: randomWordPhrase(random),
@@ -82,7 +94,11 @@ void main() {
       );
 
       final double titleHeight = tester.getSize(find.text(title)).height;
-      expect(titleHeight, _titleLineHeight, reason: title);
+      final double titleLineHeight = shownLineHeightAtWidth(
+        style: _titleLeading,
+        windowWidth: width,
+      );
+      expect(titleHeight, titleLineHeight, reason: '$title at width $width');
     }
   });
 }

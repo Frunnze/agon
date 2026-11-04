@@ -1,3 +1,4 @@
+import 'package:agent_orchestration/bridge/codecs/approval_values.dart';
 import 'package:agent_orchestration/bridge/codecs/identifier_codecs.dart';
 import 'package:agent_orchestration/bridge/codecs/json_values.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
@@ -15,24 +16,39 @@ enum AgentAccess implements WireNamed {
 }
 
 final class Workspace implements JsonEncodable {
-  const Workspace({
+  Workspace({
     required this.id,
     required this.name,
     required this.appServerAddress,
-  });
+    required List<String> protectedFiles,
+    required this.approvalPolicy,
+  }) : protectedFiles = List<String>.unmodifiable(protectedFiles);
 
   factory Workspace.fromJson(Object? json) {
     final JsonObject fields = decodeObject(json);
+    final ApprovalPolicy? chosenPolicy = readOptionalField(
+      fields,
+      'approval_policy',
+      ApprovalPolicy.decode,
+    );
     return Workspace(
       id: readField(fields, 'id', decodeWorkspaceId),
       name: readField(fields, 'name', decodeText),
       appServerAddress: readField(fields, 'app_server_address', decodeText),
+      protectedFiles: readField(
+        fields,
+        _protectedFilesField,
+        _decodeProtectedPatterns,
+      ),
+      approvalPolicy: chosenPolicy ?? ApprovalPolicy.neverAsk,
     );
   }
 
   final WorkspaceId id;
   final String name;
   final String appServerAddress;
+  final List<String> protectedFiles;
+  final ApprovalPolicy approvalPolicy;
 
   @override
   JsonObject toJson() {
@@ -40,8 +56,18 @@ final class Workspace implements JsonEncodable {
       'id': id.value,
       'name': name,
       'app_server_address': appServerAddress,
+      _protectedFilesField: <String, Object?>{_patternsField: protectedFiles},
+      'approval_policy': approvalPolicy.wireName,
     };
   }
+}
+
+const String _protectedFilesField = 'protected_files';
+const String _patternsField = 'patterns';
+
+List<String> _decodeProtectedPatterns(Object? json) {
+  final JsonObject fields = decodeObject(json);
+  return readListField(fields, _patternsField, decodeText);
 }
 
 final class Repository implements JsonEncodable {
@@ -101,6 +127,7 @@ final class Project implements JsonEncodable {
     required this.workspaceId,
     required this.name,
     required List<Repository> repositories,
+    required this.approvalPolicy,
   }) : repositories = List<Repository>.unmodifiable(repositories);
 
   factory Project.fromJson(Object? json) {
@@ -110,6 +137,11 @@ final class Project implements JsonEncodable {
       workspaceId: readField(fields, 'workspace_id', decodeWorkspaceId),
       name: readField(fields, 'name', decodeText),
       repositories: readListField(fields, 'repositories', Repository.fromJson),
+      approvalPolicy: readOptionalField(
+        fields,
+        'approval_policy',
+        ApprovalPolicy.decode,
+      ),
     );
   }
 
@@ -117,6 +149,7 @@ final class Project implements JsonEncodable {
   final WorkspaceId workspaceId;
   final String name;
   final List<Repository> repositories;
+  final ApprovalPolicy? approvalPolicy;
 
   @override
   JsonObject toJson() {
@@ -125,6 +158,7 @@ final class Project implements JsonEncodable {
       'workspace_id': workspaceId.value,
       'name': name,
       'repositories': encodeList(repositories),
+      'approval_policy': approvalPolicy?.wireName,
     };
   }
 }

@@ -17,7 +17,7 @@ class AppPage extends StatelessWidget {
       padding: pagePaddingFor(layoutSize),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: spaceVertically(children, pageGapFor(layoutSize)),
+        children: spaceVertically(children, pageGap),
       ),
     );
   }

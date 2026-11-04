@@ -12,27 +12,42 @@ import 'package:agent_orchestration/shell/side_rail.dart';
 import 'package:agent_orchestration/theme/app_spacing.dart';
 import 'package:agent_orchestration/theme/app_theme.dart';
 import 'package:agent_orchestration/theme/app_typography.dart';
+import 'package:agent_orchestration/theme/layout_density.dart';
 import 'package:agent_orchestration/theme/layout_size.dart';
 import 'package:agent_orchestration/widgets/app_button.dart';
 import 'package:agent_orchestration/widgets/page_header.dart';
 
 import '../support/app_harness.dart';
 import '../support/random_inputs.dart';
+import '../support/shown_text_metrics.dart';
 import '../support/widget_harness.dart';
 
-const double _cssButtonBoxHeight =
-    AppFontSizes.body * AppLineHeights.body +
-    (AppSpacing.space2 + AppBorders.thin) * 2;
 const double _shortestWindowHeight = 480;
 const double _tallestWindowHeight = 1400;
 
-Future<void> _pumpButtonAtWidth(WidgetTester tester, double width) async {
+double _cssButtonBoxHeight(LayoutDensity density) {
+  final double lineHeight = shownLineHeightFor(
+    style: AppTextStyles.bodyBold,
+    layoutDensity: density,
+  );
+  final double blockPadding = density.isTouch
+      ? AppSpacing.space2
+      : AppSpacing.space1;
+  return lineHeight + (blockPadding + AppBorders.thin) * 2;
+}
+
+Future<void> _pumpButton(
+  WidgetTester tester, {
+  required double width,
+  required TargetPlatform platform,
+}) async {
   useViewSize(tester, Size(width, desktopHeight));
   await tester.pumpWidget(
     wrapInApp(
       Center(
         child: AppButton.primary(label: 'New job', onPressed: () {}),
       ),
+      platform: platform,
     ),
   );
 }
@@ -48,31 +63,30 @@ void main() {
     }
   });
 
-  testWidgets('test_app_button_property_height_matches_design_on_macos', (
+  testWidgets('test_app_button_property_height_matches_design_per_device', (
     WidgetTester tester,
   ) async {
     final Random random = seededRandom(7401);
-    debugDefaultTargetPlatformOverride = TargetPlatform.macOS;
 
     for (int i = 0; i < widgetPropertyIterations; i += 1) {
+      final TargetPlatform platform = pickOne(random, TargetPlatform.values);
       final double width = randomWidth(
         random,
         least: narrowestWidth,
         most: widestWidth,
       );
-      await _pumpButtonAtWidth(tester, width);
+      await _pumpButton(tester, width: width, platform: platform);
 
-      final double minimumHeight = LayoutSize.forWidth(width).isLarge
-          ? AppSizes.controlHeightCompact
-          : AppSizes.controlHeight;
-      final double expectedHeight = max(minimumHeight, _cssButtonBoxHeight);
+      final LayoutDensity density = LayoutDensity.forPlatform(platform);
+      final double expectedHeight = max(
+        AppSizes.controlHeightFor(density),
+        _cssButtonBoxHeight(density),
+      );
       final double buttonHeight = tester
           .getSize(find.byType(AppButton))
           .height;
-      expect(buttonHeight, expectedHeight, reason: 'width $width');
+      expect(buttonHeight, expectedHeight, reason: '$platform at $width');
     }
-
-    debugDefaultTargetPlatformOverride = null;
   });
 
   testWidgets('test_app_button_property_label_uses_the_theme_body_font', (
@@ -81,7 +95,7 @@ void main() {
     for (final TargetPlatform platform in TargetPlatform.values) {
       debugDefaultTargetPlatformOverride = platform;
       await tester.pumpWidget(const SizedBox());
-      await _pumpButtonAtWidth(tester, desktopWidth);
+      await _pumpButton(tester, width: desktopWidth, platform: platform);
 
       final BuildContext context = tester.element(find.byType(AppButton));
       final String? bodyFontFamily = Theme.of(context)
@@ -151,7 +165,9 @@ void main() {
       for (final MapEntry<String, Widget> quietLink in quietLinks.entries) {
         debugDefaultTargetPlatformOverride = platform;
         await tester.pumpWidget(const SizedBox());
-        await tester.pumpWidget(wrapInApp(Center(child: quietLink.value)));
+        await tester.pumpWidget(
+          wrapInApp(Center(child: quietLink.value), platform: platform),
+        );
 
         final BuildContext context = tester.element(find.text(quietLink.key));
         final String? bodyFontFamily = Theme.of(context)
@@ -177,7 +193,7 @@ void main() {
     WidgetTester tester,
   ) async {
     final Random random = seededRandom(7403);
-    const double sidePadding = AppSpacing.space4 + AppBorders.thin;
+    const double sidePadding = AppSpacing.space3 + AppBorders.thin;
 
     for (int i = 0; i < widgetPropertyIterations; i += 1) {
       final String label = 'Label ${random.nextInt(100000)}';
@@ -187,6 +203,7 @@ void main() {
           Center(
             child: AppButton.secondary(label: label, onPressed: () {}),
           ),
+          platform: desktopPlatform,
         ),
       );
 

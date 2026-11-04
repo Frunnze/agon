@@ -60,7 +60,8 @@ pub struct Task {
     pub agent_place: Option<AgentPlace>,
     pub skills: Vec<SkillId>,
     pub uses_automatic_skills: bool,
-    pub approval_policy: ApprovalPolicy,
+    #[serde(default)]
+    pub approval_policy: Option<ApprovalPolicy>,
     pub schedule: Option<Schedule>,
     pub status: TaskStatus,
     pub created_at: DateTime<Utc>,

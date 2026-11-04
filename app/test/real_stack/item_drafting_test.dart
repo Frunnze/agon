@@ -1,6 +1,5 @@
 import 'dart:io';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -31,7 +30,7 @@ import 'support/workflow_screen_steps.dart';
 
 const String _tasksTitle = 'Tasks';
 const String _newTaskTitle = 'New task';
-const String _wish = 'Clean the build cache';
+const String _wish = 'Clean the build cache. Wait for release';
 const String _changedTitle = 'Clean the docs cache';
 const String _draftedDetails = 'Drafted by the fake agent.';
 const String _draftingTaskTitle = 'Draft new task';
@@ -41,7 +40,8 @@ const String _projectsTitle = 'Projects';
 const String _newProjectTitle = 'New project';
 const String _projectQuestion = 'What is this project, and where is its code?';
 const String _firstProjectName = 'billing';
-const String _firstProjectWish = 'The billing service. Name it billing.';
+const String _firstProjectWish =
+    'The billing service. Name it billing. Wait for release.';
 const String _chosenFolderName = 'billing-ui';
 const String _chooseFolderLabel = 'Choose folder…';
 const String _workflowQuestion = 'What should this workflow do?';
@@ -100,7 +100,7 @@ List<String> _listProjectNames(RealStack stack) {
 }
 
 Future<void> _waitForReview(WidgetTester tester, String title) async {
-  await waitUntilShown(tester, find.text(filledSectionTitle));
+  await waitUntilShown(tester, find.text(reviewSummary));
   await waitUntilShown(tester, find.text(title));
   expect(find.text(draftingProjectName), findsOneWidget);
   expect(find.text(_draftedDetails), findsOneWidget);
@@ -127,6 +127,7 @@ void main() {
       );
       expect(find.text(_wish), findsOneWidget);
       await waitUntilShown(tester, find.text(_drafterLine));
+      stage.runner.releaseAgent();
       await _waitForReview(tester, _wish);
 
       final List<String> titlesAfterDraft = await askNode(
@@ -166,7 +167,6 @@ void main() {
   testWidgets(
     'test_draft_item_property_first_project_takes_the_chosen_folder',
     (WidgetTester tester) async {
-      debugDefaultTargetPlatformOverride = TargetPlatform.macOS;
       final RealStack stack = await RealStack.openWithAccount(tester);
       final RunnerDevice runner = await startPairedRunner(
         tester,
@@ -203,7 +203,8 @@ void main() {
         expected: find.text(draftingSummary),
       );
       await waitUntilShown(tester, find.text(_drafterLine));
-      await waitUntilShown(tester, find.text(filledSectionTitle));
+      runner.releaseAgent();
+      await waitUntilShown(tester, find.text(reviewSummary));
       expect(find.text(_firstProjectName), findsWidgets);
       expect(find.text(_chosenFolderName), findsOneWidget);
       _expectNothingLeftOnServer(stack, runner);
@@ -230,10 +231,10 @@ void main() {
         'local:${stack.appDeviceId.value}:${folder.path}',
       ]);
       await stack.close(tester);
-      debugDefaultTargetPlatformOverride = null;
     },
     skip: isStackMissing,
     timeout: realStackTimeout,
+    variant: TargetPlatformVariant.only(TargetPlatform.macOS),
   );
 
   testWidgets(

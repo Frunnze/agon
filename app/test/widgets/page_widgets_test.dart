@@ -117,6 +117,7 @@ void main() {
                 Text('Line $index'),
             ],
           ),
+          platform: desktopPlatform,
         ),
       );
       expect(tester.takeException(), isNull);
@@ -153,9 +154,14 @@ void main() {
     const List<String> labels = <String>['General', 'Runners', 'Audit log'];
 
     for (int i = 0; i < widgetPropertyIterations; i += 1) {
+      final double width = randomWidth(
+        random,
+        least: narrowestWidth,
+        most: widestWidth,
+      );
       await pumpScrollableAtWidth(
         tester,
-        width: randomWidth(random, least: narrowestWidth, most: widestWidth),
+        width: width,
         child: TabStrip(
           labels: labels,
           selectedIndex: random.nextInt(labels.length),
@@ -164,7 +170,10 @@ void main() {
       );
 
       final Size strip = tester.getSize(find.byType(TabStrip));
-      expect(strip.height, AppSizes.controlHeight);
+      final double controlHeight = AppSizes.controlHeightFor(
+        densityMeantByWidth(width),
+      );
+      expect(strip.height, controlHeight, reason: 'width $width');
     }
   });
 

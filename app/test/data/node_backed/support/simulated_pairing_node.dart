@@ -1,6 +1,7 @@
 import 'package:agent_orchestration/bridge/node/node_command_channel.dart';
 
 import 'simulated_node_replies.dart';
+import 'simulated_protected_files.dart';
 
 const String simulatedPairingCode = '4F7K2Q';
 const String simulatedDisplayCode = '4F7-K2Q';
@@ -216,6 +217,9 @@ Map<String, Object?> _buildAccountJson({
         'id': 'workspace-of-$workspaceName',
         'name': workspaceName,
         'app_server_address': 'http://127.0.0.1:7070',
+        'protected_files': buildSimulatedProtectedFilesJson(
+          simulatedDefaultProtectedFiles,
+        ),
       },
     ],
   };

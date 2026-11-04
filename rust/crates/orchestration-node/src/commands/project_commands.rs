@@ -1,6 +1,7 @@
 use orchestration_api::catalog::{
     AddRepositoryRequest, RemoveRepositoryRequest, SaveProjectRequest,
 };
+use orchestration_core::approval::ApprovalPolicy;
 use orchestration_core::identifiers::{
     DeviceId, ProjectId, WorkspaceId, generate_uuid,
 };
@@ -45,6 +46,8 @@ pub(super) enum ProjectCommand {
         workspace_id: WorkspaceId,
         name: String,
         repositories: Vec<RepositoryInput>,
+        #[serde(default)]
+        approval_policy: Option<ApprovalPolicy>,
     },
     ListRepositories {
         project_id: ProjectId,
@@ -86,6 +89,7 @@ pub(super) async fn handle_project_command(
             workspace_id,
             name,
             repositories,
+            approval_policy,
         } => {
             validate_name(&name)?;
             let mut checked_repositories = Vec::new();
@@ -98,6 +102,7 @@ pub(super) async fn handle_project_command(
                 workspace_id,
                 name,
                 repositories: checked_repositories,
+                approval_policy,
             };
             let request = SaveProjectRequest {
                 project: project.clone(),

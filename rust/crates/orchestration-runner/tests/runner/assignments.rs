@@ -7,6 +7,7 @@ use orchestration_core::identifiers::{
     DeviceId, ProjectId, RuleId, RunId, TaskId, WorkspaceId,
 };
 use orchestration_core::library::Rule;
+use orchestration_core::protected_files::ProtectedFiles;
 use orchestration_core::run_lifecycle::create_run;
 use orchestration_core::scope::Scope;
 use orchestration_core::task::{Task, TaskDoer, TaskPlace, TaskStatus};
@@ -35,7 +36,7 @@ pub fn task_for(number: u128, title: &str, doer: TaskDoer) -> Task {
         agent_place: Some(AgentPlace::LocalProcess),
         skills: Vec::new(),
         uses_automatic_skills: false,
-        approval_policy: ApprovalPolicy::AskBeforeRiskyActions,
+        approval_policy: Some(ApprovalPolicy::AskBeforeRiskyActions),
         schedule: None,
         status: TaskStatus::ToDo,
         created_at: DateTime::UNIX_EPOCH,
@@ -69,6 +70,7 @@ pub fn assignment_for(
         workspace_id,
         name: "app".to_string(),
         repositories,
+        approval_policy: None,
     };
     let step_name = run.steps.first().map(|step| step.name.clone());
     Ok(RunAssignment {
@@ -76,11 +78,15 @@ pub fn assignment_for(
         run,
         task,
         workspace_id,
+        workspace_approval_policy: ApprovalPolicy::default(),
         project: Some(project),
         workflow,
         skills: Vec::new(),
         rules: Vec::new(),
         follow_up: None,
+        protected_files: ProtectedFiles {
+            patterns: Vec::new(),
+        },
     })
 }
 

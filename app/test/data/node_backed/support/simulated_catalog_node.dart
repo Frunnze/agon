@@ -3,6 +3,7 @@ import 'package:agent_orchestration/bridge/node/node_command_channel.dart';
 import 'simulated_deletions.dart';
 import 'simulated_library_edits.dart';
 import 'simulated_node_replies.dart';
+import 'simulated_protected_files.dart';
 import 'simulated_server_group.dart';
 
 const String simulatedServerAddress = 'http://127.0.0.1:7070';
@@ -32,6 +33,9 @@ final class SimulatedCatalogNode {
     skills: skills,
     rules: rules,
   );
+  late final SimulatedProtectedFiles _protectedFiles = SimulatedProtectedFiles(
+    workspaces: workspaces,
+  );
 
   late final Map<String, SimulatedHandler> _handlers =
       <String, SimulatedHandler>{
@@ -39,6 +43,7 @@ final class SimulatedCatalogNode {
         'retry_server': _checkServer,
         'list_workspaces': _listWorkspaces,
         'create_workspace': _createWorkspace,
+        'change_workspace_approval_policy': _changeApprovalPolicy,
         'list_projects': _listProjects,
         'create_project': _createProject,
         'create_repository': _createRepository,
@@ -57,6 +62,8 @@ final class SimulatedCatalogNode {
         'set_rule_enabled': _setRuleEnabled,
         'start_server_backup': serverGroup.startBackup,
         'stop_server_backup': serverGroup.stopBackup,
+        'set_protected_files': _protectedFiles.setProtectedFiles,
+        'reset_protected_files': _protectedFiles.resetProtectedFiles,
       };
 
   String answer(String inputJson) {
@@ -77,6 +84,9 @@ final class SimulatedCatalogNode {
       'id': nextIdentifier('workspace'),
       'name': name,
       'app_server_address': simulatedServerAddress,
+      'protected_files': buildSimulatedProtectedFilesJson(
+        simulatedDefaultProtectedFiles,
+      ),
     };
     workspaces.add(workspace);
     return workspace;
@@ -164,6 +174,16 @@ final class SimulatedCatalogNode {
     return addWorkspace(command['name'] as String);
   }
 
+  Object? _changeApprovalPolicy(SimulatedCommand command) {
+    final Map<String, Object?> workspace = findSimulatedRecord(
+      workspaces,
+      kind: 'workspace',
+      identifier: command['workspace_id'],
+    );
+    workspace['approval_policy'] = command['approval_policy'];
+    return workspace;
+  }
+
   Object? _listProjects(SimulatedCommand command) {
     return <Object?>[
       for (final Map<String, Object?> project in projects)
@@ -182,6 +202,7 @@ final class SimulatedCatalogNode {
       'workspace_id': command['workspace_id'],
       'name': command['name'],
       'repositories': <Object?>[...command['repositories'] as List<Object?>],
+      'approval_policy': command['approval_policy'],
     };
     projects.add(project);
     return project;

@@ -32,7 +32,9 @@ fn run_reporting_script(
         .map_err(|problem| TestCaseError::fail(problem.to_string()))
 }
 
-fn start_foreign_reaper(is_running: Arc<AtomicBool>) -> thread::JoinHandle<()> {
+fn start_foreign_reaper(
+    is_running: Arc<AtomicBool>,
+) -> thread::JoinHandle<()> {
     thread::spawn(move || {
         while is_running.load(Ordering::Relaxed) {
             let reaped =

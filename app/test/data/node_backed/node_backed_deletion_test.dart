@@ -78,6 +78,7 @@ void main() {
           workspaceId: workspaceId,
           name: 'site-$i',
           repositories: const <Repository>[],
+          approvalPolicy: null,
         ),
       );
       final List<Project> before = projects.listProjects(workspaceId);

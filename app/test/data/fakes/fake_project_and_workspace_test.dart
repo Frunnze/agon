@@ -85,6 +85,7 @@ void main() {
         workspaceId: GalleryWorkspaceIds.acme,
         name: name,
         repositories: <Repository>[randomRepository(random)],
+        approvalPolicy: null,
       );
 
       if (name.trim().isEmpty) {

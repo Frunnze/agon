@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/widgets.dart';
 
 import 'package:agent_orchestration/data/clock.dart';
@@ -17,31 +15,24 @@ import 'package:agent_orchestration/data/repository/task_repository.dart';
 import 'package:agent_orchestration/data/repository/workflow_repository.dart';
 import 'package:agent_orchestration/data/rules/kept_branches.dart';
 import 'package:agent_orchestration/data/rules/place_offers.dart';
-import 'package:agent_orchestration/data/rules/run_lifecycle.dart';
-import 'package:agent_orchestration/icons/app_icon_kind.dart';
 import 'package:agent_orchestration/presentation/device_names.dart';
 import 'package:agent_orchestration/presentation/doer_text.dart';
 import 'package:agent_orchestration/presentation/run_text.dart';
 import 'package:agent_orchestration/screens/shared/agent_login_pointer.dart';
-import 'package:agent_orchestration/screens/shared/deletion_prompts.dart';
-import 'package:agent_orchestration/screens/shared/deletion_review.dart';
 import 'package:agent_orchestration/screens/shared/live_run_watch.dart';
 import 'package:agent_orchestration/screens/shared/person_step_questions.dart';
 import 'package:agent_orchestration/screens/task_run/no_place_banner.dart';
 import 'package:agent_orchestration/screens/task_run/not_pushed_banner.dart';
 import 'package:agent_orchestration/screens/task_run/run_failure_banner.dart';
 import 'package:agent_orchestration/screens/task_run/run_log_section.dart';
+import 'package:agent_orchestration/screens/task_run/run_page_header.dart';
 import 'package:agent_orchestration/screens/task_run/run_steps_section.dart';
+import 'package:agent_orchestration/screens/task_run/run_summary.dart';
 import 'package:agent_orchestration/shell/app_navigation.dart';
 import 'package:agent_orchestration/shell/app_route.dart';
-import 'package:agent_orchestration/shell/app_section.dart';
-import 'package:agent_orchestration/widgets/app_button.dart';
 import 'package:agent_orchestration/widgets/app_page.dart';
-import 'package:agent_orchestration/widgets/mixed_text.dart';
-import 'package:agent_orchestration/widgets/page_header.dart';
 import 'package:agent_orchestration/widgets/split_layout.dart';
-
-const SectionRoute _tasksRoute = SectionRoute(AppSection.tasks);
+import 'package:agent_orchestration/windows/run_window_opener.dart';
 
 class TaskRunScreen extends StatelessWidget {
   const TaskRunScreen({
@@ -55,6 +46,7 @@ class TaskRunScreen extends StatelessWidget {
     required this.runnerRepository,
     required this.clock,
     required this.navigation,
+    required this.runWindowOpener,
     super.key,
   });
 
@@ -68,6 +60,7 @@ class TaskRunScreen extends StatelessWidget {
   final RunnerRepository runnerRepository;
   final Clock clock;
   final AppNavigation navigation;
+  final RunWindowOpener? runWindowOpener;
 
   @override
   Widget build(BuildContext context) {
@@ -105,14 +98,27 @@ class TaskRunScreen extends StatelessWidget {
       run: run,
       approvals: approvalRepository.listApprovals(),
     );
+    final String runLabel = describeRunLabel(
+      task: task,
+      workflow: workflow,
+      run: run,
+    );
 
     return AppPage(
       children: <Widget>[
-        PageHeader(
-          title: describeRunLabel(task: task, workflow: workflow, run: run),
-          summary: _describeSummary(run, task, now),
-          backLink: BackLink(label: 'Tasks', onPressed: _returnToTasks),
-          actions: _buildActions(context, run, task),
+        RunPageHeader(
+          run: run,
+          task: task,
+          runLabel: runLabel,
+          summary: describeRunSummary(
+            run: run,
+            task: task,
+            projectRepository: projectRepository,
+            now: now,
+          ),
+          taskRepository: taskRepository,
+          navigation: navigation,
+          runWindowOpener: runWindowOpener,
         ),
         if (isWaitingForPlace(
           run: run,
@@ -135,7 +141,7 @@ class TaskRunScreen extends StatelessWidget {
           NotPushedBanner(
             keptBranches: keptBranches,
             deviceNames: deviceNames,
-            onBrowse: (KeptBranch kept) => _browseKeptBranch(task, kept),
+            onBrowse: _offerBranchBrowsing(task),
           ),
         for (final OpenPersonStep question in findQuestionsForRun(
           personStepRepository.listOpenPersonSteps(),
@@ -179,68 +185,11 @@ class TaskRunScreen extends StatelessWidget {
     );
   }
 
-  List<TextSegment> _describeSummary(Run run, Task task, DateTime now) {
-    final String projectName = projectRepository
-        .findProject(task.projectId)
-        .name;
-    final String timing = describeRunTiming(run, now);
-
-    return <TextSegment>[
-      TextSegment('${task.title} · $projectName · $timing'),
-    ];
-  }
-
-  List<Widget> _buildActions(BuildContext context, Run run, Task task) {
-    if (isRunActive(run)) {
-      return <Widget>[
-        AppButton.secondary(label: 'Cancel run', onPressed: _cancelRun),
-        AppButton.primary(
-          label: 'Chat with agent',
-          icon: AppIconKind.chat,
-          onPressed: _openChat,
-        ),
-      ];
+  ValueChanged<KeptBranch>? _offerBranchBrowsing(Task task) {
+    if (!canLeaveRun(navigation)) {
+      return null;
     }
-
-    final Widget deleteButton = AppButton.secondary(
-      label: 'Delete',
-      onPressed: () => unawaited(_reviewDeletion(context, task)),
-    );
-    final Widget askButton = AppButton.secondary(
-      label: 'Ask the agent',
-      icon: AppIconKind.chat,
-      onPressed: _openChat,
-    );
-    if (run.status == RunStatus.done) {
-      return <Widget>[deleteButton, askButton];
-    }
-
-    return <Widget>[
-      deleteButton,
-      askButton,
-      AppButton.primary(
-        label: 'Retry ${findCurrentStep(run).name}',
-        icon: AppIconKind.retry,
-        onPressed: () => unawaited(_retryRun()),
-      ),
-    ];
-  }
-
-  void _returnToTasks() {
-    navigation.returnTo(_tasksRoute);
-  }
-
-  Future<void> _reviewDeletion(BuildContext context, Task task) {
-    final DeletionPrompt prompt = task.schedule == null
-        ? describeTaskDeletion(task)
-        : describeJobDeletion(task);
-
-    return reviewDeletion(
-      context: context,
-      prompt: prompt,
-      leavePage: _returnToTasks,
-      deleteRecord: () => taskRepository.deleteTask(task.id),
-    );
+    return (KeptBranch kept) => _browseKeptBranch(task, kept);
   }
 
   void _browseKeptBranch(Task task, KeptBranch kept) {
@@ -252,18 +201,5 @@ class TaskRunScreen extends StatelessWidget {
         preferredRunnerId: kept.runner,
       ),
     );
-  }
-
-  void _openChat() {
-    navigation.openRoute(ChatRoute(runId));
-  }
-
-  void _cancelRun() {
-    unawaited(taskRepository.cancelRun(runId));
-  }
-
-  Future<void> _retryRun() async {
-    final Run retried = await taskRepository.retryRun(runId);
-    navigation.replaceRoute(TaskRunRoute(retried.id));
   }
 }

@@ -10,9 +10,7 @@ import 'package:agent_orchestration/screens/settings.dart';
 import 'package:agent_orchestration/shell/app_route.dart';
 import 'package:agent_orchestration/shell/app_section.dart';
 import 'package:agent_orchestration/theme/app_colors.dart';
-import 'package:agent_orchestration/theme/app_spacing.dart';
 import 'package:agent_orchestration/theme/app_typography.dart';
-import 'package:agent_orchestration/theme/layout_size.dart';
 import 'package:agent_orchestration/widgets/lists/responsive_list.dart';
 import 'package:agent_orchestration/widgets/notice_banner.dart';
 import 'package:agent_orchestration/widgets/page_section.dart';
@@ -27,6 +25,7 @@ typedef _GapMeasure = List<double> Function(WidgetTester tester);
 
 const String _runnersSummary = '3 of 4 online · 5 free slots';
 const String _serverDownSummary = '2 of 4 reachable';
+const double _pageGap = 24;
 const String _membersTitle = 'Devices in acme';
 
 final class _TabCase {
@@ -39,13 +38,6 @@ final class _TabCase {
   final String tab;
   final AppDependencies Function() buildDependencies;
   final _GapMeasure measureGaps;
-}
-
-double _expectedPageGap(double width) {
-  if (LayoutSize.forWidth(width).isCompact) {
-    return AppSpacing.space5;
-  }
-  return AppSpacing.space6;
 }
 
 double _gapBetween(Rect above, Rect below) => below.top - above.bottom;
@@ -143,7 +135,7 @@ void main() {
 
       for (final double gap in tabCase.measureGaps(tester)) {
         final String reason = '${tabCase.tab} at width $width';
-        expect(gap, closeTo(_expectedPageGap(width), 0.5), reason: reason);
+        expect(gap, closeTo(_pageGap, 0.5), reason: reason);
       }
     }
   });

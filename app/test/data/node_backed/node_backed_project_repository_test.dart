@@ -94,6 +94,7 @@ void main() {
             workspaceId: workspace.id,
             name: 'project-$i',
             repositories: <Repository>[_randomRepository(random)],
+            approvalPolicy: null,
           ),
         );
       } else {
@@ -134,6 +135,7 @@ void main() {
         workspaceId: workspaceId,
         name: name,
         repositories: const <Repository>[],
+        approvalPolicy: null,
       );
       if (!isValid) {
         await expectLater(
@@ -166,6 +168,7 @@ void main() {
         workspaceId: workspaceId,
         name: 'site',
         repositories: const <Repository>[],
+        approvalPolicy: null,
       ),
     );
 
@@ -215,6 +218,7 @@ void main() {
         workspaceId: workspaceId,
         name: 'site',
         repositories: const <Repository>[],
+        approvalPolicy: null,
       ),
     );
 

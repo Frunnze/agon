@@ -16,7 +16,8 @@ use orchestration_api::routes::{
     SERVER_GROUP, SERVER_GROUP_MEMBER, SERVER_GROUP_MEMBERS,
     SERVER_GROUP_REPLICA, SKILL, SKILL_IMPROVEMENTS, SKILL_UNDO, SKILLS, TASK,
     TASK_RUNS, TASKS, WORKFLOW, WORKFLOW_DISCARD, WORKFLOW_SIGNATURE,
-    WORKFLOWS, WORKSPACE, WORKSPACE_DEVICE, WORKSPACE_DEVICES, WORKSPACES,
+    WORKFLOWS, WORKSPACE, WORKSPACE_APPROVAL_POLICY, WORKSPACE_DEVICE,
+    WORKSPACE_DEVICES, WORKSPACE_PROTECTED_FILES, WORKSPACES,
 };
 
 use crate::backup_guard::refuse_on_backup;
@@ -27,8 +28,8 @@ use crate::{
     pairing_exchange, pairing_joins, pairing_sessions, peer_addresses,
     person_steps, project_deletion, projects, rules, run_events, runners,
     runs, server_group_routes, skill_deletion, skill_improvements, skills,
-    task_deletion, tasks, workflow_deletion, workflows, workspace_deletion,
-    workspaces,
+    task_deletion, tasks, workflow_deletion, workflows, workspace_approvals,
+    workspace_deletion, workspace_protected_files, workspaces,
 };
 
 pub fn build_router(server: SharedServer) -> Router {
@@ -96,8 +97,16 @@ fn account_routes() -> Router<SharedServer> {
         .route(WORKSPACE, delete(workspace_deletion::delete_workspace))
         .route(WORKSPACE_DEVICES, post(workspaces::add_workspace_device))
         .route(
+            WORKSPACE_APPROVAL_POLICY,
+            put(workspace_approvals::change_workspace_approval_policy),
+        )
+        .route(
             WORKSPACE_DEVICE,
             delete(workspaces::remove_workspace_device),
+        )
+        .route(
+            WORKSPACE_PROTECTED_FILES,
+            put(workspace_protected_files::set_protected_files),
         )
         .route(AUDIT, get(audit_log::show_audit_log))
         .route(EVENTS, get(events::poll_events))

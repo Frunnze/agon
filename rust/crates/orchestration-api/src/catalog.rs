@@ -1,6 +1,8 @@
 use chrono::{DateTime, Utc};
+use orchestration_core::approval::ApprovalPolicy;
 use orchestration_core::identifiers::{DeviceId, RunId, WorkspaceId};
 use orchestration_core::library::{Rule, Skill};
+use orchestration_core::protected_files::ProtectedFiles;
 use orchestration_core::workflow::{Workflow, WorkflowSignature};
 use orchestration_core::workspace::{Project, Repository};
 use serde::{Deserialize, Serialize};
@@ -12,10 +14,20 @@ pub struct CreateWorkspaceRequest {
     pub sealed_workspace_key: Vec<u8>,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ChangeWorkspaceApprovalPolicyRequest {
+    pub approval_policy: ApprovalPolicy,
+}
+
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct AddWorkspaceDeviceRequest {
     pub device_id: DeviceId,
     pub sealed_workspace_key: Vec<u8>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SetProtectedFilesRequest {
+    pub protected_files: ProtectedFiles,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]

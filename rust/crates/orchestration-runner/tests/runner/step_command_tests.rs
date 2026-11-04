@@ -3,6 +3,7 @@ use std::path::PathBuf;
 
 use orchestration_core::approval::ApprovalPolicy;
 use orchestration_core::device::SandboxKind;
+use orchestration_core::protected_files::ProtectedFiles;
 use orchestration_core::workflow::AgentKind;
 use orchestration_hub::agent_command::AgentCommandError;
 use orchestration_hub::claude_control::write_user_message;
@@ -41,6 +42,13 @@ fn task_mounts() -> WorkspaceMounts {
     WorkspaceMounts {
         task_folder: PathBuf::from(TASK_FOLDER),
         git_directories: Vec::new(),
+        placeholder_mounts: Vec::new(),
+    }
+}
+
+fn no_protected_files() -> ProtectedFiles {
+    ProtectedFiles {
+        patterns: Vec::new(),
     }
 }
 
@@ -96,6 +104,7 @@ proptest! {
             &task_mounts(),
             AgentKind::ClaudeCode,
             ApprovalPolicy::NeverAsk,
+            &no_protected_files(),
             &chat_text,
             Some(&session),
         ).map_err(to_case_error)?;
@@ -128,6 +137,7 @@ proptest! {
             &task_mounts(),
             AgentKind::ClaudeCode,
             ApprovalPolicy::NeverAsk,
+            &no_protected_files(),
             &chat_text,
             Some(&session),
         );
@@ -158,6 +168,7 @@ fn build_claude_step(
         &task_mounts(),
         AgentKind::ClaudeCode,
         approval_policy,
+        &no_protected_files(),
         prompt,
         None,
     )
@@ -231,11 +242,27 @@ proptest! {
         let silent = ApprovalPolicy::NeverAsk;
 
         let when_asking =
-            build_step_command(&sandbox, &mounts, agent, asking, &prompt, None)
-                .map_err(to_case_error)?;
+            build_step_command(
+                &sandbox,
+                &mounts,
+                agent,
+                asking,
+                &no_protected_files(),
+                &prompt,
+                None,
+            )
+            .map_err(to_case_error)?;
         let when_silent =
-            build_step_command(&sandbox, &mounts, agent, silent, &prompt, None)
-                .map_err(to_case_error)?;
+            build_step_command(
+                &sandbox,
+                &mounts,
+                agent,
+                silent,
+                &no_protected_files(),
+                &prompt,
+                None,
+            )
+            .map_err(to_case_error)?;
 
         let command = prompt_argument_command(when_asking.clone())?;
         let last_argument = command.arguments.last().cloned();

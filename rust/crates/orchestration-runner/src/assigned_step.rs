@@ -29,11 +29,11 @@ pub(crate) async fn run_assigned_step<S: RunnerServer, P: BranchPusher>(
         prompt_for_step(step, assignment, &repository_folders, &skills);
     let opening = choose_step_opening(assignment, prompt);
     let answered_messages = count_answered_messages(assignment);
-    let progress =
+    let ending =
         execute_step(context, step, &skills, &opening, answered_messages)
             .await;
 
-    match progress.ending {
+    match ending {
         AgentEnding::Succeeded(_) => RunOutcome::Finished,
         AgentEnding::Failed(reason) => {
             let server = context.server.as_ref();

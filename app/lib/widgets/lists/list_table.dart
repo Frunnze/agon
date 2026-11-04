@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:agent_orchestration/theme/app_colors.dart';
 import 'package:agent_orchestration/theme/app_spacing.dart';
 import 'package:agent_orchestration/theme/app_typography.dart';
+import 'package:agent_orchestration/theme/layout_density.dart';
 import 'package:agent_orchestration/widgets/lists/list_column.dart';
 import 'package:agent_orchestration/widgets/lists/list_row_data.dart';
 import 'package:agent_orchestration/widgets/lists/word_safe_box.dart';
@@ -13,9 +14,19 @@ const double _columnGap = AppSpacing.space4;
 const EdgeInsets _headingPadding = EdgeInsets.symmetric(
   vertical: AppSpacing.space2,
 );
-const EdgeInsets _rowPadding = EdgeInsets.symmetric(
+const EdgeInsets _denseRowPadding = EdgeInsets.symmetric(
+  vertical: AppSpacing.space2,
+);
+const EdgeInsets _touchRowPadding = EdgeInsets.symmetric(
   vertical: AppSpacing.space3,
 );
+
+EdgeInsets _rowPaddingFor(LayoutDensity layoutDensity) {
+  if (layoutDensity.isTouch) {
+    return _touchRowPadding;
+  }
+  return _denseRowPadding;
+}
 
 enum ListHeading { shown, hidden }
 
@@ -33,12 +44,14 @@ class ListTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final EdgeInsets rowPadding = _rowPaddingFor(LayoutDensity.of(context));
+
     return Table(
       columnWidths: _buildColumnWidths(),
       defaultVerticalAlignment: TableCellVerticalAlignment.intrinsicHeight,
       children: <TableRow>[
         if (heading == ListHeading.shown) _buildHeadingRow(),
-        for (final ListRowData row in rows) _buildRow(row),
+        for (final ListRowData row in rows) _buildRow(row, rowPadding),
       ],
     );
   }
@@ -78,7 +91,7 @@ class ListTable extends StatelessWidget {
     );
   }
 
-  TableRow _buildRow(ListRowData row) {
+  TableRow _buildRow(ListRowData row, EdgeInsets rowPadding) {
     final List<Widget> cells = <Widget>[
       row.main,
       for (final Widget meta in row.meta)
@@ -96,7 +109,7 @@ class ListTable extends StatelessWidget {
           child: Align(
             alignment: columns[index].cellAlignment,
             child: Padding(
-              padding: _rowPadding,
+              padding: rowPadding,
               child: WordSafeBox(child: cells[index]),
             ),
           ),

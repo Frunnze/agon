@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:agent_orchestration/theme/app_spacing.dart';
+import 'package:agent_orchestration/theme/layout_density.dart';
 import 'package:agent_orchestration/theme/layout_size.dart';
 import 'package:agent_orchestration/widgets/lists/list_column.dart';
 import 'package:agent_orchestration/widgets/lists/list_row_data.dart';
@@ -16,6 +17,8 @@ import '../support/widget_harness.dart';
 const double _rowStartInset = AppBorders.selected + AppSpacing.space3;
 const double _rowEndInset = AppSpacing.space3;
 const double _columnGap = AppSpacing.space4;
+const double _denseRowPadding = 8;
+const double _touchRowPadding = 12;
 const double _endWidgetWidth = 40;
 const double _tallEndHeight = 40;
 const Key _endKey = ValueKey<String>('row end');
@@ -152,6 +155,42 @@ void main() {
       final String reason = 'width $width';
       expect(title.center.dy, closeTo(end.center.dy, 0.5), reason: reason);
       expect(meta.center.dy, closeTo(end.center.dy, 0.5), reason: reason);
+    }
+  });
+
+  testWidgets('test_list_table_property_rows_pad_8_dense_12_touch', (
+    WidgetTester tester,
+  ) async {
+    final Random random = seededRandom(7903);
+
+    for (int i = 0; i < widgetPropertyIterations; i += 1) {
+      final TargetPlatform platform = pickOne(random, TargetPlatform.values);
+      final double width = randomWidth(
+        random,
+        least: LayoutSize.mediumMinimumWidth,
+        most: widestWidth,
+      );
+      await pumpScrollableOnPlatform(
+        tester,
+        width: width,
+        platform: platform,
+        child: ResponsiveList.plain(
+          rows: const <ListRowData>[
+            ListRowData(
+              main: SizedBox(height: _tallEndHeight),
+              end: SizedBox(key: _endKey, height: _tallEndHeight),
+            ),
+          ],
+        ),
+      );
+
+      final bool isTouch = LayoutDensity.forPlatform(platform).isTouch;
+      final double rowPadding = isTouch ? _touchRowPadding : _denseRowPadding;
+      final Rect list = tester.getRect(find.byType(ResponsiveList));
+      final Rect end = tester.getRect(find.byKey(_endKey));
+      final String reason = '$platform at width $width';
+      expect(end.top - list.top, rowPadding, reason: reason);
+      expect(list.bottom - end.bottom, rowPadding, reason: reason);
     }
   });
 }

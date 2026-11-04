@@ -47,6 +47,7 @@ Project _folderProject({required DeviceId deviceId, required String name}) {
         agentAccess: AgentAccess.pushAfterApproval,
       ),
     ],
+    approvalPolicy: null,
   );
 }
 

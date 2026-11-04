@@ -43,7 +43,7 @@ WorkflowAgent mapWorkflowAgentFromNode(node.WorkflowAgent agent) {
     runsOn: mapRunnerTargetFromNode(agent.runsOn),
     skills: agent.skills,
     usesAutomaticSkills: agent.usesAutomaticSkills,
-    approvalPolicy: mapApprovalPolicyFromNode(agent.approvalPolicy),
+    approvalPolicy: mapOptionalApprovalPolicyFromNode(agent.approvalPolicy),
     position: mapCanvasPositionFromNode(agent.position),
   );
 }
@@ -60,7 +60,7 @@ node.WorkflowAgent mapWorkflowAgentToNode(WorkflowAgent agent) {
     runsOn: mapRunnerTargetToNode(agent.runsOn),
     skills: agent.skills,
     usesAutomaticSkills: agent.usesAutomaticSkills,
-    approvalPolicy: mapApprovalPolicyToNode(agent.approvalPolicy),
+    approvalPolicy: mapOptionalApprovalPolicyToNode(agent.approvalPolicy),
     position: mapCanvasPositionToNode(agent.position),
   );
 }

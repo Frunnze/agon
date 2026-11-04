@@ -7,9 +7,10 @@ use orchestration_core::workflow::AgentKind;
 use orchestration_runner::agents_file::AGENTS_FILE_NAME;
 use orchestration_runner::git_command::GitError;
 use orchestration_runner::uncommitted_changes::{
-    COMMITTER_EMAIL, COMMITTER_NAME, commit_uncommitted_changes,
-    compose_change_commit_subject,
+    COMMITTER_EMAIL, COMMITTER_NAME, combine_change_commit_subjects,
+    commit_uncommitted_changes, compose_change_commit_subject,
 };
+use proptest::collection::vec;
 use proptest::prelude::*;
 use tokio::runtime::Runtime;
 
@@ -24,6 +25,7 @@ use crate::leftover_changes::{
 use crate::support::{TestResult, to_case_error};
 
 const SUBJECT: &str = "build: changes from Codex";
+const STEP_SUBJECT_SEPARATOR: &str = "; ";
 const IDENTITY_FORMAT: &str = "--format=%an|%ae|%cn|%ce";
 
 fn commit_with_runtime(
@@ -71,6 +73,24 @@ proptest! {
         let agent_ending = format!(" {}", describe_agent_kind(agent));
         prop_assert!(subject.starts_with(&step_prefix));
         prop_assert!(subject.ends_with(&agent_ending));
+        prop_assert!(!subject.contains('\n'));
+    }
+
+    #[test]
+    fn test_combine_change_commit_subjects_property_names_every_step_in_order(
+        step_names in vec("[a-z0-9-]{1,20}", 1..5),
+        agent in any_agent_kind(),
+    ) {
+        let mut step_subjects = Vec::new();
+        for step_name in &step_names {
+            step_subjects.push(compose_change_commit_subject(step_name, agent));
+        }
+
+        let subject = combine_change_commit_subjects(&step_subjects);
+
+        let named_subjects: Vec<&str> =
+            subject.split(STEP_SUBJECT_SEPARATOR).collect();
+        prop_assert_eq!(named_subjects, step_subjects);
         prop_assert!(!subject.contains('\n'));
     }
 

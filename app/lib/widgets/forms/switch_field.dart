@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:agent_orchestration/theme/app_colors.dart';
 import 'package:agent_orchestration/theme/app_spacing.dart';
 import 'package:agent_orchestration/theme/app_typography.dart';
+import 'package:agent_orchestration/theme/layout_density.dart';
 
 const double _trackWidth = AppSpacing.space6 + AppSpacing.space3;
 const double _trackHeight = AppSpacing.space5;
@@ -79,6 +80,9 @@ class _SwitchTapArea extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final LayoutDensity layoutDensity = LayoutDensity.of(context);
+    final double controlHeight = AppSizes.controlHeightFor(layoutDensity);
+
     final ValueChanged<bool>? reportChange = onChanged;
     final VoidCallback? toggle = reportChange == null
         ? null
@@ -95,7 +99,7 @@ class _SwitchTapArea extends StatelessWidget {
         onTap: toggle,
         hoverColor: AppColors.transparent,
         child: ConstrainedBox(
-          constraints: const BoxConstraints(minHeight: AppSizes.controlHeight),
+          constraints: BoxConstraints(minHeight: controlHeight),
           child: Opacity(
             opacity: toggle == null ? _disabledOpacity : _enabledOpacity,
             child: Align(widthFactor: 1, child: child),

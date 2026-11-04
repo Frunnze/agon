@@ -5,11 +5,13 @@ import 'package:agent_orchestration/shell/app_navigation.dart';
 import 'package:agent_orchestration/shell/app_route.dart';
 import 'package:agent_orchestration/shell/rising_page.dart';
 import 'package:agent_orchestration/shell/route_screens.dart';
+import 'package:agent_orchestration/windows/run_window_opener.dart';
 
 List<Page<Object?>> buildRoutePages({
   required List<AppRoute> routes,
   required AppDependencies dependencies,
   required AppNavigation navigation,
+  required RunWindowOpener? runWindowOpener,
 }) {
   final List<Page<Object?>> pages = <Page<Object?>>[];
 
@@ -22,6 +24,7 @@ List<Page<Object?>> buildRoutePages({
           route: route,
           dependencies: dependencies,
           navigation: navigation,
+          runWindowOpener: runWindowOpener,
         ),
       ),
     );

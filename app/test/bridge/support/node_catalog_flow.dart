@@ -70,6 +70,7 @@ Future<Project> _expectProjectListed(
           agentAccess: AgentAccess.readOnly,
         ),
       ],
+      approvalPolicy: null,
     ),
   );
   final List<ProjectView> projects = await channel.execute(

@@ -11,10 +11,12 @@ import 'package:agent_orchestration/theme/app_colors.dart';
 import 'package:agent_orchestration/theme/app_spacing.dart';
 import 'package:agent_orchestration/theme/app_typography.dart';
 import 'package:agent_orchestration/widgets/app_button.dart';
+import 'package:agent_orchestration/widgets/forms/message_field.dart';
 import 'package:agent_orchestration/widgets/gaps.dart';
 
 const String whatCameInLabel = 'What came in';
 const String writtenAnswerHint = 'Or write an answer';
+const String writtenAnswerLabel = 'Your answer';
 const String sendAnswerLabel = 'Send';
 const String emptyAnswerProblem = 'Write an answer first';
 const int _resultMaximumLines = 8;
@@ -142,20 +144,26 @@ class _PersonStepCardState extends State<PersonStepCard> {
   }
 
   Widget _buildWrittenAnswer() {
+    final VoidCallback? sendWrittenAnswer = _isSending
+        ? null
+        : _sendWrittenAnswer;
+
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
       children: <Widget>[
         Expanded(
-          child: TextField(
+          child: MessageField(
             controller: _answerController,
-            onSubmitted: (String _) => _sendWrittenAnswer(),
-            decoration: const InputDecoration(hintText: writtenAnswerHint),
+            hintText: writtenAnswerHint,
+            fieldLabel: writtenAnswerLabel,
+            onSend: sendWrittenAnswer,
           ),
         ),
         const SizedBox(width: AppSpacing.space2),
         AppButton.primary(
           label: sendAnswerLabel,
           icon: AppIconKind.send,
-          onPressed: _isSending ? null : _sendWrittenAnswer,
+          onPressed: sendWrittenAnswer,
         ),
       ],
     );

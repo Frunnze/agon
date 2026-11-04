@@ -38,6 +38,7 @@ fn sample_draft(
                 default_branch: "main".to_owned(),
             }],
             agent_access: AgentAccess::ReadOnly,
+            approval_policy: None,
         }),
         DraftKind::Skill => {
             ItemDraft::Skill(valid_skill_draft(context, "notes", words))

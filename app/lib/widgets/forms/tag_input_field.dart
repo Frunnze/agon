@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:agent_orchestration/theme/app_colors.dart';
 import 'package:agent_orchestration/theme/app_spacing.dart';
 import 'package:agent_orchestration/theme/app_typography.dart';
+import 'package:agent_orchestration/theme/layout_density.dart';
 import 'package:agent_orchestration/widgets/forms/removable_tag.dart';
 import 'package:agent_orchestration/widgets/forms/tag_suggestions.dart';
 
@@ -40,11 +41,14 @@ class _TagInputFieldState extends State<TagInputField> {
 
   @override
   Widget build(BuildContext context) {
+    final LayoutDensity layoutDensity = LayoutDensity.of(context);
+    final double controlHeight = AppSizes.controlHeightFor(layoutDensity);
+
     return Focus(
       onFocusChange: _handleFocusChange,
       skipTraversal: true,
       child: Container(
-        constraints: const BoxConstraints(minHeight: AppSizes.controlHeight),
+        constraints: BoxConstraints(minHeight: controlHeight),
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.space2,
           vertical: AppSpacing.space1,

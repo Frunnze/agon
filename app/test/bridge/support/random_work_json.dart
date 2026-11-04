@@ -25,7 +25,7 @@ Map<String, Object?> randomWorkflowAgentJson(Random random) {
     'runs_on': randomRunnerTargetJson(random),
     'skills': randomUuidTexts(random),
     'uses_automatic_skills': random.nextBool(),
-    'approval_policy': pickOne(random, nodeApprovalPolicies),
+    'approval_policy': randomOptionalApprovalPolicyJson(random),
     'position': randomCanvasPositionJson(random),
   };
 }
@@ -137,7 +137,7 @@ Map<String, Object?> randomTaskJson(Random random) {
     'agent_place': pickOne(random, nodeAgentPlaces),
     'skills': randomUuidTexts(random),
     'uses_automatic_skills': random.nextBool(),
-    'approval_policy': pickOne(random, nodeApprovalPolicies),
+    'approval_policy': randomOptionalApprovalPolicyJson(random),
     'schedule': randomOptional(random, randomScheduleJson),
     'status': pickOne(random, nodeTaskStatuses),
     'created_at': randomMomentText(random),

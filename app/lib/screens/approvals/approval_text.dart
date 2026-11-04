@@ -59,13 +59,6 @@ String describeSkillChangeRequest({required String? runLabel}) {
   return '$askingAgent wants to change these instructions.';
 }
 
-String describeToolUse(String tool) {
-  if (tool == _commandToolName) {
-    return 'Run a command';
-  }
-  return 'Use $tool';
-}
-
 String describeToolUseRequest({
   required String? runLabel,
   required String tool,
@@ -77,33 +70,23 @@ String describeToolUseRequest({
   return '$askingAgent wants to use $tool.';
 }
 
-List<TextSegment> describeApprovalTitleSegments(
-  ApprovalAction action,
-  List<Workflow> workflows,
-) {
-  if (action is RunCommandAction) {
-    return <TextSegment>[
-      TextSegment('${describeToolUse(action.tool)}: '),
-      TextSegment.monospace(action.command),
-    ];
-  }
-  return <TextSegment>[TextSegment(describeApprovalTitle(action, workflows))];
+String describePushTitle(PushCommitsAction action) {
+  final String commitCount = _describeCommitCount(action.commits.length);
+  return 'Push $commitCount to ${action.branch}';
 }
 
 String describeApprovalTitle(ApprovalAction action, List<Workflow> workflows) {
   switch (action) {
-    case PushCommitsAction(:final List<String> commits):
-      final String commitCount = _describeCommitCount(commits.length);
-      final String path = describeRepositoryPath(action.repository);
-      return 'Push $commitCount to $path';
+    case PushCommitsAction():
+      return describePushTitle(action);
     case DeployAction(:final String target):
       return 'Deploy to $target';
     case DeleteBranchOrFilesAction(:final String what):
       return 'Delete $what in ${describeRepositoryPath(action.repository)}';
     case SignWorkflowAction(:final WorkflowId workflowId):
       return 'Sign workflow ${_findWorkflowName(workflowId, workflows)}';
-    case RunCommandAction(:final String tool, :final String command):
-      return '${describeToolUse(tool)}: $command';
+    case RunCommandAction(:final String summary):
+      return summary;
     case ImproveSkillAction(:final SkillChangePreview? preview):
       if (preview == null) {
         return 'Improve a deleted skill';
@@ -123,12 +106,13 @@ List<TextSegment> describeApprovalContext({
   }
 
   switch (action) {
-    case PushCommitsAction(:final String branch):
-      parts.add('branch $branch');
+    case PushCommitsAction(:final String repository):
+      parts.add(describeRepositoryPath(repository));
     case DeployAction():
     case DeleteBranchOrFilesAction():
-    case RunCommandAction():
       break;
+    case RunCommandAction(:final String command):
+      return _describeCommandContext(parts, command);
     case ImproveSkillAction(:final String summary):
       parts.add(summary);
     case SignWorkflowAction():
@@ -139,6 +123,15 @@ List<TextSegment> describeApprovalContext({
   }
 
   return <TextSegment>[TextSegment(parts.join(_contextSeparator))];
+}
+
+List<TextSegment> _describeCommandContext(List<String> parts, String command) {
+  final List<TextSegment> segments = <TextSegment>[];
+  for (final String part in parts) {
+    segments.add(TextSegment('$part$_contextSeparator'));
+  }
+  segments.add(TextSegment.monospace(command));
+  return segments;
 }
 
 String describeWaitingApprovals(int count) {

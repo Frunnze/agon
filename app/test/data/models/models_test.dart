@@ -222,6 +222,7 @@ void main() {
         workspaceId: const WorkspaceId('workspace'),
         name: randomWordPhrase(random),
         repositories: const <Repository>[],
+        approvalPolicy: randomInheritableApprovalPolicy(random),
       );
       final Repository repository = Repository(
         address: 'github.com/acme/${random.nextInt(99)}',
@@ -234,6 +235,7 @@ void main() {
 
       expect(changed.repositories.single.address, repository.address);
       expect(changed.name, project.name);
+      expect(changed.approvalPolicy, project.approvalPolicy);
     }
   });
 

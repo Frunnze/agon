@@ -12,15 +12,55 @@ for argument in "$@"; do
   previous="$argument"
   prompt="$argument"
 done
-if [ -n "$reads_input" ]; then
-  IFS= read -r prompt_line
-  prompt=$(printf '%s' "$prompt_line" | perl -MJSON::PP -e '
+read_user_line() {
+  IFS= read -r user_line
+  printf '%s' "$user_line" | perl -MJSON::PP -e '
     binmode STDOUT, ":utf8";
     print decode_json(<STDIN>)->{message}{content};
-  '; printf x)
+  '
+  printf x
+}
+
+name_prompt() {
+  printf '%s\n' "$1" | head -n 1 | tr -cd 'a-z0-9-'
+}
+
+say_session() {
+  printf '{"type":"system","subtype":"init","session_id":"session-%s"}\n' \
+    "$name"
+}
+
+say() {
+  printf '{"type":"assistant","message":{"content":[%s]}}\n' \
+    "{\"type\":\"text\",\"text\":\"$1\"}"
+}
+
+take_interrupt() {
+  interrupt=$(perl -e '
+    $SIG{ALRM} = sub { exit };
+    alarm 10;
+    print scalar(<STDIN>) // "";
+  ')
+  if [ -z "$interrupt" ]; then
+    return
+  fi
+  request_id=$(printf '%s' "$interrupt" \
+    | perl -MJSON::PP -e 'print decode_json(<STDIN>)->{request_id}')
+  answer="{\"subtype\":\"success\",\"request_id\":\"$request_id\"}"
+  printf '{"type":"control_response","response":%s}\n' "$answer"
+  printf '{"type":"result","subtype":"error_during_execution",'
+  printf '"is_error":true}\n'
+  prompt=$(read_user_line)
+  prompt=${prompt%x}
+  name=$(name_prompt "$prompt")
+  printf '%s same-process\n' "$name" >> "$AGENT_RECORDS/calls.txt"
+}
+
+if [ -n "$reads_input" ]; then
+  prompt=$(read_user_line)
   prompt=${prompt%x}
 fi
-name=$(printf '%s\n' "$prompt" | head -n 1 | tr -cd 'a-z0-9-')
+name=$(name_prompt "$prompt")
 printf '%s %s\n' "$name" "$session" >> "$AGENT_RECORDS/calls.txt"
 pwd -P >> "$AGENT_RECORDS/folders.txt"
 printf '%s' "$prompt" > "$AGENT_RECORDS/prompt-$name.txt"
@@ -30,6 +70,13 @@ case "$prompt" in
     for repository in */; do
       printf 'edited by %s\n' "$name" >> "$repository/README.md"
       printf 'made by %s\n' "$name" > "$repository/NOTES.md"
+    done
+    ;;
+esac
+case "$prompt" in
+  *please-write-own-file*)
+    for repository in */; do
+      printf 'first half by %s\n' "$name" > "$repository/$name.md"
     done
     ;;
 esac
@@ -47,6 +94,15 @@ case "$prompt" in
   *please-wait*)
     echo "started"
     sleep 30
+    ;;
+  *please-work*)
+    say_session
+    say "working on $name"
+    if [ -n "$reads_input" ]; then
+      take_interrupt
+    else
+      sleep 10
+    fi
     ;;
   *please-fail*)
     echo "the agent broke"
@@ -73,6 +129,35 @@ case "$prompt" in
     done
     ;;
 esac
+gathering=$(printf '%s\n' "$prompt" \
+  | sed -n 's/.*please-gather-\([0-9]*\).*/\1/p' | head -n 1)
+if [ -n "$gathering" ]; then
+  gathered="$AGENT_RECORDS/gathered.txt"
+  printf '%s\n' "$name" >> "$gathered"
+  checks=0
+  while [ "$(wc -l < "$gathered")" -lt "$gathering" ]; do
+    checks=$((checks + 1))
+    if [ "$checks" -gt 400 ]; then
+      echo "the other steps never started"
+      exit 4
+    fi
+    sleep 0.05
+  done
+fi
+case "$prompt" in
+  *please-linger*)
+    sleep 1
+    printf 'still here\n' > "lingered-$name.txt" || exit 5
+    ;;
+esac
+case "$prompt" in
+  *please-write-own-file*)
+    for repository in */; do
+      printf 'second half by %s\n' "$name" >> "$repository/$name.md" \
+        || exit 5
+    done
+    ;;
+esac
 reply="finished $name"
 improved=$(printf '%s\n' "$prompt" | sed -n 's/.*please-improve-\([a-z]*\).*/\1/p' | head -n 1)
 if [ -n "$improved" ]; then
@@ -83,8 +168,6 @@ outcome=$(printf '%s\n' "$prompt" | sed -n 's/.*please-outcome-\([a-z]*\).*/\1/p
 if [ -n "$outcome" ]; then
   reply="$reply\\nOUTCOME: $outcome"
 fi
-printf '{"type":"system","subtype":"init","session_id":"session-%s"}\n' \
-  "$name"
-printf '{"type":"assistant","message":{"content":[%s]}}\n' \
-  "{\"type\":\"text\",\"text\":\"$reply\"}"
+say_session
+say "$reply"
 printf '{"type":"result","subtype":"success","is_error":false}\n'

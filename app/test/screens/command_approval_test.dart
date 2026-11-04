@@ -7,7 +7,6 @@ import 'package:agent_orchestration/data/app_dependencies.dart';
 import 'package:agent_orchestration/data/gallery/gallery_approvals.dart';
 import 'package:agent_orchestration/data/gallery/gallery_identifiers.dart';
 import 'package:agent_orchestration/data/models/approval.dart';
-import 'package:agent_orchestration/screens/approvals/approval_text.dart';
 import 'package:agent_orchestration/shell/app_navigation.dart';
 import 'package:agent_orchestration/shell/app_route.dart';
 import 'package:agent_orchestration/shell/app_section.dart';
@@ -21,7 +20,8 @@ import '../support/random_inputs.dart';
 const ChatRoute _chatRoute = ChatRoute(GalleryRunIds.release42);
 const SectionRoute _approvalsRoute = SectionRoute(AppSection.approvals);
 const String _galleryCommand = 'xcodebuild test -scheme App';
-const String _galleryRowTitle = 'Run a command: $_galleryCommand';
+const String _galleryRowTitle = 'Run the tests';
+const String _galleryRowContext = 'release #42 · $_galleryCommand';
 const List<String> _toolNames = <String>[
   'Bash',
   'WebFetch',
@@ -78,10 +78,10 @@ void main() {
         findsOneWidget,
       );
       expect(find.text(_galleryRowTitle), findsOneWidget);
-      expect(find.text('release #42'), findsOneWidget);
+      expect(find.text(_galleryRowContext), findsOneWidget);
       expect(find.text('Sign workflow train-ranker'), findsOneWidget);
       expect(
-        _readLastSpanStyle(tester, _galleryRowTitle),
+        _readLastSpanStyle(tester, _galleryRowContext),
         AppTextStyles.monospace,
       );
     });
@@ -102,7 +102,7 @@ void main() {
 
     expect(navigation.currentRoute, isA<ChatRoute>());
     for (final String text in <String>[
-      'Run a command?',
+      'Run the tests?',
       'The agent in release #42 wants to run a command.',
       'Asked by',
       'Agent on mac-studio, just now',
@@ -122,6 +122,7 @@ void main() {
     for (int i = 0; i < widgetPropertyIterations; i += 1) {
       final RunCommandAction action = RunCommandAction(
         tool: pickOne(random, _toolNames),
+        summary: 'Fetch ${randomWordPhrase(random)}',
         command: 'https://example.com/${randomWordPhrase(random)}',
       );
       final ApprovalDecision decision = pickOne(
@@ -140,7 +141,7 @@ void main() {
       );
       await pumpFrames(tester);
 
-      expect(find.text('${describeToolUse(action.tool)}?'), findsOneWidget);
+      expect(find.text('${action.summary}?'), findsOneWidget);
       expect(find.text(action.command), findsOneWidget);
       await tester.tap(find.text(_decisionButtons[decision]!));
       await pumpFrames(tester);

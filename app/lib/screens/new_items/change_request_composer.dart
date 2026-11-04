@@ -4,11 +4,8 @@ import 'package:agent_orchestration/icons/app_icon_kind.dart';
 import 'package:agent_orchestration/screens/new_items/new_item_texts.dart';
 import 'package:agent_orchestration/theme/app_colors.dart';
 import 'package:agent_orchestration/theme/app_spacing.dart';
-import 'package:agent_orchestration/theme/field_padding.dart';
 import 'package:agent_orchestration/widgets/app_button.dart';
-
-const int _noteMinimumLines = 1;
-const int _noteMaximumLines = 6;
+import 'package:agent_orchestration/widgets/forms/message_field.dart';
 
 class ChangeRequestComposer extends StatefulWidget {
   const ChangeRequestComposer({
@@ -44,28 +41,18 @@ class _ChangeRequestComposerState extends State<ChangeRequestComposer> {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: <Widget>[
           Expanded(
-            child: TextField(
+            child: MessageField(
               controller: _noteController,
-              minLines: _noteMinimumLines,
-              maxLines: _noteMaximumLines,
-              decoration: InputDecoration(
-                constraints: const BoxConstraints(
-                  minHeight: AppSizes.controlHeight,
-                ),
-                contentPadding: multiLineFieldPadding,
-                hintText: widget.example,
-                semanticCounterText: changeFieldLabel,
-              ),
+              hintText: widget.example,
+              fieldLabel: changeFieldLabel,
+              onSend: _send,
             ),
           ),
           const SizedBox(width: AppSpacing.space2),
-          SizedBox(
-            height: AppSizes.controlHeight,
-            child: AppButton.secondary(
-              label: sendChangeLabel,
-              icon: AppIconKind.send,
-              onPressed: _send,
-            ),
+          AppButton.secondary(
+            label: sendChangeLabel,
+            icon: AppIconKind.send,
+            onPressed: _send,
           ),
         ],
       ),

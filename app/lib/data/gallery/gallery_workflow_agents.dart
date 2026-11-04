@@ -1,5 +1,4 @@
 import 'package:agent_orchestration/data/gallery/gallery_identifiers.dart';
-import 'package:agent_orchestration/data/models/approval.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/runner.dart';
 import 'package:agent_orchestration/data/models/workflow.dart';
@@ -27,7 +26,7 @@ WorkflowAgent buildGalleryAgent({
     runsOn: runsOn,
     skills: skills,
     usesAutomaticSkills: true,
-    approvalPolicy: ApprovalPolicy.askBeforeRiskyActions,
+    approvalPolicy: null,
     position: position,
   );
 }

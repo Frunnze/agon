@@ -12,12 +12,8 @@ import 'package:agent_orchestration/screens/new_items/library_draft_reviews.dart
 import 'package:agent_orchestration/shell/app_navigation.dart';
 import 'package:agent_orchestration/shell/app_route.dart';
 import 'package:agent_orchestration/shell/app_section.dart';
-import 'package:agent_orchestration/widgets/fact_list.dart';
-import 'package:agent_orchestration/widgets/mixed_text.dart';
 
 import '../../support/random_inputs.dart';
-
-const String _improvementTerm = 'Agents may improve it';
 
 SkillDraftReview _buildReview(AppDependencies dependencies) {
   return SkillDraftReview(
@@ -43,39 +39,7 @@ DraftedSkill _draftSkill(String name, SkillImprovement improvement) {
   );
 }
 
-String _readFactText(List<Fact> facts, String term) {
-  final Fact fact = facts.firstWhere((Fact fact) => fact.term == term);
-  return <String>[
-    for (final TextSegment segment in fact.description) segment.text,
-  ].join();
-}
-
 void main() {
-  test('test_describe_facts_property_shows_the_drafted_improvement', () {
-    final Random random = seededRandom(9761);
-    final SkillDraftReview review = _buildReview(buildGalleryDependencies());
-
-    for (int i = 0; i < propertyIterations; i += 1) {
-      final SkillImprovement improvement = pickOne(
-        random,
-        SkillImprovement.values,
-      );
-
-      final List<Fact> facts = review.describeFacts(
-        _draftSkill('release-notes', improvement),
-      );
-
-      final List<String> terms = <String>[
-        for (final Fact fact in facts) fact.term,
-      ];
-      expect(
-        terms.indexOf(_improvementTerm),
-        terms.indexOf('When agents use it') + 1,
-      );
-      expect(_readFactText(facts, _improvementTerm), improvement.label);
-    }
-  });
-
   test('test_approve_property_creates_the_skill_with_improvement', () async {
     final Random random = seededRandom(9762);
 

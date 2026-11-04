@@ -1,6 +1,3 @@
-import 'dart:math';
-import 'dart:ui';
-
 import 'package:flutter/gestures.dart';
 import 'package:flutter/widgets.dart';
 
@@ -8,9 +5,6 @@ import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/workflow.dart';
 import 'package:agent_orchestration/presentation/device_names.dart';
 import 'package:agent_orchestration/screens/workflow_builder.dart';
-import 'package:agent_orchestration/theme/app_spacing.dart';
-
-const double _surfaceSidePadding = AppSpacing.space5;
 
 typedef AgentMoved = void Function(
   WorkflowAgentId agentId,
@@ -67,14 +61,14 @@ class EditableWorkflowDiagram extends StatefulWidget {
 }
 
 class _EditableWorkflowDiagramState extends State<EditableWorkflowDiagram> {
-  final ScrollController _horizontalController = ScrollController();
-  final ScrollController _verticalController = ScrollController();
+  final ValueNotifier<CanvasView> _view = ValueNotifier<CanvasView>(
+    startingCanvasView,
+  );
   _CanvasDrag? _drag;
 
   @override
   void dispose() {
-    _horizontalController.dispose();
-    _verticalController.dispose();
+    _view.dispose();
     super.dispose();
   }
 
@@ -118,60 +112,29 @@ class _EditableWorkflowDiagramState extends State<EditableWorkflowDiagram> {
       drawnLoop: findDrawnLoop(widget.selection),
     );
 
-    return LayoutBuilder(
-      builder: (BuildContext _, BoxConstraints limits) =>
-          _buildScrollingCanvas(
-            context: context,
-            agents: agents,
-            nodes: nodes,
-            edges: edges,
-            viewport: Size(
-              limits.maxWidth - _surfaceSidePadding * 2,
-              limits.maxHeight - _surfaceSidePadding * 2,
-            ),
-          ),
-    );
-  }
+    final List<CanvasPosition> positions = <CanvasPosition>[
+      for (final DiagramNode node in nodes) node.position,
+    ];
 
-  Widget _buildScrollingCanvas({
-    required BuildContext context,
-    required List<WorkflowAgent> agents,
-    required List<DiagramNode> nodes,
-    required List<DiagramEdge> edges,
-    required Size viewport,
-  }) {
-    final Size surface = measureDrawingSurface(
-      positions: <CanvasPosition>[
-        for (final DiagramNode node in nodes) node.position,
-      ],
-      viewport: viewport,
-    );
-
-    return ScrollConfiguration(
-      behavior: ScrollConfiguration.of(context)
-          .copyWith(dragDevices: const <PointerDeviceKind>{}),
-      child: CanvasScrollArea(
-        horizontalController: _horizontalController,
-        verticalController: _verticalController,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: _surfaceSidePadding),
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            dragStartBehavior: DragStartBehavior.down,
-            onTapUp: (TapUpDetails details) =>
-                _selectAt(agents, edges, details.localPosition),
-            onPanStart: (DragStartDetails details) =>
-                _startDrag(agents, details.localPosition),
-            onPanUpdate: _continueDrag,
-            onPanEnd: (DragEndDetails _) => _finishDrag(agents),
-            onPanCancel: () => setState(() => _drag = null),
-            child: WorkflowDiagram(
-              size: surface,
-              nodes: nodes,
-              edges: edges,
-              drawnEdge: _buildDrawnEdge(agents),
-            ),
-          ),
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      dragStartBehavior: DragStartBehavior.down,
+      supportedDevices: canvasDragDevices,
+      onTapUp: (TapUpDetails details) =>
+          _selectAt(agents, edges, details.localPosition),
+      onPanStart: (DragStartDetails details) =>
+          _startDrag(agents, details.localPosition),
+      onPanUpdate: _continueDrag,
+      onPanEnd: (DragEndDetails _) => _finishDrag(agents),
+      onPanCancel: () => setState(() => _drag = null),
+      child: ZoomableCanvas(
+        view: _view,
+        nodePositions: positions,
+        child: WorkflowDiagram(
+          size: measureCanvas(positions),
+          nodes: nodes,
+          edges: edges,
+          drawnEdge: _buildDrawnEdge(agents),
         ),
       ),
     );
@@ -193,9 +156,10 @@ class _EditableWorkflowDiagramState extends State<EditableWorkflowDiagram> {
   void _selectAt(
     List<WorkflowAgent> agents,
     List<DiagramEdge> edges,
-    Offset point,
+    Offset viewportPoint,
   ) {
-    final CanvasHit? hit = findCanvasHit(agents, point);
+    final Offset canvasPoint = _view.value.findCanvasPoint(viewportPoint);
+    final CanvasHit? hit = findCanvasHit(agents, canvasPoint);
     if (hit != null) {
       widget.onAgentSelected(hit.agentId);
       return;
@@ -205,7 +169,7 @@ class _EditableWorkflowDiagramState extends State<EditableWorkflowDiagram> {
       for (final DiagramEdge edge in edges)
         if (widget.workflow.connections.contains(edge.connection)) edge,
     ];
-    final DiagramEdge? edgeHit = findEdgeHit(savedEdges, point);
+    final DiagramEdge? edgeHit = findEdgeHit(savedEdges, canvasPoint);
     if (edgeHit == null) {
       widget.onSelectionCleared();
     } else {
@@ -213,13 +177,14 @@ class _EditableWorkflowDiagramState extends State<EditableWorkflowDiagram> {
     }
   }
 
-  void _startDrag(List<WorkflowAgent> agents, Offset point) {
-    final CanvasHit? hit = findCanvasHit(agents, point);
+  void _startDrag(List<WorkflowAgent> agents, Offset viewportPoint) {
+    final Offset canvasPoint = _view.value.findCanvasPoint(viewportPoint);
+    final CanvasHit? hit = findCanvasHit(agents, canvasPoint);
 
     setState(() {
       switch (hit) {
         case PortHit():
-          _drag = _ConnectionDrawing(start: hit, pointer: point);
+          _drag = _ConnectionDrawing(start: hit, pointer: canvasPoint);
         case NodeHit():
           _drag = _NodeMove(
             agentId: hit.agentId,
@@ -233,41 +198,29 @@ class _EditableWorkflowDiagramState extends State<EditableWorkflowDiagram> {
 
   void _continueDrag(DragUpdateDetails details) {
     final _CanvasDrag? drag = _drag;
+    final CanvasView view = _view.value;
 
     switch (drag) {
       case _NodeMove():
+        final Offset canvasDelta = details.delta / view.scale;
         setState(() {
           _drag = _NodeMove(
             agentId: drag.agentId,
-            position: moveCanvasPosition(drag.position, details.delta),
+            position: moveCanvasPosition(drag.position, canvasDelta),
           );
         });
       case _ConnectionDrawing():
         setState(() {
           _drag = _ConnectionDrawing(
             start: drag.start,
-            pointer: details.localPosition,
+            pointer: view.findCanvasPoint(details.localPosition),
           );
         });
       case _CanvasPan():
-        _scrollBy(_horizontalController, details.delta.dx);
-        _scrollBy(_verticalController, details.delta.dy);
+        _view.value = panCanvasView(view: view, delta: details.delta);
       case null:
         break;
     }
-  }
-
-  void _scrollBy(ScrollController controller, double delta) {
-    if (!controller.hasClients) {
-      return;
-    }
-
-    final ScrollPosition position = controller.position;
-    final double target = min(
-      max(position.pixels - delta, position.minScrollExtent),
-      position.maxScrollExtent,
-    );
-    controller.jumpTo(target);
   }
 
   void _finishDrag(List<WorkflowAgent> agents) {

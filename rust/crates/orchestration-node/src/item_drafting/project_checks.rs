@@ -41,6 +41,7 @@ pub(super) fn check_project_draft(
         name,
         repositories: resolved_repositories,
         agent_access: project.agent_access,
+        approval_policy: project.approval_policy,
     };
     CheckedDraft {
         draft: ItemDraft::Project(draft),

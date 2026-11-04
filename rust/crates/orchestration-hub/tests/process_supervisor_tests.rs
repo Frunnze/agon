@@ -88,6 +88,7 @@ async fn streams_events_from_a_fake_claude_agent_in_its_workspace()
     let mounts = WorkspaceMounts {
         task_folder: workspace.path().to_path_buf(),
         git_directories: Vec::new(),
+        placeholder_mounts: Vec::new(),
     };
     let mut command = wrap_in_sandbox(
         SandboxKind::LocalProcess,

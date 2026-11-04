@@ -12,6 +12,7 @@ import 'package:agent_orchestration/widgets/forms/select_entry.dart';
 import 'package:agent_orchestration/widgets/mixed_text.dart';
 
 const String _anyFreeRunnerLabel = 'Any free runner';
+const TaskDoer defaultTaskDoer = OneAgentDoer(AgentKind.claudeCode);
 
 final class TaskFormOptions {
   TaskFormOptions({
@@ -47,6 +48,24 @@ final class TaskFormOptions {
 
   SkillId findSkillId(String skillName) {
     return findSkillIdByName(skills: skills, skillName: skillName);
+  }
+
+  ProjectId pickShownProject(ProjectId? projectId) {
+    for (final SelectOption<ProjectId> option in projects) {
+      if (option.value == projectId) {
+        return option.value;
+      }
+    }
+    return firstProjectId;
+  }
+
+  TaskDoer pickShownDoer(TaskDoer doer) {
+    for (final SelectEntry<TaskDoer> entry in doers) {
+      if (entry is SelectOption<TaskDoer> && entry.value == doer) {
+        return doer;
+      }
+    }
+    return defaultTaskDoer;
   }
 }
 

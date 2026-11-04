@@ -5,8 +5,10 @@ use axum::http::StatusCode;
 use chrono::{DateTime, Utc};
 use orchestration_api::accounts::{AccountView, CreateAccountRequest};
 use orchestration_api::updates::ChangeTopic;
+use orchestration_core::approval::ApprovalPolicy;
 use orchestration_core::identifiers::DeviceId;
 use orchestration_core::naming::validate_name;
+use orchestration_core::protected_files::ProtectedFiles;
 use orchestration_core::workspace::Workspace;
 use orchestration_security::identity::device_id_for;
 
@@ -88,6 +90,8 @@ fn open_account(
         id: request.workspace_id,
         name: request.workspace_name.clone(),
         app_server_address: public_address.to_owned(),
+        approval_policy: ApprovalPolicy::default(),
+        protected_files: ProtectedFiles::default(),
     };
 
     let device_id = device.id.clone();

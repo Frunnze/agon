@@ -2,12 +2,15 @@ import 'package:agent_orchestration/bridge/codecs/workspace_values.dart'
     as node;
 import 'package:agent_orchestration/data/models/project.dart';
 import 'package:agent_orchestration/data/models/workspace.dart';
+import 'package:agent_orchestration/data/node_backed/mapping.dart';
 
 Workspace mapWorkspaceFromNode(node.Workspace workspace) {
   return Workspace(
     id: workspace.id,
     name: workspace.name,
     appServerAddress: workspace.appServerAddress,
+    protectedFiles: workspace.protectedFiles,
+    approvalPolicy: mapApprovalPolicyFromNode(workspace.approvalPolicy),
   );
 }
 
@@ -52,5 +55,6 @@ Project mapProjectFromNode(node.Project project) {
     workspaceId: project.workspaceId,
     name: project.name,
     repositories: repositories,
+    approvalPolicy: mapOptionalApprovalPolicyFromNode(project.approvalPolicy),
   );
 }

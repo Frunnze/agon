@@ -97,6 +97,7 @@ final class NodeBackedProjectRepository extends ChangeNotifier
           for (final Repository repository in draft.repositories)
             mapRepositoryToNode(repository),
         ],
+        approvalPolicy: mapOptionalApprovalPolicyToNode(draft.approvalPolicy),
       ),
     );
     final Project project = mapProjectFromNode(created);

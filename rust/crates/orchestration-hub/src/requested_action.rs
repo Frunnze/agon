@@ -1,46 +1,114 @@
+use std::path::Path;
+
 use orchestration_core::approval::ApprovalAction;
 use serde_json::Value;
 
 use crate::claude_control::ToolPermissionRequest;
+use crate::command_label::label_shell_command;
 use crate::known_tools::CLAUDE_TOOLS;
-use crate::text_shortening::{shorten_keeping_the_end, shorten_to_characters};
+use crate::text_shortening::shorten_to_characters;
 use crate::tool_description::DetailKind;
 
 const SHELL_TOOL_NAME: &str = "Bash";
-const SHELL_COMMAND_FIELD: &str = "command";
-const MAXIMUM_SHOWN_CHARACTERS: usize = 200;
+const DESCRIPTION_FIELD: &str = "description";
+const TASK_FOLDER_NAME: &str = "the task folder";
+const MAXIMUM_SUMMARY_CHARACTERS: usize = 80;
+
+const IMPERATIVE_VERBS: [(&str, &str); 9] = [
+    ("Edit", "Edit"),
+    ("MultiEdit", "Edit"),
+    ("NotebookEdit", "Edit"),
+    ("Write", "Write"),
+    ("Read", "Read"),
+    ("Grep", "Search for"),
+    ("Glob", "Find files matching"),
+    ("WebFetch", "Fetch"),
+    ("WebSearch", "Search the web for"),
+];
 
 #[must_use]
 pub fn describe_requested_action(
     request: &ToolPermissionRequest,
+    task_folder: &str,
 ) -> ApprovalAction {
+    let telling_detail = find_telling_detail(request);
+    let requested_input = match telling_detail {
+        Some((detail, _)) => detail.to_owned(),
+        None => request.input.to_string(),
+    };
+    let command = name_task_folder(&requested_input, task_folder);
+
+    let agent_description = read_agent_description(request, task_folder);
+    let summary = agent_description.unwrap_or_else(|| {
+        make_up_summary(&request.tool_name, telling_detail, &command)
+    });
+
     ApprovalAction::RunCommand {
         tool: request.tool_name.clone(),
-        command: describe_requested_command(request),
+        summary,
+        command,
     }
 }
 
-fn describe_requested_command(request: &ToolPermissionRequest) -> String {
-    let is_shell = request.tool_name == SHELL_TOOL_NAME;
-    if is_shell
-        && let Some(shell_command) =
-            read_text_field(&request.input, SHELL_COMMAND_FIELD)
-    {
-        return shell_command.to_string();
+fn read_agent_description(
+    request: &ToolPermissionRequest,
+    task_folder: &str,
+) -> Option<String> {
+    let description = read_text_field(&request.input, DESCRIPTION_FIELD)?;
+    let readable_description = name_task_folder(description, task_folder);
+    let summary = fit_on_one_line(&readable_description);
+    if summary.is_empty() {
+        return None;
     }
+    Some(summary)
+}
 
-    match find_telling_detail(request) {
-        Some((detail, DetailKind::FilePath)) => {
-            shorten_keeping_the_end(detail, MAXIMUM_SHOWN_CHARACTERS)
+fn make_up_summary(
+    tool_name: &str,
+    telling_detail: Option<(&str, DetailKind)>,
+    command: &str,
+) -> String {
+    let tool_use_label = match telling_detail {
+        Some((_, detail_kind)) => {
+            label_tool_use(tool_name, command, detail_kind)
         }
-        Some((detail, DetailKind::Text)) => {
-            shorten_to_characters(detail, MAXIMUM_SHOWN_CHARACTERS)
-        }
-        None => {
-            let input_text = request.input.to_string();
-            shorten_to_characters(&input_text, MAXIMUM_SHOWN_CHARACTERS)
-        }
+        None => format!("Use {tool_name}"),
+    };
+    fit_on_one_line(&tool_use_label)
+}
+
+fn label_tool_use(
+    tool_name: &str,
+    command: &str,
+    detail_kind: DetailKind,
+) -> String {
+    if tool_name == SHELL_TOOL_NAME {
+        return label_shell_command(command);
     }
+    let Some((_, verb)) = IMPERATIVE_VERBS
+        .iter()
+        .find(|(known_tool_name, _)| *known_tool_name == tool_name)
+    else {
+        return format!("Use {tool_name}");
+    };
+
+    let detail = match detail_kind {
+        DetailKind::FilePath => Path::new(command)
+            .file_name()
+            .and_then(|file_name| file_name.to_str())
+            .unwrap_or(command),
+        DetailKind::Text => command,
+    };
+    format!("{verb} {detail}")
+}
+
+fn name_task_folder(text: &str, task_folder: &str) -> String {
+    text.replace(task_folder, TASK_FOLDER_NAME)
+}
+
+fn fit_on_one_line(text: &str) -> String {
+    let first_line = text.trim().lines().next().unwrap_or_default();
+    shorten_to_characters(first_line.trim(), MAXIMUM_SUMMARY_CHARACTERS)
 }
 
 fn find_telling_detail(

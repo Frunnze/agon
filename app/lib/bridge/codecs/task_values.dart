@@ -109,7 +109,7 @@ final class Task implements JsonEncodable {
         'uses_automatic_skills',
         decodeFlag,
       ),
-      approvalPolicy: readField(
+      approvalPolicy: readOptionalField(
         fields,
         'approval_policy',
         ApprovalPolicy.decode,
@@ -129,7 +129,7 @@ final class Task implements JsonEncodable {
   final AgentPlace agentPlace;
   final List<SkillId> skills;
   final bool usesAutomaticSkills;
-  final ApprovalPolicy approvalPolicy;
+  final ApprovalPolicy? approvalPolicy;
   final Schedule? schedule;
   final TaskStatus status;
   final DateTime createdAt;
@@ -146,7 +146,7 @@ final class Task implements JsonEncodable {
       'agent_place': agentPlace.wireName,
       'skills': skills,
       'uses_automatic_skills': usesAutomaticSkills,
-      'approval_policy': approvalPolicy.wireName,
+      'approval_policy': approvalPolicy?.wireName,
       'schedule': schedule?.toJson(),
       'status': status.wireName,
       'created_at': encodeMoment(createdAt),

@@ -14,7 +14,7 @@ import '../support/random_inputs.dart';
 
 const SectionRoute _approvalsRoute = SectionRoute(AppSection.approvals);
 const int _unknownRunCases = 3;
-const String _galleryRowTitle = 'Run a command: xcodebuild test -scheme App';
+const String _galleryRowTitle = 'Run the tests';
 
 ApprovalRequest _buildApprovalForRun(RunId runId) {
   return ApprovalRequest(

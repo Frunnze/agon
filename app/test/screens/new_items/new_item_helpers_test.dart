@@ -8,17 +8,14 @@ import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/item_draft.dart';
 import 'package:agent_orchestration/data/models/project.dart';
 import 'package:agent_orchestration/data/models/runner.dart';
-import 'package:agent_orchestration/data/models/schedule.dart';
 import 'package:agent_orchestration/data/models/task.dart';
 import 'package:agent_orchestration/data/models/workflow.dart';
 import 'package:agent_orchestration/data/rules/local_folder_address.dart';
-import 'package:agent_orchestration/presentation/approval_policy_text.dart';
 import 'package:agent_orchestration/presentation/device_names.dart';
 import 'package:agent_orchestration/screens/new_items/item_drafting_view.dart';
 import 'package:agent_orchestration/screens/new_items/new_item_texts.dart';
 import 'package:agent_orchestration/screens/projects/agent_access_choices.dart';
 import 'package:agent_orchestration/screens/projects/repository_rows.dart';
-import 'package:agent_orchestration/screens/new_items/work_draft_review.dart';
 import 'package:agent_orchestration/shell/app_route.dart';
 import 'package:agent_orchestration/shell/draft_kind_sections.dart';
 import 'package:agent_orchestration/shell/new_item_route_screens.dart';
@@ -59,52 +56,6 @@ void main() {
       expect(route.section, findDraftKindSection(kind));
       expect(route, NewItemFormRoute(kind));
       expect(route.section.name, startsWith(kind.name));
-    }
-  });
-
-  test('test_describe_runs_on_property_names_the_target', () {
-    final Random random = seededRandom(8602);
-    final DeviceNames deviceNames = DeviceNames(const []);
-    for (int i = 0; i < propertyIterations; i += 1) {
-      final List<String> labels = <String>[
-        for (int j = 0; j < 1 + random.nextInt(3); j += 1) 'label$j',
-      ];
-
-      final String text = describeRunsOn(
-        RunnerWithLabels(labels),
-        deviceNames,
-      );
-
-      for (final String label in labels) {
-        expect(text, contains(label));
-      }
-    }
-    expect(
-      describeRunsOn(const AnyFreeRunner(), deviceNames),
-      anyFreeRunnerText,
-    );
-  });
-
-  test('test_describe_approval_policy_property_names_choice_and_detail', () {
-    for (final ApprovalPolicy policy in ApprovalPolicy.values) {
-      expect(
-        describeApprovalPolicy(policy),
-        '${describeApprovalPolicyTitle(policy)}. '
-        '${describeApprovalPolicyDetail(policy)}',
-      );
-    }
-    expect(
-      describeApprovalPolicy(ApprovalPolicy.neverAsk),
-      startsWith('Auto. '),
-    );
-  });
-
-  test('test_describe_repeating_task_property_says_it_becomes_a_job', () {
-    final Random random = seededRandom(8603);
-    for (int i = 0; i < propertyIterations; i += 1) {
-      final Schedule schedule = HourlySchedule(minute: random.nextInt(60));
-
-      expect(describeRepeatingTask(schedule), endsWith('becomes a job'));
     }
   });
 
@@ -168,6 +119,7 @@ void main() {
             ),
         ],
         agentAccess: access,
+        approvalPolicy: null,
       );
 
       final ProjectDraft project = drafted.toProjectDraft(

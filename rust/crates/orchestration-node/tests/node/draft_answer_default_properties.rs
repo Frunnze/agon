@@ -1,7 +1,8 @@
 use orchestration_core::agent_place::AgentPlace;
-use orchestration_core::approval::ApprovalPolicy;
 use orchestration_core::device::RunnerTarget;
+use orchestration_core::library::SkillImprovement;
 use orchestration_core::naming::convert_to_project_name;
+use orchestration_core::scope::Scope;
 use orchestration_core::task::TaskDoer;
 use orchestration_core::workflow::AgentKind;
 use orchestration_core::workspace::AgentAccess;
@@ -72,7 +73,7 @@ fn fill_form_default(work: WorkDraft, field: &str) -> WorkDraft {
             ..work
         },
         _ => WorkDraft {
-            approval_policy: ApprovalPolicy::AskBeforeRiskyActions,
+            approval_policy: None,
             ..work
         },
     }
@@ -145,6 +146,7 @@ proptest! {
             project_draft.agent_access,
             AgentAccess::PushAfterApproval
         );
+        prop_assert_eq!(project_draft.approval_policy, None);
         let ItemDraft::Rule(rule_draft) = parsed_rule else {
             return Err(TestCaseError::fail("no rule draft"));
         };
@@ -180,5 +182,27 @@ proptest! {
             convert_to_project_name(&repository_name)
         );
         prop_assert!(checked.problems.is_empty(), "{:?}", checked.problems);
+    }
+
+    #[test]
+    fn test_parse_item_answer_property_a_new_skill_improves_on_auto(
+        name in "[a-z]{3,8}",
+        words in secret_text_strategy(),
+    ) {
+        let skill = json!({
+            "name": name,
+            "summary": words,
+            "instructions": words,
+            "scope": Scope::everywhere(),
+            "usage": "automatic",
+        });
+
+        let parsed = parse_item_answer(DraftKind::Skill, &skill.to_string())
+            .map_err(fail)?;
+
+        let ItemDraft::Skill(skill_draft) = parsed else {
+            return Err(TestCaseError::fail("no skill draft"));
+        };
+        prop_assert_eq!(skill_draft.improvement, SkillImprovement::Auto);
     }
 }

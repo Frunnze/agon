@@ -45,6 +45,7 @@ final class FakeProjectRepository extends ChangeNotifier
       workspaceId: draft.workspaceId,
       name: draft.name.trim(),
       repositories: draft.repositories,
+      approvalPolicy: draft.approvalPolicy,
     );
 
     _projects = appendRecord(_projects, project);

@@ -1,5 +1,4 @@
 import 'package:agent_orchestration/data/gallery/gallery_identifiers.dart';
-import 'package:agent_orchestration/data/models/approval.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/item_draft.dart';
 import 'package:agent_orchestration/data/models/library.dart';
@@ -28,7 +27,7 @@ ItemDraft _buildTaskDraft() {
       agentPlace: AgentPlace.localProcess,
       skills: const <SkillId>[GallerySkillIds.gitCleanup],
       usesAutomaticSkills: true,
-      approvalPolicy: ApprovalPolicy.askBeforeRiskyActions,
+      approvalPolicy: null,
       schedule: null,
     ),
     problems: const <String>[],
@@ -48,7 +47,7 @@ ItemDraft _buildJobDraft() {
       agentPlace: AgentPlace.localProcess,
       skills: const <SkillId>[],
       usesAutomaticSkills: true,
-      approvalPolicy: ApprovalPolicy.askBeforeRiskyActions,
+      approvalPolicy: null,
       schedule: WeeklySchedule(
         on: Weekday.monday,
         at: ScheduleTime(hour: _weeklyRunHour, minute: _weeklyRunMinute),
@@ -76,6 +75,7 @@ ItemDraft _buildProjectDraft() {
         ),
       ],
       agentAccess: AgentAccess.pushAfterApproval,
+      approvalPolicy: null,
     ),
     problems: const <String>[],
   );

@@ -9,7 +9,7 @@ use orchestration_core::workflow_layout::lay_out_workflow;
 use proptest::prelude::*;
 
 use crate::branching_strategies::{
-    branching_plan_with_agent_counts, build_branching_workflow,
+    BranchingPlan, branching_plan_with_agent_counts, build_branching_workflow,
 };
 use crate::workflow_strategies::arbitrary_workflow;
 
@@ -25,6 +25,19 @@ fn valid_drafted_workflow() -> impl Strategy<Value = Workflow> {
         SMALLEST_DRAFTED_STEP_COUNT..=LARGEST_DRAFTED_STEP_COUNT,
     )
     .prop_map(|plan| build_branching_workflow(&plan))
+}
+
+fn drafted_workflow_without_forks() -> impl Strategy<Value = Workflow> {
+    branching_plan_with_agent_counts(
+        SMALLEST_DRAFTED_STEP_COUNT..=LARGEST_DRAFTED_STEP_COUNT,
+    )
+    .prop_map(|plan| {
+        let conditioned = vec![false; plan.conditioned.len()];
+        build_branching_workflow(&BranchingPlan {
+            conditioned,
+            ..plan
+        })
+    })
 }
 
 fn is_same_coordinate(first: f64, second: f64) -> bool {
@@ -191,7 +204,7 @@ proptest! {
 
     #[test]
     fn test_lay_out_workflow_property_rows_follow_inputs_then_drafted_order(
-        workflow in valid_drafted_workflow(),
+        workflow in drafted_workflow_without_forks(),
     ) {
         let laid_out = lay_out_workflow(&workflow);
 

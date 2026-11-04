@@ -1,65 +1,17 @@
-import 'package:agent_orchestration/data/models/identifiers.dart';
+import 'package:flutter/widgets.dart';
+
 import 'package:agent_orchestration/data/models/item_draft.dart';
 import 'package:agent_orchestration/data/models/library.dart';
-import 'package:agent_orchestration/data/models/project.dart';
-import 'package:agent_orchestration/data/models/scope.dart';
-import 'package:agent_orchestration/data/models/workspace.dart';
 import 'package:agent_orchestration/data/repository/project_repository.dart';
 import 'package:agent_orchestration/data/repository/rule_repository.dart';
 import 'package:agent_orchestration/data/repository/skill_repository.dart';
 import 'package:agent_orchestration/data/repository/workspace_repository.dart';
-import 'package:agent_orchestration/presentation/scope_catalog.dart';
 import 'package:agent_orchestration/screens/new_items/draft_review.dart';
+import 'package:agent_orchestration/screens/rules/rule_form.dart';
 import 'package:agent_orchestration/screens/shared/scope_catalog_lookup.dart';
+import 'package:agent_orchestration/screens/skills/skill_form.dart';
 import 'package:agent_orchestration/shell/app_navigation.dart';
 import 'package:agent_orchestration/shell/app_route.dart';
-import 'package:agent_orchestration/widgets/code_block.dart';
-import 'package:agent_orchestration/widgets/fact_list.dart';
-import 'package:agent_orchestration/widgets/mixed_text.dart';
-
-const String _instructionLineBreak = '\n';
-const String everywhereChip = 'Everywhere';
-const String unknownWorkspaceChip = 'Unknown workspace';
-const String unknownProjectChip = 'Unknown project';
-
-String _findWorkspaceName(ScopeCatalog catalog, WorkspaceId workspaceId) {
-  for (final Workspace workspace in catalog.workspaces) {
-    if (workspace.id == workspaceId) {
-      return workspace.name;
-    }
-  }
-  return unknownWorkspaceChip;
-}
-
-String _findProjectName(ScopeCatalog catalog, ProjectId projectId) {
-  for (final Project project in catalog.projects) {
-    if (project.id == projectId) {
-      return project.name;
-    }
-  }
-  return unknownProjectChip;
-}
-
-List<String> describeDraftScopeChips(Scope scope, ScopeCatalog catalog) {
-  final List<String> chips = <String>[];
-  final WorkspaceScope workspaces = scope.workspaces;
-  if (workspaces is OnlyWorkspaces) {
-    for (final WorkspaceId workspaceId in workspaces.workspaces) {
-      chips.add(_findWorkspaceName(catalog, workspaceId));
-    }
-  }
-  final ProjectScope projects = scope.projects;
-  if (projects is OnlyProjects) {
-    for (final ProjectId projectId in projects.projects) {
-      chips.add(_findProjectName(catalog, projectId));
-    }
-  }
-
-  if (chips.isEmpty) {
-    return const <String>[everywhereChip];
-  }
-  return chips;
-}
 
 final class SkillDraftReview implements DraftReview {
   const SkillDraftReview({
@@ -75,37 +27,22 @@ final class SkillDraftReview implements DraftReview {
   final AppNavigation navigation;
 
   @override
-  List<Fact> describeFacts(DraftedItem item) {
-    final SkillDraft skill = _requireSkill(item);
-    final ScopeCatalog catalog = collectScopeCatalog(
-      workspaceRepository: workspaceRepository,
-      projectRepository: projectRepository,
+  Widget buildForm(DraftedItem item, DraftFormCallbacks callbacks) {
+    return SkillForm(
+      initialSkill: _requireSkill(item),
+      otherSkills: skillRepository.listSkills(),
+      catalog: collectScopeCatalog(
+        workspaceRepository: workspaceRepository,
+        projectRepository: projectRepository,
+      ),
+      onChanged: (SkillDraft skill) =>
+          callbacks.onChanged(DraftedSkill(skill)),
+      actions: buildReviewActions<SkillDraft>(
+        onCancelled: callbacks.onCancelled,
+        onApproved: (SkillDraft skill) =>
+            callbacks.onApproved(DraftedSkill(skill)),
+      ),
     );
-    final List<String> instructionLines = skill.instructions.split(
-      _instructionLineBreak,
-    );
-
-    return <Fact>[
-      Fact(
-        term: 'Name',
-        description: <TextSegment>[TextSegment.monospace(skill.name)],
-      ),
-      describeOptionalTextFact('What it does', skill.summary),
-      describeTextFact('When agents use it', skill.usage.label),
-      describeTextFact('Agents may improve it', skill.improvement.label),
-      Fact.chips(
-        term: 'Applies to',
-        chips: describeDraftScopeChips(skill.scope, catalog),
-      ),
-      Fact.content(
-        term: 'Instructions',
-        content: CodeBlock(
-          lines: <CodeBlockLine>[
-            for (final String line in instructionLines) CodeBlockLine(line),
-          ],
-        ),
-      ),
-    ];
   }
 
   @override
@@ -136,21 +73,20 @@ final class RuleDraftReview implements DraftReview {
   final AppNavigation navigation;
 
   @override
-  List<Fact> describeFacts(DraftedItem item) {
-    final RuleDraft rule = _requireRule(item);
-    final ScopeCatalog catalog = collectScopeCatalog(
-      workspaceRepository: workspaceRepository,
-      projectRepository: projectRepository,
-    );
-
-    return <Fact>[
-      describeTextFact('Rule', rule.title),
-      describeOptionalTextFact('Details', rule.details),
-      Fact.chips(
-        term: 'Applies to',
-        chips: describeDraftScopeChips(rule.scope, catalog),
+  Widget buildForm(DraftedItem item, DraftFormCallbacks callbacks) {
+    return RuleForm(
+      initialRule: _requireRule(item),
+      catalog: collectScopeCatalog(
+        workspaceRepository: workspaceRepository,
+        projectRepository: projectRepository,
       ),
-    ];
+      onChanged: (RuleDraft rule) => callbacks.onChanged(DraftedRule(rule)),
+      actions: buildReviewActions<RuleDraft>(
+        onCancelled: callbacks.onCancelled,
+        onApproved: (RuleDraft rule) =>
+            callbacks.onApproved(DraftedRule(rule)),
+      ),
+    );
   }
 
   @override

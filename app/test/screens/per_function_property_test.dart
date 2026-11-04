@@ -19,7 +19,6 @@ import 'package:agent_orchestration/screens/shared/status_labels.dart';
 import 'package:agent_orchestration/screens/task_form/task_form_options.dart';
 import 'package:agent_orchestration/screens/task_form/task_form_values.dart';
 import 'package:agent_orchestration/theme/layout_size.dart';
-import 'package:agent_orchestration/theme/page_metrics.dart';
 import 'package:agent_orchestration/widgets/gaps.dart';
 import 'package:agent_orchestration/widgets/status_label.dart';
 
@@ -102,17 +101,6 @@ void main() {
       expect(draft.projectId, values.projectId);
     }
     expect(AgentKind.values.length, 3);
-  });
-
-  test('test_page_gap_for_property_wider_layouts_never_tighter', () {
-    expect(
-      pageGapFor(LayoutSize.compact) <= pageGapFor(LayoutSize.medium),
-      isTrue,
-    );
-    expect(
-      pageGapFor(LayoutSize.medium) <= pageGapFor(LayoutSize.large),
-      isTrue,
-    );
   });
 
   test('test_space_horizontally_property_gaps_only_between_children', () {

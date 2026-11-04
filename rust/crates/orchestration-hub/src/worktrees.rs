@@ -85,6 +85,7 @@ pub fn create_worktrees(
     let mounts = WorkspaceMounts {
         task_folder: resolve_folder(&plan.task_folder)?,
         git_directories,
+        placeholder_mounts: Vec::new(),
     };
     Ok(PreparedWorkspace { mounts, worktrees })
 }

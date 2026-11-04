@@ -5,6 +5,7 @@ pub struct AgentTranscript {
     pub final_message: Option<String>,
     pub session: Option<String>,
     pub failure_reason: Option<String>,
+    pub answered_messages: usize,
 }
 
 impl AgentTranscript {
@@ -21,6 +22,7 @@ impl AgentTranscript {
             final_message: reply.final_message.or(self.final_message),
             session: reply.session.or(self.session),
             failure_reason: reply.failure_reason.or(self.failure_reason),
+            answered_messages: reply.answered_messages,
         }
     }
 

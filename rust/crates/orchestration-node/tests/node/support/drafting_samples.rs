@@ -100,6 +100,7 @@ pub fn sample_project(index: usize, name: &str, address: &str) -> Project {
             default_branch: "main".to_owned(),
             agent_access: AgentAccess::PushAfterApproval,
         }],
+        approval_policy: None,
     }
 }
 
@@ -203,7 +204,7 @@ pub fn valid_work_draft(
         agent_place: AgentPlace::LocalProcess,
         skills: context.skills.iter().map(|skill| skill.id).collect(),
         uses_automatic_skills: true,
-        approval_policy: ApprovalPolicy::AskBeforeRiskyActions,
+        approval_policy: Some(ApprovalPolicy::AskBeforeRiskyActions),
         schedule: Some(Schedule::Day {
             at: TimeOfDay {
                 hour: MORNING_HOUR,

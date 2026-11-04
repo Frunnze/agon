@@ -36,3 +36,19 @@ node.ApprovalPolicy mapApprovalPolicyToNode(ApprovalPolicy policy) {
     ApprovalPolicy.neverAsk => node.ApprovalPolicy.neverAsk,
   };
 }
+
+ApprovalPolicy? mapOptionalApprovalPolicyFromNode(
+  node.ApprovalPolicy? policy,
+) {
+  if (policy == null) {
+    return null;
+  }
+  return mapApprovalPolicyFromNode(policy);
+}
+
+node.ApprovalPolicy? mapOptionalApprovalPolicyToNode(ApprovalPolicy? policy) {
+  if (policy == null) {
+    return null;
+  }
+  return mapApprovalPolicyToNode(policy);
+}

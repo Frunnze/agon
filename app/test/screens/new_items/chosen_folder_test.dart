@@ -119,7 +119,7 @@ void main() {
         findGalleryItemDraft(DraftKind.project),
       );
       await tester.enterText(find.byType(TextField).last, 'Read only');
-      await tester.tap(find.text(sendChangeLabel));
+      await tapVisible(tester, find.text(sendChangeLabel));
       await pumpFrames(tester);
       expect(drafts.requests, hasLength(2));
       expect(_listChosenAddresses(drafts), expected);

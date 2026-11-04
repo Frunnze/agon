@@ -3,9 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:agent_orchestration/theme/app_colors.dart';
 import 'package:agent_orchestration/theme/app_spacing.dart';
 import 'package:agent_orchestration/theme/app_typography.dart';
-
-const double _fieldVerticalPadding =
-    (AppSizes.controlHeight - AppFontSizes.body * AppLineHeights.body) / 2;
+import 'package:agent_orchestration/theme/field_padding.dart';
+import 'package:agent_orchestration/theme/layout_density.dart';
 
 ThemeData buildAppTheme() {
   const ColorScheme colorScheme = ColorScheme.dark(
@@ -23,32 +22,29 @@ ThemeData buildAppTheme() {
     Radius.circular(AppRadii.control),
   );
 
-  const InputDecorationThemeData inputDecorationTheme =
+  final InputDecorationThemeData inputDecorationTheme =
       InputDecorationThemeData(
         filled: true,
         fillColor: AppColors.raised,
         isDense: true,
-        contentPadding: EdgeInsets.symmetric(
-          horizontal: AppSpacing.space3,
-          vertical: _fieldVerticalPadding,
-        ),
-        hintStyle: TextStyle(color: AppColors.inkMuted),
-        border: OutlineInputBorder(
+        contentPadding: singleLineFieldPaddingFor(LayoutDensity.touch),
+        hintStyle: const TextStyle(color: AppColors.inkMuted),
+        border: const OutlineInputBorder(
           borderRadius: controlRadius,
           borderSide: BorderSide(color: AppColors.lineStrong),
         ),
-        enabledBorder: OutlineInputBorder(
+        enabledBorder: const OutlineInputBorder(
           borderRadius: controlRadius,
           borderSide: BorderSide(color: AppColors.lineStrong),
         ),
-        focusedBorder: OutlineInputBorder(
+        focusedBorder: const OutlineInputBorder(
           borderRadius: controlRadius,
           borderSide: BorderSide(
             color: AppColors.action,
             width: AppBorders.selected,
           ),
         ),
-        errorBorder: OutlineInputBorder(
+        errorBorder: const OutlineInputBorder(
           borderRadius: controlRadius,
           borderSide: BorderSide(color: AppColors.danger),
         ),

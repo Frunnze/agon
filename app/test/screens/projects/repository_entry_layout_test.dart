@@ -38,7 +38,10 @@ void main() {
       final Rect button = tester.getRect(find.byType(AppButton));
       final Rect field = tester.getRect(find.byType(TextField));
       final String reason = 'width $width, problem $problem';
-      expect(button.height, AppSizes.controlHeight, reason: reason);
+      final double controlHeight = AppSizes.controlHeightFor(
+        densityMeantByWidth(width),
+      );
+      expect(button.height, controlHeight, reason: reason);
       expect(button.top, field.top, reason: reason);
     }
   });

@@ -1,6 +1,7 @@
 import 'package:agent_orchestration/data/gallery/gallery_identifiers.dart';
 import 'package:agent_orchestration/data/gallery/gallery_moments.dart';
 import 'package:agent_orchestration/data/models/app_server_group.dart';
+import 'package:agent_orchestration/data/models/approval.dart';
 import 'package:agent_orchestration/data/models/project.dart';
 import 'package:agent_orchestration/data/models/workspace.dart';
 
@@ -8,18 +9,36 @@ const String _appServerAddress =
     'peer://4f7a2c19e8b3d6a05c1f9e27b4d8a3c6f0e5b9d2a7c4e1f8b3d6a09c5e2f7b14';
 const Duration _appServerRetryInterval = Duration(seconds: 10);
 
-const List<Workspace> galleryWorkspaces = <Workspace>[
-  Workspace(
-    id: GalleryWorkspaceIds.acme,
-    name: 'acme',
-    appServerAddress: _appServerAddress,
-  ),
-  Workspace(
-    id: GalleryWorkspaceIds.personal,
-    name: 'personal',
-    appServerAddress: _appServerAddress,
-  ),
+const List<String> galleryDefaultProtectedFiles = <String>[
+  '.env',
+  '.env.*',
+  '~/.ssh',
+  '~/.aws',
+  '~/.npmrc',
 ];
+const List<String> _acmeProtectedFiles = <String>[
+  ...galleryDefaultProtectedFiles,
+  'config/credentials.json',
+];
+
+final List<Workspace> galleryWorkspaces = List<Workspace>.unmodifiable(
+  <Workspace>[
+    Workspace(
+      id: GalleryWorkspaceIds.acme,
+      name: 'acme',
+      appServerAddress: _appServerAddress,
+      protectedFiles: _acmeProtectedFiles,
+      approvalPolicy: ApprovalPolicy.neverAsk,
+    ),
+    Workspace(
+      id: GalleryWorkspaceIds.personal,
+      name: 'personal',
+      appServerAddress: _appServerAddress,
+      protectedFiles: galleryDefaultProtectedFiles,
+      approvalPolicy: ApprovalPolicy.neverAsk,
+    ),
+  ],
+);
 
 final AppServerStatus galleryAppServerStatus = AppServerStatus(
   address: _appServerAddress,
@@ -60,6 +79,7 @@ final List<Project> galleryProjects = List<Project>.unmodifiable(<Project>[
       _buildGitHubRepository('acme/app', AgentAccess.pushAfterApproval),
       _buildGitHubRepository('acme/api', AgentAccess.readOnly),
     ],
+    approvalPolicy: null,
   ),
   Project(
     id: GalleryProjectIds.mlRanker,
@@ -68,6 +88,7 @@ final List<Project> galleryProjects = List<Project>.unmodifiable(<Project>[
     repositories: <Repository>[
       _buildGitHubRepository('acme/ranker', AgentAccess.readOnly),
     ],
+    approvalPolicy: null,
   ),
   Project(
     id: GalleryProjectIds.docs,
@@ -76,6 +97,7 @@ final List<Project> galleryProjects = List<Project>.unmodifiable(<Project>[
     repositories: <Repository>[
       _buildGitHubRepository('acme/docs', AgentAccess.pushAfterApproval),
     ],
+    approvalPolicy: null,
   ),
   Project(
     id: GalleryProjectIds.blog,
@@ -84,5 +106,6 @@ final List<Project> galleryProjects = List<Project>.unmodifiable(<Project>[
     repositories: <Repository>[
       _buildGitHubRepository('air/blog', AgentAccess.pushAfterApproval),
     ],
+    approvalPolicy: null,
   ),
 ]);

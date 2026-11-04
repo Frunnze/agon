@@ -69,7 +69,7 @@ pub fn sample_task(details: &str) -> Task {
         agent_place: Some(AgentPlace::LocalProcess),
         skills: Vec::new(),
         uses_automatic_skills: true,
-        approval_policy: ApprovalPolicy::AskBeforeRiskyActions,
+        approval_policy: Some(ApprovalPolicy::AskBeforeRiskyActions),
         schedule: None,
         status: TaskStatus::ToDo,
         created_at: sample_time(),
@@ -88,7 +88,7 @@ pub fn sample_workflow(agent_tasks: &[String]) -> Workflow {
             runs_on: RunnerTarget::AnyFreeRunner,
             skills: Vec::new(),
             uses_automatic_skills: false,
-            approval_policy: ApprovalPolicy::NeverAsk,
+            approval_policy: Some(ApprovalPolicy::NeverAsk),
             position: CanvasPosition {
                 horizontal: f64::from(u8::try_from(position).unwrap_or(0)),
                 vertical: 0.0,

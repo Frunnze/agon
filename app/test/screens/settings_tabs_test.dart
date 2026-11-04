@@ -10,6 +10,7 @@ import 'package:agent_orchestration/shell/app_section.dart';
 
 import '../support/app_harness.dart';
 import '../support/server_group_repositories.dart';
+import '../support/settings_finders.dart';
 
 const String _serverDownNotice =
     'Runners on this network still work. Runs for gpu-box wait until the '
@@ -51,7 +52,7 @@ void main() {
       ]) {
         expect(find.text(text), findsWidgets, reason: text);
       }
-      expect(find.text('Remove'), findsNWidgets(6));
+      expect(findWorkspaceDeviceRemoveButtons('acme'), findsNWidgets(6));
     });
 
     testWidgets('runners tab matches the gallery at ${size.width}', (

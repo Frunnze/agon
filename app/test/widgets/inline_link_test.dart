@@ -37,6 +37,7 @@ void main() {
               onPressed: () => tapCount += 1,
             ),
           ),
+          platform: desktopPlatform,
         ),
       );
 

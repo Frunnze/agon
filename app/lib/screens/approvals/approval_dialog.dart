@@ -54,8 +54,7 @@ class ApprovalDialog extends StatelessWidget {
 
     if (action is PushCommitsAction) {
       return AppDialog(
-        title:
-            'Approve push to ${describePushDestination(action.repository)}?',
+        title: '${describePushTitle(action)}?',
         content: <Widget>[
           Text(
             describePushRequest(
@@ -126,11 +125,11 @@ class ApprovalDialog extends StatelessWidget {
     );
 
     return AppDialog(
-      title: '${describeToolUse(action.tool)}?',
+      title: '${action.summary}?',
       content: <Widget>[
         Text(request),
         FactList(facts: <Fact>[askedByFact]),
-        CodeBlock(lines: <CodeBlockLine>[CodeBlockLine(action.command)]),
+        WrappedCodeBlock(text: action.command),
         const DialogNote('The run waits until you decide.'),
       ],
       actions: _buildDecisionButtons(context),

@@ -5,6 +5,8 @@ use orchestration_core::run::{ChatAuthor, ChatMessage, StepStatus};
 
 use crate::runner_server::{RunnerServer, ServerError};
 
+const MESSAGE_DELIVERED_NOTE: &str = "Message delivered to the agent";
+
 pub(crate) async fn post_run_events<S: RunnerServer>(
     server: &S,
     run_id: RunId,
@@ -22,6 +24,10 @@ pub(crate) fn step_status_changed(
         step_name: step_name.to_string(),
         status,
     }
+}
+
+pub(crate) fn message_delivered(at: DateTime<Utc>) -> RunEvent {
+    chat_appended(ChatAuthor::Tool, MESSAGE_DELIVERED_NOTE, at)
 }
 
 pub(crate) fn chat_appended(

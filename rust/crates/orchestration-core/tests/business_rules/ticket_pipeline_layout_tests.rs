@@ -85,6 +85,17 @@ fn find_position(workflow: &Workflow, number: u128) -> CanvasPosition {
     agent.position
 }
 
+fn find_lane_columns(workflow: &Workflow, lane: &[u128]) -> (f64, f64) {
+    let mut leftmost = f64::INFINITY;
+    let mut rightmost = f64::NEG_INFINITY;
+    for step in lane {
+        let horizontal = find_position(workflow, *step).horizontal;
+        leftmost = leftmost.min(horizontal);
+        rightmost = rightmost.max(horizontal);
+    }
+    (leftmost, rightmost)
+}
+
 fn do_steps_overlap(first: CanvasPosition, second: CanvasPosition) -> bool {
     let horizontal_distance = (first.horizontal - second.horizontal).abs();
     let vertical_distance = (first.vertical - second.vertical).abs();
@@ -142,6 +153,24 @@ fn the_three_lanes_start_side_by_side_under_the_fork() {
             vertical: LANE_VERTICAL,
         };
         assert_eq!(find_position(&laid_out, lane_start), expected);
+    }
+}
+
+#[test]
+fn each_lane_keeps_to_its_own_columns_in_the_fork_order() {
+    let laid_out = lay_out_workflow(&ticket_pipeline_workflow());
+
+    let lanes: [&[u128]; 3] = [&CODE_REVIEW_LANE, &RETURNED_LANE, &BUILD_LANE];
+    for neighbours in lanes.windows(2) {
+        let (_, left_lane_rightmost) =
+            find_lane_columns(&laid_out, neighbours[0]);
+        let (right_lane_leftmost, _) =
+            find_lane_columns(&laid_out, neighbours[1]);
+        let left_lane_right_edge = left_lane_rightmost + DRAWN_STEP_WIDTH;
+        assert!(
+            left_lane_right_edge <= right_lane_leftmost,
+            "{neighbours:?}"
+        );
     }
 }
 

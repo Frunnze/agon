@@ -59,7 +59,7 @@ const List<String> _projectPageTexts = <String>[
   'Add repo',
   'acme/app',
   'acme/api',
-  'Read, push once approved',
+  'Read and push',
   'Read only',
   _tokenNote,
   'Rules',

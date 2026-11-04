@@ -6,6 +6,7 @@ mod outgoing_request;
 mod peer_dialer;
 mod peer_link_route;
 mod person_step_routes;
+mod protected_files_routes;
 mod route_paths;
 mod runner_routes;
 mod signed_server_client;

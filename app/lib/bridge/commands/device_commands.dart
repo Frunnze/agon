@@ -1,3 +1,4 @@
+import 'package:agent_orchestration/bridge/codecs/approval_values.dart';
 import 'package:agent_orchestration/bridge/codecs/audit_values.dart';
 import 'package:agent_orchestration/bridge/codecs/catalog_views.dart';
 import 'package:agent_orchestration/bridge/codecs/json_values.dart';
@@ -60,6 +61,72 @@ final class CreateWorkspaceCommand implements NodeCommand<Workspace> {
 
   @override
   JsonObject get arguments => <String, Object?>{'name': workspaceName};
+
+  @override
+  Workspace decodeReply(Object? okValue) => Workspace.fromJson(okValue);
+}
+
+final class SetProtectedFilesCommand implements NodeCommand<Workspace> {
+  SetProtectedFilesCommand({
+    required this.workspaceId,
+    required List<String> patterns,
+  }) : patterns = List<String>.unmodifiable(patterns);
+
+  final WorkspaceId workspaceId;
+  final List<String> patterns;
+
+  @override
+  String get name => 'set_protected_files';
+
+  @override
+  JsonObject get arguments {
+    return <String, Object?>{
+      'workspace_id': workspaceId.value,
+      'patterns': patterns,
+    };
+  }
+
+  @override
+  Workspace decodeReply(Object? okValue) => Workspace.fromJson(okValue);
+}
+
+final class ResetProtectedFilesCommand implements NodeCommand<Workspace> {
+  const ResetProtectedFilesCommand({required this.workspaceId});
+
+  final WorkspaceId workspaceId;
+
+  @override
+  String get name => 'reset_protected_files';
+
+  @override
+  JsonObject get arguments => <String, Object?>{
+    'workspace_id': workspaceId.value,
+  };
+
+  @override
+  Workspace decodeReply(Object? okValue) => Workspace.fromJson(okValue);
+}
+
+final class ChangeWorkspaceApprovalPolicyCommand
+    implements NodeCommand<Workspace> {
+  const ChangeWorkspaceApprovalPolicyCommand({
+    required this.workspaceId,
+    required this.approvalPolicy,
+  });
+
+  final WorkspaceId workspaceId;
+  final ApprovalPolicy approvalPolicy;
+
+  @override
+  String get name => 'change_workspace_approval_policy';
+
+  @override
+  JsonObject get arguments {
+    return <String, Object?>{
+      'workspace_id': workspaceId.value,
+      'approval_policy': approvalPolicy.wireName,
+    };
+  }
 
   @override
   Workspace decodeReply(Object? okValue) => Workspace.fromJson(okValue);

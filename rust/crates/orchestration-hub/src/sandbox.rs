@@ -4,6 +4,7 @@ use orchestration_core::device::SandboxKind;
 use thiserror::Error;
 
 use crate::command_specification::CommandSpecification;
+use crate::placeholder_mount_options::describe_placeholder_mounts;
 use crate::safe_paths::is_plain_absolute_path;
 use crate::workspace_mounts::{
     CONTAINER_WORKSPACE_DIRECTORY, GIT_DIRECTORY_NAME, WorkspaceMounts,
@@ -49,6 +50,8 @@ pub enum SandboxError {
     InvalidImage(String),
     #[error("the environment variable name {0:?} is not valid")]
     InvalidEnvironmentName(String),
+    #[error("the protected file {0:?} cannot be hidden in the container")]
+    UnsafeCoveredPath(PathBuf),
 }
 
 pub fn wrap_in_sandbox(
@@ -133,7 +136,9 @@ fn wrap_in_container(
 
     let mut arguments: Vec<String> =
         RUN_OPTIONS.iter().map(ToString::to_string).collect();
-    for mount in describe_mounts(mounts) {
+    let mut mount_descriptions = describe_mounts(mounts);
+    mount_descriptions.extend(describe_placeholder_mounts(mounts)?);
+    for mount in mount_descriptions {
         arguments.push(MOUNT_OPTION.to_string());
         arguments.push(mount);
     }
@@ -176,11 +181,11 @@ fn describe_mounts(mounts: &WorkspaceMounts) -> Vec<String> {
     descriptions
 }
 
-fn bind_mount(source: &str, target: &str) -> String {
+pub(crate) fn bind_mount(source: &str, target: &str) -> String {
     format!("type=bind,source={source},target={target}")
 }
 
-fn breaks_mount_syntax(path: &Path) -> bool {
+pub(crate) fn breaks_mount_syntax(path: &Path) -> bool {
     path.display()
         .to_string()
         .contains(MOUNT_BREAKING_CHARACTERS)

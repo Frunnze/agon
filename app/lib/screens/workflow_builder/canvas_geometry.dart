@@ -84,17 +84,15 @@ Size measureCanvas(List<CanvasPosition> positions) {
   );
 }
 
-Size measureDrawingSurface({
-  required List<CanvasPosition> positions,
-  required Size viewport,
-}) {
-  final Size nodes = measureCanvas(positions);
-  final double roomyWidth = nodes.width + CanvasMetrics.nodeWidth;
-  final double roomyHeight = nodes.height + CanvasMetrics.nodeHeight;
-  return Size(
-    max(viewport.width, roomyWidth),
-    max(viewport.height, roomyHeight),
-  );
+Rect findNodesBounds(List<CanvasPosition> positions) {
+  Rect? bounds;
+
+  for (final CanvasPosition position in positions) {
+    final Rect node = findNodeRect(position);
+    bounds = bounds == null ? node : bounds.expandToInclude(node);
+  }
+
+  return bounds ?? Rect.zero;
 }
 
 EdgeCurve connectPoints({required Offset start, required Offset end}) {

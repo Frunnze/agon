@@ -1,6 +1,5 @@
 import 'dart:math';
 
-import 'package:agent_orchestration/data/models/approval.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/scope.dart';
 import 'package:agent_orchestration/data/models/workflow.dart';
@@ -31,7 +30,7 @@ WorkflowAgent randomAgent(Random random, int index) {
         if (random.nextBool()) skillId,
     ],
     usesAutomaticSkills: random.nextBool(),
-    approvalPolicy: pickOne(random, ApprovalPolicy.values),
+    approvalPolicy: randomInheritableApprovalPolicy(random),
     position: randomCanvasPosition(random),
   );
 }

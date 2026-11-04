@@ -16,8 +16,12 @@ pub const DEVICE_PEER_ADDRESS: &str = "/devices/peer-address";
 pub const WORKSPACES: &str = "/workspaces";
 pub const WORKSPACE: &str = "/workspaces/{workspace_id}";
 pub const WORKSPACE_DEVICES: &str = "/workspaces/{workspace_id}/devices";
+pub const WORKSPACE_APPROVAL_POLICY: &str =
+    "/workspaces/{workspace_id}/approval-policy";
 pub const WORKSPACE_DEVICE: &str =
     "/workspaces/{workspace_id}/devices/{device_id}";
+pub const WORKSPACE_PROTECTED_FILES: &str =
+    "/workspaces/{workspace_id}/protected-files";
 pub const PROJECTS: &str = "/projects";
 pub const PROJECT: &str = "/projects/{project_id}";
 pub const PROJECT_REPOSITORIES: &str = "/projects/{project_id}/repositories";

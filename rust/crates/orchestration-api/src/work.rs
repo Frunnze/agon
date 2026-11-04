@@ -1,9 +1,12 @@
 use chrono::{DateTime, Utc};
 use orchestration_core::agent_place::AgentPlace;
-use orchestration_core::approval::{ApprovalAction, SignedDecision};
+use orchestration_core::approval::{
+    ApprovalAction, ApprovalPolicy, SignedDecision,
+};
 use orchestration_core::device::{Runner, RunnerLink};
 use orchestration_core::identifiers::{RunId, TaskId, WorkspaceId};
 use orchestration_core::library::{Rule, Skill};
+use orchestration_core::protected_files::ProtectedFiles;
 use orchestration_core::run::{
     ChatMessage, LogLine, Run, RunFailure, StepStatus,
 };
@@ -115,12 +118,16 @@ pub struct RunAssignment {
     pub run: Run,
     pub task: Task,
     pub workspace_id: WorkspaceId,
+    #[serde(default)]
+    pub workspace_approval_policy: ApprovalPolicy,
     pub project: Option<Project>,
     pub workflow: Option<Workflow>,
     pub skills: Vec<Skill>,
     pub rules: Vec<Rule>,
     #[serde(default)]
     pub follow_up: Option<FollowUp>,
+    #[serde(default)]
+    pub protected_files: ProtectedFiles,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

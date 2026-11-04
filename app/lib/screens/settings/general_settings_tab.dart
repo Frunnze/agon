@@ -15,7 +15,6 @@ import 'package:agent_orchestration/shell/app_navigation.dart';
 import 'package:agent_orchestration/shell/app_route.dart';
 import 'package:agent_orchestration/shell/app_section.dart';
 import 'package:agent_orchestration/theme/app_typography.dart';
-import 'package:agent_orchestration/theme/layout_size.dart';
 import 'package:agent_orchestration/theme/page_metrics.dart';
 import 'package:agent_orchestration/widgets/app_button.dart';
 import 'package:agent_orchestration/widgets/gaps.dart';
@@ -76,8 +75,6 @@ class GeneralSettingsTab extends StatelessWidget {
       workspaceId: workspace.id,
     );
 
-    final double pageGap = pageGapFor(LayoutSize.of(context));
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: spaceVertically(<Widget>[
@@ -105,6 +102,10 @@ class GeneralSettingsTab extends StatelessWidget {
             ),
           ],
         ),
+        WorkspaceApprovalPolicySection(
+          workspaceRepository: workspaceRepository,
+        ),
+        ProtectedFilesSection(workspaceRepository: workspaceRepository),
       ], pageGap),
     );
   }

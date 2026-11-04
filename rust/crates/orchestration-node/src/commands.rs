@@ -24,6 +24,7 @@ mod pairing_approval;
 mod pairing_commands;
 mod person_answers;
 mod project_commands;
+mod protected_files_commands;
 mod repository_sources;
 mod run_commands;
 mod runner_commands;
@@ -70,9 +71,10 @@ enum CommandArea {
     AgentLogin,
     ServerBackup,
     Deletion,
+    ProtectedFiles,
 }
 
-const COMMAND_AREAS: [(CommandArea, &[&str]); 20] = [
+const COMMAND_AREAS: [(CommandArea, &[&str]); 21] = [
     (
         CommandArea::Account,
         &account_commands::ACCOUNT_COMMAND_NAMES,
@@ -134,6 +136,10 @@ const COMMAND_AREAS: [(CommandArea, &[&str]); 20] = [
     (
         CommandArea::Deletion,
         &deletion_commands::DELETION_COMMAND_NAMES,
+    ),
+    (
+        CommandArea::ProtectedFiles,
+        &protected_files_commands::PROTECTED_FILES_COMMAND_NAMES,
     ),
 ];
 
@@ -245,6 +251,13 @@ async fn run_command(
         CommandArea::Deletion => {
             let parsed = parse_command(&name, command)?;
             deletion_commands::handle_deletion_command(node, parsed).await
+        }
+        CommandArea::ProtectedFiles => {
+            let parsed = parse_command(&name, command)?;
+            protected_files_commands::handle_protected_files_command(
+                node, parsed,
+            )
+            .await
         }
     }
 }

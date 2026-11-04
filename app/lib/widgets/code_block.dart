@@ -25,6 +25,12 @@ final class CodeBlockLine {
   final LineChange change;
 }
 
+final BoxDecoration _codePanelDecoration = BoxDecoration(
+  color: AppColors.sunken,
+  border: Border.all(color: AppColors.line),
+  borderRadius: BorderRadius.circular(AppRadii.panel),
+);
+
 class CodePanel extends StatelessWidget {
   const CodePanel({required this.lines, super.key});
 
@@ -34,11 +40,7 @@ class CodePanel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.space3),
-      decoration: BoxDecoration(
-        color: AppColors.sunken,
-        border: Border.all(color: AppColors.line),
-        borderRadius: BorderRadius.circular(AppRadii.panel),
-      ),
+      decoration: _codePanelDecoration,
       child: LayoutBuilder(builder: _buildScrollingLines),
     );
   }
@@ -79,6 +81,25 @@ class CodeBlock extends StatelessWidget {
             child: Text(line.text),
           ),
       ],
+    );
+  }
+}
+
+class WrappedCodeBlock extends StatelessWidget {
+  const WrappedCodeBlock({required this.text, super.key});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.space4,
+        vertical: AppSpacing.space3,
+      ),
+      decoration: _codePanelDecoration,
+      child: Text(text, style: AppTextStyles.code),
     );
   }
 }

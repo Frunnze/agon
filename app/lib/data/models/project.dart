@@ -1,3 +1,4 @@
+import 'package:agent_orchestration/data/models/approval.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 
 enum AgentAccess { readOnly, pushAfterApproval }
@@ -34,12 +35,14 @@ final class Project {
     required this.workspaceId,
     required this.name,
     required List<Repository> repositories,
+    required this.approvalPolicy,
   }) : repositories = List<Repository>.unmodifiable(repositories);
 
   final ProjectId id;
   final WorkspaceId workspaceId;
   final String name;
   final List<Repository> repositories;
+  final ApprovalPolicy? approvalPolicy;
 
   Project withRepositories(List<Repository> nextRepositories) {
     return Project(
@@ -47,6 +50,7 @@ final class Project {
       workspaceId: workspaceId,
       name: name,
       repositories: nextRepositories,
+      approvalPolicy: approvalPolicy,
     );
   }
 }
@@ -56,9 +60,11 @@ final class ProjectDraft {
     required this.workspaceId,
     required this.name,
     required List<Repository> repositories,
+    required this.approvalPolicy,
   }) : repositories = List<Repository>.unmodifiable(repositories);
 
   final WorkspaceId workspaceId;
   final String name;
   final List<Repository> repositories;
+  final ApprovalPolicy? approvalPolicy;
 }

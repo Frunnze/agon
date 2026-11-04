@@ -40,6 +40,7 @@ fn project_draft(name: &str, repositories: Vec<RepositoryDraft>) -> ItemDraft {
         name: name.to_owned(),
         repositories,
         agent_access: AgentAccess::PushAfterApproval,
+        approval_policy: None,
     })
 }
 

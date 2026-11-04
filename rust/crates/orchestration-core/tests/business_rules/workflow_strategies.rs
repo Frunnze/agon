@@ -52,7 +52,7 @@ fn workflow_agent(
         runs_on: RunnerTarget::AnyFreeRunner,
         skills: Vec::new(),
         uses_automatic_skills: false,
-        approval_policy: ApprovalPolicy::NeverAsk,
+        approval_policy: Some(ApprovalPolicy::NeverAsk),
         position,
         step_kind: StepKind::Agent,
     }

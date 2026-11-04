@@ -58,6 +58,7 @@ void _expectSameAction(
     case node.RunCommand():
       final RunCommandAction command = action as RunCommandAction;
       expect(command.tool, wire.tool);
+      expect(command.summary, wire.summary);
       expect(command.command, wire.command);
     case node.ImproveSkill():
       final ImproveSkillAction improvement = action as ImproveSkillAction;

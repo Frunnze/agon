@@ -1,3 +1,5 @@
+import 'package:agent_orchestration/theme/layout_density.dart';
+
 abstract final class AppSpacing {
   static const double space1 = 4;
   static const double space2 = 8;
@@ -23,10 +25,12 @@ abstract final class AppBorders {
 
 abstract final class AppSizes {
   static const double icon = 20;
+  static const double iconDense = 16;
   static const double iconSmall = 16;
   static const double iconStroke = 1.75;
   static const double iconViewBox = 24;
   static const double controlHeight = 44;
+  static const double controlHeightDense = 32;
   static const double controlHeightCompact = 40;
   static const double measure = 608;
   static const double railWidth = 208;
@@ -39,6 +43,20 @@ abstract final class AppSizes {
   static const double listActionColumnMinimumWidth = 96;
   static const double tagInputFieldMinimumWidth = 128;
   static const double factColumnMinimumWidth = 128;
+
+  static double controlHeightFor(LayoutDensity layoutDensity) {
+    if (layoutDensity.isTouch) {
+      return controlHeight;
+    }
+    return controlHeightDense;
+  }
+
+  static double iconFor(LayoutDensity layoutDensity) {
+    if (layoutDensity.isTouch) {
+      return icon;
+    }
+    return iconDense;
+  }
 }
 
 abstract final class AppDurations {

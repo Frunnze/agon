@@ -51,7 +51,6 @@ class _NewItemScreenState extends State<NewItemScreen> {
   String? _draftProblem;
   String? _stopProblem;
   String? _approvalProblem;
-  bool _isApproving = false;
 
   NewItemTexts get _texts => describeNewItem(widget.kind);
 
@@ -140,19 +139,25 @@ class _NewItemScreenState extends State<NewItemScreen> {
   }
 
   Widget _buildReview(ItemDraft draft) {
-    final bool canApprove = draft.canBeApproved && !_isApproving;
-
     return ItemReviewView(
       texts: _texts,
-      state: ReviewState(
-        facts: widget.review.describeFacts(draft.item),
-        problems: draft.problems,
-        approvalProblem: _approvalProblem,
+      problems: draft.problems,
+      approvalProblem: _approvalProblem,
+      form: widget.review.buildForm(
+        draft.item,
+        DraftFormCallbacks(
+          onChanged: _keepHandEdit,
+          onApproved: _approve,
+          onCancelled: widget.navigation.closeRoute,
+        ),
       ),
-      onApprove: canApprove ? () => unawaited(_approve(draft)) : null,
       onCancel: widget.navigation.closeRoute,
-      onAskForChanges: (String note) => _askForChanges(draft, note),
+      onAskForChanges: _askForChanges,
     );
+  }
+
+  void _keepHandEdit(DraftedItem editedItem) {
+    _draft = ItemDraft(item: editedItem, problems: _draft!.problems);
   }
 
   void _keepChosenFolders(List<RepositoryDraft> folders) {
@@ -187,9 +192,9 @@ class _NewItemScreenState extends State<NewItemScreen> {
     _startDrafting(request);
   }
 
-  void _askForChanges(ItemDraft draft, String note) {
+  void _askForChanges(String note) {
     final ItemDraftChange change = ItemDraftChange(
-      draft: draft.item,
+      draft: _draft!.item,
       note: note,
     );
     _startDrafting(_describeRequest(change));
@@ -275,24 +280,18 @@ class _NewItemScreenState extends State<NewItemScreen> {
     }
   }
 
-  Future<void> _approve(ItemDraft draft) async {
-    setState(() {
-      _isApproving = true;
-      _approvalProblem = null;
-    });
+  Future<void> _approve(DraftedItem item) async {
+    setState(() => _approvalProblem = null);
 
     try {
-      await widget.review.approve(draft.item);
+      await widget.review.approve(item);
     } on Object catch (problem) {
       final String? explanation = describeProblemForPeople(problem);
       if (explanation == null) {
         rethrow;
       }
       if (mounted) {
-        setState(() {
-          _approvalProblem = explanation;
-          _isApproving = false;
-        });
+        setState(() => _approvalProblem = explanation);
       }
     }
   }

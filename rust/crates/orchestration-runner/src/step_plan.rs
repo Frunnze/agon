@@ -1,5 +1,8 @@
 use orchestration_api::work::RunAssignment;
 use orchestration_core::approval::ApprovalPolicy;
+use orchestration_core::approval_levels::{
+    ApprovalLevels, resolve_approval_policy,
+};
 use orchestration_core::identifiers::{SkillId, WorkflowId};
 use orchestration_core::step_outcomes::list_step_choices;
 use orchestration_core::task::TaskDoer;
@@ -57,9 +60,24 @@ pub fn plan_assigned_step(
             Err(AssignmentProblem::MissingWorkflow)
         }
         (TaskDoer::Workflow { workflow_id }, Some(workflow)) => {
-            plan_workflow_step(*workflow_id, workflow, &assignment.step_name)
+            plan_workflow_step(*workflow_id, workflow, assignment)
         }
     }
+}
+
+fn resolve_step_approval(
+    assignment: &RunAssignment,
+    step_choice: Option<ApprovalPolicy>,
+) -> ApprovalPolicy {
+    let project_choice = assignment
+        .project
+        .as_ref()
+        .and_then(|project| project.approval_policy);
+    resolve_approval_policy(ApprovalLevels {
+        step: step_choice,
+        project: project_choice,
+        workspace: assignment.workspace_approval_policy,
+    })
 }
 
 fn plan_one_agent_step(
@@ -82,7 +100,10 @@ fn plan_one_agent_step(
         instruction: task.title.clone(),
         pinned_skills: task.skills.clone(),
         uses_automatic_skills: task.uses_automatic_skills,
-        approval_policy: task.approval_policy,
+        approval_policy: resolve_step_approval(
+            assignment,
+            task.approval_policy,
+        ),
         upstream_step_names: Vec::new(),
         outcome_choices: Vec::new(),
     })
@@ -91,8 +112,9 @@ fn plan_one_agent_step(
 fn plan_workflow_step(
     expected_workflow: WorkflowId,
     workflow: &Workflow,
-    step_name: &str,
+    assignment: &RunAssignment,
 ) -> Result<StepPlan, AssignmentProblem> {
+    let step_name = assignment.step_name.as_str();
     if workflow.id != expected_workflow {
         return Err(AssignmentProblem::WrongWorkflow(expected_workflow));
     }
@@ -102,12 +124,13 @@ fn plan_workflow_step(
     let Some(agent) = agent else {
         return Err(AssignmentProblem::UnknownStep(step_name.to_owned()));
     };
-    plan_agent_step(workflow, agent)
+    plan_agent_step(workflow, agent, assignment)
 }
 
 fn plan_agent_step(
     workflow: &Workflow,
     agent: &WorkflowAgent,
+    assignment: &RunAssignment,
 ) -> Result<StepPlan, AssignmentProblem> {
     if agent.step_kind == StepKind::Person {
         return Err(AssignmentProblem::PersonStep(agent.name.clone()));
@@ -126,7 +149,10 @@ fn plan_agent_step(
         instruction: agent.task.clone(),
         pinned_skills: agent.skills.clone(),
         uses_automatic_skills: agent.uses_automatic_skills,
-        approval_policy: agent.approval_policy,
+        approval_policy: resolve_step_approval(
+            assignment,
+            agent.approval_policy,
+        ),
         upstream_step_names,
         outcome_choices: list_step_choices(workflow, agent.id),
     })

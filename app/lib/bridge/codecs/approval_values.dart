@@ -2,6 +2,8 @@ import 'package:agent_orchestration/bridge/codecs/identifier_codecs.dart';
 import 'package:agent_orchestration/bridge/codecs/json_values.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 
+const String unlabelledCommandSummary = 'Use a tool';
+
 enum ApprovalPolicy implements WireNamed {
   askBeforeRiskyActions('ask_before_risky_actions'),
   neverAsk('never_ask');
@@ -52,6 +54,9 @@ sealed class ApprovalAction implements JsonEncodable {
       ),
       RunCommand.kind => RunCommand(
         tool: readField(fields, 'tool', decodeText),
+        summary:
+            readOptionalField(fields, 'summary', decodeText) ??
+            unlabelledCommandSummary,
         command: readField(fields, 'command', decodeText),
       ),
       ImproveSkill.kind => ImproveSkill(
@@ -135,16 +140,26 @@ final class SignWorkflow extends ApprovalAction {
 }
 
 final class RunCommand extends ApprovalAction {
-  const RunCommand({required this.tool, required this.command});
+  const RunCommand({
+    required this.tool,
+    required this.summary,
+    required this.command,
+  });
 
   static const String kind = 'run_command';
 
   final String tool;
+  final String summary;
   final String command;
 
   @override
   JsonObject toJson() {
-    return <String, Object?>{'kind': kind, 'tool': tool, 'command': command};
+    return <String, Object?>{
+      'kind': kind,
+      'tool': tool,
+      'summary': summary,
+      'command': command,
+    };
   }
 }
 

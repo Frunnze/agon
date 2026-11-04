@@ -1,28 +1,40 @@
-import 'package:agent_orchestration/data/models/item_draft.dart';
-import 'package:agent_orchestration/screens/shared/muted_note.dart';
-import 'package:agent_orchestration/widgets/fact_list.dart';
-import 'package:agent_orchestration/widgets/mixed_text.dart';
+import 'package:flutter/widgets.dart';
 
-const String noneChosenText = 'None';
-const String notChosenText = 'Not chosen';
+import 'package:agent_orchestration/data/models/item_draft.dart';
+import 'package:agent_orchestration/icons/app_icon_kind.dart';
+import 'package:agent_orchestration/screens/new_items/new_item_texts.dart';
+import 'package:agent_orchestration/widgets/app_button.dart';
+import 'package:agent_orchestration/widgets/forms/form_action.dart';
+
+final class DraftFormCallbacks {
+  const DraftFormCallbacks({
+    required this.onChanged,
+    required this.onApproved,
+    required this.onCancelled,
+  });
+
+  final ValueChanged<DraftedItem> onChanged;
+  final Future<void> Function(DraftedItem item) onApproved;
+  final VoidCallback onCancelled;
+}
 
 abstract interface class DraftReview {
-  List<Fact> describeFacts(DraftedItem item);
+  Widget buildForm(DraftedItem item, DraftFormCallbacks callbacks);
 
   Future<void> approve(DraftedItem item);
 }
 
-Fact describeTextFact(String term, String text) {
-  return Fact(term: term, description: <TextSegment>[TextSegment(text)]);
-}
-
-Fact describeMutedFact(String term, String text) {
-  return Fact.content(term: term, content: MutedNote(text));
-}
-
-Fact describeOptionalTextFact(String term, String text) {
-  if (text.trim().isEmpty) {
-    return describeMutedFact(term, noneChosenText);
-  }
-  return describeTextFact(term, text);
+List<FormAction<V>> buildReviewActions<V>({
+  required VoidCallback onCancelled,
+  required Future<void> Function(V values) onApproved,
+}) {
+  return <FormAction<V>>[
+    LeaveFormAction<V>(label: cancelReviewLabel, onPressed: onCancelled),
+    SubmitFormAction<V>(
+      label: approveLabel,
+      tone: ButtonTone.primary,
+      icon: AppIconKind.check,
+      onSubmitted: onApproved,
+    ),
+  ];
 }

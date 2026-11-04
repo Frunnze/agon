@@ -40,7 +40,8 @@ pub struct WorkflowAgent {
     pub runs_on: RunnerTarget,
     pub skills: Vec<SkillId>,
     pub uses_automatic_skills: bool,
-    pub approval_policy: ApprovalPolicy,
+    #[serde(default)]
+    pub approval_policy: Option<ApprovalPolicy>,
     pub position: CanvasPosition,
 }
 

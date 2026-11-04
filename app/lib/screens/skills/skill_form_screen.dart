@@ -1,56 +1,39 @@
-import 'dart:async';
-
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 
 import 'package:agent_orchestration/data/models/library.dart';
+import 'package:agent_orchestration/data/models/scope.dart';
 import 'package:agent_orchestration/data/repository/project_repository.dart';
 import 'package:agent_orchestration/data/repository/skill_repository.dart';
 import 'package:agent_orchestration/data/repository/workspace_repository.dart';
 import 'package:agent_orchestration/screens/shared/scope_catalog_lookup.dart';
-import 'package:agent_orchestration/screens/shared/scope_fields.dart';
-import 'package:agent_orchestration/screens/shared/scope_selection.dart';
-import 'package:agent_orchestration/screens/skills/skill_name_problem.dart';
+import 'package:agent_orchestration/screens/skills/skill_form.dart';
 import 'package:agent_orchestration/shell/app_navigation.dart';
-import 'package:agent_orchestration/theme/app_spacing.dart';
-import 'package:agent_orchestration/theme/field_padding.dart';
-import 'package:agent_orchestration/theme/app_typography.dart';
 import 'package:agent_orchestration/widgets/app_button.dart';
 import 'package:agent_orchestration/widgets/app_page.dart';
-import 'package:agent_orchestration/widgets/forms/choice_list_field.dart';
-import 'package:agent_orchestration/widgets/forms/form_field_block.dart';
+import 'package:agent_orchestration/widgets/forms/form_action.dart';
 import 'package:agent_orchestration/widgets/page_header.dart';
 
-const int _instructionsMinimumLines = 6;
-const int _instructionsMaximumLines = 16;
-final TextStyle _monospaceInput = AppTextStyles.body.merge(
-  AppTextStyles.monospace,
+const SkillDraft _blankSkill = SkillDraft(
+  name: '',
+  summary: '',
+  instructions: '',
+  scope: Scope.everywhere(),
+  usage: SkillUsage.automatic,
+  improvement: SkillImprovement.auto,
 );
 
-const List<ChoiceOption<SkillUsage>> _usageChoices =
-    <ChoiceOption<SkillUsage>>[
-      ChoiceOption<SkillUsage>(
-        value: SkillUsage.automatic,
-        title: 'Automatic',
-        detail: 'Any agent can use it when the work fits.',
-      ),
-      ChoiceOption<SkillUsage>(
-        value: SkillUsage.whenChosen,
-        title: 'Only when chosen',
-        detail: 'A task, job or workflow agent has to add it.',
-      ),
-    ];
+SkillDraft _describeSkillDraft(Skill skill) {
+  return SkillDraft(
+    name: skill.name,
+    summary: skill.summary,
+    instructions: skill.instructions,
+    scope: skill.scope,
+    usage: skill.usage,
+    improvement: skill.improvement,
+  );
+}
 
-final List<ChoiceOption<SkillImprovement>> _improvementChoices =
-    <ChoiceOption<SkillImprovement>>[
-      for (final SkillImprovement improvement in SkillImprovement.values)
-        ChoiceOption<SkillImprovement>(
-          value: improvement,
-          title: improvement.label,
-          detail: improvement.explanation,
-        ),
-    ];
-
-class SkillFormScreen extends StatefulWidget {
+class SkillFormScreen extends StatelessWidget {
   const SkillFormScreen({
     required this.existingSkill,
     required this.skillRepository,
@@ -67,71 +50,12 @@ class SkillFormScreen extends StatefulWidget {
   final AppNavigation navigation;
 
   @override
-  State<SkillFormScreen> createState() => _SkillFormScreenState();
-}
-
-class _SkillFormScreenState extends State<SkillFormScreen> {
-  late final TextEditingController _nameController = TextEditingController(
-    text: widget.existingSkill?.name,
-  );
-  late final TextEditingController _summaryController = TextEditingController(
-    text: widget.existingSkill?.summary,
-  );
-  late final TextEditingController _instructionsController =
-      TextEditingController(text: widget.existingSkill?.instructions);
-  late ScopeSelection _scope = _buildInitialScope();
-  late SkillUsage _usage = widget.existingSkill?.usage ?? SkillUsage.automatic;
-  late SkillImprovement _improvement =
-      widget.existingSkill?.improvement ?? SkillImprovement.never;
-  String? _nameProblem;
-  String? _summaryProblem;
-  String? _instructionsProblem;
-  bool _isSaving = false;
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _summaryController.dispose();
-    _instructionsController.dispose();
-    super.dispose();
-  }
-
-  ScopeSelection _buildInitialScope() {
-    final Skill? skill = widget.existingSkill;
-    if (skill == null) {
-      return ScopeSelection.everywhere();
-    }
-    return ScopeSelection.fromScope(skill.scope);
-  }
-
-  String? _findNameProblem() {
-    final List<Skill> otherSkills = <Skill>[
-      for (final Skill skill in widget.skillRepository.listSkills())
-        if (skill.id != widget.existingSkill?.id) skill,
-    ];
-    return describeSkillNameProblem(
-      name: _nameController.text,
-      existingSkills: otherSkills,
-    );
-  }
-
-  String? _findSummaryProblem() {
-    if (_summaryController.text.trim().isEmpty) {
-      return 'Say what the skill does';
-    }
-    return null;
-  }
-
-  String? _findInstructionsProblem() {
-    if (_instructionsController.text.trim().isEmpty) {
-      return 'Write the instructions';
-    }
-    return null;
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final Skill? skill = widget.existingSkill;
+    final Skill? skill = existingSkill;
+    final List<Skill> otherSkills = <Skill>[
+      for (final Skill listed in skillRepository.listSkills())
+        if (listed.id != skill?.id) listed,
+    ];
 
     return AppPage(
       children: <Widget>[
@@ -139,92 +63,27 @@ class _SkillFormScreenState extends State<SkillFormScreen> {
           title: skill == null ? 'New skill' : 'Edit skill',
           backLink: BackLink(
             label: skill == null ? 'Skills' : skill.name,
-            onPressed: widget.navigation.closeRoute,
+            onPressed: navigation.closeRoute,
           ),
         ),
-        FormColumn(
-          children: <Widget>[
-            FormFieldBlock(
-              label: 'Name',
-              children: <Widget>[
-                TextField(
-                  controller: _nameController,
-                  style: _monospaceInput,
-                  decoration: InputDecoration(errorText: _nameProblem),
-                  onChanged: (String _) => setState(() => _nameProblem = null),
-                ),
-              ],
+        SkillForm(
+          initialSkill: skill == null
+              ? _blankSkill
+              : _describeSkillDraft(skill),
+          otherSkills: otherSkills,
+          catalog: collectScopeCatalog(
+            workspaceRepository: workspaceRepository,
+            projectRepository: projectRepository,
+          ),
+          actions: <FormAction<SkillDraft>>[
+            LeaveFormAction<SkillDraft>(
+              label: 'Cancel',
+              onPressed: navigation.closeRoute,
             ),
-            FormFieldBlock(
-              label: 'What it does',
-              hint: 'Agents read this to decide when the skill fits.',
-              children: <Widget>[
-                TextField(
-                  controller: _summaryController,
-                  decoration: InputDecoration(errorText: _summaryProblem),
-                  onChanged: (String _) =>
-                      setState(() => _summaryProblem = null),
-                ),
-              ],
-            ),
-            FormFieldBlock(
-              label: 'Instructions',
-              children: <Widget>[
-                TextField(
-                  controller: _instructionsController,
-                  style: _monospaceInput,
-                  minLines: _instructionsMinimumLines,
-                  maxLines: _instructionsMaximumLines,
-                  decoration: InputDecoration(
-                    contentPadding: multiLineFieldPadding,
-                    errorText: _instructionsProblem,
-                  ),
-                  onChanged: (String _) =>
-                      setState(() => _instructionsProblem = null),
-                ),
-              ],
-            ),
-            ScopeFields(
-              catalog: collectScopeCatalog(
-                workspaceRepository: widget.workspaceRepository,
-                projectRepository: widget.projectRepository,
-              ),
-              selection: _scope,
-              onChanged: _changeScope,
-            ),
-            FormFieldBlock(
-              label: 'When agents use it',
-              children: <Widget>[
-                ChoiceListField<SkillUsage>(
-                  options: _usageChoices,
-                  selected: _usage,
-                  onChanged: _changeUsage,
-                ),
-              ],
-            ),
-            FormFieldBlock(
-              label: 'Agents may improve it',
-              children: <Widget>[
-                ChoiceListField<SkillImprovement>(
-                  options: _improvementChoices,
-                  selected: _improvement,
-                  onChanged: _changeImprovement,
-                ),
-              ],
-            ),
-            Wrap(
-              spacing: AppSpacing.space2,
-              runSpacing: AppSpacing.space2,
-              children: <Widget>[
-                AppButton.secondary(
-                  label: 'Cancel',
-                  onPressed: widget.navigation.closeRoute,
-                ),
-                AppButton.primary(
-                  label: 'Save skill',
-                  onPressed: _isSaving ? null : () => unawaited(_save()),
-                ),
-              ],
+            SubmitFormAction<SkillDraft>(
+              label: 'Save skill',
+              tone: ButtonTone.primary,
+              onSubmitted: _saveSkill,
             ),
           ],
         ),
@@ -232,54 +91,13 @@ class _SkillFormScreenState extends State<SkillFormScreen> {
     );
   }
 
-  void _changeScope(ScopeSelection scope) {
-    setState(() => _scope = scope);
-  }
-
-  void _changeUsage(SkillUsage usage) {
-    setState(() => _usage = usage);
-  }
-
-  void _changeImprovement(SkillImprovement improvement) {
-    setState(() => _improvement = improvement);
-  }
-
-  Future<void> _save() async {
-    final String? nameProblem = _findNameProblem();
-    final String? summaryProblem = _findSummaryProblem();
-    final String? instructionsProblem = _findInstructionsProblem();
-    setState(() {
-      _nameProblem = nameProblem;
-      _summaryProblem = summaryProblem;
-      _instructionsProblem = instructionsProblem;
-    });
-
-    final bool hasProblem =
-        nameProblem != null ||
-        summaryProblem != null ||
-        instructionsProblem != null;
-    if (hasProblem) {
-      return;
-    }
-
-    setState(() => _isSaving = true);
-    final SkillDraft draft = SkillDraft(
-      name: _nameController.text,
-      summary: _summaryController.text.trim(),
-      instructions: _instructionsController.text,
-      scope: _scope.toScope(),
-      usage: _usage,
-      improvement: _improvement,
-    );
-    await _storeSkill(draft);
-    widget.navigation.closeSavedForm();
-  }
-
-  Future<Skill> _storeSkill(SkillDraft draft) {
-    final Skill? skill = widget.existingSkill;
+  Future<void> _saveSkill(SkillDraft draft) async {
+    final Skill? skill = existingSkill;
     if (skill == null) {
-      return widget.skillRepository.createSkill(draft);
+      await skillRepository.createSkill(draft);
+    } else {
+      await skillRepository.updateSkill(skill.id, draft);
     }
-    return widget.skillRepository.updateSkill(skill.id, draft);
+    navigation.closeSavedForm();
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:agent_orchestration/theme/app_spacing.dart';
 import 'package:agent_orchestration/theme/app_theme.dart';
+import 'package:agent_orchestration/theme/apply_layout_density.dart';
 import 'package:agent_orchestration/widgets/app_button.dart';
 import 'package:agent_orchestration/widgets/empty_state.dart';
 
@@ -18,6 +19,7 @@ class StartupWaitingPage extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: buildAppTheme(),
+      builder: applyLayoutDensity,
       home: const Scaffold(body: Center(child: Text(_startingText))),
     );
   }
@@ -40,6 +42,7 @@ class StartupProblemPage extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: buildAppTheme(),
+      builder: applyLayoutDensity,
       home: Scaffold(
         body: Padding(
           padding: const EdgeInsets.all(AppSpacing.space5),

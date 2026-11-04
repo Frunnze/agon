@@ -12,10 +12,10 @@ import '../../support/app_harness.dart';
 import '../../support/builder_harness.dart';
 import '../../support/form_finders.dart';
 
-const String _askHint = 'It asks you before each command and each push.';
-const String _autoHint =
-    'It runs commands and pushes without asking, and refuses risky '
-    'commands. In Docker it can run anything.';
+const String _sameAsProjectHint =
+    "Uses the project's setting, or the workspace's.";
+const String _askHint = 'Asks you before each command and each push.';
+const String _autoHint = 'Runs commands and pushes without asking you.';
 const String _draftedNote =
     'Check each agent before you sign. Change anything by hand: drag between '
     'dots, add agents, or edit the settings.';
@@ -51,11 +51,13 @@ const List<String> _settingsTexts = <String>[
   'Skills to use',
   'ios-release',
   'Also let the agent pick automatic skills',
-  'Commands',
-  'Ask for approval',
-  _askHint,
+  'Commands and pushes',
+  'Same as the project',
+  _sameAsProjectHint,
   'Auto',
   _autoHint,
+  'Ask me',
+  _askHint,
   'Remove agent',
 ];
 

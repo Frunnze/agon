@@ -25,15 +25,11 @@ void main() {
 
   test('test_page_padding_for_property_grows_with_layout_size', () {
     double previousHorizontal = 0;
-    double previousGap = 0;
 
     for (final LayoutSize size in LayoutSize.values) {
       final EdgeInsets padding = pagePaddingFor(size);
-      final double gap = pageGapFor(size);
       expect(padding.left >= previousHorizontal, isTrue);
-      expect(gap >= previousGap, isTrue);
       previousHorizontal = padding.left;
-      previousGap = gap;
     }
   });
 

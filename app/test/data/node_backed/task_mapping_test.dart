@@ -59,7 +59,7 @@ void main() {
       expect(task.skills, wire.skills);
       expect(task.usesAutomaticSkills, wire.usesAutomaticSkills);
       expect(
-        mapApprovalPolicyToNode(task.approvalPolicy),
+        mapOptionalApprovalPolicyToNode(task.approvalPolicy),
         wire.approvalPolicy,
       );
       expect(task.schedule == null, wire.schedule == null);
@@ -88,7 +88,7 @@ void main() {
       expect(arguments.skills, draft.skills);
       expect(arguments.usesAutomaticSkills, draft.usesAutomaticSkills);
       expect(
-        mapApprovalPolicyFromNode(arguments.approvalPolicy),
+        mapOptionalApprovalPolicyFromNode(arguments.approvalPolicy),
         draft.approvalPolicy,
       );
     }

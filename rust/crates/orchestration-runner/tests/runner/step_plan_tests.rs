@@ -89,7 +89,7 @@ proptest! {
             .map(|number| SkillId(Uuid::from_u128(*number)))
             .collect();
         let task = Task {
-            approval_policy,
+            approval_policy: Some(approval_policy),
             uses_automatic_skills,
             skills: skills.clone(),
             ..task_for(TASK_NUMBER, &title, TaskDoer::OneAgent { agent })

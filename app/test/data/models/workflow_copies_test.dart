@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:agent_orchestration/data/gallery/gallery_library.dart';
+import 'package:agent_orchestration/data/models/approval.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/library.dart';
 import 'package:agent_orchestration/data/models/workflow.dart';
@@ -11,6 +12,7 @@ import 'package:agent_orchestration/presentation/skill_names.dart';
 
 import '../../support/random_inputs.dart';
 import '../../support/random_workflows.dart';
+import '../../support/sample_records.dart';
 
 void main() {
   test('test_copy_with_property_untouched_fields_kept', () {
@@ -29,6 +31,28 @@ void main() {
       expect(copy.skills, agent.skills);
       expect(copy.usesAutomaticSkills, agent.usesAutomaticSkills);
       expect(copy.approvalPolicy, agent.approvalPolicy);
+      expect(copy.position, same(agent.position));
+    }
+  });
+
+  test('test_with_approval_policy_property_changes_only_the_policy', () {
+    final Random random = seededRandom(9409);
+
+    for (int i = 0; i < propertyIterations; i += 1) {
+      final WorkflowAgent agent = randomAgent(random, i);
+      final ApprovalPolicy? chosen = randomInheritableApprovalPolicy(random);
+
+      final WorkflowAgent copy = agent.withApprovalPolicy(chosen);
+
+      expect(copy.approvalPolicy, chosen);
+      expect(copy.id, agent.id);
+      expect(copy.name, agent.name);
+      expect(copy.stepKind, agent.stepKind);
+      expect(copy.kind, agent.kind);
+      expect(copy.task, agent.task);
+      expect(copy.runsOn, agent.runsOn);
+      expect(copy.skills, agent.skills);
+      expect(copy.usesAutomaticSkills, agent.usesAutomaticSkills);
       expect(copy.position, same(agent.position));
     }
   });

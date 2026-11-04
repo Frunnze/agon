@@ -119,6 +119,7 @@ pub fn sample_project(workspace_id: WorkspaceId) -> Project {
             default_branch: "main".to_owned(),
             agent_access: AgentAccess::ReadOnly,
         }],
+        approval_policy: None,
     }
 }
 
@@ -148,7 +149,7 @@ pub fn one_agent_task(
         agent_place: Some(AgentPlace::LocalProcess),
         skills: Vec::new(),
         uses_automatic_skills: true,
-        approval_policy: ApprovalPolicy::AskBeforeRiskyActions,
+        approval_policy: Some(ApprovalPolicy::AskBeforeRiskyActions),
         schedule,
         status: TaskStatus::ToDo,
         created_at: chrono::DateTime::from_timestamp(

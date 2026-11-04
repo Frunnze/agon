@@ -6,6 +6,7 @@ import 'package:agent_orchestration/bridge/commands/device_commands.dart'
 import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/widgets/app_button.dart';
 
+import '../support/settings_finders.dart';
 import 'support/real_stack.dart';
 import 'support/stack_navigation.dart';
 import 'support/stack_node_reads.dart';
@@ -139,7 +140,10 @@ void main() {
             _isRunnerInWorkspace(stack: stack, workspaceId: secondWorkspaceId),
       );
 
-      await tapWhenShown(tester, find.widgetWithText(AppButton, 'Remove'));
+      await tapWhenShown(
+        tester,
+        findWorkspaceDeviceRemoveButtons(_secondWorkspaceName),
+      );
       await waitUntilGone(tester, find.text(runnerDeviceName));
       final node.DeviceView removed = await askNode(
         tester,

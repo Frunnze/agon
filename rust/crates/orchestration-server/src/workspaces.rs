@@ -5,9 +5,11 @@ use orchestration_api::catalog::{
     AddWorkspaceDeviceRequest, CreateWorkspaceRequest,
 };
 use orchestration_api::updates::ChangeTopic;
+use orchestration_core::approval::ApprovalPolicy;
 use orchestration_core::device::Device;
 use orchestration_core::identifiers::{DeviceId, WorkspaceId};
 use orchestration_core::naming::validate_name;
+use orchestration_core::protected_files::ProtectedFiles;
 use orchestration_core::workspace::Workspace;
 use uuid::Uuid;
 
@@ -94,6 +96,8 @@ fn open_workspace(
         id: request.workspace_id,
         name: request.name.clone(),
         app_server_address: public_address.to_owned(),
+        approval_policy: ApprovalPolicy::default(),
+        protected_files: ProtectedFiles::default(),
     };
     state.workspaces.insert(workspace.id, workspace.clone());
     grant_workspace(

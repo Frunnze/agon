@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:agent_orchestration/theme/app_spacing.dart';
 import 'package:agent_orchestration/theme/app_typography.dart';
+import 'package:agent_orchestration/theme/layout_density.dart';
 import 'package:agent_orchestration/widgets/app_button.dart';
 
 class RepositoryEntryField extends StatelessWidget {
@@ -22,6 +23,9 @@ class RepositoryEntryField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final LayoutDensity layoutDensity = LayoutDensity.of(context);
+    final double controlHeight = AppSizes.controlHeightFor(layoutDensity);
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
@@ -42,7 +46,7 @@ class RepositoryEntryField extends StatelessWidget {
         ),
         const SizedBox(width: AppSpacing.space2),
         SizedBox(
-          height: AppSizes.controlHeight,
+          height: controlHeight,
           child: AppButton.secondary(label: 'Add repo', onPressed: onAdded),
         ),
       ],

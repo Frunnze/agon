@@ -46,6 +46,14 @@ wait_for_file() {
   done
 }
 
+hold_until_released() {
+  case "$prompt" in
+    *"Wait for release"*)
+      wait_for_file release
+      ;;
+  esac
+}
+
 say() {
   text_block="{\"type\":\"text\",\"text\":\"$1\"}"
   printf '{"type":"assistant","message":{"content":[%s]}}\n' "$text_block"
@@ -116,6 +124,7 @@ case "$prompt" in
     ;;
   *"Draft a new task."*)
     : > "$AGENT_RECORDS/item-drafting-started"
+    hold_until_released
     project_id=$(printf '%s\n' "$prompt" \
       | sed -n '/^Projects:$/,/^Workflows:$/s/^- .* (id \([0-9a-f-]*\)).*/\1/p' \
       | head -n 1)
@@ -138,6 +147,7 @@ case "$prompt" in
     ;;
   *"Draft a new project."*)
     : > "$AGENT_RECORDS/item-drafting-started"
+    hold_until_released
     project_name=$(read_chosen_name)
     draft="{\"name\":\"$project_name\",\
 \"repositories\":[{\"address\":\"github.com/acme/$project_name\",\

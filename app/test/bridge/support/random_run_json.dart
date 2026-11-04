@@ -132,6 +132,7 @@ Map<String, Object?> randomRunCommandJson(Random random) {
   return <String, Object?>{
     'kind': 'run_command',
     'tool': randomText(random),
+    'summary': randomText(random),
     'command': randomText(random),
   };
 }

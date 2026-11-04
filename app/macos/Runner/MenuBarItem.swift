@@ -7,11 +7,11 @@ private let noKeyEquivalent = ""
 private let iconSide: CGFloat = 18
 
 final class MenuBarItem: NSObject {
-  private unowned let window: NSWindow
+  private let onOpen: () -> Void
   private var statusItem: NSStatusItem?
 
-  init(window: NSWindow) {
-    self.window = window
+  init(onOpen: @escaping () -> Void) {
+    self.onOpen = onOpen
   }
 
   var isShown: Bool {
@@ -78,8 +78,7 @@ final class MenuBarItem: NSObject {
   }
 
   @objc private func openWindow() {
-    NSApp.activate(ignoringOtherApps: true)
-    window.makeKeyAndOrderFront(nil)
+    onOpen()
   }
 
   @objc private func quit() {

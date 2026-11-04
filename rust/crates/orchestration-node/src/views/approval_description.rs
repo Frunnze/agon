@@ -10,16 +10,14 @@ pub fn describe_approval_action(
 ) -> String {
     match action {
         ApprovalAction::PushCommits {
-            repository,
-            commits,
-            ..
+            branch, commits, ..
         } => {
             let commit_word = if commits.len() == 1 {
                 "commit"
             } else {
                 "commits"
             };
-            format!("Push {} {commit_word} to {repository}", commits.len())
+            format!("Push {} {commit_word} to {branch}", commits.len())
         }
         ApprovalAction::Deploy { target } => format!("Deploy to {target}"),
         ApprovalAction::DeleteBranchOrFiles { repository, what } => {
@@ -32,9 +30,7 @@ pub fn describe_approval_action(
                 .unwrap_or_else(|| workflow_id.0.to_string());
             format!("Sign workflow {workflow_name}")
         }
-        ApprovalAction::RunCommand { tool, command } => {
-            format!("Use {tool}: {command}")
-        }
+        ApprovalAction::RunCommand { summary, .. } => summary.clone(),
         ApprovalAction::ImproveSkill { summary, .. } => {
             format!("Improve a skill: {summary}")
         }

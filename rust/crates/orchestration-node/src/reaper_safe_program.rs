@@ -49,12 +49,8 @@ pub fn run_program(
     working_folder: &Path,
 ) -> io::Result<ProgramOutcome> {
     let files = create_outcome_files()?;
-    let outcome = run_with_outcome_files(
-        program,
-        arguments,
-        working_folder,
-        &files,
-    );
+    let outcome =
+        run_with_outcome_files(program, arguments, working_folder, &files);
     fs::remove_dir_all(&files.folder)?;
     outcome
 }
@@ -109,7 +105,9 @@ fn wait_for_exit_code(status_file: &Path) -> io::Result<i32> {
     let deadline = Instant::now() + STATUS_WAIT_LIMIT;
     while !status_file.exists() {
         if Instant::now() > deadline {
-            return Err(io::Error::other("the program never reported its end"));
+            return Err(io::Error::other(
+                "the program never reported its end",
+            ));
         }
         thread::sleep(STATUS_CHECK_INTERVAL);
     }

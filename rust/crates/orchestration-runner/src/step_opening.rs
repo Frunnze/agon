@@ -49,14 +49,16 @@ pub(crate) async fn open_agent_conversation<
     context: &RunContext<S, P>,
     step: &StepPlan,
     opening: &StepOpening,
+    answered_messages: usize,
 ) -> Result<AgentEnding, RunError> {
     match opening {
         StepOpening::FreshPrompt(prompt) => {
-            invoke_agent(context, step, prompt, None).await
+            invoke_agent(context, step, prompt, None, answered_messages).await
         }
         StepOpening::ResumedSession(session) => {
             let transcript = AgentTranscript {
                 session: Some(session.clone()),
+                answered_messages,
                 ..AgentTranscript::default()
             };
             Ok(AgentEnding::Succeeded(transcript))

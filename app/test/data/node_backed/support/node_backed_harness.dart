@@ -5,6 +5,7 @@ import 'package:agent_orchestration/bridge/node/node_command_channel.dart';
 import 'package:agent_orchestration/data/clock.dart';
 import 'package:agent_orchestration/data/fakes.dart';
 import 'package:agent_orchestration/data/models/app_server_group.dart';
+import 'package:agent_orchestration/data/models/approval.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/task.dart';
 import 'package:agent_orchestration/data/models/workspace.dart';
@@ -23,11 +24,13 @@ final DateTime _harnessMoment = DateTime.utc(2026, 10, 31, 9);
 
 WorkspaceRepository buildSingleWorkspaceRepository() {
   return FakeWorkspaceRepository(
-    workspaces: const <Workspace>[
+    workspaces: <Workspace>[
       Workspace(
         id: harnessWorkspaceId,
         name: 'home',
         appServerAddress: _harnessServerAddress,
+        protectedFiles: const <String>[],
+        approvalPolicy: ApprovalPolicy.neverAsk,
       ),
     ],
     currentWorkspaceId: harnessWorkspaceId,

@@ -86,7 +86,7 @@ String describeAgentAccess(AgentAccess access) {
     case AgentAccess.readOnly:
       return 'Read only';
     case AgentAccess.pushAfterApproval:
-      return 'Read, push once approved';
+      return 'Read and push';
   }
 }
 

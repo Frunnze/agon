@@ -9,7 +9,6 @@ import 'package:agent_orchestration/presentation/audit_text.dart';
 import 'package:agent_orchestration/presentation/device_names.dart';
 import 'package:agent_orchestration/presentation/identifier_text.dart';
 import 'package:agent_orchestration/theme/app_typography.dart';
-import 'package:agent_orchestration/theme/layout_size.dart';
 import 'package:agent_orchestration/theme/page_metrics.dart';
 import 'package:agent_orchestration/widgets/empty_state.dart';
 import 'package:agent_orchestration/widgets/gaps.dart';
@@ -104,8 +103,6 @@ class _AuditLogTabState extends State<AuditLogTab> {
     final DeviceNames deviceNames = DeviceNames(
       widget.deviceRepository.listDevices(),
     );
-
-    final double pageGap = pageGapFor(LayoutSize.of(context));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,

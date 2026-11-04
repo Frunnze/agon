@@ -1,4 +1,3 @@
-import 'package:agent_orchestration/data/models/approval.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/runner.dart';
 import 'package:agent_orchestration/data/models/workflow.dart';
@@ -85,7 +84,7 @@ WorkflowAgent _buildBlankStep(
     runsOn: const AnyFreeRunner(),
     skills: const <SkillId>[],
     usesAutomaticSkills: true,
-    approvalPolicy: ApprovalPolicy.askBeforeRiskyActions,
+    approvalPolicy: null,
     position: placeBelowAgents(workflow.agents),
   );
 }

@@ -1,4 +1,6 @@
-use orchestration_core::approval::ApprovalAction;
+use orchestration_core::approval::{
+    ApprovalAction, UNLABELLED_COMMAND_SUMMARY,
+};
 use orchestration_core::identifiers::SkillId;
 use orchestration_core::library::{Skill, SkillImprovement};
 use proptest::prelude::*;
@@ -9,13 +11,18 @@ use uuid::Uuid;
 fn a_run_command_approval_has_the_agreed_wire_shape() {
     let action = ApprovalAction::RunCommand {
         tool: "Bash".to_string(),
+        summary: "Run the tests".to_string(),
         command: "npm test".to_string(),
     };
 
     let encoded_action = serde_json::to_value(&action).ok();
 
-    let expected_action =
-        json!({"kind": "run_command", "tool": "Bash", "command": "npm test"});
+    let expected_action = json!({
+        "kind": "run_command",
+        "tool": "Bash",
+        "summary": "Run the tests",
+        "command": "npm test",
+    });
     assert_eq!(encoded_action, Some(expected_action));
 }
 
@@ -23,10 +30,12 @@ proptest! {
     #[test]
     fn test_approval_action_property_run_command_keeps_its_wire_shape(
         tool in "\\PC{0,20}",
+        summary in "\\PC{0,80}",
         command in "\\PC{0,200}",
     ) {
         let action = ApprovalAction::RunCommand {
             tool: tool.clone(),
+            summary: summary.clone(),
             command: command.clone(),
         };
 
@@ -35,10 +44,33 @@ proptest! {
             .clone()
             .and_then(|encoded| serde_json::from_value(encoded).ok());
 
-        let expected_action: Value =
-            json!({"kind": "run_command", "tool": tool, "command": command});
+        let expected_action: Value = json!({
+            "kind": "run_command",
+            "tool": tool,
+            "summary": summary,
+            "command": command,
+        });
         prop_assert_eq!(encoded_action, Some(expected_action));
         prop_assert_eq!(decoded_action, Some(action));
+    }
+
+    #[test]
+    fn test_approval_action_property_stored_command_reads_without_summary(
+        tool in "\\PC{0,20}",
+        command in "\\PC{0,200}",
+    ) {
+        let stored_action =
+            json!({"kind": "run_command", "tool": tool, "command": command});
+
+        let decoded_action: Option<ApprovalAction> =
+            serde_json::from_value(stored_action).ok();
+
+        let expected_action = ApprovalAction::RunCommand {
+            tool,
+            summary: UNLABELLED_COMMAND_SUMMARY.to_string(),
+            command,
+        };
+        prop_assert_eq!(decoded_action, Some(expected_action));
     }
 }
 

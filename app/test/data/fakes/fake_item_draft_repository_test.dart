@@ -49,7 +49,7 @@ void main() {
           finished.draft.item.runtimeType,
           prepared[kind]!.item.runtimeType,
         );
-        expect(finished.draft.canBeApproved, isTrue);
+        expect(finished.draft.problems, isEmpty);
       }
     },
   );

@@ -8,9 +8,11 @@ const LISTED_IDS_ONLY: &str = "Use only the ids listed above.";
 pub(crate) const RUNS_ON_FORMS: &str = "{\"kind\": \"any_free_runner\"}, \
      {\"kind\": \"specific_runner\", \"device_id\": \"<id>\"} or \
      {\"kind\": \"runner_with_labels\", \"labels\": [\"<label>\"]}";
-pub(crate) const APPROVAL_POLICY_FORMS: &str = "ask_before_risky_actions \
-     (ask the person before each command and push) or never_ask (run \
-     without asking)";
+pub(crate) const APPROVAL_POLICY_FORMS: &str = "null (follow the \
+     project's setting, Auto unless the person changed it), never_ask \
+     (Auto: run commands and push without asking) or \
+     ask_before_risky_actions (Ask me: ask the person before each command \
+     and push)";
 const WORK_OPENING_LINES: [&str; 4] = [
     "- title: what should be done, in a few words.",
     "- details: everything the agent needs to know to do it.",
@@ -32,8 +34,8 @@ const WORK_PLACE_AND_SKILL_LINES: [&str; 3] = [
 ];
 const RUNS_ON_ADVICE: &str =
     "any_free_runner unless the person names a runner or a label";
-const APPROVAL_ADVICE: &str =
-    "ask_before_risky_actions unless the person says otherwise";
+const APPROVAL_ADVICE: &str = "null unless the person asks for Auto or \
+                               for being asked first";
 const SCHEDULE_FORMS: &str = "{\"every\": \"hour\", \"minute\": 0-59}, \
      {\"every\": \"day\", \"at\": {\"hour\": 0-23, \"minute\": 0-59}} or \
      {\"every\": \"week\", \"on\": \"Mon\", \"at\": {\"hour\": 0-23, \
@@ -65,8 +67,8 @@ const SKILL_FIELD_LINES: [&str; 2] = [
 ];
 const SKILL_USAGE_LINE: &str = "- usage: automatic or when_chosen.";
 const SKILL_IMPROVEMENT_LINE: &str = "- improvement: never, ask_me or auto, \
-     how agents may improve the skill; never unless the person asks for \
-     agents to improve it.";
+     how agents may improve the skill; auto unless the person asks to be \
+     asked first or for agents never to change it.";
 const RULE_FIELD_LINES: [&str; 2] = [
     "- title: the rule in one short sentence.",
     "- details: more about the rule, or an empty text.",

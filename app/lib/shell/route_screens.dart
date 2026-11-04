@@ -4,9 +4,7 @@ import 'package:agent_orchestration/data/app_dependencies.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/item_draft.dart';
 import 'package:agent_orchestration/data/models/project.dart';
-import 'package:agent_orchestration/screens/chat/chat_screen.dart';
 import 'package:agent_orchestration/screens/settings.dart';
-import 'package:agent_orchestration/screens/task_run/task_run_screen.dart';
 import 'package:agent_orchestration/screens/workflows/new_workflow_screen.dart';
 import 'package:agent_orchestration/shell/app_navigation.dart';
 import 'package:agent_orchestration/shell/app_route.dart';
@@ -18,6 +16,7 @@ import 'package:agent_orchestration/shell/project_route_screens.dart';
 import 'package:agent_orchestration/shell/section_route_screens.dart';
 import 'package:agent_orchestration/shell/task_route_screens.dart';
 import 'package:agent_orchestration/shell/workflow_route_screens.dart';
+import 'package:agent_orchestration/windows/run_window_opener.dart';
 
 bool _startsNewWork(AppRoute route) {
   if (route is NewItemFormRoute) {
@@ -42,6 +41,7 @@ Widget buildRouteScreen({
   required AppRoute route,
   required AppDependencies dependencies,
   required AppNavigation navigation,
+  required RunWindowOpener? runWindowOpener,
 }) {
   if (_startsNewWork(route) && !_hasProjectsInCurrentWorkspace(dependencies)) {
     return buildNewItemScreen(
@@ -73,29 +73,21 @@ Widget buildRouteScreen({
         navigation: navigation,
       );
     case TaskRunRoute():
-      return TaskRunScreen(
+      return buildTaskRunScreen(
         runId: route.runId,
-        taskRepository: dependencies.taskRepository,
-        workflowRepository: dependencies.workflowRepository,
-        projectRepository: dependencies.projectRepository,
-        deviceRepository: dependencies.deviceRepository,
-        approvalRepository: dependencies.approvalRepository,
-        personStepRepository: dependencies.personStepRepository,
-        runnerRepository: dependencies.runnerRepository,
-        clock: dependencies.clock,
+        dependencies: dependencies,
         navigation: navigation,
+        runWindowOpener: runWindowOpener,
       );
     case ChatRoute():
-      return ChatScreen(
+      return buildRunApprovalPrompts(
         runId: route.runId,
-        taskRepository: dependencies.taskRepository,
-        workflowRepository: dependencies.workflowRepository,
-        chatRepository: dependencies.chatRepository,
-        approvalRepository: dependencies.approvalRepository,
-        runnerRepository: dependencies.runnerRepository,
-        deviceRepository: dependencies.deviceRepository,
-        clock: dependencies.clock,
-        navigation: navigation,
+        dependencies: dependencies,
+        child: buildChatScreen(
+          runId: route.runId,
+          dependencies: dependencies,
+          navigation: navigation,
+        ),
       );
     case NewJobRoute():
       return buildNewItemScreen(

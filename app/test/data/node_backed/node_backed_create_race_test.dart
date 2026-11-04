@@ -59,6 +59,7 @@ void main() {
               workspaceId: workspaceId,
               name: 'site-$i',
               repositories: const <Repository>[],
+              approvalPolicy: null,
             ),
           ),
           fetchedArea: node.ChangeArea.projects,

@@ -37,25 +37,6 @@ class ListRowMain extends StatelessWidget {
   }
 }
 
-class MixedListRowMain extends StatelessWidget {
-  const MixedListRowMain({
-    required this.title,
-    super.key,
-    this.subtitle = const <TextSegment>[],
-  });
-
-  final List<TextSegment> title;
-  final List<TextSegment> subtitle;
-
-  @override
-  Widget build(BuildContext context) {
-    return _RowMainColumn(
-      title: MixedText(title, style: AppTextStyles.bodyBold),
-      subtitle: subtitle,
-    );
-  }
-}
-
 class _RowMainColumn extends StatelessWidget {
   const _RowMainColumn({required this.title, required this.subtitle});
 

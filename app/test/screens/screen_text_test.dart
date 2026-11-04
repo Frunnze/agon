@@ -139,7 +139,7 @@ void main() {
         ),
       );
 
-      expect(text, '$label · branch release');
+      expect(text, '$label · acme/app');
     }
     expect(
       joinSegments(

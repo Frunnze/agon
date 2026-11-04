@@ -59,7 +59,7 @@ final class TaskDraft {
   final AgentPlace agentPlace;
   final List<SkillId> skills;
   final bool usesAutomaticSkills;
-  final ApprovalPolicy approvalPolicy;
+  final ApprovalPolicy? approvalPolicy;
 }
 
 final class JobDraft {
@@ -111,7 +111,7 @@ final class Task {
   final AgentPlace agentPlace;
   final List<SkillId> skills;
   final bool usesAutomaticSkills;
-  final ApprovalPolicy approvalPolicy;
+  final ApprovalPolicy? approvalPolicy;
   final Schedule? schedule;
   final TaskStatus status;
   final DateTime createdAt;

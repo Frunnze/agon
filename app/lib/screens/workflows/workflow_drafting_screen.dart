@@ -189,7 +189,7 @@ class _WorkflowDraftingScreenState extends State<WorkflowDraftingScreen> {
           ),
       ],
       builder: BuilderFrame(
-        canvas: CanvasScrollArea(child: _buildDiagram(progress, deviceNames)),
+        canvas: _buildDiagram(progress, deviceNames),
         panel: DraftProgressPanel(
           lines: describeDraftProgress(
             progress: progress,
@@ -206,7 +206,10 @@ class _WorkflowDraftingScreenState extends State<WorkflowDraftingScreen> {
     DeviceNames deviceNames,
   ) {
     if (progress == null) {
-      return const SizedBox.shrink();
+      return const ReadOnlyWorkflowDiagram(
+        nodes: <DiagramNode>[],
+        edges: <DiagramEdge>[],
+      );
     }
 
     final Workflow workflow = progress.workflow;
@@ -221,10 +224,7 @@ class _WorkflowDraftingScreenState extends State<WorkflowDraftingScreen> {
       for (final PendingAgent pending in progress.pendingAgents)
         describePendingNode(pending),
     ];
-    return WorkflowDiagram(
-      size: measureCanvas(<CanvasPosition>[
-        for (final DiagramNode node in nodes) node.position,
-      ]),
+    return ReadOnlyWorkflowDiagram(
       nodes: nodes,
       edges: describeDiagramEdges(
         agents: workflow.agents,
@@ -232,7 +232,6 @@ class _WorkflowDraftingScreenState extends State<WorkflowDraftingScreen> {
         selected: null,
         drawnLoop: null,
       ),
-      drawnEdge: null,
     );
   }
 }

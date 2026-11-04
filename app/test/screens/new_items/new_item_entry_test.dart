@@ -16,6 +16,7 @@ import 'package:agent_orchestration/shell/app_route.dart';
 import 'package:agent_orchestration/shell/app_section.dart';
 
 import '../../support/app_harness.dart';
+import '../../support/form_finders.dart';
 import '../../support/random_inputs.dart';
 import '../../support/scripted_item_draft_repository.dart';
 import 'new_item_harness.dart';
@@ -86,7 +87,7 @@ void main() {
         drafts,
         findGalleryItemDraft(DraftKind.project),
       );
-      await tester.tap(find.text(approveLabel));
+      await tapVisible(tester, findAppButton(approveLabel));
       await pumpFrames(tester);
 
       expect(navigation.currentRoute, isA<ProjectRoute>());
@@ -121,7 +122,7 @@ void main() {
       await startNewItemDraft(tester, describeNewItem(kind).draftLabel);
       await finishNewItemDraft(tester, drafts, findGalleryItemDraft(kind));
 
-      await tester.tap(find.text(approveLabel));
+      await tapVisible(tester, findAppButton(approveLabel));
       await pumpFrames(tester);
 
       final AppRoute route = navigation.currentRoute;

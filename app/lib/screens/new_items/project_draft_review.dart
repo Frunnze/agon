@@ -1,58 +1,43 @@
 import 'package:flutter/widgets.dart';
 
+import 'package:agent_orchestration/data/folder_picker.dart';
 import 'package:agent_orchestration/data/models/item_draft.dart';
 import 'package:agent_orchestration/data/models/project.dart';
 import 'package:agent_orchestration/data/repository/device_repository.dart';
 import 'package:agent_orchestration/data/repository/project_repository.dart';
 import 'package:agent_orchestration/data/repository/workspace_repository.dart';
-import 'package:agent_orchestration/presentation/device_names.dart';
 import 'package:agent_orchestration/screens/new_items/draft_review.dart';
-import 'package:agent_orchestration/screens/projects/agent_access_choices.dart';
-import 'package:agent_orchestration/screens/projects/repository_rows.dart';
+import 'package:agent_orchestration/screens/projects/project_form.dart';
 import 'package:agent_orchestration/shell/app_navigation.dart';
 import 'package:agent_orchestration/shell/app_route.dart';
-import 'package:agent_orchestration/widgets/fact_list.dart';
-import 'package:agent_orchestration/widgets/lists/list_row_data.dart';
-import 'package:agent_orchestration/widgets/lists/responsive_list.dart';
-import 'package:agent_orchestration/widgets/mixed_text.dart';
 
 final class ProjectDraftReview implements DraftReview {
   const ProjectDraftReview({
     required this.projectRepository,
     required this.workspaceRepository,
     required this.deviceRepository,
+    required this.folderPicker,
     required this.navigation,
   });
 
   final ProjectRepository projectRepository;
   final WorkspaceRepository workspaceRepository;
   final DeviceRepository deviceRepository;
+  final FolderPicker? folderPicker;
   final AppNavigation navigation;
 
   @override
-  List<Fact> describeFacts(DraftedItem item) {
-    final DraftedProject project = _requireProject(item);
-    final DeviceNames deviceNames = DeviceNames(
-      deviceRepository.listDevices(),
+  Widget buildForm(DraftedItem item, DraftFormCallbacks callbacks) {
+    return ProjectForm(
+      initialProject: _requireProject(item),
+      deviceRepository: deviceRepository,
+      folderPicker: folderPicker,
+      onChanged: callbacks.onChanged,
+      actions: buildReviewActions<DraftedProject>(
+        onCancelled: callbacks.onCancelled,
+        onApproved: callbacks.onApproved,
+      ),
     );
-
-    return <Fact>[
-      Fact(
-        term: 'Name',
-        description: <TextSegment>[TextSegment.monospace(project.name)],
-      ),
-      if (project.repositories.isEmpty)
-        describeMutedFact('Repos', noneChosenText)
-      else
-        Fact.content(
-          term: 'Repos',
-          content: _buildRepositoryList(project.repositories, deviceNames),
-        ),
-      describeTextFact(
-        'What agents can do',
-        describeAgentAccessChoiceTitle(project.agentAccess),
-      ),
-    ];
   }
 
   @override
@@ -69,22 +54,5 @@ final class ProjectDraftReview implements DraftReview {
       throw ArgumentError.value(item, 'item', 'Not a project draft');
     }
     return item;
-  }
-
-  Widget _buildRepositoryList(
-    List<RepositoryDraft> repositories,
-    DeviceNames deviceNames,
-  ) {
-    return ResponsiveList.plain(
-      rows: <ListRowData>[
-        for (final RepositoryDraft repository in repositories)
-          buildRepositoryDraftRow(
-            repository: repository,
-            deviceNames: deviceNames,
-            gitStartedAddresses: const <String>{},
-            end: null,
-          ),
-      ],
-    );
   }
 }

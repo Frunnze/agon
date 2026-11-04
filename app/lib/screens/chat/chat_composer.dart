@@ -6,8 +6,7 @@ import 'package:agent_orchestration/icons/app_icon_kind.dart';
 import 'package:agent_orchestration/theme/app_colors.dart';
 import 'package:agent_orchestration/theme/app_spacing.dart';
 import 'package:agent_orchestration/widgets/app_button.dart';
-
-const int _composerMaximumLines = 4;
+import 'package:agent_orchestration/widgets/forms/message_field.dart';
 
 class ChatComposer extends StatefulWidget {
   const ChatComposer({required this.onSend, super.key});
@@ -20,10 +19,18 @@ class ChatComposer extends StatefulWidget {
 
 class _ChatComposerState extends State<ChatComposer> {
   final TextEditingController _messageController = TextEditingController();
+  final FocusNode _messageFocusNode = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    _messageFocusNode.requestFocus();
+  }
 
   @override
   void dispose() {
     _messageController.dispose();
+    _messageFocusNode.dispose();
     super.dispose();
   }
 
@@ -38,14 +45,12 @@ class _ChatComposerState extends State<ChatComposer> {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: <Widget>[
           Expanded(
-            child: TextField(
+            child: MessageField(
               controller: _messageController,
-              minLines: 1,
-              maxLines: _composerMaximumLines,
-              decoration: const InputDecoration(
-                hintText: 'Message the agent',
-                semanticCounterText: 'Message to the agent',
-              ),
+              focusNode: _messageFocusNode,
+              hintText: 'Message the agent',
+              fieldLabel: 'Message to the agent',
+              onSend: () => unawaited(_send()),
             ),
           ),
           const SizedBox(width: AppSpacing.space2),
@@ -60,12 +65,13 @@ class _ChatComposerState extends State<ChatComposer> {
   }
 
   Future<void> _send() async {
-    final String text = _messageController.text;
-    if (text.trim().isEmpty) {
+    final String message = _messageController.text.trim();
+    if (message.isEmpty) {
       return;
     }
 
     _messageController.clear();
-    await widget.onSend(text);
+    _messageFocusNode.requestFocus();
+    await widget.onSend(message);
   }
 }

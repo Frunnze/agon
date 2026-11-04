@@ -1,7 +1,9 @@
 use orchestration_api::accounts::{RevokeDeviceRequest, revocation_statement};
 use orchestration_api::catalog::{
-    AddWorkspaceDeviceRequest, CreateWorkspaceRequest,
+    AddWorkspaceDeviceRequest, ChangeWorkspaceApprovalPolicyRequest,
+    CreateWorkspaceRequest,
 };
+use orchestration_core::approval::ApprovalPolicy;
 use orchestration_core::device::Device;
 use orchestration_core::identifiers::{DeviceId, WorkspaceId, generate_uuid};
 use orchestration_core::naming::validate_name;
@@ -17,11 +19,12 @@ use crate::node::{DeviceSession, Node};
 use crate::node_error::NodeError;
 use crate::peer_side::trusted_peer_address;
 
-pub(super) const DEVICE_COMMAND_NAMES: [&str; 7] = [
+pub(super) const DEVICE_COMMAND_NAMES: [&str; 8] = [
     "list_devices",
     "revoke_device",
     "list_workspaces",
     "create_workspace",
+    "change_workspace_approval_policy",
     "add_device_to_workspace",
     "remove_device_from_workspace",
     "list_audit",
@@ -37,6 +40,10 @@ pub(super) enum DeviceCommand {
     ListWorkspaces,
     CreateWorkspace {
         name: String,
+    },
+    ChangeWorkspaceApprovalPolicy {
+        workspace_id: WorkspaceId,
+        approval_policy: ApprovalPolicy,
     },
     AddDeviceToWorkspace {
         workspace_id: WorkspaceId,
@@ -96,6 +103,17 @@ pub(super) async fn handle_device_command(
         }
         DeviceCommand::CreateWorkspace { name } => {
             encode_reply(&create_workspace(node, &session, name).await?)
+        }
+        DeviceCommand::ChangeWorkspaceApprovalPolicy {
+            workspace_id,
+            approval_policy,
+        } => {
+            let request =
+                ChangeWorkspaceApprovalPolicyRequest { approval_policy };
+            let workspace = client
+                .change_workspace_approval_policy(workspace_id, &request)
+                .await?;
+            encode_reply(&workspace)
         }
         DeviceCommand::AddDeviceToWorkspace {
             workspace_id,

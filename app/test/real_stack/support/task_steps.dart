@@ -1,8 +1,12 @@
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:agent_orchestration/bridge/codecs/approval_values.dart'
+    as node;
 import 'package:agent_orchestration/bridge/codecs/run_values.dart' as node;
 import 'package:agent_orchestration/bridge/codecs/task_views.dart' as node;
 import 'package:agent_orchestration/bridge/codecs/workspace_values.dart'
+    as node;
+import 'package:agent_orchestration/bridge/commands/device_commands.dart'
     as node;
 import 'package:agent_orchestration/bridge/commands/project_commands.dart'
     as node;
@@ -40,6 +44,7 @@ Future<void> createLocalProject(
         agentAccess: agentAccess,
       ),
     ],
+    approvalPolicy: null,
   );
   await askNode(tester, () => stack.channel.execute(command));
   await waitUntilTrue(
@@ -47,6 +52,18 @@ Future<void> createLocalProject(
     description: 'the app to know the $localProjectName project',
     isReached: () => _isProjectKnown(stack),
   );
+}
+
+Future<void> askBeforeCommandsInHomeWorkspace(
+  WidgetTester tester, {
+  required RealStack stack,
+}) async {
+  final node.ChangeWorkspaceApprovalPolicyCommand command =
+      node.ChangeWorkspaceApprovalPolicyCommand(
+        workspaceId: stack.homeWorkspaceId,
+        approvalPolicy: node.ApprovalPolicy.askBeforeRiskyActions,
+      );
+  await askNode(tester, () => stack.channel.execute(command));
 }
 
 Future<RunnerDevice> pairRunnerWithProject(

@@ -7,6 +7,7 @@ import 'package:agent_orchestration/theme/app_typography.dart';
 import 'package:agent_orchestration/widgets/forms/choice_list_field.dart';
 
 import '../support/random_inputs.dart';
+import '../support/shown_text_metrics.dart';
 import '../support/widget_harness.dart';
 
 List<ChoiceOption<int>> buildNumberedOptions(int count) {
@@ -80,11 +81,16 @@ void main() {
     WidgetTester tester,
   ) async {
     final Random random = seededRandom(9304);
-    const double textHeight =
-        AppFontSizes.body * AppLineHeights.body +
-        AppSpacing.space1 +
-        AppFontSizes.small * AppLineHeights.body;
-    const double tileHeight =
+    final double titleHeight = shownLineHeightAtWidth(
+      style: AppTextStyles.body,
+      windowWidth: desktopWidth,
+    );
+    final double detailHeight = shownLineHeightAtWidth(
+      style: AppTextStyles.small,
+      windowWidth: desktopWidth,
+    );
+    final double textHeight = titleHeight + AppSpacing.space1 + detailHeight;
+    final double tileHeight =
         textHeight + 2 * (AppSpacing.space4 + AppBorders.thin);
 
     for (int i = 0; i < widgetPropertyIterations; i += 1) {

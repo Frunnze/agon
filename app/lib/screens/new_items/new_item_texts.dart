@@ -5,16 +5,16 @@ const String newItemHint =
 const String draftingSummary = 'Drafting from your words';
 const String startingDraftText = 'Starting the draft';
 const String askedSectionTitle = 'You asked';
-const String reviewSummary = 'Check what the agent filled in.';
-const String filledSectionTitle = 'Filled in by the agent';
-const String changeSectionTitle = 'Ask for changes';
-const String changeHint = 'The agent drafts it again with your note.';
+const String reviewSummary =
+    'Check what the agent filled in. Change it here or ask the agent.';
+const String changeHint =
+    'The agent drafts it again from what is on screen and your note.';
 const String changeFieldLabel = 'What should the agent change?';
 const String draftProblemsTitle = 'The agent could not fill in everything';
 const String draftProblemsNote =
-    'Each line names the field and how to fix it. Approve stays off until '
-    'then.';
+    'Each line names the field. Fix it here, or ask the agent below.';
 const String approveLabel = 'Approve';
+const String cancelReviewLabel = 'Cancel';
 const String sendChangeLabel = 'Send';
 const String stopDraftingLabel = 'Stop drafting';
 const String fillInFormLabel = 'Fill in the form';

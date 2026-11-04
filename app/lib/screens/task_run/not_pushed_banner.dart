@@ -18,10 +18,12 @@ class NotPushedBanner extends StatelessWidget {
 
   final List<KeptBranch> keptBranches;
   final DeviceNames deviceNames;
-  final ValueChanged<KeptBranch> onBrowse;
+  final ValueChanged<KeptBranch>? onBrowse;
 
   @override
   Widget build(BuildContext context) {
+    final ValueChanged<KeptBranch>? browse = onBrowse;
+
     return NoticeBanner(
       tone: BannerTone.neutral,
       icon: AppIconKind.offline,
@@ -31,11 +33,12 @@ class NotPushedBanner extends StatelessWidget {
           MixedText(describeKeptBranch(kept: kept, deviceNames: deviceNames)),
       ],
       actions: <Widget>[
-        for (final KeptBranch kept in keptBranches)
-          AppButton.secondary(
-            label: describeKeptBranchLink(kept),
-            onPressed: () => onBrowse(kept),
-          ),
+        if (browse != null)
+          for (final KeptBranch kept in keptBranches)
+            AppButton.secondary(
+              label: describeKeptBranchLink(kept),
+              onPressed: () => browse(kept),
+            ),
       ],
     );
   }

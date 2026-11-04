@@ -179,7 +179,7 @@ pub fn example_task() -> Task {
         agent_place: Some(AgentPlace::LocalProcess),
         skills: Vec::new(),
         uses_automatic_skills: false,
-        approval_policy: ApprovalPolicy::NeverAsk,
+        approval_policy: Some(ApprovalPolicy::NeverAsk),
         schedule: None,
         status: TaskStatus::ToDo,
         created_at: DateTime::UNIX_EPOCH,

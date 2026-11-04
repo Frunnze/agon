@@ -27,6 +27,7 @@ Future<node.Project> createProjectOnNode(
         agentAccess: node.AgentAccess.pushAfterApproval,
       ),
     ],
+    approvalPolicy: null,
   );
 
   return askNode(tester, () => stack.channel.execute(command));

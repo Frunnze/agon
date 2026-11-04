@@ -16,8 +16,8 @@ pub fn describe_request(action: &ApprovalAction) -> String {
         ApprovalAction::SignWorkflow { .. } => {
             "Asked to sign a workflow".to_owned()
         }
-        ApprovalAction::RunCommand { tool, command } => {
-            format!("Asked to use {tool}: {command}")
+        ApprovalAction::RunCommand { summary, .. } => {
+            format!("Asked to approve “{summary}”")
         }
         ApprovalAction::ImproveSkill { summary, .. } => {
             format!("Asked to improve a skill: {summary}")
@@ -46,9 +46,7 @@ fn describe_action_in_progress(action: &ApprovalAction) -> String {
             format!("deleting {what}")
         }
         ApprovalAction::SignWorkflow { .. } => "signing a workflow".to_owned(),
-        ApprovalAction::RunCommand { tool, command } => {
-            format!("using {tool}: {command}")
-        }
+        ApprovalAction::RunCommand { summary, .. } => format!("“{summary}”"),
         ApprovalAction::ImproveSkill { .. } => "improving a skill".to_owned(),
     }
 }

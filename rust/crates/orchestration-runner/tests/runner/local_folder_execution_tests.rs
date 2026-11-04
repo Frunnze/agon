@@ -74,7 +74,7 @@ fn prepare_folder_scenario(
         agent_access: AgentAccess::PushAfterApproval,
     };
     let task = Task {
-        approval_policy,
+        approval_policy: Some(approval_policy),
         ..claude_task(RUN_NUMBER, COMMITTING_TITLE)
     };
     let assignment = assignment_for(task, None, vec![repository], RUN_NUMBER)?;

@@ -61,6 +61,10 @@ TaskArguments randomTaskArguments(Random random) {
     agentPlace: pickOne(random, AgentPlace.values),
     skills: randomSkillIds(random),
     usesAutomaticSkills: random.nextBool(),
-    approvalPolicy: pickOne(random, ApprovalPolicy.values),
+    approvalPolicy: randomOptionalApprovalPolicy(random),
   );
+}
+
+ApprovalPolicy? randomOptionalApprovalPolicy(Random random) {
+  return pickOne(random, <ApprovalPolicy?>[null, ...ApprovalPolicy.values]);
 }

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:agent_orchestration/theme/app_colors.dart';
 import 'package:agent_orchestration/theme/app_spacing.dart';
 import 'package:agent_orchestration/theme/app_typography.dart';
+import 'package:agent_orchestration/theme/layout_density.dart';
 import 'package:agent_orchestration/widgets/gaps.dart';
 import 'package:agent_orchestration/widgets/selection.dart';
 
@@ -66,6 +67,9 @@ class _TabButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final LayoutDensity layoutDensity = LayoutDensity.of(context);
+    final double controlHeight = AppSizes.controlHeightFor(layoutDensity);
+
     final bool isSelected = selection.isSelected;
 
     return Semantics(
@@ -75,7 +79,7 @@ class _TabButton extends StatelessWidget {
         onTap: onPressed,
         hoverColor: AppColors.transparent,
         child: Container(
-          constraints: const BoxConstraints(minHeight: AppSizes.controlHeight),
+          constraints: BoxConstraints(minHeight: controlHeight),
           alignment: Alignment.center,
           decoration: BoxDecoration(
             border: Border(

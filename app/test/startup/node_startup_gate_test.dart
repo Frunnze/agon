@@ -10,6 +10,7 @@ import 'package:agent_orchestration/shell/app_navigation.dart';
 import 'package:agent_orchestration/shell/app_route.dart';
 import 'package:agent_orchestration/shell/app_section.dart';
 import 'package:agent_orchestration/startup/node_app_start.dart';
+import 'package:agent_orchestration/startup/node_startup.dart';
 import 'package:agent_orchestration/startup/node_startup_gate.dart';
 import 'package:agent_orchestration/startup/startup_pages.dart';
 
@@ -83,17 +84,42 @@ final class _RecordedStarts {
   }
 }
 
+Widget _buildStartedAppWidget(StartedApp started) {
+  return AgentOrchestrationApp(
+    dependencies: started.dependencies,
+    navigation: started.navigation,
+    messengerKey: GlobalKey<ScaffoldMessengerState>(),
+    runWindowOpener: null,
+  );
+}
+
+Widget _buildGate({
+  required Key key,
+  required AppStart startApp,
+  required AppStart startAppAsNewDevice,
+}) {
+  final NodeStartup startup = NodeStartup(
+    startApp: startApp,
+    startAppAsNewDevice: startAppAsNewDevice,
+  );
+  startup.start();
+  return NodeStartupGate(
+    key: key,
+    startup: startup,
+    buildStartedApp: _buildStartedAppWidget,
+  );
+}
+
 Future<void> _pumpFailedGate(
   WidgetTester tester, {
   required int iteration,
   required _RecordedStarts starts,
 }) async {
   await tester.pumpWidget(
-    NodeStartupGate(
+    _buildGate(
       key: ValueKey<int>(iteration),
       startApp: starts.startApp,
       startAppAsNewDevice: starts.startAppAsNewDevice,
-      messengerKey: GlobalKey<ScaffoldMessengerState>(),
     ),
   );
   starts.failLatestAppStart();
@@ -111,11 +137,10 @@ void main() {
         failuresBeforeSuccess: random.nextInt(3),
       );
       await tester.pumpWidget(
-        NodeStartupGate(
+        _buildGate(
           key: ValueKey<int>(i),
           startApp: starts.start,
           startAppAsNewDevice: starts.start,
-          messengerKey: GlobalKey<ScaffoldMessengerState>(),
         ),
       );
       expect(find.byType(StartupWaitingPage), findsOneWidget);

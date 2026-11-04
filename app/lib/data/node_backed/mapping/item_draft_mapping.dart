@@ -45,6 +45,7 @@ DraftedItem mapDraftedItemFromNode(node.ItemDraft draft) {
           ),
       ],
       agentAccess: mapAgentAccessFromNode(draft.agentAccess),
+      approvalPolicy: mapOptionalApprovalPolicyFromNode(draft.approvalPolicy),
     ),
     node.SkillItemDraft() => DraftedSkill(
       SkillDraft(
@@ -76,6 +77,7 @@ node.ItemDraft mapDraftedItemToNode(DraftedItem item, DraftKind kind) {
           mapRepositoryDraftToNode(repository),
       ],
       agentAccess: mapAgentAccessToNode(item.agentAccess),
+      approvalPolicy: mapOptionalApprovalPolicyToNode(item.approvalPolicy),
     ),
     DraftedSkill(:final SkillDraft skill) => node.SkillItemDraft(
       name: skill.name,
@@ -108,7 +110,7 @@ DraftedWork _mapWorkFromNode(node.WorkItemDraft draft) {
     agentPlace: mapAgentPlaceFromNode(draft.agentPlace),
     skills: draft.skills,
     usesAutomaticSkills: draft.usesAutomaticSkills,
-    approvalPolicy: mapApprovalPolicyFromNode(draft.approvalPolicy),
+    approvalPolicy: mapOptionalApprovalPolicyFromNode(draft.approvalPolicy),
     schedule: schedule,
   );
 }
@@ -129,7 +131,7 @@ node.WorkItemDraft _mapWorkToNode(DraftedWork work, DraftKind kind) {
     agentPlace: mapAgentPlaceToNode(work.agentPlace),
     skills: work.skills,
     usesAutomaticSkills: work.usesAutomaticSkills,
-    approvalPolicy: mapApprovalPolicyToNode(work.approvalPolicy),
+    approvalPolicy: mapOptionalApprovalPolicyToNode(work.approvalPolicy),
     schedule: wireSchedule,
   );
 }

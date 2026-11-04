@@ -9,6 +9,7 @@ import 'package:agent_orchestration/shell/app_navigation.dart';
 import 'package:agent_orchestration/shell/app_route.dart';
 
 import '../../support/app_harness.dart';
+import '../../support/form_finders.dart';
 import '../../support/scripted_item_draft_repository.dart';
 import 'new_item_harness.dart';
 
@@ -91,14 +92,14 @@ void main() {
       drafts,
       findGalleryItemDraft(DraftKind.task),
     );
-    expect(find.text(filledSectionTitle), findsOneWidget);
+    expect(find.text(reviewSummary), findsOneWidget);
     expect(find.text('Clean up old feature branches'), findsOneWidget);
     expect(find.text('acme-app'), findsOneWidget);
     expect(find.text('git-cleanup'), findsOneWidget);
     expect(isAppButtonOn(tester, approveLabel), isTrue);
   });
 
-  testWidgets('problems are listed and keep approve off', (
+  testWidgets('problems are listed and approve stays on', (
     WidgetTester tester,
   ) async {
     final ScriptedItemDraftRepository drafts = ScriptedItemDraftRepository();
@@ -119,7 +120,7 @@ void main() {
     expect(find.text(draftProblemsTitle), findsOneWidget);
     expect(find.text(_projectProblem), findsOneWidget);
     expect(find.text(draftProblemsNote), findsOneWidget);
-    expect(isAppButtonOn(tester, approveLabel), isFalse);
+    expect(isAppButtonOn(tester, approveLabel), isTrue);
   });
 
   testWidgets('asking for changes drafts again with the note and draft', (
@@ -136,7 +137,7 @@ void main() {
     await finishNewItemDraft(tester, drafts, first);
 
     await tester.enterText(find.byType(TextField).last, 'On Fridays');
-    await tester.tap(find.text(sendChangeLabel));
+    await tapVisible(tester, find.text(sendChangeLabel));
     await pumpFrames(tester);
 
     final ItemDraftRequest changed = drafts.latestRequest;
@@ -151,7 +152,7 @@ void main() {
     expect(find.text('the agent broke'), findsOneWidget);
     await tester.tap(find.text(backToDraftLabel));
     await pumpFrames(tester);
-    expect(find.text(filledSectionTitle), findsOneWidget);
+    expect(find.text(reviewSummary), findsOneWidget);
     expect(find.text('Update dependencies'), findsOneWidget);
   });
 

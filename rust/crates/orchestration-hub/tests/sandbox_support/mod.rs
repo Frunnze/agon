@@ -34,6 +34,7 @@ pub fn any_mounts() -> impl Strategy<Value = WorkspaceMounts> {
         |(task_folder, git_directories)| WorkspaceMounts {
             task_folder,
             git_directories,
+            placeholder_mounts: Vec::new(),
         },
     )
 }

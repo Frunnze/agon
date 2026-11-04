@@ -41,10 +41,7 @@ fn find_last_agent_step(steps: &[RunStep]) -> Option<&RunStep> {
         .max_by_key(|step| step.started_at)
 }
 
-fn queue_follow_up(
-    record: &RunRecord,
-    follow_up_step: &RunStep,
-) -> RunRecord {
+fn queue_follow_up(record: &RunRecord, follow_up_step: &RunStep) -> RunRecord {
     let step_name = &follow_up_step.name;
     let follow_up = FollowUp {
         answered_user_messages: count_user_messages(&record.run.chat),

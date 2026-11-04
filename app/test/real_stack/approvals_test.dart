@@ -8,10 +8,9 @@ import 'package:agent_orchestration/bridge/codecs/run_chat_values.dart'
 import 'package:agent_orchestration/bridge/codecs/run_values.dart' as node;
 import 'package:agent_orchestration/bridge/codecs/workspace_values.dart'
     as node;
-import 'package:agent_orchestration/bridge/commands/approval_commands.dart'
-    as node;
 
 import 'support/real_stack.dart';
+import 'support/stack_approvals.dart';
 import 'support/runner_device.dart';
 import 'support/stack_navigation.dart';
 import 'support/stack_waiting.dart';
@@ -19,41 +18,14 @@ import 'support/task_steps.dart';
 
 const String _approvedTitle = 'Publish the changes file';
 const String _deniedTitle = 'Publish the release notes';
-const String _pushDialogTitle = 'Approve push to local.test?';
-const String _pushRowTitle = 'Push 1 commit to acme/app';
 const String _approveLabel = 'Approve';
 const String _deniedNote = 'was denied, so nothing was pushed.';
-
-Future<node.ApprovalsView> _listNodeApprovals(
-  WidgetTester tester,
-  RealStack stack,
-) {
-  return askNode(
-    tester,
-    () => stack.channel.execute(const node.ListApprovalsCommand()),
-  );
-}
-
-Future<node.PushCommits> _readWaitingPush(
-  WidgetTester tester,
-  RealStack stack,
-) async {
-  final node.ApprovalsView approvals = await _listNodeApprovals(tester, stack);
-  expect(approvals.waitingCount, 1);
-
-  final node.ApprovalAction action =
-      approvals.approvals.single.approval.action;
-  if (action is! node.PushCommits) {
-    throw TestFailure('The waiting approval is not a push: $action');
-  }
-  return action;
-}
 
 Future<node.ApprovalDecision?> _readSingleDecision(
   WidgetTester tester,
   RealStack stack,
 ) async {
-  final node.ApprovalsView approvals = await _listNodeApprovals(tester, stack);
+  final node.ApprovalsView approvals = await listNodeApprovals(tester, stack);
   expect(approvals.waitingCount, 0);
   return approvals.approvals.single.approval.decision?.decision;
 }
@@ -103,8 +75,10 @@ void main() {
         stack: stack,
         agentAccess: node.AgentAccess.pushAfterApproval,
       );
+      await askBeforeCommandsInHomeWorkspace(tester, stack: stack);
       await _startPublishingTask(tester, stack: stack, title: _approvedTitle);
-      final node.PushCommits push = await _readWaitingPush(tester, stack);
+      final node.PushCommits push = await readWaitingPush(tester, stack);
+      final String pushDialogTitle = describePushDialogTitle(push);
       final List<String> pushedBefore = await askNode(
         tester,
         runner.listPushedTaskBranches,
@@ -114,13 +88,13 @@ void main() {
       await tapAndWait(
         tester,
         find.text('Chat with agent'),
-        expected: find.text(_pushDialogTitle),
+        expected: find.text(pushDialogTitle),
       );
       expect(find.text(localRepositoryAddress), findsOneWidget);
       expect(find.text(push.branch), findsOneWidget);
       expect(find.text(push.commits.single), findsOneWidget);
       await tapWhenShown(tester, find.text(_approveLabel));
-      await waitUntilGone(tester, find.text(_pushDialogTitle));
+      await waitUntilGone(tester, find.text(pushDialogTitle));
       await waitUntilNodeAgrees(
         tester,
         description: 'the task branch pushed to the origin',
@@ -159,22 +133,26 @@ void main() {
         stack: stack,
         agentAccess: node.AgentAccess.pushAfterApproval,
       );
+      await askBeforeCommandsInHomeWorkspace(tester, stack: stack);
       await _startPublishingTask(tester, stack: stack, title: _deniedTitle);
+      final node.PushCommits push = await readWaitingPush(tester, stack);
+      final String pushRowTitle = describePushRowTitle(push);
+      final String pushDialogTitle = describePushDialogTitle(push);
 
       await openRailSection(
         tester,
         label: 'Approvals',
         pageTitle: 'Approvals',
       );
-      await waitUntilShown(tester, find.text(_pushRowTitle));
+      await waitUntilShown(tester, find.text(pushRowTitle));
       expect(find.text('1 waiting. It needs your approval.'), findsOneWidget);
       await tapAndWait(
         tester,
-        find.text(_pushRowTitle),
-        expected: find.text(_pushDialogTitle),
+        find.text(pushRowTitle),
+        expected: find.text(pushDialogTitle),
       );
       await tapWhenShown(tester, find.text('Deny'));
-      await waitUntilGone(tester, find.text(_pushDialogTitle));
+      await waitUntilGone(tester, find.text(pushDialogTitle));
       await waitUntilRunStatus(
         tester,
         stack: stack,
@@ -205,7 +183,7 @@ void main() {
         pageTitle: 'Approvals',
       );
       await waitUntilShown(tester, find.text('No approvals waiting'));
-      expect(find.text(_pushRowTitle), findsNothing);
+      expect(find.text(pushRowTitle), findsNothing);
       await stack.close(tester);
     },
     skip: isStackMissing,

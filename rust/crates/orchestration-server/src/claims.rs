@@ -27,6 +27,8 @@ use crate::runners::present_runners;
 use crate::server::SharedServer;
 use crate::stored_state::{RunRecord, StoredState};
 use crate::task_places::{find_task_project, find_task_workspace};
+use crate::workspace_approvals::find_workspace_approval_policy;
+use crate::workspace_protected_files::find_workspace_protected_files;
 
 pub async fn claim_next_run(
     State(server): State<SharedServer>,
@@ -215,11 +217,16 @@ fn build_assignment(
         workflow: run_workflow(state, task).cloned(),
         task: task.clone(),
         workspace_id,
+        workspace_approval_policy: find_workspace_approval_policy(
+            state,
+            workspace_id,
+        )?,
         project: project.cloned(),
         skills,
         rules,
         run,
         follow_up,
+        protected_files: find_workspace_protected_files(state, workspace_id)?,
     })
 }
 

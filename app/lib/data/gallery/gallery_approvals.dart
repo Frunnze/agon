@@ -57,6 +57,7 @@ final ApprovalRequest galleryRunCommandApproval = ApprovalRequest(
   runId: GalleryRunIds.release42,
   action: const RunCommandAction(
     tool: 'Bash',
+    summary: 'Run the tests',
     command: 'xcodebuild test -scheme App',
   ),
   requestedBy: GalleryDeviceIds.macStudio,

@@ -196,6 +196,7 @@ final class RealStack {
         dependencies: stack.dependencies,
         navigation: stack.navigation,
         messengerKey: GlobalKey<ScaffoldMessengerState>(),
+        runWindowOpener: null,
       ),
     );
     await letRealWorkHappen(tester);

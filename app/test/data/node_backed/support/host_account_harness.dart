@@ -79,6 +79,7 @@ Future<HostAccount> openHostAccount({
       workspaceId: account.workspaces.single.id,
       projectName: 'website',
       repositories: repositories,
+      approvalPolicy: null,
     ),
   );
   return (channel: channel, account: account, project: project);

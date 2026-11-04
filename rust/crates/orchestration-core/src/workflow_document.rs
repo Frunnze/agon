@@ -12,6 +12,9 @@ const ALL_WORKSPACES_TEXT: &str = "all_workspaces";
 const ANY_FREE_RUNNER_TEXT: &str = "any free runner";
 const AGENT_NOT_SET_UP_TEXT: &str = "not-set-up";
 const PERSON_KIND_LINE: &str = "    kind: person";
+const ASKS_FOR_APPROVAL_TEXT: &str = "true";
+const RUNS_WITHOUT_ASKING_TEXT: &str = "false";
+const FOLLOWS_THE_PROJECT_TEXT: &str = "same as the project";
 
 #[must_use]
 pub fn render_workflow_document(workflow: &Workflow) -> String {
@@ -79,9 +82,19 @@ fn render_agent_lines(
         format!("    automatic_skills: {}", agent.uses_automatic_skills),
         format!(
             "    asks_for_approval: {}",
-            agent.approval_policy == ApprovalPolicy::AskBeforeRiskyActions
+            render_approval_choice(agent.approval_policy)
         ),
     ]
+}
+
+const fn render_approval_choice(
+    choice: Option<ApprovalPolicy>,
+) -> &'static str {
+    match choice {
+        Some(ApprovalPolicy::AskBeforeRiskyActions) => ASKS_FOR_APPROVAL_TEXT,
+        Some(ApprovalPolicy::NeverAsk) => RUNS_WITHOUT_ASKING_TEXT,
+        None => FOLLOWS_THE_PROJECT_TEXT,
+    }
 }
 
 fn render_person_lines(
