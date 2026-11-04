@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
@@ -8,7 +9,6 @@ import 'package:agent_orchestration/data/app_dependencies.dart';
 import 'package:agent_orchestration/data/fakes.dart';
 import 'package:agent_orchestration/data/gallery/gallery_devices.dart';
 import 'package:agent_orchestration/data/gallery/gallery_identifiers.dart';
-import 'package:agent_orchestration/data/models/item_draft.dart';
 import 'package:agent_orchestration/data/models/project.dart';
 import 'package:agent_orchestration/data/rules/naming.dart';
 import 'package:agent_orchestration/shell/app_route.dart';
@@ -22,7 +22,7 @@ const String _chooseFolderLabel = 'Choose folder…';
 const String _addRepoLabel = 'Add repo';
 const String _removeLabel = 'Remove';
 const String _startedGitNote = 'Started git in this folder';
-const String _folderParent = '/Users/someone/work';
+final String _folderParent = '${Directory.systemTemp.path}/work';
 const String _gitlessFolderName = 'notes';
 const String _laterAddress = 'github.com/acme/later';
 const List<String> _folderNames = <String>['Billing UI', 'site_2', 'app'];
@@ -38,7 +38,7 @@ Future<FixedFolderPicker> _pumpNewProject(WidgetTester tester) async {
       devices: galleryDevices,
       currentDeviceId: GalleryDeviceIds.airLaptop,
       peerAddressProblem: null,
-      gitlessFolderPaths: const <String>{'$_folderParent/$_gitlessFolderName'},
+      gitlessFolderPaths: <String>{'$_folderParent/$_gitlessFolderName'},
     ),
     folderPicker: picker,
   );
@@ -46,7 +46,7 @@ Future<FixedFolderPicker> _pumpNewProject(WidgetTester tester) async {
   await pumpApp(
     tester,
     size: desktopSize,
-    route: NewItemFormRoute(DraftKind.project),
+    route: const NewProjectRoute(),
     dependencies: dependencies,
   );
   return picker;

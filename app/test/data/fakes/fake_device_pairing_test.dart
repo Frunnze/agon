@@ -16,6 +16,7 @@ Device buildNewDevice(Random random, int index) {
     id: DeviceId('new-device-$index'),
     name: 'new-device-$index',
     role: pickOne(random, DeviceRole.values),
+    kind: pickOne(random, DeviceKind.values),
     keyKind: pickOne(random, HardwareKeyKind.values),
     signingPublicKey: const <int>[0],
     sealingPublicKey: const <int>[0],

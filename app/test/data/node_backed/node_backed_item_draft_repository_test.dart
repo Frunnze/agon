@@ -6,7 +6,6 @@ import 'package:agent_orchestration/bridge/codecs/item_draft_values.dart'
     as node;
 import 'package:agent_orchestration/bridge/codecs/json_values.dart';
 import 'package:agent_orchestration/data/models/item_draft.dart';
-import 'package:agent_orchestration/data/models/project.dart';
 import 'package:agent_orchestration/data/node_backed.dart';
 import 'package:agent_orchestration/data/node_backed/mapping.dart';
 
@@ -17,7 +16,6 @@ import 'support/simulated_item_draft_node.dart';
 
 const int _draftIterations = 30;
 const int _pollsOfALongDraft = 1000000;
-const int _mostChosenFolders = 3;
 
 JsonObject _randomDoneStatus(Random random) {
   return <String, Object?>{
@@ -43,19 +41,7 @@ ItemDraftRequest _randomRequest(Random random, {ItemDraftChange? change}) {
     wish: 'Wish ${randomText(random)}',
     startedFrom: random.nextBool() ? null : randomText(random),
     change: change,
-    chosenFolders: const <RepositoryDraft>[],
   );
-}
-
-List<RepositoryDraft> _randomChosenFolders(Random random) {
-  final int count = random.nextInt(_mostChosenFolders + 1);
-  return <RepositoryDraft>[
-    for (int i = 0; i < count; i += 1)
-      RepositoryDraft(
-        address: 'local:air-laptop:/Users/someone/${randomText(random)}',
-        defaultBranch: randomText(random),
-      ),
-  ];
 }
 
 Future<void> _waitForPolls(SimulatedItemDraftNode node, int count) async {
@@ -117,7 +103,6 @@ void main() {
         wish: 'Wish',
         startedFrom: null,
         change: ItemDraftChange(draft: previous, note: note),
-        chosenFolders: const <RepositoryDraft>[],
       );
 
       await _buildRepository(simulated).draftItem(request).toList();
@@ -129,50 +114,6 @@ void main() {
       );
     }
   });
-
-  test(
-    'test_draft_item_property_every_command_carries_chosen_folders',
-    () async {
-      final Random random = seededRandom(8205);
-      for (int i = 0; i < _draftIterations; i += 1) {
-        final List<RepositoryDraft> chosenFolders = _randomChosenFolders(
-          random,
-        );
-        final SimulatedItemDraftNode simulated = SimulatedItemDraftNode(
-          random: random,
-          pollsBeforeDone: random.nextInt(4),
-          finishedStatus: _randomDoneStatus(random),
-        );
-        final ItemDraftRequest request = ItemDraftRequest(
-          kind: DraftKind.project,
-          wish: 'Wish ${randomText(random)}',
-          startedFrom: null,
-          change: null,
-          chosenFolders: chosenFolders,
-        );
-
-        await _buildRepository(simulated).draftItem(request).toList();
-
-        final List<Object?> expected = <Object?>[
-          for (final RepositoryDraft folder in chosenFolders)
-            <String, Object?>{
-              'address': folder.address,
-              'default_branch': folder.defaultBranch,
-            },
-        ];
-        final List<JsonObject> statusCommands = simulated.commandsNamed(
-          'item_draft_status',
-        );
-        expect(statusCommands, isNotEmpty);
-        for (final JsonObject sent in <JsonObject>[
-          ...simulated.commandsNamed('draft_item'),
-          ...statusCommands,
-        ]) {
-          expect(sent['chosen_folders'], equals(expected));
-        }
-      }
-    },
-  );
 
   test('test_stop_drafting_property_cancels_and_removes_the_run', () async {
     final Random random = seededRandom(8203);
@@ -216,7 +157,6 @@ void main() {
         wish: blank,
         startedFrom: null,
         change: null,
-        chosenFolders: const <RepositoryDraft>[],
       );
 
       await expectLater(

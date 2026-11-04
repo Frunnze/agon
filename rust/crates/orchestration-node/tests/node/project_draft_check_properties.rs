@@ -23,8 +23,7 @@ const BRANCH_PATTERN: &str = "[a-z][a-z0-9-]{0,8}[a-z0-9]";
 const INNER_FOLDER_NAME: &str = "inner";
 const NO_REPOSITORY: &str =
     "Repos: none found. Ask for changes and say where the code is.";
-const FOREIGN_FOLDER: &str =
-    "the folder /Users/someone/app is on another computer, so add it there";
+const FOREIGN_FOLDER_NAME: &str = "app-on-another-computer";
 const REPOSITORY_FIX: &str = "Ask for changes and give a GitHub address or a \
                               git folder on this computer.";
 
@@ -83,7 +82,9 @@ fn folder_problems_are_written_as_sentences() {
         panic!("the inner folder is made");
     };
     let inner_path = inner_folder.display().to_string();
-    let foreign_address = format!("local:{FOREIGN_DEVICE_ID}:/Users/someone/app");
+    let foreign_folder = parent.path().join(FOREIGN_FOLDER_NAME);
+    let foreign_path = foreign_folder.display().to_string();
+    let foreign_address = format!("local:{FOREIGN_DEVICE_ID}:{foreign_path}");
     let drafted = project_draft(
         "billing",
         vec![
@@ -102,10 +103,13 @@ fn folder_problems_are_written_as_sentences() {
     );
     let inner_problem =
         format!("the folder {inner_path} is not a git repository");
+    let foreign_problem = format!(
+        "the folder {foreign_path} is on another computer, so add it there"
+    );
     let expected = vec![
         describe_repository_problem(&missing_folder),
         describe_repository_problem(&inner_problem),
-        describe_repository_problem(FOREIGN_FOLDER),
+        describe_repository_problem(&foreign_problem),
         describe_repository_problem(
             "only https and git@ addresses are supported, not ftp",
         ),

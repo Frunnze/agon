@@ -3,7 +3,7 @@ use orchestration_api::accounts::{
     ApprovePairingRequest, JoiningDevice, PairingCommitment, PairingNonce,
     SealedWorkspaceKey,
 };
-use orchestration_core::device::{DeviceRole, HardwareKeyKind};
+use orchestration_core::device::{DeviceKind, DeviceRole, HardwareKeyKind};
 use orchestration_core::identifiers::WorkspaceId;
 use orchestration_security::pairing::{
     PairingCode, PairingPublicKeys, PairingTranscript,
@@ -31,6 +31,7 @@ pub(super) struct PairingRequestScreen {
 struct JoiningDeviceScreen {
     name: String,
     role: DeviceRole,
+    kind: DeviceKind,
     key_kind: HardwareKeyKind,
     sealing_public_key: Vec<u8>,
     fingerprint_words: Vec<String>,
@@ -203,6 +204,7 @@ fn describe_joining(
     JoiningDeviceScreen {
         name: joining.name.clone(),
         role: joining.role,
+        kind: joining.kind,
         key_kind: joining.key_kind,
         sealing_public_key: transcript.joiner.sealing_public_key.clone(),
         fingerprint_words: list_fingerprint_words(transcript),

@@ -24,6 +24,7 @@ class CheckField extends StatelessWidget {
       onTap: _toggle,
       child: InkWell(
         onTap: _toggle,
+        mouseCursor: WidgetStateMouseCursor.clickable,
         hoverColor: AppColors.transparent,
         child: ConstrainedBox(
           constraints: const BoxConstraints(
@@ -36,6 +37,7 @@ class CheckField extends StatelessWidget {
                 child: Checkbox(
                   value: value,
                   onChanged: _handleChanged,
+                  mouseCursor: WidgetStateMouseCursor.clickable,
                   activeColor: AppColors.action,
                   checkColor: AppColors.paper,
                   side: const BorderSide(color: AppColors.lineStrong),

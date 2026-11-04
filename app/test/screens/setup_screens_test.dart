@@ -5,7 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:agent_orchestration/data/fakes.dart';
 import 'package:agent_orchestration/data/models/device.dart';
-import 'package:agent_orchestration/screens/settings.dart';
+import 'package:agent_orchestration/screens/devices/devices_screen.dart';
 import 'package:agent_orchestration/screens/setup.dart';
 import 'package:agent_orchestration/shell/app_navigation.dart';
 import 'package:agent_orchestration/shell/app_route.dart';
@@ -173,7 +173,7 @@ void main() {
         final AppRoute route = chooseRouteAfterPairing(role);
         final bool runsTasks = role != DeviceRole.client;
 
-        expect(route is RunnersSettingsRoute, runsTasks);
+        expect(route == const SectionRoute(AppSection.devices), runsTasks);
         expect(route == const SectionRoute(AppSection.tasks), !runsTasks);
       }
     },
@@ -200,7 +200,7 @@ void main() {
       expect(navigation.currentRoute, chooseRouteAfterPairing(role));
       expect(navigation.routes.length, 1);
       expect(
-        find.byType(RunnersSettingsTab).evaluate().isNotEmpty,
+        find.byType(DevicesScreen).evaluate().isNotEmpty,
         role != DeviceRole.client,
       );
       expect(find.text('Approvals'), findsWidgets);

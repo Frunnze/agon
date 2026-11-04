@@ -6,7 +6,6 @@ import 'package:agent_orchestration/data/clock.dart';
 import 'package:agent_orchestration/data/models/workspace.dart';
 import 'package:agent_orchestration/data/repository/audit_repository.dart';
 import 'package:agent_orchestration/data/repository/device_repository.dart';
-import 'package:agent_orchestration/data/repository/runner_repository.dart';
 import 'package:agent_orchestration/data/repository/workspace_repository.dart';
 import 'package:agent_orchestration/screens/settings.dart';
 import 'package:agent_orchestration/screens/shared/deletion_prompts.dart';
@@ -24,8 +23,9 @@ const String _deleteWorkspaceLabel = 'Delete workspace';
 const SectionRoute _projectsRoute = SectionRoute(AppSection.projects);
 
 enum SettingsTab {
-  general('General'),
-  runners('Runners'),
+  server('Server'),
+  commandsAndPushes('Commands and pushes'),
+  protectedFiles("Files agents can't read"),
   auditLog('Audit log');
 
   const SettingsTab(this.label);
@@ -35,20 +35,16 @@ enum SettingsTab {
 
 class WorkspaceSettingsScreen extends StatefulWidget {
   const WorkspaceSettingsScreen({
-    required this.initialTab,
     required this.workspaceRepository,
     required this.deviceRepository,
-    required this.runnerRepository,
     required this.auditRepository,
     required this.clock,
     required this.navigation,
     super.key,
   });
 
-  final SettingsTab initialTab;
   final WorkspaceRepository workspaceRepository;
   final DeviceRepository deviceRepository;
-  final RunnerRepository runnerRepository;
   final AuditRepository auditRepository;
   final Clock clock;
   final AppNavigation navigation;
@@ -59,7 +55,7 @@ class WorkspaceSettingsScreen extends StatefulWidget {
 }
 
 class _WorkspaceSettingsScreenState extends State<WorkspaceSettingsScreen> {
-  late SettingsTab _selectedTab = widget.initialTab;
+  SettingsTab _selectedTab = SettingsTab.server;
 
   @override
   Widget build(BuildContext context) {
@@ -86,7 +82,7 @@ class _WorkspaceSettingsScreenState extends State<WorkspaceSettingsScreen> {
             TextSegment('For the $workspaceName workspace.'),
           ],
           actions: <Widget>[
-            if (_selectedTab == SettingsTab.general)
+            if (_selectedTab == SettingsTab.server)
               _buildDeleteButton(context, workspace),
           ],
         ),
@@ -146,20 +142,18 @@ class _WorkspaceSettingsScreenState extends State<WorkspaceSettingsScreen> {
 
   Widget _buildTab() {
     switch (_selectedTab) {
-      case SettingsTab.general:
-        return GeneralSettingsTab(
+      case SettingsTab.server:
+        return AppServerSection(
           workspaceRepository: widget.workspaceRepository,
           deviceRepository: widget.deviceRepository,
-          clock: widget.clock,
-          navigation: widget.navigation,
         );
-      case SettingsTab.runners:
-        return RunnersSettingsTab(
-          runnerRepository: widget.runnerRepository,
-          deviceRepository: widget.deviceRepository,
+      case SettingsTab.commandsAndPushes:
+        return WorkspaceApprovalPolicySection(
           workspaceRepository: widget.workspaceRepository,
-          clock: widget.clock,
-          navigation: widget.navigation,
+        );
+      case SettingsTab.protectedFiles:
+        return ProtectedFilesSection(
+          workspaceRepository: widget.workspaceRepository,
         );
       case SettingsTab.auditLog:
         return AuditLogTab(

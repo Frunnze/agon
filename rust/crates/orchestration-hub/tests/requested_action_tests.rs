@@ -1,17 +1,29 @@
+mod temporary_paths;
+
 use orchestration_core::approval::ApprovalAction;
 use orchestration_hub::claude_control::ToolPermissionRequest;
 use orchestration_hub::requested_action::describe_requested_action;
 use proptest::prelude::*;
 use serde_json::{Value, json};
+use temporary_paths::temporary_path;
 
-const TASK_FOLDER: &str =
-    "/Users/someone/Library/Application Support/agon/worktrees/task-7";
+const TASK_FOLDER_INSIDE_TEMPORARY_FOLDER: &str =
+    "someone/Library/Application Support/agon/worktrees/task-7";
 const TASK_FOLDER_NAME: &str = "the task folder";
 const LONGEST_SUMMARY_CHARACTERS: usize = 81;
-const TASK_FOLDER_PATTERN: &str = concat!(
-    "/Users/[a-z]{1,8}/Library/Application Support/",
+const TASK_FOLDER_INSIDE_TEMPORARY_FOLDER_PATTERN: &str = concat!(
+    "[a-z]{1,8}/Library/Application Support/",
     "[a-z.]{1,20}/task-[0-9]{1,4}",
 );
+
+fn task_folder() -> String {
+    temporary_path(TASK_FOLDER_INSIDE_TEMPORARY_FOLDER)
+}
+
+fn any_task_folder() -> impl Strategy<Value = String> {
+    TASK_FOLDER_INSIDE_TEMPORARY_FOLDER_PATTERN
+        .prop_map(|inside| temporary_path(&inside))
+}
 
 fn request_for(tool_name: &str, input: Value) -> ToolPermissionRequest {
     ToolPermissionRequest {
@@ -39,7 +51,7 @@ fn read_summary_and_command(action: &ApprovalAction) -> (String, String) {
 }
 
 fn describe(tool_name: &str, input: Value) -> ApprovalAction {
-    describe_requested_action(&request_for(tool_name, input), TASK_FOLDER)
+    describe_requested_action(&request_for(tool_name, input), &task_folder())
 }
 
 fn any_tool_with_field() -> impl Strategy<Value = (&'static str, &'static str)>
@@ -83,7 +95,9 @@ fn a_bash_request_without_a_description_is_named_from_the_command() {
 
 #[test]
 fn the_task_folder_is_named_in_the_command() {
-    let command = format!("C=\"{TASK_FOLDER}/app\"; cd \"$C\" && npm test");
+    let task_folder_path = task_folder();
+    let command =
+        format!("C=\"{task_folder_path}/app\"; cd \"$C\" && npm test");
     let input = json!({"command": command});
 
     let action = describe("Bash", input);
@@ -94,7 +108,8 @@ fn the_task_folder_is_named_in_the_command() {
 
 #[test]
 fn a_file_request_names_the_file_and_keeps_the_whole_path() {
-    let path = format!("{TASK_FOLDER}/app/README.md");
+    let task_folder_path = task_folder();
+    let path = format!("{task_folder_path}/app/README.md");
     let input = json!({"file_path": path, "old_string": "x"});
 
     let action = describe("Edit", input);
@@ -157,7 +172,7 @@ proptest! {
 
     #[test]
     fn test_describe_requested_action_property_label_hides_the_task_folder(
-        task_folder in TASK_FOLDER_PATTERN,
+        task_folder in any_task_folder(),
         (tool_name, field) in any_tool_with_field(),
         before in "\\PC{0,40}",
         after in "\\PC{0,40}",
@@ -180,7 +195,7 @@ proptest! {
 
     #[test]
     fn test_describe_requested_action_property_keeps_the_whole_command(
-        task_folder in TASK_FOLDER_PATTERN,
+        task_folder in any_task_folder(),
         (tool_name, field) in any_tool_with_field(),
         detail in "\\PC{1,400}(\n\\PC{1,80}){0,3}",
         has_folder in any::<bool>(),

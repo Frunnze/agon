@@ -15,7 +15,6 @@ import 'random_work_json.dart';
 const List<String> nodeDraftKinds = <String>[
   'task',
   'job',
-  'project',
   'skill',
   'rule',
 ];
@@ -29,7 +28,6 @@ const List<CommandShape> itemDraftCommandShapes = <CommandShape>[
       'request',
       'started_from',
       'change',
-      'chosen_folders',
     },
     buildCommand: _buildDraftItem,
     buildReplyJson: randomDraftingTaskViewJson,
@@ -41,7 +39,6 @@ const List<CommandShape> itemDraftCommandShapes = <CommandShape>[
       'workspace_id',
       'task_id',
       'kind',
-      'chosen_folders',
     },
     buildCommand: _buildItemDraftStatus,
     buildReplyJson: randomItemDraftStatusJson,
@@ -65,23 +62,9 @@ Map<String, Object?> _randomWorkDraftJson(Random random, String kind) {
   };
 }
 
-Map<String, Object?> _randomDraftedRepositoryJson(Random random) {
-  return <String, Object?>{
-    'address': randomText(random),
-    'default_branch': randomText(random),
-  };
-}
-
 Map<String, Object?> randomItemDraftJson(Random random) {
   final String kind = pickOne(random, nodeDraftKinds);
   return switch (kind) {
-    'project' => <String, Object?>{
-      'kind': kind,
-      'name': randomText(random),
-      'repositories': randomListOf(random, _randomDraftedRepositoryJson),
-      'agent_access': pickOne(random, nodeAgentAccesses),
-      'approval_policy': randomOptionalApprovalPolicyJson(random),
-    },
     'skill' => <String, Object?>{
       'kind': kind,
       'name': randomText(random),
@@ -120,16 +103,6 @@ Map<String, Object?> randomDraftingTaskViewJson(Random random) {
   };
 }
 
-List<DraftedRepository> _randomChosenFolders(Random random) {
-  return <DraftedRepository>[
-    for (final Object? json in randomListOf(
-      random,
-      _randomDraftedRepositoryJson,
-    ))
-      DraftedRepository.fromJson(json),
-  ];
-}
-
 DraftKind _randomDraftKind(Random random) {
   return pickOne(random, DraftKind.values);
 }
@@ -151,7 +124,6 @@ NodeCommand<Object?> _buildDraftItem(Random random) {
     wish: randomText(random),
     startedFrom: random.nextBool() ? null : randomText(random),
     change: _randomDraftChange(random),
-    chosenFolders: _randomChosenFolders(random),
   );
 }
 
@@ -160,6 +132,5 @@ NodeCommand<Object?> _buildItemDraftStatus(Random random) {
     workspaceId: randomWorkspaceId(random),
     taskId: randomTaskId(random),
     kind: _randomDraftKind(random),
-    chosenFolders: _randomChosenFolders(random),
   );
 }

@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import 'package:agent_orchestration/data/app_dependencies.dart';
 import 'package:agent_orchestration/data/clock.dart';
 import 'package:agent_orchestration/data/fakes.dart';
@@ -22,7 +24,7 @@ import 'package:agent_orchestration/data/models/audit.dart';
 import 'package:agent_orchestration/data/models/conversation.dart';
 import 'package:agent_orchestration/data/models/person_step.dart';
 import 'package:agent_orchestration/data/models/task.dart';
-import 'package:agent_orchestration/folders/platform_folder_picker.dart';
+import 'package:agent_orchestration/folders/folder_picker_choice.dart';
 import 'package:agent_orchestration/scanning/camera_qr_code_scanner.dart';
 
 const int _featurePipelineIndex = 2;
@@ -125,6 +127,6 @@ AppDependencies buildGalleryDependencies() {
       stepDelay: _galleryDraftStepDelay,
     ),
     qrCodeScanner: const CameraQrCodeScanner(),
-    folderPicker: const PlatformFolderPicker(),
+    folderPicker: buildPlatformFolderPicker(defaultTargetPlatform),
   );
 }

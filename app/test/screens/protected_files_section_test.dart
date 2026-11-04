@@ -12,6 +12,7 @@ import 'package:agent_orchestration/shell/app_route.dart';
 import 'package:agent_orchestration/shell/app_section.dart';
 import 'package:agent_orchestration/theme/app_typography.dart';
 import 'package:agent_orchestration/widgets/page_section.dart';
+import 'package:agent_orchestration/widgets/tab_strip.dart';
 
 import '../support/app_harness.dart';
 import '../support/form_finders.dart';
@@ -23,7 +24,7 @@ import '../support/widget_harness.dart';
 const String _addLabel = 'Add pattern';
 const String _removeLabel = 'Remove';
 const String _resetLabel = 'Reset to defaults';
-const String _membersTitle = 'Devices in acme';
+const String _tabLabel = "Files agents can't read";
 const List<String> _patternStems = <String>[
   '~/.config/secrets-',
   '*.pem.',
@@ -74,6 +75,11 @@ Future<FakeWorkspaceRepository> _openSettings(
     route: const SectionRoute(AppSection.settings),
     dependencies: dependencies,
   );
+  await tapVisible(
+    tester,
+    find.descendant(of: find.byType(TabStrip), matching: find.text(_tabLabel)),
+  );
+  await pumpFrames(tester);
   return repository;
 }
 
@@ -118,20 +124,17 @@ void main() {
     }
   });
 
-  testWidgets('the section follows the devices of the workspace', (
+  testWidgets('the files tab shows only its section', (
     WidgetTester tester,
   ) async {
     await _openSettings(tester, patterns: galleryDefaultProtectedFiles);
 
-    final Rect members = tester.getRect(
-      find.byWidgetPredicate(
-        (Widget widget) =>
-            widget is PageSection && widget.title == _membersTitle,
-      ),
-    );
+    final Rect tabs = tester.getRect(find.byType(TabStrip));
     final Rect section = tester.getRect(find.byType(ProtectedFilesSection));
-    expect(section.top, greaterThan(members.bottom));
-    expect(find.text("Files agents can't read"), findsOneWidget);
+    expect(section.top, greaterThan(tabs.bottom));
+    expect(find.byType(PageSection), findsOneWidget);
+    expect(find.byType(AppServerSection), findsNothing);
+    expect(find.byType(WorkspaceApprovalPolicySection), findsNothing);
     expect(find.textContaining('Claude Code refuses them'), findsOneWidget);
   });
 

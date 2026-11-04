@@ -4,7 +4,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:agent_orchestration/data/app_dependencies.dart';
 import 'package:agent_orchestration/data/models/item_draft.dart';
 import 'package:agent_orchestration/data/models/library.dart';
-import 'package:agent_orchestration/data/models/project.dart';
 import 'package:agent_orchestration/data/models/task.dart';
 import 'package:agent_orchestration/screens/new_items/change_request_composer.dart';
 import 'package:agent_orchestration/screens/new_items/new_item_texts.dart';
@@ -23,7 +22,6 @@ const String _changeNote = 'Ask before pushing';
 const Map<DraftKind, String> _editedFieldLabels = <DraftKind, String>{
   DraftKind.task: _taskTitleLabel,
   DraftKind.job: _taskTitleLabel,
-  DraftKind.project: 'Name',
   DraftKind.skill: 'Name',
   DraftKind.rule: 'Rule',
 };
@@ -31,7 +29,6 @@ const Map<DraftKind, String> _editedFieldLabels = <DraftKind, String>{
 const Map<DraftKind, String> _handValues = <DraftKind, String>{
   DraftKind.task: _handTaskTitle,
   DraftKind.job: 'Update the lockfiles',
-  DraftKind.project: 'billing-by-hand',
   DraftKind.skill: 'release-notes-by-hand',
   DraftKind.rule: 'Write small commits',
 };
@@ -44,12 +41,6 @@ List<String> _listSavedNames(AppDependencies dependencies, DraftKind kind) {
         ...dependencies.jobRepository.listJobs(),
       ];
       return <String>[for (final Task task in work) task.title];
-    case DraftKind.project:
-      final List<Project> projects = dependencies.projectRepository
-          .listProjects(
-            dependencies.workspaceRepository.currentWorkspace().id,
-          );
-      return <String>[for (final Project project in projects) project.name];
     case DraftKind.skill:
       return <String>[
         for (final Skill skill in dependencies.skillRepository.listSkills())

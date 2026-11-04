@@ -14,6 +14,7 @@ import 'package:agent_orchestration/theme/app_typography.dart';
 import 'package:agent_orchestration/widgets/lists/responsive_list.dart';
 import 'package:agent_orchestration/widgets/notice_banner.dart';
 import 'package:agent_orchestration/widgets/page_section.dart';
+import 'package:agent_orchestration/widgets/tab_strip.dart';
 
 import '../support/app_harness.dart';
 import '../support/form_finders.dart';
@@ -23,47 +24,52 @@ import '../support/widget_harness.dart';
 
 typedef _GapMeasure = List<double> Function(WidgetTester tester);
 
-const String _runnersSummary = '3 of 4 online · 5 free slots';
-const String _serverDownSummary = '2 of 4 reachable';
 const double _pageGap = 24;
-const String _membersTitle = 'Devices in acme';
+const String _membersTitle = 'In acme';
+const String _allDevicesTitle = 'All your devices';
 
-final class _TabCase {
-  const _TabCase({
+final class _PageCase {
+  const _PageCase({
+    required this.name,
+    required this.section,
     required this.tab,
     required this.buildDependencies,
     required this.measureGaps,
   });
 
-  final String tab;
+  final String name;
+  final AppSection section;
+  final String? tab;
   final AppDependencies Function() buildDependencies;
   final _GapMeasure measureGaps;
 }
 
 double _gapBetween(Rect above, Rect below) => below.top - above.bottom;
 
-List<double> _measureGeneralGaps(WidgetTester tester) {
-  final Rect server = tester.getRect(find.byType(AppServerSection));
-  final Rect members = tester.getRect(
+Rect _findSectionRect(WidgetTester tester, String title) {
+  return tester.getRect(
     find.byWidgetPredicate(
-      (Widget widget) =>
-          widget is PageSection && widget.title == _membersTitle,
+      (Widget widget) => widget is PageSection && widget.title == title,
     ),
   );
-  return <double>[_gapBetween(server, members)];
 }
 
-List<double> _measureRunnersGaps(WidgetTester tester) {
-  final Rect summary = tester.getRect(find.text(_runnersSummary));
-  final Rect list = tester.getRect(find.byType(ResponsiveList));
-  return <double>[_gapBetween(summary, list)];
+List<double> _measureServerGaps(WidgetTester tester) {
+  final Rect tabs = tester.getRect(find.byType(TabStrip));
+  final Rect server = tester.getRect(find.byType(AppServerSection));
+  return <double>[_gapBetween(tabs, server)];
+}
+
+List<double> _measureDevicesGaps(WidgetTester tester) {
+  final Rect members = _findSectionRect(tester, _membersTitle);
+  final Rect allDevices = _findSectionRect(tester, _allDevicesTitle);
+  return <double>[_gapBetween(members, allDevices)];
 }
 
 List<double> _measureServerDownGaps(WidgetTester tester) {
-  final Rect summary = tester.getRect(find.text(_serverDownSummary));
   final Rect banner = tester.getRect(find.byType(NoticeBanner));
-  final Rect list = tester.getRect(find.byType(ResponsiveList));
-  return <double>[_gapBetween(summary, banner), _gapBetween(banner, list)];
+  final Rect members = _findSectionRect(tester, _membersTitle);
+  return <double>[_gapBetween(banner, members)];
 }
 
 List<double> _measureAuditGaps(WidgetTester tester) {
@@ -72,42 +78,57 @@ List<double> _measureAuditGaps(WidgetTester tester) {
   return <double>[_gapBetween(banner, list)];
 }
 
-const List<_TabCase> _tabCases = <_TabCase>[
-  _TabCase(
-    tab: 'General',
+const List<_PageCase> _pageCases = <_PageCase>[
+  _PageCase(
+    name: 'Server',
+    section: AppSection.settings,
+    tab: 'Server',
     buildDependencies: buildGalleryDependencies,
-    measureGaps: _measureGeneralGaps,
+    measureGaps: _measureServerGaps,
   ),
-  _TabCase(
-    tab: 'Runners',
+  _PageCase(
+    name: 'Devices',
+    section: AppSection.devices,
+    tab: null,
     buildDependencies: buildGalleryDependencies,
-    measureGaps: _measureRunnersGaps,
+    measureGaps: _measureDevicesGaps,
   ),
-  _TabCase(
-    tab: 'Runners',
+  _PageCase(
+    name: 'Devices with the server down',
+    section: AppSection.devices,
+    tab: null,
     buildDependencies: buildDependenciesWithServerDown,
     measureGaps: _measureServerDownGaps,
   ),
-  _TabCase(
+  _PageCase(
+    name: 'Audit log',
+    section: AppSection.settings,
     tab: 'Audit log',
     buildDependencies: buildGalleryDependencies,
     measureGaps: _measureAuditGaps,
   ),
 ];
 
-Future<void> _openTab(
+Future<void> _openPage(
   WidgetTester tester, {
   required double width,
-  required _TabCase tabCase,
+  required _PageCase pageCase,
 }) async {
   await tester.pumpWidget(const SizedBox.shrink());
   await pumpApp(
     tester,
     size: Size(width, desktopHeight),
-    route: const SectionRoute(AppSection.settings),
-    dependencies: tabCase.buildDependencies(),
+    route: SectionRoute(pageCase.section),
+    dependencies: pageCase.buildDependencies(),
   );
-  await tapVisible(tester, find.text(tabCase.tab));
+  final String? tab = pageCase.tab;
+  if (tab == null) {
+    return;
+  }
+  await tapVisible(
+    tester,
+    find.descendant(of: find.byType(TabStrip), matching: find.text(tab)),
+  );
   await pumpFrames(tester);
 }
 
@@ -119,7 +140,7 @@ void _expectBodyMuted(WidgetTester tester, Finder text) {
 }
 
 void main() {
-  testWidgets('test_workspace_settings_screen_property_blocks_use_page_gap', (
+  testWidgets('test_settings_and_devices_property_blocks_use_page_gap', (
     WidgetTester tester,
   ) async {
     final Random random = seededRandom(7921);
@@ -130,17 +151,17 @@ void main() {
         least: narrowestWidth,
         most: widestWidth,
       );
-      final _TabCase tabCase = pickOne(random, _tabCases);
-      await _openTab(tester, width: width, tabCase: tabCase);
+      final _PageCase pageCase = pickOne(random, _pageCases);
+      await _openPage(tester, width: width, pageCase: pageCase);
 
-      for (final double gap in tabCase.measureGaps(tester)) {
-        final String reason = '${tabCase.tab} at width $width';
+      for (final double gap in pageCase.measureGaps(tester)) {
+        final String reason = '${pageCase.name} at width $width';
         expect(gap, closeTo(_pageGap, 0.5), reason: reason);
       }
     }
   });
 
-  testWidgets('test_settings_tabs_property_muted_paragraphs_use_body_text', (
+  testWidgets('test_settings_and_devices_property_muted_text_is_body_text', (
     WidgetTester tester,
   ) async {
     final Random random = seededRandom(7922);
@@ -151,15 +172,14 @@ void main() {
         least: narrowestWidth,
         most: widestWidth,
       );
-      await _openTab(tester, width: width, tabCase: _tabCases[0]);
+      await _openPage(tester, width: width, pageCase: _pageCases[1]);
       _expectBodyMuted(tester, find.textContaining('Removing a device here'));
-      _expectBodyMuted(tester, find.text('Your devices'));
+      _expectBodyMuted(tester, find.text(_allDevicesTitle).first);
 
-      await _openTab(tester, width: width, tabCase: _tabCases[2]);
-      _expectBodyMuted(tester, find.text(_serverDownSummary));
+      await _openPage(tester, width: width, pageCase: _pageCases[2]);
       _expectBodyMuted(tester, find.textContaining('Last connected 14:12'));
 
-      await _openTab(tester, width: width, tabCase: _tabCases[3]);
+      await _openPage(tester, width: width, pageCase: _pageCases[3]);
       _expectBodyMuted(tester, find.textContaining('Latest '));
       _expectBodyMuted(tester, find.text('14:09'));
     }

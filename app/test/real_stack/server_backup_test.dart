@@ -100,7 +100,7 @@ void main() {
 
       await openSettingsTab(
         tester,
-        tabLabel: 'General',
+        tabLabel: 'Server',
         expected: find.text('App server'),
       );
       await waitUntilShown(tester, find.text(_backupDeviceName));

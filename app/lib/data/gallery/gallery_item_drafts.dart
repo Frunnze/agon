@@ -2,15 +2,12 @@ import 'package:agent_orchestration/data/gallery/gallery_identifiers.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/item_draft.dart';
 import 'package:agent_orchestration/data/models/library.dart';
-import 'package:agent_orchestration/data/models/project.dart';
 import 'package:agent_orchestration/data/models/runner.dart';
 import 'package:agent_orchestration/data/models/schedule.dart';
 import 'package:agent_orchestration/data/models/scope.dart';
 import 'package:agent_orchestration/data/models/task.dart';
 import 'package:agent_orchestration/data/models/workflow.dart';
-import 'package:agent_orchestration/data/rules/local_folder_address.dart';
 
-const String galleryBillingFolderPath = '/Users/someone/code/billing-ui';
 const int _weeklyRunHour = 9;
 const int _weeklyRunMinute = 0;
 
@@ -57,30 +54,6 @@ ItemDraft _buildJobDraft() {
   );
 }
 
-ItemDraft _buildProjectDraft() {
-  return ItemDraft(
-    item: DraftedProject(
-      name: 'billing',
-      repositories: <RepositoryDraft>[
-        const RepositoryDraft(
-          address: 'github.com/acme/billing',
-          defaultBranch: 'main',
-        ),
-        RepositoryDraft(
-          address: renderLocalFolderAddress(
-            deviceId: GalleryDeviceIds.airLaptop,
-            path: galleryBillingFolderPath,
-          ),
-          defaultBranch: 'main',
-        ),
-      ],
-      agentAccess: AgentAccess.pushAfterApproval,
-      approvalPolicy: null,
-    ),
-    problems: const <String>[],
-  );
-}
-
 ItemDraft _buildSkillDraft() {
   return ItemDraft(
     item: DraftedSkill(
@@ -122,7 +95,6 @@ Map<DraftKind, ItemDraft> buildGalleryItemDrafts() {
   return <DraftKind, ItemDraft>{
     DraftKind.task: _buildTaskDraft(),
     DraftKind.job: _buildJobDraft(),
-    DraftKind.project: _buildProjectDraft(),
     DraftKind.skill: _buildSkillDraft(),
     DraftKind.rule: _buildRuleDraft(),
   };

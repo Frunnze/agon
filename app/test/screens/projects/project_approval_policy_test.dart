@@ -7,7 +7,6 @@ import 'package:agent_orchestration/data/app_dependencies.dart';
 import 'package:agent_orchestration/data/fakes.dart';
 import 'package:agent_orchestration/data/gallery/gallery_identifiers.dart';
 import 'package:agent_orchestration/data/models/approval.dart';
-import 'package:agent_orchestration/data/models/item_draft.dart';
 import 'package:agent_orchestration/data/models/project.dart';
 import 'package:agent_orchestration/shell/app_route.dart';
 
@@ -41,7 +40,7 @@ Future<AppDependencies> _pumpNewProject(WidgetTester tester) async {
   await pumpApp(
     tester,
     size: desktopSize,
-    route: NewItemFormRoute(DraftKind.project),
+    route: const NewProjectRoute(),
     dependencies: dependencies,
   );
   return dependencies;

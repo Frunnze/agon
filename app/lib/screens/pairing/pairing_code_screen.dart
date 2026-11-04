@@ -61,9 +61,9 @@ class PairingCodeScreen extends StatelessWidget {
     return AppPage(
       children: <Widget>[
         PageHeader(
-          title: 'Add a device',
+          title: 'Pair a device',
           backLink: BackLink(
-            label: 'Your devices',
+            label: 'Devices',
             onPressed: navigation.closeRoute,
           ),
           summary: const <TextSegment>[

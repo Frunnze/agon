@@ -239,8 +239,11 @@ proptest! {
         ),
         note in secret_text_strategy(),
     ) {
-        let paths: Vec<String> =
-            names.iter().map(|name| format!("/Users/someone/{name}")).collect();
+        let mut paths: Vec<String> = Vec::new();
+        for name in &names {
+            let folder = std::env::temp_dir().join(name);
+            paths.push(folder.display().to_string());
+        }
         let folders: Vec<RepositoryDraft> =
             paths.iter().map(|path| chosen_folder(path)).collect();
         let change = DraftChange { draft: json!({}), note };

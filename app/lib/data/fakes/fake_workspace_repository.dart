@@ -187,6 +187,7 @@ final class FakeWorkspaceRepository extends ChangeNotifier
     final AppServerMember thisBackup = AppServerMember(
       deviceId: _currentDeviceId,
       standing: ServerStanding.backup,
+      copy: null,
     );
     return _replaceAppServerGroup(
       members: <AppServerMember>[..._appServerGroup.members, thisBackup],

@@ -2,7 +2,6 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:agent_orchestration/data/fakes.dart';
-import 'package:agent_orchestration/data/models/item_draft.dart';
 import 'package:agent_orchestration/data/models/project.dart';
 import 'package:agent_orchestration/screens/projects/agent_access_choices.dart';
 import 'package:agent_orchestration/shell/app_route.dart';
@@ -39,7 +38,7 @@ void main() {
         await pumpApp(
           tester,
           size: size,
-          route: NewItemFormRoute(DraftKind.project),
+          route: const NewProjectRoute(),
           dependencies: buildGalleryDependencies(),
         );
 

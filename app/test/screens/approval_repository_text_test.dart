@@ -9,6 +9,7 @@ import 'package:agent_orchestration/presentation/device_names.dart';
 import 'package:agent_orchestration/screens/approvals/approval_text.dart';
 
 import '../support/random_inputs.dart';
+import '../support/sample_folder_paths.dart';
 
 const List<String> _folderNames = <String>['hello-counter', 'billing', 'app'];
 const List<String> _webAddresses = <String>[
@@ -26,9 +27,10 @@ void main() {
       for (int i = 0; i < propertyIterations; i += 1) {
         final Device device = pickOne(random, galleryDevices);
         final String folder = pickOne(random, _folderNames);
+        final int parentNumber = random.nextInt(100);
         final String address = renderLocalFolderAddress(
           deviceId: device.id,
-          path: '/Users/someone/code/${random.nextInt(100)}/$folder',
+          path: buildTemporaryFolderPath('code/$parentNumber/$folder'),
         );
 
         final String label = describeApprovalRepository(address, deviceNames);

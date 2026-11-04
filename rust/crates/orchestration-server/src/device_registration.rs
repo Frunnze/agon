@@ -27,6 +27,7 @@ pub fn register_device(
         id: device_id_for(&registration.signing_public_key),
         name: registration.name.clone(),
         role: registration.role,
+        kind: registration.kind,
         key_kind: registration.key_kind,
         signing_public_key: registration.signing_public_key.clone(),
         sealing_public_key: registration.sealing_public_key.clone(),

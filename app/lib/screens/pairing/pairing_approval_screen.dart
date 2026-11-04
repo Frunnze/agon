@@ -58,7 +58,7 @@ class _PairingApprovalScreenState extends State<PairingApprovalScreen> {
     final PairingRequest? request = widget.pairingRepository
         .findPendingRequest();
     final BackLink backLink = BackLink(
-      label: 'Your devices',
+      label: 'Devices',
       onPressed: _returnToDevices,
     );
 

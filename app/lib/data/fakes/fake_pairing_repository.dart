@@ -72,6 +72,7 @@ final class FakePairingRepository extends ChangeNotifier
       id: DeviceId('paired-${request.deviceName}'),
       name: request.deviceName,
       role: request.role,
+      kind: DeviceKind.computer,
       keyKind: request.keyKind,
       signingPublicKey: _fakePublicKey,
       sealingPublicKey: _fakePublicKey,

@@ -71,7 +71,6 @@ final class RealStack {
     required this.navigation,
     required this.account,
     required this.runnerPresence,
-    required this.folderPicker,
   });
 
   final Directory workingDirectory;
@@ -81,7 +80,6 @@ final class RealStack {
   final AppNavigation navigation;
   final node.AccountSummary? account;
   final RecordedRunnerPresence runnerPresence;
-  final FixedFolderPicker folderPicker;
   final FakeAgentLoginRepository _agentLogins = FakeAgentLoginRepository(
     status: _loggedInClaudeCode,
   );
@@ -238,13 +236,12 @@ final class RealStack {
       transport: transport,
     );
     final node.AccountSummary? account = await prepareNode(channel, server);
-    final FixedFolderPicker folderPicker = FixedFolderPicker(null);
 
     final NodeDependencies nodeDependencies = buildNodeDependencies(
       channel: channel,
       clock: const SystemClock(),
       qrCodeScanner: FixedQrCodeScanner(null),
-      folderPicker: folderPicker,
+      folderPicker: FixedFolderPicker(null),
       workspaceChoiceStore: MemoryWorkspaceChoiceStore(
         chosenWorkspaceId: null,
       ),
@@ -264,7 +261,6 @@ final class RealStack {
       navigation: started.navigation,
       account: account,
       runnerPresence: runnerPresence,
-      folderPicker: folderPicker,
     );
     addTearDown(stack._stopProcesses);
     return stack;

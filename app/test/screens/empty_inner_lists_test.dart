@@ -20,11 +20,10 @@ import 'package:agent_orchestration/shell/app_route.dart';
 import 'package:agent_orchestration/shell/app_section.dart';
 
 import '../support/app_harness.dart';
+import '../support/form_finders.dart';
 import '../support/list_harness.dart';
 import '../support/random_inputs.dart';
 
-const String _runnersMessage =
-    'Pair a computer as a runner in Your devices and it shows up here.';
 const String _auditMessage =
     'Pairings, signed workflows and other changes show up here, each signed '
     'by the device that made it.';
@@ -51,7 +50,7 @@ Project _findAcmeApp() {
 
 void main() {
   testWidgets(
-    'test_runners_settings_tab_property_empty_only_without_runners',
+    'test_devices_screen_property_runner_summary_only_with_runners',
     (WidgetTester tester) async {
       final Random random = seededRandom(7201);
 
@@ -60,22 +59,15 @@ void main() {
         await pumpApp(
           tester,
           size: pickOne(random, _sizes),
-          route: const RunnersSettingsRoute(),
+          route: const SectionRoute(AppSection.devices),
           dependencies: buildDependenciesWithRunners(runners),
         );
 
         expect(
-          find.text('No runners yet'),
-          runners.isEmpty ? findsOneWidget : findsNothing,
-        );
-        expect(
-          find.text(_runnersMessage),
-          runners.isEmpty ? findsOneWidget : findsNothing,
-        );
-        expect(
-          find.text(describeRunnerFleet(runners)),
+          find.text('Runners: ${describeRunnerFleet(runners)}'),
           runners.isNotEmpty ? findsOneWidget : findsNothing,
         );
+        expect(find.text('No runners yet'), findsNothing);
       }
     },
   );
@@ -96,7 +88,7 @@ void main() {
         route: const SectionRoute(AppSection.settings),
         dependencies: buildDependenciesWithAuditEntries(entries),
       );
-      await tester.tap(find.text('Audit log'));
+      await tapVisible(tester, find.text('Audit log'));
       await pumpFrames(tester);
 
       expect(

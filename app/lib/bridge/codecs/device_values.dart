@@ -16,6 +16,18 @@ enum DeviceRole implements WireNamed {
   static DeviceRole decode(Object? json) => decodeWireName(values, json);
 }
 
+enum DeviceKind implements WireNamed {
+  computer('computer'),
+  phone('phone');
+
+  const DeviceKind(this.wireName);
+
+  @override
+  final String wireName;
+
+  static DeviceKind decode(Object? json) => decodeWireName(values, json);
+}
+
 enum HardwareKeyKind implements WireNamed {
   secureEnclave('secure_enclave'),
   tpm('tpm'),
@@ -51,6 +63,7 @@ final class Device implements JsonEncodable {
     required this.id,
     required this.name,
     required this.role,
+    required this.kind,
     required this.keyKind,
     required List<int> signingPublicKey,
     required List<int> sealingPublicKey,
@@ -69,6 +82,7 @@ final class Device implements JsonEncodable {
       id: readField(fields, 'id', decodeDeviceId),
       name: readField(fields, 'name', decodeText),
       role: readField(fields, 'role', DeviceRole.decode),
+      kind: readField(fields, 'kind', DeviceKind.decode),
       keyKind: readField(fields, 'key_kind', HardwareKeyKind.decode),
       signingPublicKey: readListField(
         fields,
@@ -91,6 +105,7 @@ final class Device implements JsonEncodable {
   final DeviceId id;
   final String name;
   final DeviceRole role;
+  final DeviceKind kind;
   final HardwareKeyKind keyKind;
   final List<int> signingPublicKey;
   final List<int> sealingPublicKey;
@@ -106,6 +121,7 @@ final class Device implements JsonEncodable {
       'id': id.value,
       'name': name,
       'role': role.wireName,
+      'kind': kind.wireName,
       'key_kind': keyKind.wireName,
       'signing_public_key': signingPublicKey,
       'sealing_public_key': sealingPublicKey,

@@ -39,6 +39,7 @@ class RailLink extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppRadii.control),
         child: InkWell(
           onTap: () => onSelected(section),
+          mouseCursor: WidgetStateMouseCursor.clickable,
           borderRadius: BorderRadius.circular(AppRadii.control),
           child: Container(
             constraints: const BoxConstraints(

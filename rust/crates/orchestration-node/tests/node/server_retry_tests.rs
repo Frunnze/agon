@@ -125,4 +125,5 @@ fn retry_server_sees_a_stopped_server_come_back() {
     };
     assert_eq!(status["server_reachable"], json!(true));
     assert_eq!(status["account"]["device"]["name"], DEVICE_NAME);
+    assert_eq!(status["account"]["device"]["kind"], "computer");
 }

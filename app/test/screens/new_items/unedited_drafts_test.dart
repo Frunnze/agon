@@ -3,10 +3,8 @@ import 'dart:math';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:agent_orchestration/data/app_dependencies.dart';
-import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/item_draft.dart';
 import 'package:agent_orchestration/data/models/library.dart';
-import 'package:agent_orchestration/data/models/project.dart';
 import 'package:agent_orchestration/data/models/task.dart';
 import 'package:agent_orchestration/screens/new_items/new_item_texts.dart';
 
@@ -22,8 +20,6 @@ List<Object?> _describeDraftedItem(DraftedItem item) {
   switch (item) {
     case DraftedWork():
       return describeDraftedWorkFields(item);
-    case DraftedProject():
-      return describeDraftedProjectFields(item);
     case DraftedSkill(:final SkillDraft skill):
       return describeSkillFields(
         name: skill.name,
@@ -56,14 +52,6 @@ List<Object?> _describeSavedItem(
   switch (item) {
     case DraftedWork():
       return describeSavedWorkFields(_findNewestWork(dependencies, item));
-    case DraftedProject():
-      final WorkspaceId workspaceId = dependencies.workspaceRepository
-          .currentWorkspace()
-          .id;
-      final Project project = dependencies.projectRepository
-          .listProjects(workspaceId)
-          .last;
-      return describeSavedProjectFields(project);
     case DraftedSkill():
       final Skill skill = dependencies.skillRepository.listSkills().last;
       return describeSkillFields(

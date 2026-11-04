@@ -82,6 +82,10 @@ fn test_start_server_backup_property_the_backup_keeps_a_verified_copy() {
         panic!("the hosting device shows the servers");
     };
     assert_eq!(hosting_view["this_device"], "active");
+    assert_eq!(hosting_view["servers"][0]["copy"], json!(null));
+    let backup_copy = &hosting_view["servers"][1]["copy"];
+    assert!(backup_copy["changes_behind"].is_u64(), "{hosting_view}");
+    assert!(backup_copy["verified_at"].is_string(), "{hosting_view}");
     assert_eq!(
         active_stops,
         Err("this device is the active app server".to_owned())

@@ -32,30 +32,6 @@ void main() {
     }
   });
 
-  test('test_describe_device_last_seen_property_this_device_is_now', () {
-    final Random random = seededRandom(9402);
-
-    for (int i = 0; i < propertyIterations; i += 1) {
-      final DateTime now = randomLocalMoment(random);
-      final Device device =
-          galleryDevices[random.nextInt(galleryDevices.length)];
-      final Device thisDevice =
-          galleryDevices[random.nextInt(galleryDevices.length)];
-
-      final String lastSeen = describeDeviceLastSeen(
-        device: device,
-        thisDeviceId: thisDevice.id,
-        now: now,
-      );
-
-      if (device.id == thisDevice.id) {
-        expect(lastSeen, 'Now');
-      } else {
-        expect(lastSeen, describeLastSeen(device.lastSeen, now));
-      }
-    }
-  });
-
   test('test_describe_role_with_article_property_lowercase_label', () {
     for (final DeviceRole role in DeviceRole.values) {
       final String phrase = describeRoleWithArticle(role);
@@ -84,22 +60,6 @@ void main() {
     }
     expect(describeTrayName(TargetPlatform.linux), 'tray');
     expect(describeTrayName(TargetPlatform.windows), 'tray');
-  });
-
-  test('test_describe_device_key_property_marks_only_this_device', () {
-    final Random random = seededRandom(9402);
-
-    for (int i = 0; i < propertyIterations; i += 1) {
-      final Device device = pickOne(random, galleryDevices);
-      final DeviceId currentDeviceId = pickOne(random, galleryDevices).id;
-      final String key = describeDeviceKey(
-        device: device,
-        currentDeviceId: currentDeviceId,
-      );
-
-      expect(key.endsWith(device.keyKind.label), isTrue);
-      expect(key.startsWith('This device · '), device.id == currentDeviceId);
-    }
   });
 
   test('test_describe_device_pairing_property_date_then_approver', () {

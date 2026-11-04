@@ -28,6 +28,7 @@ import 'package:agent_orchestration/widgets/lists/list_row_data.dart';
 import 'package:agent_orchestration/widgets/mixed_text.dart';
 
 import '../support/random_inputs.dart';
+import '../support/sample_folder_paths.dart';
 
 final DeviceNames _deviceNames = DeviceNames(galleryDevices);
 
@@ -225,7 +226,8 @@ void main() {
     for (int i = 0; i < propertyIterations; i += 1) {
       final String path = randomWordPhrase(random).replaceAll(' ', '-');
       final String folderName = pickOne(random, <String>['billing', 'a b']);
-      final String folderAddress = 'local:3f2a9c:/Users/someone/$folderName';
+      final String folderPath = buildTemporaryFolderPath(folderName);
+      final String folderAddress = 'local:3f2a9c:$folderPath';
       expect(describePushDestination('github.com/$path'), 'GitHub');
       expect(
         describePushDestination('git.example.org/$path'),

@@ -138,6 +138,7 @@ class FileTreeRow extends StatelessWidget {
       expanded: _describeExpandedState(),
       child: InkWell(
         onTap: onTap,
+        mouseCursor: WidgetStateMouseCursor.clickable,
         child: Container(
           constraints: BoxConstraints(minHeight: controlHeight),
           decoration: buildRowDecoration(emphasis),

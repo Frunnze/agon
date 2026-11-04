@@ -1,7 +1,6 @@
 import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/item_draft.dart';
 import 'package:agent_orchestration/data/models/library.dart';
-import 'package:agent_orchestration/data/models/project.dart';
 import 'package:agent_orchestration/data/models/schedule.dart';
 import 'package:agent_orchestration/data/models/scope.dart';
 import 'package:agent_orchestration/data/models/task.dart';
@@ -65,31 +64,6 @@ List<Object?> describeSavedWorkFields(Task task) {
     task.usesAutomaticSkills,
     task.approvalPolicy,
     ...describeScheduleFields(task.schedule),
-  ];
-}
-
-List<Object?> describeDraftedProjectFields(DraftedProject project) {
-  return <Object?>[
-    project.name,
-    project.approvalPolicy,
-    for (final RepositoryDraft repository
-        in project.repositories) ...<Object?>[
-      repository.address,
-      repository.defaultBranch,
-      project.agentAccess,
-    ],
-  ];
-}
-
-List<Object?> describeSavedProjectFields(Project project) {
-  return <Object?>[
-    project.name,
-    project.approvalPolicy,
-    for (final Repository repository in project.repositories) ...<Object?>[
-      repository.address,
-      repository.defaultBranch,
-      repository.agentAccess,
-    ],
   ];
 }
 

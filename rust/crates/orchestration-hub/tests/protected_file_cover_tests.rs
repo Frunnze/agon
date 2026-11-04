@@ -9,7 +9,7 @@ use orchestration_core::protected_files::ProtectedFiles;
 use orchestration_core::protected_paths::is_protected_path;
 use orchestration_hub::command_specification::CommandSpecification;
 use orchestration_hub::protected_file_covers::{
-    CONTAINER_HOME_DIRECTORY, cover_protected_files,
+    container_home_directory, cover_protected_files,
 };
 use orchestration_hub::sandbox::{
     ContainerEngine, ContainerSettings, wrap_in_sandbox,
@@ -255,14 +255,12 @@ proptest! {
         let covered = cover_protected_files(&mounts, &protected)
             .map_err(|problem| to_case_error(&problem))?;
 
+        let home_directory = container_home_directory();
         let mut expected = BTreeSet::new();
         for file in &files {
             let agent_path = format!("{CONTAINER_WORKSPACE_DIRECTORY}/{file}");
-            let is_protected = is_protected_path(
-                &protected,
-                &agent_path,
-                CONTAINER_HOME_DIRECTORY,
-            );
+            let is_protected =
+                is_protected_path(&protected, &agent_path, &home_directory);
             if is_protected {
                 expected.insert(file.clone());
             }
@@ -271,5 +269,26 @@ proptest! {
             covered_relative_paths(&covered)
                 .map_err(|problem| to_case_error(&*problem))?;
         prop_assert_eq!(covered_paths, expected);
+    }
+
+    #[test]
+    fn test_container_home_directory_property_home_patterns_skip_workspace(
+        files in btree_set(any_tree_file(), 1..10),
+    ) {
+        let file_names: Vec<&str> = files.iter().map(String::as_str).collect();
+        let mut patterns = Vec::new();
+        for file in &files {
+            patterns.push(format!("~/{file}"));
+            patterns.push(format!("~{CONTAINER_WORKSPACE_DIRECTORY}/{file}"));
+        }
+        let protected = ProtectedFiles { patterns };
+        let tree = make_task_tree(&file_names, &[])
+            .map_err(|problem| to_case_error(&*problem))?;
+        let mounts = mounts_for(&tree.task_folder);
+
+        let covered = cover_protected_files(&mounts, &protected)
+            .map_err(|problem| to_case_error(&problem))?;
+
+        prop_assert_eq!(covered, mounts);
     }
 }

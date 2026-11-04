@@ -61,7 +61,7 @@ void main() {
       );
 
       for (final String text in <String>[
-        'Add a device',
+        'Pair a device',
         'Pair it once, then use it in any of your workspaces.',
         '4F7-K2Q',
         'Expires in 4:52',
@@ -162,7 +162,7 @@ void main() {
     expect(dependencies.pairingRepository.findPendingRequest(), isNull);
     expect(navigation.currentRoute, const SectionRoute(AppSection.devices));
     expect(find.text('mac-mini'), findsOneWidget);
-    expect(find.text('personal'), findsWidgets);
+    expect(find.text('Computer · personal'), findsOneWidget);
   });
 
   testWidgets('rejecting ends the pairing', (WidgetTester tester) async {

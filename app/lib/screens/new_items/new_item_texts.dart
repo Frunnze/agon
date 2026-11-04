@@ -61,12 +61,6 @@ NewItemTexts describeNewItem(DraftKind kind) {
       question: 'What should repeat, and how often?',
       changeExample: 'For example: on Fridays instead',
     ),
-    DraftKind.project => const NewItemTexts(
-      kindName: 'project',
-      sectionLabel: 'Projects',
-      question: 'What is this project, and where is its code?',
-      changeExample: 'For example: read only',
-    ),
     DraftKind.skill => const NewItemTexts(
       kindName: 'skill',
       sectionLabel: 'Skills',

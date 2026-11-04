@@ -17,7 +17,7 @@ fn sample_listed_context() -> DraftingContext {
     let mut context = empty_context();
     let mut billing = sample_project(0, "billing", "github.com/acme/billing");
     billing.repositories.push(Repository {
-        address: "local:a1b2c3:/Users/someone/api".to_owned(),
+        address: "local:a1b2c3:~/projects/api".to_owned(),
         default_branch: "main".to_owned(),
         agent_access: AgentAccess::ReadOnly,
     });
@@ -91,7 +91,7 @@ fn a_prompt_lists_the_context_in_the_agreed_line_format() {
         This computer: air-laptop (id a1b2c3)\n\
         Projects:\n\
         - billing (id 00000000-0000-0000-0000-000000000100): \
-        github.com/acme/billing, local:a1b2c3:/Users/someone/api\n\
+        github.com/acme/billing, local:a1b2c3:~/projects/api\n\
         Workflows:\n\
         - release (id 00000000-0000-0000-0000-000000000003), signed\n\
         - review (id 00000000-0000-0000-0000-000000000004), not signed yet\n\

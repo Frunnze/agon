@@ -6,6 +6,7 @@ import 'support/real_stack.dart';
 import 'support/stack_navigation.dart';
 import 'support/stack_waiting.dart';
 
+const String _createProjectLabel = 'Create project';
 const String _projectQuestion = 'What is this project, and where is its code?';
 const String _missingProjectProblem = 'Create a project before adding tasks';
 const Map<String, String> _newWorkButtons = <String, String>{
@@ -21,7 +22,7 @@ bool _hasNoProjects(RealStack stack) {
 
 void main() {
   testWidgets(
-    'test_new_work_property_without_a_project_opens_the_new_project_chat',
+    'test_new_work_property_without_a_project_opens_the_new_project_form',
     (WidgetTester tester) async {
       final RealStack stack = await RealStack.openWithAccount(tester);
       expect(_hasNoProjects(stack), isTrue);
@@ -35,10 +36,11 @@ void main() {
         await tapAndWait(
           tester,
           find.text(section.value).first,
-          expected: find.text(_projectQuestion),
+          expected: find.text(_createProjectLabel),
         );
 
         expect(tester.takeException(), isNull, reason: section.value);
+        expect(find.text(_projectQuestion), findsNothing);
         expect(find.textContaining(_missingProjectProblem), findsNothing);
       }
 

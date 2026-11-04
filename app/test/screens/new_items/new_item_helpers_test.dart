@@ -17,6 +17,7 @@ import 'package:agent_orchestration/screens/new_items/new_item_texts.dart';
 import 'package:agent_orchestration/screens/projects/agent_access_choices.dart';
 import 'package:agent_orchestration/screens/projects/repository_rows.dart';
 import 'package:agent_orchestration/shell/app_route.dart';
+import 'package:agent_orchestration/shell/app_section.dart';
 import 'package:agent_orchestration/shell/draft_kind_sections.dart';
 import 'package:agent_orchestration/shell/new_item_route_screens.dart';
 
@@ -56,6 +57,13 @@ void main() {
       expect(route.section, findDraftKindSection(kind));
       expect(route, NewItemFormRoute(kind));
       expect(route.section.name, startsWith(kind.name));
+    }
+  });
+
+  test('test_find_draft_kind_section_property_no_kind_drafts_a_project', () {
+    for (final DraftKind kind in DraftKind.values) {
+      expect(findDraftKindSection(kind), isNot(AppSection.projects));
+      expect(describeNewItem(kind).kindName, isNot('project'));
     }
   });
 

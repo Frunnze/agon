@@ -1,68 +1,173 @@
+import 'dart:math';
+
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:agent_orchestration/data/app_dependencies.dart';
-import 'package:agent_orchestration/data/clock.dart';
 import 'package:agent_orchestration/data/fakes.dart';
 import 'package:agent_orchestration/data/gallery/gallery_identifiers.dart';
-import 'package:agent_orchestration/data/gallery/gallery_moments.dart';
-import 'package:agent_orchestration/data/gallery/gallery_pairing.dart';
+import 'package:agent_orchestration/data/models/device.dart';
 import 'package:agent_orchestration/shell/app_navigation.dart';
 import 'package:agent_orchestration/shell/app_route.dart';
 import 'package:agent_orchestration/shell/app_section.dart';
+import 'package:agent_orchestration/widgets/inline_link.dart';
 
 import '../support/app_harness.dart';
 import '../support/form_finders.dart';
+import '../support/random_inputs.dart';
+import '../support/workspace_device_finders.dart';
 
 const String _revokeWarning =
     'Its key stops working in every workspace at once. To come back, it has '
     'to be paired again.';
+const String _noCopyNote =
+    'Shared by all your workspaces. Pair once, revoke once. Clients and '
+    'runners keep no copy of the workspace data.';
 
 Future<void> openRevokeDialog(WidgetTester tester, int rowIndex) async {
   await tapVisible(tester, find.text('Revoke').at(rowIndex));
   await pumpFrames(tester);
 }
 
+Future<AppNavigation> _pumpDevices(
+  WidgetTester tester, {
+  required Size size,
+  required AppDependencies dependencies,
+}) {
+  return pumpApp(
+    tester,
+    size: size,
+    route: const SectionRoute(AppSection.devices),
+    dependencies: dependencies,
+  );
+}
+
+int _countAcmeMembers(AppDependencies dependencies) {
+  int members = 0;
+  for (final Device device in dependencies.deviceRepository.listDevices()) {
+    if (device.workspaces.contains(GalleryWorkspaceIds.acme)) {
+      members += 1;
+    }
+  }
+  return members;
+}
+
 void main() {
   for (final Size size in <Size>[phoneSize, desktopSize]) {
-    testWidgets('your devices match the gallery at ${size.width}', (
+    testWidgets('devices match the gallery at ${size.width}', (
       WidgetTester tester,
     ) async {
-      await pumpApp(
+      await _pumpDevices(
         tester,
         size: size,
-        route: const SectionRoute(AppSection.devices),
         dependencies: buildGalleryDependencies(),
       );
 
       for (final String text in <String>[
-        'Shared by all your workspaces. Pair once, revoke once.',
-        'Add device',
-        'This device · Secure Enclave',
-        'TPM 2.0',
-        'StrongBox',
-        'acme, personal',
-        'Client and runner',
-        'Now',
-        '1 min ago',
-        '3 days ago',
+        'In acme',
+        'Add a device',
+        'All your devices',
+        'Pair a device',
+        _noCopyNote,
+        'This device · Computer',
+        'This device · Computer · acme, personal',
+        'Phone · acme, personal',
+        'Computer · acme',
+        'App server',
+        'Backup server',
+        'Runner',
+        'Holds the data',
+        'Has a copy · Last copied 3 days ago',
+        'No copy',
+        'Online',
+        'Last seen 1 min ago',
+        'Last seen 3 days ago',
       ]) {
         expect(find.text(text), findsWidgets, reason: text);
       }
+      expect(
+        find.textContaining(
+          'Removing a device here only takes it out of acme.',
+          findRichText: true,
+        ),
+        findsOneWidget,
+      );
+      expect(findWorkspaceDeviceRemoveButtons('acme'), findsNWidgets(6));
       expect(find.text('Revoke'), findsNWidgets(6));
     });
   }
+
+  testWidgets('test_devices_screen_property_remove_takes_device_out', (
+    WidgetTester tester,
+  ) async {
+    final Random random = seededRandom(9901);
+    final AppDependencies dependencies = buildGalleryDependencies();
+    await _pumpDevices(tester, size: desktopSize, dependencies: dependencies);
+
+    final Finder removeButtons = findWorkspaceDeviceRemoveButtons('acme');
+    for (int i = 0; i < 3; i += 1) {
+      final int buttonCount = tester.widgetList(removeButtons).length;
+      final int chosen = random.nextInt(buttonCount);
+      await tapVisible(tester, removeButtons.at(chosen));
+      await pumpFrames(tester);
+
+      expect(removeButtons, findsNWidgets(buttonCount - 1));
+      expect(_countAcmeMembers(dependencies), buttonCount);
+      expect(find.text('Revoke'), findsNWidgets(6));
+    }
+  });
+
+  testWidgets('a removed device can be added back to the workspace', (
+    WidgetTester tester,
+  ) async {
+    final AppDependencies dependencies = buildGalleryDependencies();
+    await dependencies.deviceRepository.removeDeviceFromWorkspace(
+      GalleryDeviceIds.gpuBox,
+      GalleryWorkspaceIds.acme,
+    );
+    await _pumpDevices(tester, size: desktopSize, dependencies: dependencies);
+    expect(findWorkspaceDeviceRemoveButtons('acme'), findsNWidgets(5));
+
+    await tapVisible(tester, find.text('Add a device'));
+    await pumpFrames(tester);
+    expect(find.text('Add a device to acme'), findsOneWidget);
+    await tester.tap(find.text('Add'));
+    await pumpFrames(tester);
+
+    expect(findWorkspaceDeviceRemoveButtons('acme'), findsNWidgets(6));
+    expect(
+      dependencies.deviceRepository
+          .findDevice(GalleryDeviceIds.gpuBox)
+          .workspaces,
+      contains(GalleryWorkspaceIds.acme),
+    );
+  });
+
+  testWidgets('the removal note links to all your devices on the page', (
+    WidgetTester tester,
+  ) async {
+    final AppNavigation navigation = await _pumpDevices(
+      tester,
+      size: phoneSize,
+      dependencies: buildGalleryDependencies(),
+    );
+    final Finder link = find.widgetWithText(InlineLink, 'All your devices');
+    final Finder pairButton = find.text('Pair a device');
+    expect(tester.getTopLeft(pairButton).dy > phoneSize.height, isTrue);
+
+    await tester.tap(link);
+    await pumpFrames(tester);
+
+    expect(navigation.currentRoute, const SectionRoute(AppSection.devices));
+    final double pairTop = tester.getTopLeft(pairButton).dy;
+    expect(pairTop >= 0 && pairTop < phoneSize.height, isTrue);
+  });
 
   testWidgets('revoking a device takes one tap in the dialog', (
     WidgetTester tester,
   ) async {
     final AppDependencies dependencies = buildGalleryDependencies();
-    await pumpApp(
-      tester,
-      size: desktopSize,
-      route: const SectionRoute(AppSection.devices),
-      dependencies: dependencies,
-    );
+    await _pumpDevices(tester, size: desktopSize, dependencies: dependencies);
 
     await openRevokeDialog(tester, 4);
     for (final String text in <String>[
@@ -96,105 +201,6 @@ void main() {
     );
     expect(find.text('old-macbook'), findsNothing);
     expect(find.text('Revoke'), findsNWidgets(5));
-  });
-
-  testWidgets('add device leads to the code and then the approval', (
-    WidgetTester tester,
-  ) async {
-    final AppNavigation navigation = await pumpApp(
-      tester,
-      size: phoneSize,
-      route: const SectionRoute(AppSection.devices),
-      dependencies: buildGalleryDependencies(),
-    );
-
-    await tester.tap(find.text('Add device'));
-    await pumpFrames(tester);
-    expect(navigation.currentRoute, const PairingCodeRoute());
-
-    await tapVisible(tester, find.text('Check mac-mini'));
-    await pumpFrames(tester);
-    expect(navigation.currentRoute, const PairingApprovalRoute());
-  });
-
-  testWidgets('add device shows a fresh code when none is active', (
-    WidgetTester tester,
-  ) async {
-    final AppDependencies base = buildGalleryDependencies();
-    final AppDependencies dependencies = replaceRepositories(
-      base,
-      pairingRepository: FakePairingRepository(
-        session: null,
-        request: null,
-        clock: FixedClock(galleryNow),
-        deviceRepository: base.deviceRepository as FakeDeviceRepository,
-        joinOutcome: galleryPairingOutcome,
-      ),
-    );
-    final AppNavigation navigation = await pumpApp(
-      tester,
-      size: phoneSize,
-      route: const SectionRoute(AppSection.devices),
-      dependencies: dependencies,
-    );
-
-    await tester.tap(find.text('Add device'));
-    await pumpFrames(tester);
-
-    expect(navigation.currentRoute, const PairingCodeRoute());
-    expect(find.text('This code expired.'), findsNothing);
-    expect(find.text('9QX-3MD'), findsOneWidget);
-  });
-
-  testWidgets('cancel withdraws the code and returns to your devices', (
-    WidgetTester tester,
-  ) async {
-    final AppDependencies dependencies = buildGalleryDependencies();
-    final AppNavigation navigation = await pumpApp(
-      tester,
-      size: phoneSize,
-      route: const SectionRoute(AppSection.devices),
-      dependencies: dependencies,
-    );
-    await tester.tap(find.text('Add device'));
-    await pumpFrames(tester);
-
-    await tapVisible(tester, find.text('Cancel'));
-    await pumpFrames(tester);
-
-    expect(navigation.currentRoute, const SectionRoute(AppSection.devices));
-    expect(dependencies.pairingRepository.findActiveSession(), isNull);
-    await tester.tap(find.text('Add device'));
-    await pumpFrames(tester);
-    expect(find.text('9QX-3MD'), findsOneWidget);
-  });
-
-  testWidgets('cancel on an expired code only closes the page', (
-    WidgetTester tester,
-  ) async {
-    final AppDependencies base = buildGalleryDependencies();
-    final AppNavigation navigation = await pumpApp(
-      tester,
-      size: phoneSize,
-      route: const SectionRoute(AppSection.devices),
-      dependencies: replaceRepositories(
-        base,
-        pairingRepository: FakePairingRepository(
-          session: null,
-          request: null,
-          clock: FixedClock(galleryNow),
-          deviceRepository: base.deviceRepository as FakeDeviceRepository,
-          joinOutcome: galleryPairingOutcome,
-        ),
-      ),
-    );
-    navigation.openRoute(const PairingCodeRoute());
-    await pumpFrames(tester);
-
-    await tapVisible(tester, find.text('Cancel'));
-    await pumpFrames(tester);
-
-    expect(navigation.currentRoute, const SectionRoute(AppSection.devices));
-    expect(tester.takeException(), isNull);
+    expect(findWorkspaceDeviceRemoveButtons('acme'), findsNWidgets(5));
   });
 }

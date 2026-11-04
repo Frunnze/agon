@@ -36,6 +36,8 @@ pub enum NodeError {
     LocalFolder(#[from] LocalFolderProblem),
     #[error("the folder {0} does not exist or this app cannot open it")]
     FolderMissing(String),
+    #[error("the folder {0} already exists, so choose another name or place")]
+    FolderExists(String),
     #[error("the folder {0} is not a git repository")]
     NotGitRepository(String),
     #[error("the folder {0} has no branch checked out")]

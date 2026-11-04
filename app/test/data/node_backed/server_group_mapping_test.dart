@@ -28,6 +28,8 @@ void main() {
         final AppServerMember member = group.members[index];
         expect(member.deviceId, server.deviceId);
         expect(member.standing.name, server.standing.name);
+        expect(member.copy?.changesBehind, server.copy?.changesBehind);
+        expect(member.copy?.verifiedAt, server.copy?.verifiedAt);
       }
       expect(group.thisDeviceStanding.name, view.thisDevice.name);
       expect(group.canKeepBackup, view.canKeepBackup);
@@ -44,6 +46,7 @@ void main() {
       const AppServerMember extra = AppServerMember(
         deviceId: DeviceId('extra-server'),
         standing: ServerStanding.backup,
+        copy: null,
       );
 
       expect(() => group.members.add(extra), throwsUnsupportedError);

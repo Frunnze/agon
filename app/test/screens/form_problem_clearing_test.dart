@@ -34,7 +34,7 @@ final class _CheckedForm {
 
 final List<_CheckedForm> _checkedForms = <_CheckedForm>[
   _CheckedForm(
-    route: NewItemFormRoute(DraftKind.project),
+    route: const NewProjectRoute(),
     openingTaps: const <Finder>[],
     saveButton: find.text('Create project'),
     wrongTextsByField: <String, List<String>>{

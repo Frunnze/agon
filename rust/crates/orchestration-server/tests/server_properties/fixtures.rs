@@ -10,7 +10,8 @@ use orchestration_api::work::{
 use orchestration_core::agent_place::AgentPlace;
 use orchestration_core::approval::ApprovalPolicy;
 use orchestration_core::device::{
-    Device, DeviceRole, HardwareKeyKind, Runner, RunnerLink, RunnerTarget,
+    Device, DeviceKind, DeviceRole, HardwareKeyKind, Runner, RunnerLink,
+    RunnerTarget,
 };
 use orchestration_core::identifiers::{ProjectId, TaskId, WorkspaceId};
 use orchestration_core::task::{
@@ -53,6 +54,7 @@ pub fn registration_for(
     DeviceRegistration {
         name: name.to_owned(),
         role,
+        kind: DeviceKind::Computer,
         key_kind: HardwareKeyKind::Software,
         signing_public_key: public_identity.signing_public_key,
         sealing_public_key: public_identity.sealing_public_key,

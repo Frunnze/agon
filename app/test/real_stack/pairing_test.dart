@@ -14,10 +14,10 @@ const String _secondRunnerName = 'second-runner';
 const String _rejectedState = 'rejected';
 
 Future<String> _showPairingCode(WidgetTester tester) async {
-  await openYourDevices(tester);
+  await openDevices(tester);
   await tapAndWait(
     tester,
-    find.text('Add device'),
+    find.text('Pair a device'),
     expected: findShownPairingCode(),
   );
   return readShownPairingCode(tester);
@@ -60,7 +60,7 @@ void main() {
       final String code = await _showPairingCode(tester);
       expect(find.text('Waiting for the new device'), findsOneWidget);
       await tapWhenShown(tester, find.text('Cancel'));
-      await waitUntilGone(tester, findPageTitle('Add a device'));
+      await waitUntilGone(tester, findPageTitle('Pair a device'));
       final String? joinProblem = await askNode(
         tester,
         () => runner.readJoinProblem(
@@ -70,7 +70,7 @@ void main() {
       );
 
       expect(joinProblem, isNotNull);
-      expect(findPageTitle('Your devices'), findsOneWidget);
+      expect(findPageTitle('Devices'), findsOneWidget);
       await stack.close(tester);
     },
     skip: isStackMissing,
@@ -118,7 +118,7 @@ void main() {
       );
       await tapAndWait(
         tester,
-        find.text('Add device'),
+        find.text('Pair a device'),
         expected: findShownPairingCode(),
       );
       await _joinAndOpenRequest(

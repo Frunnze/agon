@@ -8,8 +8,8 @@ enum AppSection {
   workflows('Workflows', AppIconKind.workflow),
   skills('Skills', AppIconKind.skills),
   rules('Rules', AppIconKind.rules),
+  devices('Devices', AppIconKind.key),
   settings('Settings', AppIconKind.settings),
-  devices('Your devices', AppIconKind.key),
   more('More', AppIconKind.more);
 
   const AppSection(this.label, this.icon);
@@ -26,6 +26,7 @@ const List<AppSection> railSections = <AppSection>[
   AppSection.workflows,
   AppSection.skills,
   AppSection.rules,
+  AppSection.devices,
   AppSection.settings,
 ];
 

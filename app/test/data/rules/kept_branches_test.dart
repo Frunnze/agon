@@ -11,11 +11,12 @@ import 'package:agent_orchestration/data/models/run.dart';
 import 'package:agent_orchestration/data/rules/kept_branches.dart';
 
 import '../../support/random_inputs.dart';
+import '../../support/sample_folder_paths.dart';
 
-const List<String> _repositories = <String>[
+final List<String> _repositories = <String>[
   'github.com/acme/app',
   'github.com/acme/api',
-  'local:9c7a5e3b:/Users/someone/hello-counter',
+  'local:9c7a5e3b:${buildTemporaryFolderPath('hello-counter')}',
 ];
 const List<String> _branches = <String>[
   'task/rename-the-billing-module-7b3e',

@@ -32,7 +32,7 @@ AppRoute chooseRouteAfterPairing(DeviceRole role) {
       return const SectionRoute(AppSection.tasks);
     case DeviceRole.runner:
     case DeviceRole.clientAndRunner:
-      return const RunnersSettingsRoute();
+      return const SectionRoute(AppSection.devices);
   }
 }
 

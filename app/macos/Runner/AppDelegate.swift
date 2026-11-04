@@ -8,10 +8,12 @@ class AppDelegate: FlutterAppDelegate {
   private let engine = FlutterEngine(name: engineName, project: nil)
   private var runnerPresence: RunnerPresenceChannel?
   private var windowChannel: WindowChannel?
+  private var folderChannel: FolderChannel?
 
   override func applicationDidFinishLaunching(_ notification: Notification) {
     let windows = WindowChannel(messenger: engine.binaryMessenger)
     windowChannel = windows
+    folderChannel = FolderChannel(messenger: engine.binaryMessenger)
     runnerPresence = RunnerPresenceChannel(
       messenger: engine.binaryMessenger,
       menuBarItem: MenuBarItem(onOpen: windows.reopen),

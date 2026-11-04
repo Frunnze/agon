@@ -1,7 +1,8 @@
 use std::path::Path;
+use std::sync::MutexGuard;
 use std::sync::atomic::Ordering;
 
-use orchestration_api::server_group::ServerGroupView;
+use orchestration_api::server_group::{ReplicaCopy, ServerGroupView};
 use orchestration_core::identifiers::DeviceId;
 use orchestration_core::server_group::{
     ServerGroup, ServerMember, ServerStanding, ServerTerm,
@@ -11,10 +12,13 @@ use super::Server;
 use crate::error::ServerError;
 use crate::persistence::StateStorage;
 use crate::replica_check::verify_replica;
+use crate::replica_copies::ReplicaCopyLedger;
 use crate::server_group_changes::{
     admit_member, found_group, record_takeover,
 };
 use crate::stored_state::StoredState;
+
+const POISONED_REPLICA_COPIES: &str = "the replica copy lock is poisoned";
 
 impl Server {
     pub fn seed_replica(
@@ -104,11 +108,37 @@ impl Server {
 
     pub fn describe_group(&self) -> Result<ServerGroupView, ServerError> {
         let state = self.lock_state()?;
+        let replica_copies = self.lock_replica_copies()?;
+        let copies = replica_copies.copies_of_members(&state.server_group);
         Ok(ServerGroupView {
             group: state.server_group.clone(),
             standing: self.standing(),
             revision: state.revision,
+            copies,
         })
+    }
+
+    pub fn record_copy_request(
+        &self,
+        device_id: &DeviceId,
+        verified_revision: u64,
+    ) -> Result<(), ServerError> {
+        let copy_request = ReplicaCopy {
+            device_id: device_id.clone(),
+            verified_revision,
+            verified_at: self.now(),
+        };
+        let mut replica_copies = self.lock_replica_copies()?;
+        replica_copies.record(copy_request);
+        Ok(())
+    }
+
+    fn lock_replica_copies(
+        &self,
+    ) -> Result<MutexGuard<'_, ReplicaCopyLedger>, ServerError> {
+        self.replica_copies
+            .lock()
+            .map_err(|_| ServerError::Internal(POISONED_REPLICA_COPIES))
     }
 }
 

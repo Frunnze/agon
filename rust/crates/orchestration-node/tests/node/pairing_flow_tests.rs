@@ -56,6 +56,7 @@ fn both_devices_compute_the_same_fingerprint_words() {
         panic!("the request is read again: {request:?}");
     };
     assert_eq!(request["joining"]["name"], JOINING_NAME);
+    assert_eq!(request["joining"]["kind"], "computer");
     assert_eq!(request["joining"]["fingerprint_words"], shown.joiner_words);
 }
 

@@ -5,7 +5,8 @@ mod run_progress;
 mod runner_summary;
 
 pub use app_servers::{
-    AppServerView, AppServersView, ThisDeviceStanding, describe_app_servers,
+    AppServerView, AppServersView, CopyView, ThisDeviceStanding,
+    count_changes_behind, describe_app_servers, describe_fresh_app_servers,
 };
 pub use approval_description::describe_approval_action;
 pub use repository_holders::{

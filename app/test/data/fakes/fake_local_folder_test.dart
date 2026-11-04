@@ -9,17 +9,18 @@ import 'package:agent_orchestration/data/models/project.dart';
 import 'package:agent_orchestration/data/rules/local_folder_address.dart';
 
 import '../../support/random_inputs.dart';
+import '../../support/sample_folder_paths.dart';
 
 const List<String> _folderNames = <String>['billing', 'app', 'My Code'];
 const List<String> _trailingSeparators = <String>['', '/', '//'];
-const String _gitlessFolderPath = '/Users/someone/notes';
+final String _gitlessFolderPath = buildTemporaryFolderPath('notes');
 
 FakeDeviceRepository _buildRepository() {
   return FakeDeviceRepository(
     devices: galleryDevices,
     currentDeviceId: GalleryDeviceIds.airLaptop,
     peerAddressProblem: null,
-    gitlessFolderPaths: const <String>{_gitlessFolderPath},
+    gitlessFolderPaths: <String>{_gitlessFolderPath},
   );
 }
 
@@ -29,7 +30,8 @@ void main() {
     final FakeDeviceRepository repository = _buildRepository();
 
     for (int i = 0; i < propertyIterations; i += 1) {
-      final String path = '/Users/someone/${pickOne(random, _folderNames)}';
+      final String folderName = pickOne(random, _folderNames);
+      final String path = buildTemporaryFolderPath(folderName);
       final String typed = '$path${pickOne(random, _trailingSeparators)}';
 
       final CheckedFolder checked = await repository.checkLocalFolder(typed);

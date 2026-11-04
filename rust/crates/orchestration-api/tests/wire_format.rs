@@ -7,7 +7,7 @@ use orchestration_api::updates::{
     ChangeNotification, ChangeTopic, EventsResponse,
 };
 use orchestration_api::work::{RunEvent, RunEventsRequest, TaskStart};
-use orchestration_core::device::{DeviceRole, HardwareKeyKind};
+use orchestration_core::device::{DeviceKind, DeviceRole, HardwareKeyKind};
 use orchestration_core::identifiers::RunId;
 use orchestration_core::peer_address::{PeerAddress, SignedPeerAddress};
 use proptest::prelude::*;
@@ -30,6 +30,7 @@ fn join_request_for(code: String, name: String) -> JoinRequest {
         device: orchestration_api::accounts::DeviceRegistration {
             name,
             role: DeviceRole::Runner,
+            kind: DeviceKind::Phone,
             key_kind: HardwareKeyKind::Software,
             signing_public_key: vec![1, 2, 3],
             sealing_public_key: vec![4, 5, 6],

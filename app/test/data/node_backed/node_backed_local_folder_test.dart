@@ -8,6 +8,7 @@ import 'package:agent_orchestration/data/node_backed.dart';
 
 import '../../bridge/support/scripted_node_transport.dart';
 import '../../support/random_inputs.dart';
+import '../../support/sample_folder_paths.dart';
 import 'support/node_backed_harness.dart';
 
 const List<String> _branches = <String>['main', 'master', 'dev-2'];
@@ -21,7 +22,7 @@ void main() {
     final Random random = seededRandom(9201);
 
     for (int i = 0; i < propertyIterations; i += 1) {
-      final String path = '/Users/someone/${randomWordPhrase(random)}';
+      final String path = buildTemporaryFolderPath(randomWordPhrase(random));
       final String address = 'local:3f2a9c:$path';
       final String branch = pickOne(random, _branches);
       final bool hasStartedGit = random.nextBool();

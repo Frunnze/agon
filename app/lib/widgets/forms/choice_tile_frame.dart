@@ -39,6 +39,7 @@ class ChoiceTileFrame extends StatelessWidget {
       ),
       child: InkWell(
         onTap: onPressed,
+        mouseCursor: WidgetStateMouseCursor.clickable,
         borderRadius: corners,
         hoverColor: AppColors.sunken,
         child: Padding(

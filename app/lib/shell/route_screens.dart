@@ -4,7 +4,6 @@ import 'package:agent_orchestration/data/app_dependencies.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/item_draft.dart';
 import 'package:agent_orchestration/data/models/project.dart';
-import 'package:agent_orchestration/screens/settings.dart';
 import 'package:agent_orchestration/screens/workflows/new_workflow_screen.dart';
 import 'package:agent_orchestration/shell/app_navigation.dart';
 import 'package:agent_orchestration/shell/app_route.dart';
@@ -44,9 +43,7 @@ Widget buildRouteScreen({
   required RunWindowOpener? runWindowOpener,
 }) {
   if (_startsNewWork(route) && !_hasProjectsInCurrentWorkspace(dependencies)) {
-    return buildNewItemScreen(
-      formRoute: NewItemFormRoute(DraftKind.project),
-      startedFrom: null,
+    return buildNewProjectScreen(
       dependencies: dependencies,
       navigation: navigation,
     );
@@ -114,9 +111,7 @@ Widget buildRouteScreen({
         navigation: navigation,
       );
     case NewProjectRoute():
-      return buildNewItemScreen(
-        formRoute: NewItemFormRoute(DraftKind.project),
-        startedFrom: null,
+      return buildNewProjectScreen(
         dependencies: dependencies,
         navigation: navigation,
       );
@@ -210,12 +205,6 @@ Widget buildRouteScreen({
       return buildRuleFormScreen(
         existingRule: dependencies.ruleRepository.findRule(route.ruleId),
         presetProjectId: null,
-        dependencies: dependencies,
-        navigation: navigation,
-      );
-    case RunnersSettingsRoute():
-      return buildSettingsScreen(
-        initialTab: SettingsTab.runners,
         dependencies: dependencies,
         navigation: navigation,
       );

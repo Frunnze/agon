@@ -7,6 +7,7 @@ export 'workflow_builder/builder_rules.dart';
 export 'workflow_builder/builder_selection.dart';
 export 'workflow_builder/builder_toolbar.dart';
 export 'workflow_builder/canvas_frame.dart';
+export 'workflow_builder/canvas_cursor.dart';
 export 'workflow_builder/canvas_geometry.dart';
 export 'workflow_builder/canvas_view.dart';
 export 'workflow_builder/canvas_zoom_buttons.dart';

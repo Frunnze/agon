@@ -10,6 +10,15 @@ enum DeviceRole {
   final String label;
 }
 
+enum DeviceKind {
+  computer('Computer'),
+  phone('Phone');
+
+  const DeviceKind(this.label);
+
+  final String label;
+}
+
 enum HardwareKeyKind {
   secureEnclave('Secure Enclave'),
   tpm('TPM 2.0'),
@@ -26,6 +35,7 @@ final class Device {
     required this.id,
     required this.name,
     required this.role,
+    required this.kind,
     required this.keyKind,
     required List<int> signingPublicKey,
     required List<int> sealingPublicKey,
@@ -41,6 +51,7 @@ final class Device {
   final DeviceId id;
   final String name;
   final DeviceRole role;
+  final DeviceKind kind;
   final HardwareKeyKind keyKind;
   final List<int> signingPublicKey;
   final List<int> sealingPublicKey;
@@ -55,6 +66,7 @@ final class Device {
       id: id,
       name: name,
       role: role,
+      kind: kind,
       keyKind: keyKind,
       signingPublicKey: signingPublicKey,
       sealingPublicKey: sealingPublicKey,
@@ -71,6 +83,7 @@ final class Device {
       id: id,
       name: name,
       role: role,
+      kind: kind,
       keyKind: keyKind,
       signingPublicKey: signingPublicKey,
       sealingPublicKey: sealingPublicKey,

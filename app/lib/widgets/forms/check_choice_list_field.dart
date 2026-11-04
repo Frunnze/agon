@@ -83,6 +83,7 @@ class _CheckMark extends StatelessWidget {
       child: Checkbox(
         value: isSelected,
         onChanged: null,
+        mouseCursor: MouseCursor.defer,
         fillColor: WidgetStateProperty.resolveWith(_chooseFill),
         checkColor: AppColors.paper,
         side: const BorderSide(

@@ -9,8 +9,9 @@ use crate::workspace_mounts::{
     CONTAINER_WORKSPACE_DIRECTORY, PlaceholderMount, WorkspaceMounts,
 };
 
-pub const CONTAINER_HOME_DIRECTORY: &str = "/home/agent";
 pub const PLACEHOLDER_FOLDER_NAME: &str = "protected-file-placeholders";
+const CONTAINER_HOMES_FOLDER_NAME: &str = "home";
+const CONTAINER_USER_NAME: &str = "agent";
 const EMPTY_FILE_NAME: &str = "empty-file";
 const EMPTY_FOLDER_NAME: &str = "empty-folder";
 const AGENT_PATH_SEPARATOR: &str = "/";
@@ -29,6 +30,14 @@ struct ProtectedEntry {
 struct Placeholders {
     empty_file: PathBuf,
     empty_folder: PathBuf,
+}
+
+#[must_use]
+pub fn container_home_directory() -> String {
+    format!(
+        "{AGENT_PATH_SEPARATOR}{CONTAINER_HOMES_FOLDER_NAME}\
+         {AGENT_PATH_SEPARATOR}{CONTAINER_USER_NAME}"
+    )
 }
 
 pub fn cover_protected_files(
@@ -66,6 +75,7 @@ fn find_protected_entries(
     task_folder: &Path,
     protected: &ProtectedFiles,
 ) -> io::Result<Vec<ProtectedEntry>> {
+    let home_directory = container_home_directory();
     let mut protected_entries = Vec::new();
     let mut folders_to_read = vec![task_folder.to_path_buf()];
     while let Some(folder) = folders_to_read.pop() {
@@ -73,11 +83,8 @@ fn find_protected_entries(
             let directory_entry = directory_entry?;
             let path = directory_entry.path();
             let agent_path = describe_agent_path(task_folder, &path);
-            let is_protected = is_protected_path(
-                protected,
-                &agent_path,
-                CONTAINER_HOME_DIRECTORY,
-            );
+            let is_protected =
+                is_protected_path(protected, &agent_path, &home_directory);
             if is_protected {
                 if let Some(kind) = read_entry_kind(&path) {
                     protected_entries.push(ProtectedEntry { path, kind });

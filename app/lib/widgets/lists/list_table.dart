@@ -106,6 +106,7 @@ class ListTable extends StatelessWidget {
       for (int index = 0; index < cells.length; index += 1)
         TableRowInkWell(
           onTap: row.onTap,
+          mouseCursor: WidgetStateMouseCursor.clickable,
           child: Align(
             alignment: columns[index].cellAlignment,
             child: Padding(
@@ -117,6 +118,7 @@ class ListTable extends StatelessWidget {
     ];
     final Widget spacer = TableRowInkWell(
       onTap: row.onTap,
+      mouseCursor: WidgetStateMouseCursor.clickable,
       child: const SizedBox.shrink(),
     );
 

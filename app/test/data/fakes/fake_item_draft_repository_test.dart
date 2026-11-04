@@ -6,7 +6,6 @@ import 'package:agent_orchestration/data/fakes.dart';
 import 'package:agent_orchestration/data/gallery/gallery_identifiers.dart';
 import 'package:agent_orchestration/data/gallery/gallery_item_drafts.dart';
 import 'package:agent_orchestration/data/models/item_draft.dart';
-import 'package:agent_orchestration/data/models/project.dart';
 
 import '../../support/random_inputs.dart';
 
@@ -24,7 +23,6 @@ ItemDraftRequest _requestFor(DraftKind kind, String wish) {
     wish: wish,
     startedFrom: null,
     change: null,
-    chosenFolders: const <RepositoryDraft>[],
   );
 }
 

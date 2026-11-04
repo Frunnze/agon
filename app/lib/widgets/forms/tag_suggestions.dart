@@ -77,6 +77,7 @@ class TagSuggestionList extends StatelessWidget {
               for (final String option in options)
                 InkWell(
                   onTap: () => onSelected(option),
+                  mouseCursor: WidgetStateMouseCursor.clickable,
                   borderRadius: BorderRadius.circular(AppRadii.control),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(

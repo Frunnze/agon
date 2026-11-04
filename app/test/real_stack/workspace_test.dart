@@ -6,7 +6,7 @@ import 'package:agent_orchestration/bridge/commands/device_commands.dart'
 import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/widgets/app_button.dart';
 
-import '../support/settings_finders.dart';
+import '../support/workspace_device_finders.dart';
 import 'support/real_stack.dart';
 import 'support/stack_navigation.dart';
 import 'support/stack_node_reads.dart';
@@ -120,19 +120,28 @@ void main() {
         ),
       );
 
-      await openRailSection(tester, label: 'Settings', pageTitle: 'Settings');
-      await waitUntilShown(
-        tester,
-        find.text('Devices in $_secondWorkspaceName'),
+      await openDevices(tester);
+      await waitUntilShown(tester, find.text('In $_secondWorkspaceName'));
+      expect(
+        findWorkspaceDevice(
+          workspaceName: _secondWorkspaceName,
+          deviceName: runnerDeviceName,
+        ),
+        findsNothing,
       );
-      expect(find.text(runnerDeviceName), findsNothing);
-      await tapWhenShown(tester, find.text('Add one of your devices'));
+      await tapWhenShown(tester, find.text('Add a device'));
       await tapWhenShown(tester, find.widgetWithText(AppButton, 'Add'));
       await waitUntilGone(
         tester,
         find.text('Add a device to $_secondWorkspaceName'),
       );
-      await waitUntilShown(tester, find.text(runnerDeviceName));
+      await waitUntilShown(
+        tester,
+        findWorkspaceDevice(
+          workspaceName: _secondWorkspaceName,
+          deviceName: runnerDeviceName,
+        ),
+      );
       await waitUntilNodeAgrees(
         tester,
         description: 'the runner in the second workspace',
@@ -144,7 +153,13 @@ void main() {
         tester,
         findWorkspaceDeviceRemoveButtons(_secondWorkspaceName),
       );
-      await waitUntilGone(tester, find.text(runnerDeviceName));
+      await waitUntilGone(
+        tester,
+        findWorkspaceDevice(
+          workspaceName: _secondWorkspaceName,
+          deviceName: runnerDeviceName,
+        ),
+      );
       final node.DeviceView removed = await askNode(
         tester,
         () => fetchNodeDevice(stack: stack, deviceName: runnerDeviceName),

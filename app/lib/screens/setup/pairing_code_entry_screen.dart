@@ -92,7 +92,7 @@ class _PairingCodeEntryScreenState extends State<PairingCodeEntryScreen> {
       title: 'Enter the pairing code',
       children: <Widget>[
         const Text(
-          'On a device you already use, open Your devices, then Add device. '
+          'On a device you already use, open Devices, then Pair a device. '
           'It shows a code that works for 5 minutes.',
           style: AppTextStyles.bodyMuted,
         ),

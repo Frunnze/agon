@@ -33,6 +33,7 @@ class PathBreadcrumb extends StatelessWidget {
       crumbs.add(
         InkWell(
           onTap: onPressed,
+          mouseCursor: WidgetStateMouseCursor.clickable,
           child: ConstrainedBox(
             constraints: const BoxConstraints(minHeight: AppSpacing.space5),
             child: Align(

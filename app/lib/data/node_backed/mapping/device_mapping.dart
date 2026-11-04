@@ -17,6 +17,13 @@ node.DeviceRole mapDeviceRoleToNode(DeviceRole role) {
   };
 }
 
+DeviceKind mapDeviceKindFromNode(node.DeviceKind kind) {
+  return switch (kind) {
+    node.DeviceKind.computer => DeviceKind.computer,
+    node.DeviceKind.phone => DeviceKind.phone,
+  };
+}
+
 HardwareKeyKind mapHardwareKeyKindFromNode(node.HardwareKeyKind kind) {
   return switch (kind) {
     node.HardwareKeyKind.secureEnclave => HardwareKeyKind.secureEnclave,
@@ -31,6 +38,7 @@ Device mapDeviceFromNode(node.Device device) {
     id: device.id,
     name: device.name,
     role: mapDeviceRoleFromNode(device.role),
+    kind: mapDeviceKindFromNode(device.kind),
     keyKind: mapHardwareKeyKindFromNode(device.keyKind),
     signingPublicKey: device.signingPublicKey,
     sealingPublicKey: device.sealingPublicKey,

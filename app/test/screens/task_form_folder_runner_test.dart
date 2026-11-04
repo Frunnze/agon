@@ -23,6 +23,7 @@ import 'package:agent_orchestration/shell/app_route.dart';
 
 import '../support/app_harness.dart';
 import '../support/random_inputs.dart';
+import '../support/sample_folder_paths.dart';
 import '../support/workflow_repositories.dart';
 
 const List<String> _folderNames = <String>['billing-ui', 'app', 'site'];
@@ -42,7 +43,7 @@ Project _folderProject({required DeviceId deviceId, required String name}) {
       Repository(
         address: renderLocalFolderAddress(
           deviceId: deviceId,
-          path: '/Users/someone/$name',
+          path: buildTemporaryFolderPath(name),
         ),
         defaultBranch: 'main',
         agentAccess: AgentAccess.pushAfterApproval,

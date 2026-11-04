@@ -31,7 +31,8 @@ List<AppRoute> galleryRoutes() {
     const SectionRoute(AppSection.approvals),
     const SectionRoute(AppSection.more),
     const SectionRoute(AppSection.projects),
-    const RunnersSettingsRoute(),
+    const SectionRoute(AppSection.devices),
+    const SectionRoute(AppSection.settings),
   ];
 }
 

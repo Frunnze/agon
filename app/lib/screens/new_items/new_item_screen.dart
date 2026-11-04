@@ -2,12 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import 'package:agent_orchestration/data/folder_picker.dart';
 import 'package:agent_orchestration/data/models/item_draft.dart';
-import 'package:agent_orchestration/data/models/project.dart';
 import 'package:agent_orchestration/data/models/runner.dart';
 import 'package:agent_orchestration/presentation/problem_text.dart';
-import 'package:agent_orchestration/screens/new_items/chosen_folders.dart';
 import 'package:agent_orchestration/screens/new_items/draft_review.dart';
 import 'package:agent_orchestration/screens/new_items/drafting_notices.dart';
 import 'package:agent_orchestration/screens/new_items/item_drafting_view.dart';
@@ -46,7 +43,6 @@ class _NewItemScreenState extends State<NewItemScreen> {
   ItemDraftRequest? _runningRequest;
   DraftRunning? _running;
   ItemDraft? _draft;
-  List<RepositoryDraft> _chosenFolders = const <RepositoryDraft>[];
   String? _wishProblem;
   String? _draftProblem;
   String? _stopProblem;
@@ -92,15 +88,6 @@ class _NewItemScreenState extends State<NewItemScreen> {
     final Widget? notice = hasOnlineRunner
         ? null
         : NoRunnerNotice(onFillForm: _openForm);
-    final FolderPicker? folderPicker = widget.sources.folderPicker;
-    final Widget? folderChoice = folderPicker == null
-        ? null
-        : ChosenFolderField(
-            folders: _chosenFolders,
-            folderPicker: folderPicker,
-            deviceRepository: widget.sources.deviceRepository,
-            onChanged: _keepChosenFolders,
-          );
 
     return ItemRequestView(
       texts: _texts,
@@ -108,7 +95,6 @@ class _NewItemScreenState extends State<NewItemScreen> {
       wishProblem: _wishProblem,
       onWishChanged: (String _) => setState(() => _wishProblem = null),
       notice: notice,
-      folderChoice: folderChoice,
       onDraft: _startFirstDraft,
       onAddManually: _openFormAboveRequest,
       onBack: widget.navigation.closeRoute,
@@ -160,10 +146,6 @@ class _NewItemScreenState extends State<NewItemScreen> {
     _draft = ItemDraft(item: editedItem, problems: _draft!.problems);
   }
 
-  void _keepChosenFolders(List<RepositoryDraft> folders) {
-    setState(() => _chosenFolders = folders);
-  }
-
   void _openForm() {
     widget.navigation.replaceRoute(widget.formRoute);
   }
@@ -178,7 +160,6 @@ class _NewItemScreenState extends State<NewItemScreen> {
       wish: _wishController.text.trim(),
       startedFrom: widget.startedFrom,
       change: change,
-      chosenFolders: _chosenFolders,
     );
   }
 

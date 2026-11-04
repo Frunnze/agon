@@ -49,7 +49,7 @@ const List<String> _switcherTexts = <String>[
   'Open',
   _switcherNote,
   'Close',
-  'Your devices',
+  'Devices',
   'Create workspace',
 ];
 const List<String> _projectPageTexts = <String>[

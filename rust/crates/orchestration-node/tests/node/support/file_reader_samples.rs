@@ -1,4 +1,6 @@
-use orchestration_core::device::{Device, DeviceRole, HardwareKeyKind};
+use orchestration_core::device::{
+    Device, DeviceKind, DeviceRole, HardwareKeyKind,
+};
 use orchestration_core::identifiers::{ProjectId, WorkspaceId};
 use orchestration_core::peer_address::PeerAddress;
 use orchestration_core::workspace::{AgentAccess, Project, Repository};
@@ -64,6 +66,7 @@ pub fn build_device(shape: ReaderShape, seed: u8) -> Result<Device, String> {
         id: public.device_id,
         name: "laptop".to_owned(),
         role: shape.role,
+        kind: DeviceKind::Computer,
         key_kind: HardwareKeyKind::Software,
         signing_public_key: public.signing_public_key,
         sealing_public_key: public.sealing_public_key,

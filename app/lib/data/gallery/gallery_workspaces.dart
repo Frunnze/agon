@@ -8,6 +8,8 @@ import 'package:agent_orchestration/data/models/workspace.dart';
 const String _appServerAddress =
     'peer://4f7a2c19e8b3d6a05c1f9e27b4d8a3c6f0e5b9d2a7c4e1f8b3d6a09c5e2f7b14';
 const Duration _appServerRetryInterval = Duration(seconds: 10);
+const int _oldMacbookChangesBehind = 214;
+const int _oldMacbookCopyDaysAgo = 3;
 
 const List<String> galleryDefaultProtectedFiles = <String>[
   '.env',
@@ -48,14 +50,19 @@ final AppServerStatus galleryAppServerStatus = AppServerStatus(
 );
 
 final AppServerGroup galleryAppServerGroup = AppServerGroup(
-  members: const <AppServerMember>[
-    AppServerMember(
+  members: <AppServerMember>[
+    const AppServerMember(
       deviceId: GalleryDeviceIds.mainMac,
       standing: ServerStanding.active,
+      copy: null,
     ),
     AppServerMember(
       deviceId: GalleryDeviceIds.oldMacbook,
       standing: ServerStanding.backup,
+      copy: BackupCopy(
+        changesBehind: _oldMacbookChangesBehind,
+        verifiedAt: galleryDaysAgo(_oldMacbookCopyDaysAgo),
+      ),
     ),
   ],
   thisDeviceStanding: ThisDeviceStanding.none,

@@ -110,6 +110,7 @@ fn build_pairing_view(
         .map(|join| JoiningDevice {
             name: join.registration.name.clone(),
             role: join.registration.role,
+            kind: join.registration.kind,
             key_kind: join.registration.key_kind,
             signing_public_key: join.registration.signing_public_key.clone(),
             sealing_public_key: join.registration.sealing_public_key.clone(),

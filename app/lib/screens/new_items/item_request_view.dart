@@ -20,7 +20,6 @@ class ItemRequestView extends StatelessWidget {
     required this.wishProblem,
     required this.onWishChanged,
     required this.notice,
-    required this.folderChoice,
     required this.onDraft,
     required this.onAddManually,
     required this.onBack,
@@ -32,7 +31,6 @@ class ItemRequestView extends StatelessWidget {
   final String? wishProblem;
   final ValueChanged<String> onWishChanged;
   final Widget? notice;
-  final Widget? folderChoice;
   final VoidCallback onDraft;
   final VoidCallback onAddManually;
   final VoidCallback onBack;
@@ -40,7 +38,6 @@ class ItemRequestView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final Widget? shownNotice = notice;
-    final Widget? shownFolderChoice = folderChoice;
 
     return AppPage(
       children: <Widget>[
@@ -65,7 +62,6 @@ class ItemRequestView extends StatelessWidget {
                   ),
                   onChanged: onWishChanged,
                 ),
-                ?shownFolderChoice,
               ],
             ),
             Align(

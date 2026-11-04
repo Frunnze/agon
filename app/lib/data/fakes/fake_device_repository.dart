@@ -29,6 +29,7 @@ final class FakeDeviceRepository extends ChangeNotifier
   final DeviceId _currentDeviceId;
   final String? _peerAddressProblem;
   final Set<String> _gitlessFolderPaths;
+  Set<String> _createdFolderPaths = const <String>{};
   List<Device> _devices;
 
   @override
@@ -69,6 +70,32 @@ final class FakeDeviceRepository extends ChangeNotifier
         defaultBranch: _fakeCheckedOutBranch,
       ),
       hasStartedGit: _gitlessFolderPaths.contains(folderPath),
+    );
+  }
+
+  @override
+  Future<CheckedFolder> createLocalFolder({
+    required String parent,
+    required String name,
+  }) async {
+    final String folderPath = '$parent/$name';
+    if (_createdFolderPaths.contains(folderPath)) {
+      throw StateError(
+        'the folder $folderPath already exists, so choose another name or '
+        'place',
+      );
+    }
+    _createdFolderPaths = <String>{..._createdFolderPaths, folderPath};
+
+    return CheckedFolder(
+      repository: RepositoryDraft(
+        address: renderLocalFolderAddress(
+          deviceId: _currentDeviceId,
+          path: folderPath,
+        ),
+        defaultBranch: _fakeCheckedOutBranch,
+      ),
+      hasStartedGit: true,
     );
   }
 

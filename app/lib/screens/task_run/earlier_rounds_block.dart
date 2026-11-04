@@ -6,6 +6,7 @@ import 'package:agent_orchestration/screens/shared/status_labels.dart';
 import 'package:agent_orchestration/theme/app_colors.dart';
 import 'package:agent_orchestration/theme/app_spacing.dart';
 import 'package:agent_orchestration/theme/app_typography.dart';
+import 'package:agent_orchestration/widgets/clickable.dart';
 import 'package:agent_orchestration/widgets/gaps.dart';
 
 const int _resultMaximumLines = 6;
@@ -34,8 +35,7 @@ class EarlierRoundsBlock extends StatelessWidget {
       children: spaceVertically(<Widget>[
         Semantics(
           button: true,
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
+          child: Clickable(
             onTap: onToggled,
             child: Text(
               toggleLabel,

@@ -21,6 +21,7 @@ AppServerMember _randomMember(Random random) {
   return AppServerMember(
     deviceId: DeviceId(randomDeviceIdText(random)),
     standing: pickOne(random, ServerStanding.values),
+    copy: null,
   );
 }
 

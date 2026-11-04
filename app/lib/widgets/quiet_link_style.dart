@@ -17,6 +17,7 @@ ButtonStyle buildQuietLinkStyle(BuildContext context) {
       Size(0, AppSpacing.space5),
     ),
     tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+    mouseCursor: WidgetStateMouseCursor.clickable,
     overlayColor: const WidgetStatePropertyAll<Color>(AppColors.transparent),
     foregroundColor: const WidgetStateProperty<Color>.fromMap(
       <WidgetStatesConstraint, Color>{

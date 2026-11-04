@@ -17,7 +17,6 @@ const String newItemWish = 'Clean up the merged feature branches';
 final Map<DraftKind, AppRoute> newItemRoutes = <DraftKind, AppRoute>{
   DraftKind.task: const NewTaskRoute(),
   DraftKind.job: const NewJobRoute(),
-  DraftKind.project: const NewProjectRoute(),
   DraftKind.skill: const NewSkillRoute(),
   DraftKind.rule: const NewRuleRoute(presetProjectId: null),
 };

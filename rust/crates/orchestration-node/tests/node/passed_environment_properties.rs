@@ -1,5 +1,5 @@
 use std::collections::BTreeMap;
-use std::path::Path;
+use std::path::PathBuf;
 
 use orchestration_core::device::SandboxKind;
 use orchestration_node::runner_bridge::build_runner_configuration;
@@ -9,8 +9,12 @@ use orchestration_node::runner_settings::{
 use proptest::prelude::*;
 use serde_json::json;
 
-const DATA_DIRECTORY: &str = "/tmp/orchestration-runner-data";
+const DATA_FOLDER_NAME: &str = "orchestration-runner-data";
 const MISSING_NAME: &str = "ORCHESTRATION_TEST_MISSING_TOKEN";
+
+fn data_directory() -> PathBuf {
+    std::env::temp_dir().join(DATA_FOLDER_NAME)
+}
 
 fn container_settings(passed_environment: Vec<String>) -> RunnerSettings {
     RunnerSettings {
@@ -64,7 +68,7 @@ proptest! {
         let configuration = build_runner_configuration(
             &settings,
             &offered,
-            Path::new(DATA_DIRECTORY),
+            &data_directory(),
             &BTreeMap::new(),
         );
 
@@ -95,7 +99,7 @@ proptest! {
         let configuration = build_runner_configuration(
             &settings,
             std::slice::from_ref(&settings.sandbox),
-            Path::new(DATA_DIRECTORY),
+            &data_directory(),
             &process_environment,
         );
 
@@ -119,7 +123,7 @@ proptest! {
         let configuration = build_runner_configuration(
             &settings,
             std::slice::from_ref(&settings.sandbox),
-            Path::new(DATA_DIRECTORY),
+            &data_directory(),
             &process_environment,
         );
 
@@ -146,7 +150,7 @@ fn runner_settings_without_passed_environment_pass_nothing() {
     let configuration = build_runner_configuration(
         &settings,
         std::slice::from_ref(&settings.sandbox),
-        Path::new(DATA_DIRECTORY),
+        &data_directory(),
         &BTreeMap::new(),
     );
 

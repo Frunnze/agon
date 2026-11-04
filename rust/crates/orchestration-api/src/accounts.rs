@@ -1,5 +1,7 @@
 use chrono::{DateTime, Utc};
-use orchestration_core::device::{Device, DeviceRole, HardwareKeyKind};
+use orchestration_core::device::{
+    Device, DeviceKind, DeviceRole, HardwareKeyKind,
+};
 use orchestration_core::identifiers::{DeviceId, WorkspaceId};
 use orchestration_core::peer_address::SignedPeerAddress;
 use orchestration_core::workspace::Workspace;
@@ -10,6 +12,8 @@ use uuid::Uuid;
 pub struct DeviceRegistration {
     pub name: String,
     pub role: DeviceRole,
+    #[serde(default)]
+    pub kind: DeviceKind,
     pub key_kind: HardwareKeyKind,
     pub signing_public_key: Vec<u8>,
     pub sealing_public_key: Vec<u8>,
@@ -72,6 +76,8 @@ pub struct PairingNonce {
 pub struct JoiningDevice {
     pub name: String,
     pub role: DeviceRole,
+    #[serde(default)]
+    pub kind: DeviceKind,
     pub key_kind: HardwareKeyKind,
     pub signing_public_key: Vec<u8>,
     pub sealing_public_key: Vec<u8>,

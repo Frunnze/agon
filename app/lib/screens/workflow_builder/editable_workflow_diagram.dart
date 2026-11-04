@@ -65,6 +65,7 @@ class _EditableWorkflowDiagramState extends State<EditableWorkflowDiagram> {
     startingCanvasView,
   );
   _CanvasDrag? _drag;
+  MouseCursor _hoveredCursor = SystemMouseCursors.basic;
 
   @override
   void dispose() {
@@ -119,28 +120,64 @@ class _EditableWorkflowDiagramState extends State<EditableWorkflowDiagram> {
       edges: edges,
     );
 
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      dragStartBehavior: DragStartBehavior.down,
-      supportedDevices: canvasDragDevices,
-      onTapUp: (TapUpDetails details) =>
-          _selectAt(agents, edges, details.localPosition),
-      onPanStart: (DragStartDetails details) =>
-          _startDrag(agents, details.localPosition),
-      onPanUpdate: _continueDrag,
-      onPanEnd: (DragEndDetails _) => _finishDrag(agents),
-      onPanCancel: () => setState(() => _drag = null),
-      child: ZoomableCanvas(
-        view: _view,
-        diagramBounds: diagramBounds,
-        child: WorkflowDiagram(
-          size: measureCanvas(diagramBounds),
-          nodes: nodes,
-          edges: edges,
-          drawnEdge: _buildDrawnEdge(agents),
+    return MouseRegion(
+      cursor: _chooseShownCursor(),
+      onHover: (PointerHoverEvent event) =>
+          _showCursorAt(agents, edges, event.localPosition),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        dragStartBehavior: DragStartBehavior.down,
+        supportedDevices: canvasDragDevices,
+        onTapUp: (TapUpDetails details) =>
+            _selectAt(agents, edges, details.localPosition),
+        onPanStart: (DragStartDetails details) =>
+            _startDrag(agents, details.localPosition),
+        onPanUpdate: _continueDrag,
+        onPanEnd: (DragEndDetails _) => _finishDrag(agents),
+        onPanCancel: () => setState(() => _drag = null),
+        child: ZoomableCanvas(
+          view: _view,
+          diagramBounds: diagramBounds,
+          child: WorkflowDiagram(
+            size: measureCanvas(diagramBounds),
+            nodes: nodes,
+            edges: edges,
+            drawnEdge: _buildDrawnEdge(agents),
+          ),
         ),
       ),
     );
+  }
+
+  MouseCursor _chooseShownCursor() {
+    if (_drag is _NodeMove) {
+      return SystemMouseCursors.grabbing;
+    }
+    return _hoveredCursor;
+  }
+
+  void _showCursorAt(
+    List<WorkflowAgent> agents,
+    List<DiagramEdge> edges,
+    Offset viewportPoint,
+  ) {
+    final Offset canvasPoint = _view.value.findCanvasPoint(viewportPoint);
+    final MouseCursor pointedCursor = chooseCanvasCursor(
+      agentHit: findCanvasHit(agents, canvasPoint),
+      edgeHit: _findSavedEdgeHit(edges, canvasPoint),
+    );
+
+    if (pointedCursor != _hoveredCursor) {
+      setState(() => _hoveredCursor = pointedCursor);
+    }
+  }
+
+  DiagramEdge? _findSavedEdgeHit(List<DiagramEdge> edges, Offset canvasPoint) {
+    final List<DiagramEdge> savedEdges = <DiagramEdge>[
+      for (final DiagramEdge edge in edges)
+        if (widget.workflow.connections.contains(edge.connection)) edge,
+    ];
+    return findEdgeHit(savedEdges, canvasPoint);
   }
 
   EdgeCurve? _buildDrawnEdge(List<WorkflowAgent> agents) {
@@ -168,11 +205,7 @@ class _EditableWorkflowDiagramState extends State<EditableWorkflowDiagram> {
       return;
     }
 
-    final List<DiagramEdge> savedEdges = <DiagramEdge>[
-      for (final DiagramEdge edge in edges)
-        if (widget.workflow.connections.contains(edge.connection)) edge,
-    ];
-    final DiagramEdge? edgeHit = findEdgeHit(savedEdges, canvasPoint);
+    final DiagramEdge? edgeHit = _findSavedEdgeHit(edges, canvasPoint);
     if (edgeHit == null) {
       widget.onSelectionCleared();
     } else {

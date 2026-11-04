@@ -3,7 +3,6 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:agent_orchestration/shell/side_rail.dart';
 import 'package:agent_orchestration/widgets/compact_page_header.dart';
-import 'package:agent_orchestration/widgets/inline_link.dart';
 import 'package:agent_orchestration/widgets/page_header.dart';
 
 import 'stack_waiting.dart';
@@ -57,13 +56,8 @@ Future<void> openRailSection(
   );
 }
 
-Future<void> openYourDevices(WidgetTester tester) async {
-  await openRailSection(tester, label: 'Settings', pageTitle: 'Settings');
-  await tapAndWait(
-    tester,
-    find.widgetWithText(InlineLink, 'Your devices'),
-    expected: findPageTitle('Your devices'),
-  );
+Future<void> openDevices(WidgetTester tester) async {
+  await openRailSection(tester, label: 'Devices', pageTitle: 'Devices');
 }
 
 Future<void> tapButton(WidgetTester tester, String label) async {

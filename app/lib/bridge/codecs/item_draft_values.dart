@@ -12,7 +12,6 @@ import 'package:agent_orchestration/data/models/identifiers.dart';
 enum DraftKind implements WireNamed {
   task('task'),
   job('job'),
-  project('project'),
   skill('skill'),
   rule('rule');
 
@@ -35,7 +34,6 @@ sealed class ItemDraft implements JsonEncodable {
     return switch (kind) {
       DraftKind.task ||
       DraftKind.job => WorkItemDraft.fromFields(kind, fields),
-      DraftKind.project => ProjectItemDraft.fromFields(fields),
       DraftKind.skill => SkillItemDraft.fromFields(fields),
       DraftKind.rule => RuleItemDraft.fromFields(fields),
     };
@@ -107,74 +105,6 @@ final class WorkItemDraft extends ItemDraft {
       'uses_automatic_skills': usesAutomaticSkills,
       'approval_policy': approvalPolicy?.wireName,
       'schedule': schedule?.toJson(),
-    };
-  }
-}
-
-final class DraftedRepository implements JsonEncodable {
-  const DraftedRepository({
-    required this.address,
-    required this.defaultBranch,
-  });
-
-  factory DraftedRepository.fromJson(Object? json) {
-    final JsonObject fields = decodeObject(json);
-    return DraftedRepository(
-      address: readField(fields, 'address', decodeText),
-      defaultBranch: readField(fields, 'default_branch', decodeText),
-    );
-  }
-
-  final String address;
-  final String defaultBranch;
-
-  @override
-  JsonObject toJson() {
-    return <String, Object?>{
-      'address': address,
-      'default_branch': defaultBranch,
-    };
-  }
-}
-
-final class ProjectItemDraft extends ItemDraft {
-  ProjectItemDraft({
-    required this.name,
-    required List<DraftedRepository> repositories,
-    required this.agentAccess,
-    required this.approvalPolicy,
-  }) : repositories = List<DraftedRepository>.unmodifiable(repositories);
-
-  factory ProjectItemDraft.fromFields(JsonObject fields) {
-    return ProjectItemDraft(
-      name: readField(fields, 'name', decodeText),
-      repositories: readListField(
-        fields,
-        'repositories',
-        DraftedRepository.fromJson,
-      ),
-      agentAccess: readField(fields, 'agent_access', AgentAccess.decode),
-      approvalPolicy: readOptionalField(
-        fields,
-        'approval_policy',
-        ApprovalPolicy.decode,
-      ),
-    );
-  }
-
-  final String name;
-  final List<DraftedRepository> repositories;
-  final AgentAccess agentAccess;
-  final ApprovalPolicy? approvalPolicy;
-
-  @override
-  JsonObject toJson() {
-    return <String, Object?>{
-      _kindField: DraftKind.project.wireName,
-      'name': name,
-      'repositories': encodeList(repositories),
-      'agent_access': agentAccess.wireName,
-      'approval_policy': approvalPolicy?.wireName,
     };
   }
 }

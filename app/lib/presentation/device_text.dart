@@ -12,6 +12,7 @@ const String _workspaceSeparator = ', ';
 const int _countdownFieldWidth = 2;
 
 const String _presentText = 'Now';
+const String _onlineText = 'Online';
 
 String describeLastSeen(DateTime lastSeen, DateTime now) {
   if (now.difference(lastSeen) < _presentWithin) {
@@ -20,15 +21,18 @@ String describeLastSeen(DateTime lastSeen, DateTime now) {
   return describeTimeSince(lastSeen, now);
 }
 
-String describeDeviceLastSeen({
+String describeDevicePresence({
   required Device device,
   required DeviceId thisDeviceId,
   required DateTime now,
 }) {
-  if (device.id == thisDeviceId) {
-    return _presentText;
+  final bool isSeenNow = now.difference(device.lastSeen) < _presentWithin;
+  if (device.id == thisDeviceId || isSeenNow) {
+    return _onlineText;
   }
-  return describeLastSeen(device.lastSeen, now);
+
+  final String timeSinceSeen = describeTimeSince(device.lastSeen, now);
+  return 'Last seen ${timeSinceSeen.toLowerCase()}';
 }
 
 String describeRoleWithArticle(DeviceRole role) {
@@ -63,14 +67,14 @@ String describeTrayName(TargetPlatform platform) {
   }
 }
 
-String describeDeviceKey({
+String describeDeviceKindLine({
   required Device device,
-  required DeviceId currentDeviceId,
+  required DeviceId thisDeviceId,
 }) {
-  if (device.id == currentDeviceId) {
-    return '$_thisDeviceLabel · ${device.keyKind.label}';
+  if (device.id == thisDeviceId) {
+    return '$_thisDeviceLabel · ${device.kind.label}';
   }
-  return device.keyKind.label;
+  return device.kind.label;
 }
 
 String describeDevicePairing(Device device, DeviceNames deviceNames) {

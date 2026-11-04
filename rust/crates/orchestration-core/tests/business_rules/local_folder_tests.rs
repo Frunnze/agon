@@ -13,6 +13,7 @@ use proptest::prelude::*;
 const MAXIMUM_FOLDER_PARTS: usize = 5;
 const MAXIMUM_TRAILING_SEPARATORS: usize = 3;
 const MAXIMUM_REPOSITORIES: usize = 4;
+const WINDOWS_DRIVE_LETTER: char = 'C';
 
 fn device_id() -> impl Strategy<Value = DeviceId> {
     "[0-9a-f]{32}".prop_map(DeviceId)
@@ -66,21 +67,25 @@ fn local_repository(
 
 #[test]
 fn test_render_local_address_pins_the_documented_format() {
+    let billing_folder = std::env::temp_dir().join("billing");
+    let billing_path = billing_folder.display().to_string();
     let folder = LocalFolder {
         device_id: DeviceId("3f2a9c".to_owned()),
-        path: "/Users/someone/billing/".to_owned(),
+        path: format!("{billing_path}/"),
     };
 
     assert_eq!(
         render_local_address(&folder),
-        Ok("local:3f2a9c:/Users/someone/billing".to_owned())
+        Ok(format!("local:3f2a9c:{billing_path}"))
     );
 }
 
 #[test]
 fn test_normalize_folder_path_refuses_the_root_and_blank_text() {
+    let windows_drive_root = format!("{WINDOWS_DRIVE_LETTER}:\\");
+
     assert!(normalize_folder_path("/").is_err());
-    assert!(normalize_folder_path("C:\\").is_err());
+    assert!(normalize_folder_path(&windows_drive_root).is_err());
     assert_eq!(
         normalize_folder_path("   "),
         Err(LocalFolderProblem::EmptyPath)

@@ -53,14 +53,14 @@ class MoreScreen extends StatelessWidget {
               route: const SectionRoute(AppSection.rules),
             ),
             _buildRow(
-              title: 'Settings',
-              subtitle: 'App server, runners, audit log',
-              route: const SectionRoute(AppSection.settings),
+              title: 'Devices',
+              subtitle: 'Runners, servers and pairing',
+              route: const SectionRoute(AppSection.devices),
             ),
             _buildRow(
-              title: 'Your devices',
-              subtitle: 'Pair and revoke devices',
-              route: const SectionRoute(AppSection.devices),
+              title: 'Settings',
+              subtitle: 'App server, commands, audit log',
+              route: const SectionRoute(AppSection.settings),
             ),
             _buildRow(
               title: 'Switch workspace',

@@ -10,21 +10,19 @@ import 'package:agent_orchestration/data/rules/setup_input_rules.dart';
 import 'package:agent_orchestration/presentation/device_text.dart';
 import 'package:agent_orchestration/screens/devices/devices_screen.dart';
 import 'package:agent_orchestration/screens/pairing.dart';
+import 'package:agent_orchestration/screens/runners.dart';
 import 'package:agent_orchestration/screens/settings.dart';
 import 'package:agent_orchestration/screens/setup.dart';
 import 'package:agent_orchestration/shell/app_navigation.dart';
 import 'package:agent_orchestration/shell/app_route.dart';
 
 Widget buildSettingsScreen({
-  required SettingsTab initialTab,
   required AppDependencies dependencies,
   required AppNavigation navigation,
 }) {
   return WorkspaceSettingsScreen(
-    initialTab: initialTab,
     workspaceRepository: dependencies.workspaceRepository,
     deviceRepository: dependencies.deviceRepository,
-    runnerRepository: dependencies.runnerRepository,
     auditRepository: dependencies.auditRepository,
     clock: dependencies.clock,
     navigation: navigation,
@@ -55,6 +53,7 @@ Widget buildDevicesScreen({
 }) {
   return DevicesScreen(
     deviceRepository: dependencies.deviceRepository,
+    runnerRepository: dependencies.runnerRepository,
     pairingRepository: dependencies.pairingRepository,
     workspaceRepository: dependencies.workspaceRepository,
     projectRepository: dependencies.projectRepository,

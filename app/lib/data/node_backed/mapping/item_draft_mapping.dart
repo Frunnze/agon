@@ -4,7 +4,6 @@ import 'package:agent_orchestration/bridge/codecs/schedule_values.dart'
     as node;
 import 'package:agent_orchestration/data/models/item_draft.dart';
 import 'package:agent_orchestration/data/models/library.dart';
-import 'package:agent_orchestration/data/models/project.dart';
 import 'package:agent_orchestration/data/models/schedule.dart';
 import 'package:agent_orchestration/data/node_backed/mapping.dart';
 
@@ -12,17 +11,9 @@ node.DraftKind mapDraftKindToNode(DraftKind kind) {
   return switch (kind) {
     DraftKind.task => node.DraftKind.task,
     DraftKind.job => node.DraftKind.job,
-    DraftKind.project => node.DraftKind.project,
     DraftKind.skill => node.DraftKind.skill,
     DraftKind.rule => node.DraftKind.rule,
   };
-}
-
-node.DraftedRepository mapRepositoryDraftToNode(RepositoryDraft repository) {
-  return node.DraftedRepository(
-    address: repository.address,
-    defaultBranch: repository.defaultBranch,
-  );
 }
 
 ItemDraft mapItemDraftFromNode(node.ItemDraftDone done) {
@@ -35,18 +26,6 @@ ItemDraft mapItemDraftFromNode(node.ItemDraftDone done) {
 DraftedItem mapDraftedItemFromNode(node.ItemDraft draft) {
   return switch (draft) {
     node.WorkItemDraft() => _mapWorkFromNode(draft),
-    node.ProjectItemDraft() => DraftedProject(
-      name: draft.name,
-      repositories: <RepositoryDraft>[
-        for (final node.DraftedRepository repository in draft.repositories)
-          RepositoryDraft(
-            address: repository.address,
-            defaultBranch: repository.defaultBranch,
-          ),
-      ],
-      agentAccess: mapAgentAccessFromNode(draft.agentAccess),
-      approvalPolicy: mapOptionalApprovalPolicyFromNode(draft.approvalPolicy),
-    ),
     node.SkillItemDraft() => DraftedSkill(
       SkillDraft(
         name: draft.name,
@@ -70,15 +49,6 @@ DraftedItem mapDraftedItemFromNode(node.ItemDraft draft) {
 node.ItemDraft mapDraftedItemToNode(DraftedItem item, DraftKind kind) {
   return switch (item) {
     DraftedWork() => _mapWorkToNode(item, kind),
-    DraftedProject() => node.ProjectItemDraft(
-      name: item.name,
-      repositories: <node.DraftedRepository>[
-        for (final RepositoryDraft repository in item.repositories)
-          mapRepositoryDraftToNode(repository),
-      ],
-      agentAccess: mapAgentAccessToNode(item.agentAccess),
-      approvalPolicy: mapOptionalApprovalPolicyToNode(item.approvalPolicy),
-    ),
     DraftedSkill(:final SkillDraft skill) => node.SkillItemDraft(
       name: skill.name,
       summary: skill.summary,

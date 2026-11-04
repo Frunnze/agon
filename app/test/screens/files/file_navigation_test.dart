@@ -13,6 +13,7 @@ import 'package:agent_orchestration/data/models/repository_files.dart';
 import 'package:agent_orchestration/data/repository/file_repository.dart';
 import 'package:agent_orchestration/shell/app_navigation.dart';
 import 'package:agent_orchestration/shell/app_route.dart';
+import 'package:agent_orchestration/shell/app_section.dart';
 
 import '../../bridge/support/random_typed_values.dart';
 import '../../support/app_harness.dart';
@@ -293,7 +294,7 @@ void main() {
     await tester.tap(find.text('See runners'));
     await pumpFrames(tester);
 
-    expect(navigation.currentRoute, const RunnersSettingsRoute());
+    expect(navigation.currentRoute, const SectionRoute(AppSection.devices));
   });
 
   testWidgets('a refused opening shows the problem', (

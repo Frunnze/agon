@@ -1,8 +1,6 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 
 import 'package:agent_orchestration/data/app_dependencies.dart';
-import 'package:agent_orchestration/data/folder_picker.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/item_draft.dart';
 import 'package:agent_orchestration/data/models/runner.dart';
@@ -10,13 +8,10 @@ import 'package:agent_orchestration/screens/new_items/draft_review.dart';
 import 'package:agent_orchestration/screens/new_items/library_draft_reviews.dart';
 import 'package:agent_orchestration/screens/new_items/new_item_screen.dart';
 import 'package:agent_orchestration/screens/new_items/new_item_sources.dart';
-import 'package:agent_orchestration/screens/new_items/project_draft_review.dart';
 import 'package:agent_orchestration/screens/new_items/work_draft_review.dart';
-import 'package:agent_orchestration/screens/projects/folder_choice.dart';
 import 'package:agent_orchestration/shell/app_navigation.dart';
 import 'package:agent_orchestration/shell/app_route.dart';
 import 'package:agent_orchestration/shell/library_route_screens.dart';
-import 'package:agent_orchestration/shell/project_route_screens.dart';
 import 'package:agent_orchestration/shell/task_route_screens.dart';
 import 'package:agent_orchestration/shell/workflow_route_screens.dart';
 
@@ -44,16 +39,6 @@ DraftReview _buildDraftReview({
       jobRepository: dependencies.jobRepository,
       navigation: navigation,
     ),
-    DraftKind.project => ProjectDraftReview(
-      projectRepository: dependencies.projectRepository,
-      workspaceRepository: dependencies.workspaceRepository,
-      deviceRepository: dependencies.deviceRepository,
-      folderPicker: _findDraftFolderPicker(
-        kind: kind,
-        dependencies: dependencies,
-      ),
-      navigation: navigation,
-    ),
     DraftKind.skill => SkillDraftReview(
       skillRepository: dependencies.skillRepository,
       workspaceRepository: dependencies.workspaceRepository,
@@ -69,18 +54,6 @@ DraftReview _buildDraftReview({
   };
 }
 
-FolderPicker? _findDraftFolderPicker({
-  required DraftKind kind,
-  required AppDependencies dependencies,
-}) {
-  final bool takesFolders =
-      kind == DraftKind.project && canChooseFolders(defaultTargetPlatform);
-  if (!takesFolders) {
-    return null;
-  }
-  return dependencies.folderPicker;
-}
-
 Widget buildNewItemScreen({
   required NewItemFormRoute formRoute,
   required String? startedFrom,
@@ -94,10 +67,6 @@ Widget buildNewItemScreen({
       itemDraftRepository: dependencies.itemDraftRepository,
       runnerRepository: dependencies.runnerRepository,
       deviceRepository: dependencies.deviceRepository,
-      folderPicker: _findDraftFolderPicker(
-        kind: formRoute.kind,
-        dependencies: dependencies,
-      ),
     ),
     review: _buildDraftReview(
       kind: formRoute.kind,
@@ -174,11 +143,6 @@ Widget buildNewItemForm({
     case DraftKind.job:
       return buildJobFormScreen(
         existingJob: null,
-        dependencies: dependencies,
-        navigation: navigation,
-      );
-    case DraftKind.project:
-      return buildNewProjectScreen(
         dependencies: dependencies,
         navigation: navigation,
       );

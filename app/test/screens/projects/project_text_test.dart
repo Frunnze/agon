@@ -22,6 +22,7 @@ import 'package:agent_orchestration/screens/projects.dart';
 import 'package:agent_orchestration/widgets/status_label.dart';
 
 import '../../support/random_inputs.dart';
+import '../../support/sample_folder_paths.dart';
 
 final ScopeCatalog _catalog = ScopeCatalog(
   workspaces: galleryWorkspaces,
@@ -71,7 +72,7 @@ void main() {
       final String name = pickOne(random, <String>['billing-ui', 'a b']);
       final String address = renderLocalFolderAddress(
         deviceId: device.id,
-        path: '/Users/someone/$name',
+        path: buildTemporaryFolderPath(name),
       );
       final Project project = Project(
         id: const ProjectId('folder-project'),

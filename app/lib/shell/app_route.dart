@@ -263,12 +263,8 @@ final class NewItemFormRoute extends AppRoute {
   }
 }
 
-final class RunnersSettingsRoute extends AppRoute {
-  const RunnersSettingsRoute() : super(AppSection.settings);
-}
-
 final class RunnerDetailRoute extends AppRoute {
-  const RunnerDetailRoute(this.deviceId) : super(AppSection.settings);
+  const RunnerDetailRoute(this.deviceId) : super(AppSection.devices);
 
   final DeviceId deviceId;
 

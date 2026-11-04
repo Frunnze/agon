@@ -66,6 +66,7 @@ Map<String, Object?> buildSimulatedDeviceJson({
     'id': deviceId,
     'name': name,
     'role': 'client',
+    'kind': 'computer',
     'key_kind': 'software',
     'signing_public_key': <int>[1, 2],
     'sealing_public_key': sealingPublicKey,

@@ -7,13 +7,14 @@ import 'package:agent_orchestration/bridge/commands/runner_commands.dart'
 import 'package:agent_orchestration/bridge/node/runner_settings.dart' as node;
 import 'package:agent_orchestration/data/models/runner.dart';
 import 'package:agent_orchestration/presentation/agent_place_text.dart';
-import 'package:agent_orchestration/screens/settings.dart';
+import 'package:agent_orchestration/screens/devices/devices_screen.dart';
 import 'package:agent_orchestration/widgets/forms/check_choice_list_field.dart';
+import 'package:agent_orchestration/widgets/slots_indicator.dart';
 
+import '../support/workspace_device_finders.dart';
 import 'support/real_stack.dart';
 import 'support/stack_navigation.dart';
 import 'support/stack_node_reads.dart';
-import 'support/stack_settings.dart';
 import 'support/stack_waiting.dart';
 
 const String _missingImage = 'agents-orchestration-real-stack-missing:never';
@@ -32,9 +33,9 @@ node.RunnerSettings _blockedContainerRunner() {
   );
 }
 
-Finder _findInRunnersTab(String text) {
+Finder _findOnDevicesPage(String text) {
   return find.descendant(
-    of: find.byType(RunnersSettingsTab),
+    of: find.byType(DevicesScreen),
     matching: find.text(text),
   );
 }
@@ -120,36 +121,40 @@ void main() {
         tester,
         runner: _blockedContainerRunner(),
       );
-      await openSettingsTab(
-        tester,
-        tabLabel: 'Runners',
-        expected: find.byType(RunnersSettingsTab),
-      );
-      await waitUntilShown(tester, _findInRunnersTab(runnerProblemTitle));
+      await openDevices(tester);
+      await waitUntilShown(tester, _findOnDevicesPage(runnerProblemTitle));
       final node.RunnersView blocked = await askNode(
         tester,
         () => _listNodeRunners(stack),
       );
       final String? problem = blocked.thisDeviceProblem;
       expect(problem, isNotNull);
-      expect(_findInRunnersTab(problem!), findsOneWidget);
-      expect(_findInRunnersTab('No runners yet'), findsNothing);
+      expect(_findOnDevicesPage(problem!), findsOneWidget);
 
-      await tapWhenShown(tester, _findInRunnersTab(runLocallyLabel));
+      await tapWhenShown(tester, _findOnDevicesPage(runLocallyLabel));
       await waitUntilNodeAgrees(
         tester,
         description: 'this computer offering both places',
         check: () => _offersBothAndIsOnline(stack),
       );
-      await waitUntilShown(tester, _findInRunnersTab(appDeviceName));
-      await waitUntilGone(tester, _findInRunnersTab(runnerProblemTitle));
+      await waitUntilShown(
+        tester,
+        find.descendant(
+          of: find.byType(DevicesScreen),
+          matching: find.byType(SlotsIndicator),
+        ),
+      );
+      await waitUntilGone(tester, _findOnDevicesPage(runnerProblemTitle));
 
       await tapAndWait(
         tester,
-        _findInRunnersTab(appDeviceName),
+        findWorkspaceDevice(
+          workspaceName: homeWorkspaceName,
+          deviceName: appDeviceName,
+        ),
         expected: findPageTitle(appDeviceName),
       );
-      await waitUntilGone(tester, find.byType(RunnersSettingsTab));
+      await waitUntilGone(tester, find.byType(DevicesScreen));
       await _waitUntilTicked(tester, AgentPlace.values.toSet());
       await _expectDockerProblemShown(tester, stack);
 

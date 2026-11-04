@@ -12,6 +12,7 @@ import 'package:agent_orchestration/presentation/device_names.dart';
 import 'package:agent_orchestration/screens/approvals/approval_dialog.dart';
 
 import '../support/random_inputs.dart';
+import '../support/sample_folder_paths.dart';
 import '../support/widget_harness.dart';
 
 void main() {
@@ -24,7 +25,7 @@ void main() {
       final Device device = pickOne(random, galleryDevices);
       final String address = renderLocalFolderAddress(
         deviceId: device.id,
-        path: '/Users/someone/code/hello-counter-$i',
+        path: buildTemporaryFolderPath('code/hello-counter-$i'),
       );
       final ApprovalRequest request = ApprovalRequest(
         id: ApprovalId('approval-$i'),

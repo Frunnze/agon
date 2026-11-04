@@ -31,6 +31,7 @@ void main() {
             servers[index]! as Map<String, Object?>;
         expect(decoded.servers[index].deviceId.value, server['device_id']);
         expect(decoded.servers[index].standing.wireName, server['standing']);
+        expect(decoded.servers[index].toJson(), equals(server));
       }
       expect(decoded.thisDevice.wireName, json['this_device']);
       expect(decoded.canKeepBackup, json['can_keep_backup']);
@@ -96,6 +97,24 @@ void main() {
 
       json.remove('app_servers');
       expect(() => StatusView.fromJson(json), throwsA(isA<FormatException>()));
+    }
+  });
+
+  test('test_backup_copy_view_from_json_property_requires_both_fields', () {
+    final Random random = seededRandom(4906);
+
+    for (int i = 0; i < propertyIterations; i += 1) {
+      final Map<String, Object?> json = randomBackupCopyJson(random);
+
+      final BackupCopyView decoded = BackupCopyView.fromJson(json);
+      expect(decoded.toJson(), equals(json));
+
+      final String missing = pickOne(random, json.keys.toList());
+      json.remove(missing);
+      expect(
+        () => BackupCopyView.fromJson(json),
+        throwsA(isA<FormatException>()),
+      );
     }
   });
 }

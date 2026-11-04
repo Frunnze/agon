@@ -15,17 +15,19 @@ use serde_json::Value;
 use super::local_folder_checks::{
     check_local_folder, require_folder_on_this_device,
 };
+use super::local_folder_creation::create_local_folder;
 use crate::command_reply::encode_reply;
 use crate::node::Node;
 use crate::node_error::NodeError;
 
-pub(super) const PROJECT_COMMAND_NAMES: [&str; 6] = [
+pub(super) const PROJECT_COMMAND_NAMES: [&str; 7] = [
     "list_projects",
     "create_project",
     "list_repositories",
     "create_repository",
     "remove_repository",
     "check_local_folder",
+    "create_local_folder",
 ];
 
 #[derive(Debug, Deserialize)]
@@ -62,6 +64,10 @@ pub(super) enum ProjectCommand {
     },
     CheckLocalFolder {
         path: String,
+    },
+    CreateLocalFolder {
+        parent: String,
+        name: String,
     },
 }
 
@@ -140,6 +146,9 @@ pub(super) async fn handle_project_command(
         }
         ProjectCommand::CheckLocalFolder { path } => {
             encode_reply(&check_local_folder(&device_id, &path)?)
+        }
+        ProjectCommand::CreateLocalFolder { parent, name } => {
+            encode_reply(&create_local_folder(&device_id, &parent, &name)?)
         }
     }
 }

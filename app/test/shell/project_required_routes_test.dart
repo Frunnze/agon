@@ -8,7 +8,7 @@ import 'package:agent_orchestration/data/fakes.dart';
 import 'package:agent_orchestration/data/gallery/gallery_identifiers.dart';
 import 'package:agent_orchestration/data/models/item_draft.dart';
 import 'package:agent_orchestration/data/models/project.dart';
-import 'package:agent_orchestration/screens/new_items/new_item_screen.dart';
+import 'package:agent_orchestration/screens/projects/new_project_screen.dart';
 import 'package:agent_orchestration/shell/app_navigation.dart';
 import 'package:agent_orchestration/shell/app_route.dart';
 import 'package:agent_orchestration/shell/app_section.dart';
@@ -26,8 +26,8 @@ final List<AppRoute> _routesNeedingProject = <AppRoute>[
   NewItemFormRoute(DraftKind.job),
 ];
 
-bool _isNewProjectChat(Widget screen) {
-  return screen is NewItemScreen && screen.kind == DraftKind.project;
+bool _isNewProjectForm(Widget screen) {
+  return screen is NewProjectScreen;
 }
 
 void main() {
@@ -41,7 +41,7 @@ void main() {
   );
 
   test('test_build_route_screen_property_new_work_without_projects_opens_'
-      'new_project_chat', () {
+      'new_project_form', () {
     final Random random = seededRandom(7301);
 
     for (int i = 0; i < propertyIterations; i += 1) {
@@ -60,8 +60,28 @@ void main() {
         runWindowOpener: null,
       );
 
-      expect(_isNewProjectChat(screenWithoutProjects), isTrue);
-      expect(_isNewProjectChat(screenWithProjects), isFalse);
+      expect(_isNewProjectForm(screenWithoutProjects), isTrue);
+      expect(_isNewProjectForm(screenWithProjects), isFalse);
+    }
+  });
+
+  test('test_build_route_screen_property_new_project_opens_the_form', () {
+    final Random random = seededRandom(7302);
+
+    for (int i = 0; i < propertyIterations; i += 1) {
+      final AppDependencies dependencies = pickOne(
+        random,
+        <AppDependencies>[withProjects, withoutProjects],
+      );
+
+      final Widget screen = buildRouteScreen(
+        route: const NewProjectRoute(),
+        dependencies: dependencies,
+        navigation: navigation,
+        runWindowOpener: null,
+      );
+
+      expect(_isNewProjectForm(screen), isTrue);
     }
   });
 }

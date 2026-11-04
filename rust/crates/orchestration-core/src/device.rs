@@ -13,6 +13,16 @@ pub enum DeviceRole {
     ClientAndRunner,
 }
 
+#[derive(
+    Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize,
+)]
+#[serde(rename_all = "snake_case")]
+pub enum DeviceKind {
+    #[default]
+    Computer,
+    Phone,
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum HardwareKeyKind {
@@ -27,6 +37,8 @@ pub struct Device {
     pub id: DeviceId,
     pub name: String,
     pub role: DeviceRole,
+    #[serde(default)]
+    pub kind: DeviceKind,
     pub key_kind: HardwareKeyKind,
     pub signing_public_key: Vec<u8>,
     pub sealing_public_key: Vec<u8>,

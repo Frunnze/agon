@@ -7,7 +7,6 @@ import 'package:agent_orchestration/data/models/item_draft.dart';
 import 'package:agent_orchestration/screens/jobs/job_form_screen.dart';
 import 'package:agent_orchestration/screens/new_items/item_request_view.dart';
 import 'package:agent_orchestration/screens/new_items/new_item_texts.dart';
-import 'package:agent_orchestration/screens/projects/new_project_screen.dart';
 import 'package:agent_orchestration/screens/rules/rule_form_screen.dart';
 import 'package:agent_orchestration/screens/skills/skill_form_screen.dart';
 import 'package:agent_orchestration/screens/task_form/task_form_values.dart';
@@ -29,7 +28,6 @@ import 'new_item_harness.dart';
 final Map<DraftKind, Type> _manualFormScreens = <DraftKind, Type>{
   DraftKind.task: TaskFormScreen,
   DraftKind.job: JobFormScreen,
-  DraftKind.project: NewProjectScreen,
   DraftKind.skill: SkillFormScreen,
   DraftKind.rule: RuleFormScreen,
 };

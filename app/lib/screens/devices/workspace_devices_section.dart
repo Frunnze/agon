@@ -3,21 +3,25 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import 'package:agent_orchestration/data/clock.dart';
+import 'package:agent_orchestration/data/models/app_server_group.dart';
 import 'package:agent_orchestration/data/models/device.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
+import 'package:agent_orchestration/data/models/runner.dart';
 import 'package:agent_orchestration/data/models/workspace.dart';
 import 'package:agent_orchestration/data/repository/device_repository.dart';
+import 'package:agent_orchestration/data/repository/runner_repository.dart';
 import 'package:agent_orchestration/data/repository/workspace_repository.dart';
 import 'package:agent_orchestration/icons/app_icon_kind.dart';
+import 'package:agent_orchestration/presentation/agent_place_text.dart';
+import 'package:agent_orchestration/presentation/device_data_text.dart';
 import 'package:agent_orchestration/presentation/device_text.dart';
-import 'package:agent_orchestration/screens/settings.dart';
+import 'package:agent_orchestration/presentation/runner_text.dart';
+import 'package:agent_orchestration/screens/devices/add_workspace_device_dialog.dart';
+import 'package:agent_orchestration/screens/runners.dart';
 import 'package:agent_orchestration/shell/app_navigation.dart';
 import 'package:agent_orchestration/shell/app_route.dart';
-import 'package:agent_orchestration/shell/app_section.dart';
 import 'package:agent_orchestration/theme/app_typography.dart';
-import 'package:agent_orchestration/theme/page_metrics.dart';
 import 'package:agent_orchestration/widgets/app_button.dart';
-import 'package:agent_orchestration/widgets/gaps.dart';
 import 'package:agent_orchestration/widgets/inline_link.dart';
 import 'package:agent_orchestration/widgets/lists/list_column.dart';
 import 'package:agent_orchestration/widgets/lists/list_row_data.dart';
@@ -25,11 +29,15 @@ import 'package:agent_orchestration/widgets/lists/list_row_main.dart';
 import 'package:agent_orchestration/widgets/lists/responsive_list.dart';
 import 'package:agent_orchestration/widgets/mixed_text.dart';
 import 'package:agent_orchestration/widgets/page_section.dart';
+import 'package:agent_orchestration/widgets/slots_indicator.dart';
 
+const String allDevicesTitle = 'All your devices';
+const String _noSlotsText = '—';
 const List<String> _memberColumnLabels = <String>[
   'Device',
   'Role',
-  'Last seen',
+  'Slots',
+  'Status',
   '',
 ];
 
@@ -43,70 +51,63 @@ List<Device> listWorkspaceMembers({
   ];
 }
 
-class GeneralSettingsTab extends StatelessWidget {
-  const GeneralSettingsTab({
+Runner? findDeviceRunner({
+  required List<Runner> runners,
+  required DeviceId deviceId,
+}) {
+  for (final Runner runner in runners) {
+    if (runner.deviceId == deviceId) {
+      return runner;
+    }
+  }
+  return null;
+}
+
+class WorkspaceDevicesSection extends StatelessWidget {
+  const WorkspaceDevicesSection({
     required this.workspaceRepository,
     required this.deviceRepository,
+    required this.runnerRepository,
     required this.clock,
     required this.navigation,
+    required this.onShowAllDevices,
     super.key,
   });
 
   final WorkspaceRepository workspaceRepository;
   final DeviceRepository deviceRepository;
+  final RunnerRepository runnerRepository;
   final Clock clock;
   final AppNavigation navigation;
+  final VoidCallback onShowAllDevices;
 
   @override
   Widget build(BuildContext context) {
-    return ListenableBuilder(
-      listenable: Listenable.merge(<Listenable>[
-        workspaceRepository,
-        deviceRepository,
-      ]),
-      builder: _buildSections,
-    );
-  }
-
-  Widget _buildSections(BuildContext context, Widget? _) {
     final Workspace workspace = workspaceRepository.currentWorkspace();
     final List<Device> members = listWorkspaceMembers(
       devices: deviceRepository.listDevices(),
       workspaceId: workspace.id,
     );
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: spaceVertically(<Widget>[
-        AppServerSection(
-          workspaceRepository: workspaceRepository,
-          deviceRepository: deviceRepository,
+    return PageSection(
+      title: 'In ${workspace.name}',
+      actions: <Widget>[
+        AppButton.secondary(
+          label: 'Add a device',
+          icon: AppIconKind.plus,
+          onPressed: () => unawaited(_addDevice(context, workspace)),
         ),
-        PageSection(
-          title: 'Devices in ${workspace.name}',
-          actions: <Widget>[
-            AppButton.secondary(
-              label: 'Add one of your devices',
-              icon: AppIconKind.plus,
-              onPressed: () => unawaited(_addDevice(context, workspace)),
-            ),
-          ],
-          children: <Widget>[
-            _buildRemovalNote(workspace.name),
-            ResponsiveList(
-              columns: buildStandardColumns(_memberColumnLabels),
-              rows: <ListRowData>[
-                for (final Device device in members)
-                  _buildMemberRow(device, workspace.id),
-              ],
-            ),
+      ],
+      children: <Widget>[
+        _buildRemovalNote(workspace.name),
+        ResponsiveList(
+          columns: buildColumnsWithAction(_memberColumnLabels),
+          rows: <ListRowData>[
+            for (final Device device in members)
+              _buildMemberRow(device, workspace.id),
           ],
         ),
-        WorkspaceApprovalPolicySection(
-          workspaceRepository: workspaceRepository,
-        ),
-        ProtectedFilesSection(workspaceRepository: workspaceRepository),
-      ], pageGap),
+      ],
     );
   }
 
@@ -123,10 +124,8 @@ class GeneralSettingsTab extends StatelessWidget {
             alignment: PlaceholderAlignment.baseline,
             baseline: TextBaseline.alphabetic,
             child: InlineLink(
-              label: 'Your devices',
-              onPressed: () => navigation.openSection(
-                const SectionRoute(AppSection.devices),
-              ),
+              label: allDevicesTitle,
+              onPressed: onShowAllDevices,
             ),
           ),
           const TextSpan(text: '.'),
@@ -139,27 +138,35 @@ class GeneralSettingsTab extends StatelessWidget {
 
   ListRowData _buildMemberRow(Device device, WorkspaceId workspaceId) {
     final DeviceId thisDeviceId = deviceRepository.currentDevice().id;
-    final bool isThisDevice = device.id == thisDeviceId;
+    final AppServerMember? serverMember = findAppServerMember(
+      group: workspaceRepository.findAppServerGroup(),
+      deviceId: device.id,
+    );
+    final Runner? runner = findDeviceRunner(
+      runners: runnerRepository.listRunners(),
+      deviceId: device.id,
+    );
+    final String kindLine = describeDeviceKindLine(
+      device: device,
+      thisDeviceId: thisDeviceId,
+    );
+    final String deviceLine = runner == null
+        ? kindLine
+        : '$kindLine · ${describeRunnerOffers(runner.offers)}';
 
     return ListRowData(
       key: ValueKey<DeviceId>(device.id),
       main: ListRowMain.monospace(
         title: device.name,
-        subtitle: <TextSegment>[
-          if (isThisDevice) const TextSegment('This device'),
-        ],
+        subtitle: <TextSegment>[TextSegment(deviceLine)],
       ),
       meta: <Widget>[
-        Text(device.role.label),
         Text(
-          describeDeviceLastSeen(
-            device: device,
-            thisDeviceId: thisDeviceId,
-            now: clock.now(),
-          ),
+          describeDeviceRole(role: device.role, serverMember: serverMember),
         ),
+        ..._buildRunnerMeta(device, thisDeviceId, runner),
       ],
-      end: isThisDevice
+      end: device.id == thisDeviceId
           ? null
           : AppButton.secondary(
               label: 'Remove',
@@ -170,7 +177,48 @@ class GeneralSettingsTab extends StatelessWidget {
                 ),
               ),
             ),
+      onTap: runner == null
+          ? null
+          : () => navigation.openRoute(RunnerDetailRoute(device.id)),
     );
+  }
+
+  List<Widget> _buildRunnerMeta(
+    Device device,
+    DeviceId thisDeviceId,
+    Runner? runner,
+  ) {
+    if (runner == null) {
+      final String presence = describeDevicePresence(
+        device: device,
+        thisDeviceId: thisDeviceId,
+        now: clock.now(),
+      );
+      return <Widget>[const Text(_noSlotsText), Text(presence)];
+    }
+
+    final AppServerState serverState = workspaceRepository
+        .findAppServerStatus()
+        .state;
+    final RunnerReach reach = findRunnerReach(runner, serverState);
+    return <Widget>[
+      _buildSlots(runner, reach),
+      buildRunnerStatusLabel(runner: runner, reach: reach),
+    ];
+  }
+
+  Widget _buildSlots(Runner runner, RunnerReach reach) {
+    switch (reach) {
+      case RunnerReach.reachable:
+        return SlotsIndicator(
+          total: runner.slotsTotal,
+          busy: runner.slotsBusy,
+        );
+      case RunnerReach.offline:
+        return const Text('None free');
+      case RunnerReach.needsServer:
+        return const Text('Unknown');
+    }
   }
 
   Future<void> _addDevice(BuildContext context, Workspace workspace) async {

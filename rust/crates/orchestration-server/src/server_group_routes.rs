@@ -64,6 +64,7 @@ pub async fn fetch_replica(
             "only a device keeping the app server can copy it",
         ));
     }
+    server.record_copy_request(caller, query.after)?;
 
     let mut revisions = server.subscribe_to_revisions();
     let newer_revision = revisions.wait_for(|latest| *latest > query.after);

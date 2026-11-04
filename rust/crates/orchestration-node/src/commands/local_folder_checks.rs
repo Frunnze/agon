@@ -54,7 +54,7 @@ pub(crate) fn require_folder_on_this_device(
     require_git_checkout(&folder.path)
 }
 
-fn require_folder(path: &str) -> Result<(), NodeError> {
+pub(super) fn require_folder(path: &str) -> Result<(), NodeError> {
     if !Path::new(path).is_dir() {
         return Err(NodeError::FolderMissing(path.to_owned()));
     }

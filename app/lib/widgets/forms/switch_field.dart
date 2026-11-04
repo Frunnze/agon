@@ -97,6 +97,7 @@ class _SwitchTapArea extends StatelessWidget {
       onTap: toggle,
       child: InkWell(
         onTap: toggle,
+        mouseCursor: WidgetStateMouseCursor.clickable,
         hoverColor: AppColors.transparent,
         child: ConstrainedBox(
           constraints: BoxConstraints(minHeight: controlHeight),

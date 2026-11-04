@@ -6,11 +6,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:agent_orchestration/bridge/codecs/catalog_views.dart' as node;
 import 'package:agent_orchestration/bridge/codecs/workspace_values.dart'
     as node;
-import 'package:agent_orchestration/data/models/item_draft.dart';
 import 'package:agent_orchestration/widgets/page_header.dart';
 
 import '../support/form_finders.dart';
-import 'support/item_form_steps.dart';
 import 'support/real_stack.dart';
 import 'support/stack_catalog.dart';
 import 'support/stack_folders.dart';
@@ -97,7 +95,6 @@ void main() {
         expected: findPageTitle(_newProjectTitle),
       );
       await waitUntilGone(tester, findPageTitle(_projectsTitle));
-      await replaceChatWithForm(tester, kind: DraftKind.project);
 
       await enterFieldText(tester, label: 'Name', text: _projectName);
       await enterFieldText(tester, label: 'Repos', text: _typedAddress);
@@ -155,7 +152,6 @@ void main() {
         find.text(_newProjectTitle).first,
         expected: findPageTitle(_newProjectTitle),
       );
-      await replaceChatWithForm(tester, kind: DraftKind.project);
 
       await enterFieldText(tester, label: 'Name', text: _projectName);
       await enterFieldText(tester, label: 'Repos', text: folder.path);

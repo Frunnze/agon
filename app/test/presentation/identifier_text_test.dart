@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:math';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -7,6 +8,7 @@ import 'package:agent_orchestration/data/rules/local_folder_address.dart';
 import 'package:agent_orchestration/presentation/identifier_text.dart';
 
 import '../support/random_inputs.dart';
+import '../support/sample_folder_paths.dart';
 
 void main() {
   test('test_shorten_identifier_property_keeps_both_ends', () {
@@ -42,9 +44,13 @@ void main() {
 
   test('test_describe_repository_path_property_names_a_local_folder', () {
     final Random random = seededRandom(53);
+    final List<String> parents = <String>[
+      Directory.systemTemp.path,
+      buildWindowsFolderPath(driveLetter: 'C', folderNames: <String>['x']),
+    ];
 
     for (int i = 0; i < propertyIterations; i += 1) {
-      final String parent = pickOne(random, <String>['/Users/someone', 'C:\\x']);
+      final String parent = pickOne(random, parents);
       final String name = pickOne(random, <String>['billing', 'a b', 'x.y']);
       final String address = renderLocalFolderAddress(
         deviceId: DeviceId('d${random.nextInt(999)}'),

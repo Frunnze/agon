@@ -13,7 +13,7 @@ import 'package:agent_orchestration/data/clock.dart';
 import 'package:agent_orchestration/data/models/device.dart';
 import 'package:agent_orchestration/data/node_backed.dart';
 import 'package:agent_orchestration/data/node_backed/mapping.dart';
-import 'package:agent_orchestration/folders/platform_folder_picker.dart';
+import 'package:agent_orchestration/folders/folder_picker_choice.dart';
 import 'package:agent_orchestration/scanning/camera_qr_code_scanner.dart';
 import 'package:agent_orchestration/shell/app_navigation.dart';
 import 'package:agent_orchestration/shell/app_route.dart';
@@ -34,7 +34,7 @@ Future<StartedApp> startNodeApp() async {
     channel: channel,
     clock: const SystemClock(),
     qrCodeScanner: const CameraQrCodeScanner(),
-    folderPicker: const PlatformFolderPicker(),
+    folderPicker: buildPlatformFolderPicker(defaultTargetPlatform),
     workspaceChoiceStore: const SharedPreferencesWorkspaceChoiceStore(),
   );
   return startAppOnNode(

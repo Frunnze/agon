@@ -6,7 +6,6 @@ import 'package:agent_orchestration/data/gallery/gallery_identifiers.dart';
 import 'package:agent_orchestration/data/models/project.dart';
 import 'package:agent_orchestration/screens/projects.dart';
 import 'package:agent_orchestration/shell/app_navigation.dart';
-import 'package:agent_orchestration/data/models/item_draft.dart';
 import 'package:agent_orchestration/shell/app_route.dart';
 import 'package:agent_orchestration/shell/app_section.dart';
 
@@ -27,8 +26,6 @@ void main() {
       dependencies: dependencies,
     );
     await tester.tap(find.text('New project'));
-    await pumpFrames(tester);
-    navigation.replaceRoute(NewItemFormRoute(DraftKind.project));
     await pumpFrames(tester);
 
     await tapVisible(tester, find.text('Create project'));

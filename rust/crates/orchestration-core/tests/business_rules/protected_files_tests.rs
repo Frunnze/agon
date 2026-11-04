@@ -10,6 +10,12 @@ use proptest::prelude::*;
 const ENV_FILE_NAME: &str = ".env";
 const ENV_VARIANTS_PATTERN: &str = ".env.*";
 const FORBIDDEN_CHARACTERS: [char; 5] = ['"', '\'', '\\', '(', ')'];
+const SAMPLE_HOME_FOLDER_NAME: &str = "home";
+
+fn sample_home() -> String {
+    let home_folder = std::env::temp_dir().join(SAMPLE_HOME_FOLDER_NAME);
+    home_folder.display().to_string()
+}
 
 fn folder_name() -> impl Strategy<Value = String> {
     "[a-z][a-z0-9_-]{0,8}"
@@ -53,10 +59,11 @@ proptest! {
         let only_env_file = only_patterns(&[ENV_FILE_NAME]);
         let only_variants = only_patterns(&[ENV_VARIANTS_PATTERN]);
         let env_file = format!("{folders}/{ENV_FILE_NAME}");
+        let home = sample_home();
 
-        prop_assert!(!is_protected_path(&only_env_file, &variant, "/home"));
-        prop_assert!(is_protected_path(&only_variants, &variant, "/home"));
-        prop_assert!(!is_protected_path(&only_variants, &env_file, "/home"));
+        prop_assert!(!is_protected_path(&only_env_file, &variant, &home));
+        prop_assert!(is_protected_path(&only_variants, &variant, &home));
+        prop_assert!(!is_protected_path(&only_variants, &env_file, &home));
     }
 
     #[test]
@@ -68,9 +75,10 @@ proptest! {
         let protected = only_patterns(&[ENV_FILE_NAME]);
         let before = format!("{folders}/{prefix}{ENV_FILE_NAME}");
         let after = format!("{folders}/{ENV_FILE_NAME}{suffix}");
+        let home = sample_home();
 
-        prop_assert!(!is_protected_path(&protected, &before, "/home"));
-        prop_assert!(!is_protected_path(&protected, &after, "/home"));
+        prop_assert!(!is_protected_path(&protected, &before, &home));
+        prop_assert!(!is_protected_path(&protected, &after, &home));
     }
 
     #[test]
@@ -81,7 +89,7 @@ proptest! {
         let protected = only_patterns(&[ENV_FILE_NAME]);
         let path = format!("{folders}/{ENV_FILE_NAME}{inside}");
 
-        prop_assert!(is_protected_path(&protected, &path, "/home"));
+        prop_assert!(is_protected_path(&protected, &path, &sample_home()));
     }
 
     #[test]
@@ -110,9 +118,10 @@ proptest! {
         let protected = ProtectedFiles { patterns: vec![pattern] };
         let at_root = format!("/secrets/{name}{folders}");
         let deeper = format!("/deeper/secrets/{name}");
+        let home = sample_home();
 
-        prop_assert!(is_protected_path(&protected, &at_root, "/home"));
-        prop_assert!(!is_protected_path(&protected, &deeper, "/home"));
+        prop_assert!(is_protected_path(&protected, &at_root, &home));
+        prop_assert!(!is_protected_path(&protected, &deeper, &home));
     }
 
     #[test]
@@ -121,11 +130,12 @@ proptest! {
         name in folder_name(),
     ) {
         let protected = only_patterns(&["~/.config/**/token.json"]);
-        let path = format!("/home/.config{folders}/token.json");
-        let other = format!("/home/.config{folders}/{name}.txt");
+        let home = sample_home();
+        let path = format!("{home}/.config{folders}/token.json");
+        let other = format!("{home}/.config{folders}/{name}.txt");
 
-        prop_assert!(is_protected_path(&protected, &path, "/home"));
-        prop_assert!(!is_protected_path(&protected, &other, "/home"));
+        prop_assert!(is_protected_path(&protected, &path, &home));
+        prop_assert!(!is_protected_path(&protected, &other, &home));
     }
 
     #[test]
@@ -135,7 +145,7 @@ proptest! {
         let protected = ProtectedFiles::default();
         let path = format!("{folders}/.ENV");
 
-        prop_assert!(is_protected_path(&protected, &path, "/home"));
+        prop_assert!(is_protected_path(&protected, &path, &sample_home()));
     }
 
     #[test]
@@ -146,7 +156,7 @@ proptest! {
         let protected = ProtectedFiles { patterns: Vec::new() };
         let path = format!("{folders}/{name}");
 
-        prop_assert!(!is_protected_path(&protected, &path, "/home"));
+        prop_assert!(!is_protected_path(&protected, &path, &sample_home()));
     }
 
     #[test]

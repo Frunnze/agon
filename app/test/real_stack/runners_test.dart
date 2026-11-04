@@ -1,23 +1,30 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:agent_orchestration/bridge/codecs/catalog_views.dart' as node;
-import 'package:agent_orchestration/screens/settings.dart';
+import 'package:agent_orchestration/screens/devices/devices_screen.dart';
 import 'package:agent_orchestration/widgets/slots_indicator.dart';
 
+import '../support/workspace_device_finders.dart';
 import 'support/real_stack.dart';
 import 'support/stack_navigation.dart';
 import 'support/stack_node_reads.dart';
 import 'support/stack_pairing.dart';
-import 'support/stack_settings.dart';
 import 'support/stack_waiting.dart';
 
 const String _runnerLabel = 'mac';
 const String _serverDownTitle = "Can't reach the app server";
 
-Finder _findInRunnersTab(String text) {
+Finder _findOnDevicesPage(String text) {
   return find.descendant(
-    of: find.byType(RunnersSettingsTab),
+    of: find.byType(DevicesScreen),
     matching: find.text(text),
+  );
+}
+
+Finder _findHomeDevice(String deviceName) {
+  return findWorkspaceDevice(
+    workspaceName: homeWorkspaceName,
+    deviceName: deviceName,
   );
 }
 
@@ -52,12 +59,15 @@ Future<void> _openRunnersWithPairedRunner(
     description: 'the paired runner online',
     check: () => _isRunnerAcceptingNewRuns(stack: stack),
   );
-  await openSettingsTab(
+  await openDevices(tester);
+  await waitUntilShown(tester, _findHomeDevice(runnerDeviceName));
+  await waitUntilShown(
     tester,
-    tabLabel: 'Runners',
-    expected: find.byType(RunnersSettingsTab),
+    find.descendant(
+      of: find.byType(DevicesScreen),
+      matching: find.byType(SlotsIndicator),
+    ),
   );
-  await waitUntilShown(tester, _findInRunnersTab(runnerDeviceName));
 }
 
 void main() {
@@ -68,7 +78,7 @@ void main() {
     (WidgetTester tester) async {
       final RealStack stack = await RealStack.openWithAccount(tester);
       await _openRunnersWithPairedRunner(tester, stack: stack);
-      await waitUntilShown(tester, _findInRunnersTab('Online'));
+      await waitUntilShown(tester, _findOnDevicesPage('Online'));
 
       final node.RunnerView? nodeRunner = await askNode(
         tester,
@@ -76,17 +86,26 @@ void main() {
       );
       final SlotsIndicator slots = tester.widget<SlotsIndicator>(
         find.descendant(
-          of: find.byType(RunnersSettingsTab),
+          of: find.byType(DevicesScreen),
           matching: find.byType(SlotsIndicator),
         ),
       );
 
       expect(nodeRunner, isNotNull);
       expect(nodeRunner!.runner.labels, <String>[_runnerLabel]);
-      expect(_findInRunnersTab(_runnerLabel), findsOneWidget);
       expect(slots.total, nodeRunner.runner.slotsTotal);
       expect(slots.busy, nodeRunner.runner.slotsBusy);
-      expect(_findInRunnersTab('1 of 1 online · 1 free slot'), findsOneWidget);
+      expect(
+        _findOnDevicesPage('Runners: 1 of 1 online · 1 free slot'),
+        findsOneWidget,
+      );
+
+      await tapAndWait(
+        tester,
+        _findHomeDevice(runnerDeviceName),
+        expected: findPageTitle(runnerDeviceName),
+      );
+      await waitUntilShown(tester, find.text(_runnerLabel));
       await stack.close(tester);
     },
     skip: isStackMissing,
@@ -100,10 +119,10 @@ void main() {
       await _openRunnersWithPairedRunner(tester, stack: stack);
       await tapAndWait(
         tester,
-        _findInRunnersTab(runnerDeviceName),
+        _findHomeDevice(runnerDeviceName),
         expected: findPageTitle(runnerDeviceName),
       );
-      await waitUntilGone(tester, find.byType(RunnersSettingsTab));
+      await waitUntilGone(tester, find.byType(DevicesScreen));
 
       await tapWhenShown(tester, find.text('Pause new runs'));
       await waitUntilShown(tester, find.text('Resume new runs'));
@@ -137,11 +156,11 @@ void main() {
 
       await askNode(tester, stack.server.stop);
       await waitUntilShown(tester, find.text(_serverDownTitle));
-      expect(_findInRunnersTab(runnerDeviceName), findsOneWidget);
+      expect(_findHomeDevice(runnerDeviceName), findsOneWidget);
 
       await stack.restartServer(tester);
       await waitUntilGone(tester, find.text(_serverDownTitle));
-      expect(_findInRunnersTab(runnerDeviceName), findsOneWidget);
+      expect(_findHomeDevice(runnerDeviceName), findsOneWidget);
       await stack.close(tester);
     },
     skip: isStackMissing,

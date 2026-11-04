@@ -15,6 +15,11 @@ abstract interface class DeviceRepository implements Listenable {
 
   Future<CheckedFolder> checkLocalFolder(String path);
 
+  Future<CheckedFolder> createLocalFolder({
+    required String parent,
+    required String name,
+  });
+
   Future<Device> revokeDevice(DeviceId deviceId);
 
   Future<Device> addDeviceToWorkspace(

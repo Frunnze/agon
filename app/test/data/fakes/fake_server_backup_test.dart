@@ -28,7 +28,9 @@ AppServerGroup _randomGroup(Random random) {
       final ServerStanding standing = members.isEmpty
           ? ServerStanding.active
           : ServerStanding.backup;
-      members.add(AppServerMember(deviceId: deviceId, standing: standing));
+      members.add(
+        AppServerMember(deviceId: deviceId, standing: standing, copy: null),
+      );
     }
   }
   return AppServerGroup(
@@ -117,6 +119,7 @@ void main() {
           const AppServerMember(
             deviceId: _thisDeviceId,
             standing: ServerStanding.active,
+            copy: null,
           ),
           ..._randomGroup(random).members,
         ],

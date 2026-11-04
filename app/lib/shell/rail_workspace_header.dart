@@ -22,6 +22,7 @@ class RailWorkspaceHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onPressed,
+      mouseCursor: WidgetStateMouseCursor.clickable,
       borderRadius: BorderRadius.circular(AppRadii.control),
       child: Padding(
         padding: const EdgeInsets.symmetric(

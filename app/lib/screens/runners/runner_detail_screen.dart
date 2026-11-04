@@ -19,7 +19,7 @@ import 'package:agent_orchestration/presentation/doer_text.dart';
 import 'package:agent_orchestration/presentation/host_text.dart';
 import 'package:agent_orchestration/presentation/runner_text.dart';
 import 'package:agent_orchestration/presentation/time_phrases.dart';
-import 'package:agent_orchestration/screens/settings.dart';
+import 'package:agent_orchestration/screens/runners.dart';
 import 'package:agent_orchestration/screens/shared/runner_link_route.dart';
 import 'package:agent_orchestration/shell/app_navigation.dart';
 import 'package:agent_orchestration/shell/app_route.dart';
@@ -92,7 +92,7 @@ class RunnerDetailScreen extends StatelessWidget {
         PageHeader(
           title: device.name,
           backLink: BackLink(
-            label: 'Runners',
+            label: 'Devices',
             onPressed: navigation.closeRoute,
           ),
           summary: <TextSegment>[

@@ -61,9 +61,9 @@ void main() {
         'Reusable chains of agents',
         'Instructions agents can follow',
         'What every agent must follow',
-        'App server, runners, audit log',
-        'Your devices',
-        'Pair and revoke devices',
+        'App server, commands, audit log',
+        'Devices',
+        'Runners, servers and pairing',
         'Switch workspace',
         'Now in acme',
       ]) {

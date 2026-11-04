@@ -40,3 +40,21 @@ ListRowData buildRepositoryDraftRow({
     end: end,
   );
 }
+
+const String newFolderNote =
+    'New folder · made with git when you create the project';
+const ValueKey<String> _newFolderRowKey = ValueKey<String>('new-folder');
+
+ListRowData buildNewFolderRow({
+  required String folderPath,
+  required Widget end,
+}) {
+  return ListRowData(
+    key: _newFolderRowKey,
+    main: ListRowMain.monospace(
+      title: folderPath,
+      subtitle: const <TextSegment>[TextSegment(newFolderNote)],
+    ),
+    end: end,
+  );
+}

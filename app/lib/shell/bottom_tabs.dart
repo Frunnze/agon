@@ -76,6 +76,7 @@ class _BottomTab extends StatelessWidget {
       button: true,
       child: InkWell(
         onTap: () => onSelected(section),
+        mouseCursor: WidgetStateMouseCursor.clickable,
         child: Stack(
           clipBehavior: Clip.none,
           children: <Widget>[

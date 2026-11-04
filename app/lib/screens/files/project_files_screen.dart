@@ -18,6 +18,7 @@ import 'package:agent_orchestration/screens/files/readme_section.dart';
 import 'package:agent_orchestration/presentation/identifier_text.dart';
 import 'package:agent_orchestration/shell/app_navigation.dart';
 import 'package:agent_orchestration/shell/app_route.dart';
+import 'package:agent_orchestration/shell/app_section.dart';
 import 'package:agent_orchestration/theme/layout_size.dart';
 import 'package:agent_orchestration/widgets/app_page.dart';
 import 'package:agent_orchestration/widgets/split_layout.dart';
@@ -246,8 +247,9 @@ class _ProjectFilesScreenState extends State<ProjectFilesScreen> {
             ),
             now: widget.clock.now(),
             onTryAgain: _tryAgain,
-            onSeeRunners: () =>
-                widget.navigation.openRoute(const RunnersSettingsRoute()),
+            onSeeRunners: () => widget.navigation.openRoute(
+              const SectionRoute(AppSection.devices),
+            ),
           ),
         ];
       case FilesFromRunner():

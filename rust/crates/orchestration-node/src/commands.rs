@@ -20,6 +20,7 @@ mod library_commands;
 mod library_edits;
 mod live_commands;
 pub(crate) mod local_folder_checks;
+mod local_folder_creation;
 mod pairing_approval;
 mod pairing_commands;
 mod person_answers;

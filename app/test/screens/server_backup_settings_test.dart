@@ -173,10 +173,12 @@ void main() {
         AppServerMember(
           deviceId: GalleryDeviceIds.oldMacbook,
           standing: ServerStanding.backup,
+          copy: null,
         ),
         AppServerMember(
           deviceId: GalleryDeviceIds.airLaptop,
           standing: ServerStanding.active,
+          copy: null,
         ),
       ],
       thisDeviceStanding: ThisDeviceStanding.active,
@@ -218,12 +220,14 @@ void main() {
         AppServerMember(
           deviceId: activeServerId,
           standing: ServerStanding.active,
+          copy: null,
         ),
         for (final DeviceId deviceId in candidates)
           if (deviceId != activeServerId && random.nextBool())
             AppServerMember(
               deviceId: deviceId,
               standing: ServerStanding.backup,
+              copy: null,
             ),
       ];
       final AppServerGroup group = AppServerGroup(

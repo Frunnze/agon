@@ -83,22 +83,6 @@ void main() {
     }
   });
 
-  test('test_project_item_draft_from_fields_property_keeps_policy', () {
-    final Random random = seededRandom(9705);
-
-    for (int i = 0; i < propertyIterations; i += 1) {
-      final JsonObject json = randomItemDraftJson(random);
-      if (json['kind'] != DraftKind.project.wireName) {
-        continue;
-      }
-
-      final ProjectItemDraft draft = ProjectItemDraft.fromFields(json);
-
-      expect(draft.approvalPolicy?.wireName, json[_policyField]);
-      expect(draft.toJson(), json);
-    }
-  });
-
   test('test_project_from_json_property_missing_policy_follows_workspace', () {
     final Random random = seededRandom(9706);
 

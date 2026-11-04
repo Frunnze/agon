@@ -21,7 +21,7 @@ void main() {
         stack: stack,
       );
 
-      await openYourDevices(tester);
+      await openDevices(tester);
       await waitUntilShown(tester, find.text(runnerDeviceName));
       await tapWhenShown(tester, find.text('Revoke'));
       await waitUntilShown(tester, find.text('Revoke $runnerDeviceName?'));
@@ -41,8 +41,8 @@ void main() {
       expect(revoked.device.revoked, isTrue);
       expect(revoked.device.id, isNot(stack.appDeviceId));
       expect(refusal, contains(_revokedWord));
-      expect(find.text(appDeviceName), findsOneWidget);
-      expect(findPageTitle('Your devices'), findsOneWidget);
+      expect(find.text(appDeviceName), findsWidgets);
+      expect(findPageTitle('Devices'), findsOneWidget);
       await stack.close(tester);
     },
     skip: findRealStackSkipReason() != null,

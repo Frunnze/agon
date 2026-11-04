@@ -19,12 +19,23 @@ ThisDeviceStanding _mapThisDeviceStandingFromNode(
   };
 }
 
+BackupCopy? _mapBackupCopyFromNode(node.BackupCopyView? copy) {
+  if (copy == null) {
+    return null;
+  }
+  return BackupCopy(
+    changesBehind: copy.changesBehind,
+    verifiedAt: copy.verifiedAt,
+  );
+}
+
 AppServerGroup mapAppServerGroupFromNode(node.AppServersView view) {
   final List<AppServerMember> members = <AppServerMember>[
     for (final node.AppServerView server in view.servers)
       AppServerMember(
         deviceId: server.deviceId,
         standing: _mapServerStandingFromNode(server.standing),
+        copy: _mapBackupCopyFromNode(server.copy),
       ),
   ];
 

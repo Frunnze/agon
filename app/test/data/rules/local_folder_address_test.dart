@@ -7,10 +7,13 @@ import 'package:agent_orchestration/data/models/project.dart';
 import 'package:agent_orchestration/data/rules/local_folder_address.dart';
 
 import '../../support/random_inputs.dart';
+import '../../support/sample_folder_paths.dart';
 
+const String _systemDriveLetter = 'C';
+const String _otherDriveLetter = 'D';
 const List<String> _folderParts = <String>[
-  'Users',
-  'air',
+  'projects',
+  'acme',
   'code',
   'billing-ui',
   'My Projects',
@@ -46,7 +49,10 @@ String _randomFolderPath(Random random) {
   if (random.nextBool()) {
     return '/${parts.join('/')}';
   }
-  return 'C:\\${parts.join('\\')}';
+  return buildWindowsFolderPath(
+    driveLetter: _systemDriveLetter,
+    folderNames: parts,
+  );
 }
 
 Repository _repositoryAt(String address) {
@@ -74,12 +80,13 @@ void main() {
       expect(folder?.deviceId, deviceId);
       expect(folder?.path, path);
     }
+    final String billingPath = buildTemporaryFolderPath('billing');
     expect(
       renderLocalFolderAddress(
         deviceId: const DeviceId('3f2a9c'),
-        path: '/Users/someone/billing',
+        path: billingPath,
       ),
-      'local:3f2a9c:/Users/someone/billing',
+      'local:3f2a9c:$billingPath',
     );
   });
 
@@ -114,7 +121,11 @@ void main() {
       final List<String> parts = _randomParts(random);
       final String trailing = pickOne(random, <String>['', '/', '\\']);
       final String unixPath = '/${parts.join('/')}$trailing';
-      final String windowsPath = 'D:\\${parts.join('\\')}$trailing';
+      final String windowsFolder = buildWindowsFolderPath(
+        driveLetter: _otherDriveLetter,
+        folderNames: parts,
+      );
+      final String windowsPath = '$windowsFolder$trailing';
 
       expect(describeFolderName(unixPath), parts.last);
       expect(describeFolderName(windowsPath), parts.last);

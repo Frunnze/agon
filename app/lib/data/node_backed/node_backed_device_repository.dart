@@ -69,6 +69,22 @@ final class NodeBackedDeviceRepository extends ChangeNotifier
       _channel,
       node.CheckLocalFolderCommand(path: path),
     );
+    return _mapCheckedFolder(checked);
+  }
+
+  @override
+  Future<CheckedFolder> createLocalFolder({
+    required String parent,
+    required String name,
+  }) async {
+    final node.CheckedLocalFolder created = await executeNodeCommand(
+      _channel,
+      node.CreateLocalFolderCommand(parent: parent, folderName: name),
+    );
+    return _mapCheckedFolder(created);
+  }
+
+  CheckedFolder _mapCheckedFolder(node.CheckedLocalFolder checked) {
     return CheckedFolder(
       repository: RepositoryDraft(
         address: checked.address,

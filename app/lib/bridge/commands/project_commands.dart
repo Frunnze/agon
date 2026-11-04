@@ -140,3 +140,27 @@ final class CheckLocalFolderCommand
     return CheckedLocalFolder.fromJson(okValue);
   }
 }
+
+final class CreateLocalFolderCommand
+    implements NodeCommand<CheckedLocalFolder> {
+  const CreateLocalFolderCommand({
+    required this.parent,
+    required this.folderName,
+  });
+
+  final String parent;
+  final String folderName;
+
+  @override
+  String get name => 'create_local_folder';
+
+  @override
+  JsonObject get arguments {
+    return <String, Object?>{'parent': parent, 'name': folderName};
+  }
+
+  @override
+  CheckedLocalFolder decodeReply(Object? okValue) {
+    return CheckedLocalFolder.fromJson(okValue);
+  }
+}

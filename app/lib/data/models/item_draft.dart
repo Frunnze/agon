@@ -7,7 +7,7 @@ import 'package:agent_orchestration/data/models/schedule.dart';
 import 'package:agent_orchestration/data/models/task.dart';
 import 'package:agent_orchestration/data/models/workflow.dart';
 
-enum DraftKind { task, job, project, skill, rule }
+enum DraftKind { task, job, skill, rule }
 
 sealed class DraftedItem {
   const DraftedItem();
@@ -58,7 +58,7 @@ final class DraftedWork extends DraftedItem {
   }
 }
 
-final class DraftedProject extends DraftedItem {
+final class DraftedProject {
   DraftedProject({
     required this.name,
     required List<RepositoryDraft> repositories,
@@ -123,14 +123,12 @@ final class ItemDraftRequest {
     required this.wish,
     required this.startedFrom,
     required this.change,
-    required List<RepositoryDraft> chosenFolders,
-  }) : chosenFolders = List<RepositoryDraft>.unmodifiable(chosenFolders);
+  });
 
   final DraftKind kind;
   final String wish;
   final String? startedFrom;
   final ItemDraftChange? change;
-  final List<RepositoryDraft> chosenFolders;
 }
 
 sealed class ItemDraftProgress {

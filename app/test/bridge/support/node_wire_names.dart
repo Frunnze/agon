@@ -11,6 +11,8 @@ const List<String> nodeHardwareKeyKinds = <String>[
   'software',
 ];
 
+const List<String> nodeDeviceKinds = <String>['computer', 'phone'];
+
 const List<String> nodeRunnerLinks = <String>[
   'direct',
   'relay',

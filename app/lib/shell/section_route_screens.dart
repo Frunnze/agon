@@ -4,7 +4,6 @@ import 'package:agent_orchestration/data/app_dependencies.dart';
 import 'package:agent_orchestration/screens/approvals/approvals_screen.dart';
 import 'package:agent_orchestration/screens/jobs/jobs_screen.dart';
 import 'package:agent_orchestration/screens/more/more_screen.dart';
-import 'package:agent_orchestration/screens/settings.dart';
 import 'package:agent_orchestration/screens/tasks/tasks_screen.dart';
 import 'package:agent_orchestration/shell/app_navigation.dart';
 import 'package:agent_orchestration/shell/app_section.dart';
@@ -64,7 +63,6 @@ Widget buildSectionScreen({
       );
     case AppSection.settings:
       return buildSettingsScreen(
-        initialTab: SettingsTab.general,
         dependencies: dependencies,
         navigation: navigation,
       );

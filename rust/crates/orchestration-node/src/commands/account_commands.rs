@@ -20,7 +20,9 @@ use crate::node_error::NodeError;
 use crate::peer_side::{AnnouncementState, PeerSide};
 use crate::runner_settings::RunnerSettings;
 use crate::server_address::ServerAddress;
-use crate::views::{AppServersView, describe_app_servers};
+use crate::views::{
+    AppServersView, describe_app_servers, describe_fresh_app_servers,
+};
 
 const GROUP_CHANGE_TOPICS: [ChangeTopic; 2] =
     [ChangeTopic::ServerGroup, ChangeTopic::Devices];
@@ -173,16 +175,21 @@ async fn describe_status(node: &Node) -> Result<StatusView, NodeError> {
     let mut account = node.device_files().load_account()?;
 
     let can_refresh_account = account.is_some() && health.reachable;
+    let mut fresh_group_view = None;
     if can_refresh_account {
         let session = node.open_session()?;
         let fresh_account = session.client().read_account().await?;
         node.device_files().save_account(&fresh_account)?;
         account = Some(fresh_account);
-        node.refresh_server_group(&session).await?;
+        fresh_group_view = Some(node.refresh_server_group(&session).await?);
     }
-    let server_group = node.device_files().load_server_group()?;
     let own_device = account.as_ref().map(|known| &known.device);
-    let app_servers = describe_app_servers(server_group.as_ref(), own_device);
+    let app_servers = if let Some(fresh_view) = &fresh_group_view {
+        describe_fresh_app_servers(fresh_view, own_device)
+    } else {
+        let stored_group = node.device_files().load_server_group()?;
+        describe_app_servers(stored_group.as_ref(), own_device)
+    };
 
     let app_server = node.device_files().load_app_server()?;
     let hosted_address = node.hosted_server_address();

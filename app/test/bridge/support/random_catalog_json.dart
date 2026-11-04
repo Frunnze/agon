@@ -10,6 +10,7 @@ Map<String, Object?> randomDeviceJson(Random random) {
     'id': randomDeviceIdText(random),
     'name': randomText(random),
     'role': pickOne(random, nodeDeviceRoles),
+    'kind': pickOne(random, nodeDeviceKinds),
     'key_kind': pickOne(random, nodeHardwareKeyKinds),
     'signing_public_key': randomBytes(random),
     'sealing_public_key': randomBytes(random),

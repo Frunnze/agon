@@ -17,6 +17,7 @@ use crate::clock::Clock;
 use crate::error::ServerError;
 use crate::events::append_notification;
 use crate::persistence::StateStorage;
+use crate::replica_copies::ReplicaCopyLedger;
 use crate::request_ledger::{Presence, RequestLedger};
 use crate::settings::ServerSettings;
 use crate::setup_code::SetupCode;
@@ -32,6 +33,7 @@ const POISONED_SETUP_CODE: &str = "the setup code lock is poisoned";
 pub struct Server {
     state: Mutex<StoredState>,
     request_ledger: Mutex<RequestLedger>,
+    replica_copies: Mutex<ReplicaCopyLedger>,
     setup_code: Mutex<Option<SetupCode>>,
     newly_issued_setup_code: Option<String>,
     started_at: DateTime<Utc>,
@@ -60,6 +62,7 @@ impl Server {
         Ok(Self {
             state: Mutex::new(stored_state),
             request_ledger: Mutex::new(RequestLedger::default()),
+            replica_copies: Mutex::new(ReplicaCopyLedger::default()),
             setup_code: Mutex::new(prepared_setup.setup_code),
             newly_issued_setup_code: prepared_setup.newly_issued,
             started_at: clock.now(),

@@ -1,3 +1,5 @@
+mod temporary_paths;
+
 use std::error::Error;
 use std::io::Write;
 use std::process::{Command, Stdio};
@@ -6,9 +8,11 @@ use orchestration_core::protected_files::ProtectedFiles;
 use orchestration_hub::protected_files_hook::write_protected_files_hook;
 use proptest::prelude::*;
 use serde_json::{Value, json};
+use temporary_paths::temporary_path;
 
 const SHELL_PROGRAM: &str = "sh";
-const SAMPLE_HOME: &str = "/Users/sample.person";
+const SAMPLE_HOME_FOLDER_NAME: &str = "sample.person";
+const TRANSCRIPT_FILE_NAME: &str = "transcript.jsonl";
 const DENY_DECISION: &str = "deny";
 const HOOK_EVENT: &str = "PreToolUse";
 const HOOK_CASES: u32 = 24;
@@ -23,7 +27,7 @@ fn run_hook(
 ) -> Result<String, Box<dyn Error>> {
     let hook_input = json!({
         "session_id": "a1b2",
-        "transcript_path": "/tmp/transcript.jsonl",
+        "transcript_path": temporary_path(TRANSCRIPT_FILE_NAME),
         "cwd": "/workspace",
         "hook_event_name": HOOK_EVENT,
         "tool_name": tool_name,
@@ -32,7 +36,7 @@ fn run_hook(
     let mut child = Command::new(SHELL_PROGRAM)
         .arg("-c")
         .arg(hook)
-        .env("HOME", SAMPLE_HOME)
+        .env("HOME", temporary_path(SAMPLE_HOME_FOLDER_NAME))
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .spawn()?;
@@ -128,7 +132,8 @@ fn test_write_protected_files_hook_property_follows_patterns_as_written()
 fn test_write_protected_files_hook_property_refuses_home_files() -> TestResult
 {
     let hook = default_hook();
-    let home_config = format!("{SAMPLE_HOME}/.ssh/config");
+    let sample_home = temporary_path(SAMPLE_HOME_FOLDER_NAME);
+    let home_config = format!("{sample_home}/.ssh/config");
     let browser_listing =
         "ls \"$HOME/Library/Application Support/Google/Chrome\"";
 

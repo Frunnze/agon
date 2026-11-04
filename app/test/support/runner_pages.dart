@@ -13,7 +13,6 @@ import 'package:agent_orchestration/shell/app_section.dart';
 import 'package:agent_orchestration/widgets/forms/check_choice_list_field.dart';
 
 import 'app_harness.dart';
-import 'form_finders.dart';
 
 const DeviceId thisRunnerDeviceId = GalleryDeviceIds.airLaptop;
 
@@ -89,7 +88,7 @@ Future<void> openRunnerPage(
   );
 }
 
-Future<void> openRunnersTab(
+Future<void> openDevicesWithRunners(
   WidgetTester tester, {
   required FakeRunnerRepository runners,
 }) async {
@@ -97,13 +96,11 @@ Future<void> openRunnersTab(
   await pumpApp(
     tester,
     size: desktopSize,
-    route: const SectionRoute(AppSection.settings),
+    route: const SectionRoute(AppSection.devices),
     dependencies: replaceRepositories(
       buildGalleryDependencies(),
       deviceRepository: buildRunnerDevices(peerAddressProblem: null),
       runnerRepository: runners,
     ),
   );
-  await tapVisible(tester, find.text('Runners'));
-  await pumpFrames(tester);
 }

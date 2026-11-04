@@ -33,6 +33,7 @@ mod person_steps;
 mod project_deletion;
 mod projects;
 mod replica_check;
+mod replica_copies;
 mod request_ledger;
 mod router;
 mod rules;

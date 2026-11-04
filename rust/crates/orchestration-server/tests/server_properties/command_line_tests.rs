@@ -6,6 +6,12 @@ use proptest::prelude::*;
 const LISTEN_OPTION: &str = "--listen";
 const DATA_DIRECTORY_OPTION: &str = "--data-directory";
 const PUBLIC_ADDRESS_OPTION: &str = "--public-address";
+const DATA_FOLDER_NAME: &str = "orchestration";
+
+fn data_directory() -> String {
+    let folder = std::env::temp_dir().join(DATA_FOLDER_NAME);
+    folder.display().to_string()
+}
 
 fn arguments(texts: &[&str]) -> Vec<String> {
     texts.iter().map(|text| (*text).to_owned()).collect()
@@ -65,11 +71,12 @@ proptest! {
         let is_web_address =
             address.starts_with("http://") || address.starts_with("https://");
         prop_assume!(!is_web_address);
+        let data_directory = data_directory();
         let texts = [
             LISTEN_OPTION,
             "0.0.0.0:8080",
             DATA_DIRECTORY_OPTION,
-            "/var/lib/orchestration",
+            data_directory.as_str(),
             PUBLIC_ADDRESS_OPTION,
             address.as_str(),
         ];
@@ -83,11 +90,12 @@ proptest! {
     ) {
         prop_assume!(option != LISTEN_OPTION);
         prop_assume!(option != DATA_DIRECTORY_OPTION);
+        let data_directory = data_directory();
         let texts = [
             LISTEN_OPTION,
             "0.0.0.0:8080",
             DATA_DIRECTORY_OPTION,
-            "/var/lib/orchestration",
+            data_directory.as_str(),
             option.as_str(),
             "value",
         ];
@@ -108,7 +116,8 @@ proptest! {
 #[test]
 fn listen_and_data_directory_are_required() {
     let only_listen = arguments(&[LISTEN_OPTION, "127.0.0.1:8080"]);
-    let only_data = arguments(&[DATA_DIRECTORY_OPTION, "/tmp/data"]);
+    let data_directory = data_directory();
+    let only_data = arguments(&[DATA_DIRECTORY_OPTION, &data_directory]);
     let dangling = arguments(&[LISTEN_OPTION]);
 
     assert!(parse_command_line(only_listen).is_err());

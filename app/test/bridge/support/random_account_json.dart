@@ -41,10 +41,18 @@ Map<String, Object?> randomStatusViewJson(Random random) {
   };
 }
 
+Map<String, Object?> randomBackupCopyJson(Random random) {
+  return <String, Object?>{
+    'changes_behind': random.nextInt(100000),
+    'verified_at': randomMomentText(random),
+  };
+}
+
 Map<String, Object?> randomAppServerJson(Random random) {
   return <String, Object?>{
     'device_id': randomDeviceIdText(random),
     'standing': pickOne(random, nodeServerStandings),
+    'copy': randomOptional(random, randomBackupCopyJson),
   };
 }
 

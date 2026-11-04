@@ -77,6 +77,7 @@ class _TabButton extends StatelessWidget {
       button: true,
       child: InkWell(
         onTap: onPressed,
+        mouseCursor: WidgetStateMouseCursor.clickable,
         hoverColor: AppColors.transparent,
         child: Container(
           constraints: BoxConstraints(minHeight: controlHeight),

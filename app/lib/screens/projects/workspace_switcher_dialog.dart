@@ -78,7 +78,7 @@ class _WorkspaceSwitcherDialogState extends State<WorkspaceSwitcherDialog> {
       actions: <Widget>[
         AppButton.secondary(label: 'Close', onPressed: _close),
         AppButton.secondary(
-          label: 'Your devices',
+          label: 'Devices',
           icon: AppIconKind.key,
           onPressed: () => widget.navigation.openSection(
             const SectionRoute(AppSection.devices),

@@ -112,6 +112,7 @@ class AppButton extends StatelessWidget {
       ),
       textStyle: WidgetStatePropertyAll<TextStyle>(labelStyle),
       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      mouseCursor: WidgetStateMouseCursor.clickable,
     );
 
     return TextButton(

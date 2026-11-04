@@ -42,6 +42,7 @@ class RemovableTag extends StatelessWidget {
             excludeSemantics: true,
             child: InkWell(
               onTap: _remove,
+              mouseCursor: WidgetStateMouseCursor.clickable,
               hoverColor: AppColors.line,
               borderRadius: BorderRadius.circular(AppRadii.control),
               child: const SizedBox.square(

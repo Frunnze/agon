@@ -43,6 +43,7 @@ mod library_draft_check_properties;
 mod library_edit_flow_tests;
 mod live_link_tests;
 mod local_folder_command_tests;
+mod local_folder_creation_tests;
 mod local_folder_flow_tests;
 mod local_folder_git_tests;
 mod local_network_join_tests;

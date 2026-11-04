@@ -158,7 +158,7 @@ fn test_reading_refuses_unknown_branches_and_folders() -> TestResult<()> {
     let fixture = build_fixture()?;
 
     let unknown = fixture.reader.list_folder("HEAD~1", "");
-    let option_like = fixture.reader.read_file("--output=/tmp/x", "a");
+    let option_like = fixture.reader.read_file("--output=x", "a");
     let folder_as_file = fixture.reader.read_file("main", "src");
     let file_as_folder = fixture.reader.list_folder("main", "README.md");
 

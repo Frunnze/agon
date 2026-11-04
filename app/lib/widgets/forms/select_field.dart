@@ -69,6 +69,8 @@ class SelectField<T> extends StatelessWidget {
           ],
           selectedItemBuilder: _buildSelectedItems,
           onChanged: _handleChanged,
+          mouseCursor: WidgetStateMouseCursor.clickable,
+          dropdownMenuItemMouseCursor: WidgetStateMouseCursor.clickable,
         ),
       ),
     );

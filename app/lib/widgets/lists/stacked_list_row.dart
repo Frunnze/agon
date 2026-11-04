@@ -13,6 +13,7 @@ class StackedListRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return InkWell(
       onTap: row.onTap,
+      mouseCursor: WidgetStateMouseCursor.clickable,
       child: Container(
         decoration: buildRowDecoration(row.emphasis),
         padding: const EdgeInsets.fromLTRB(

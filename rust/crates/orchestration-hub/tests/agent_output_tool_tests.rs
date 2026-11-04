@@ -1,10 +1,12 @@
 mod agent_reading;
 mod claude_lines;
+mod temporary_paths;
 
 use claude_lines::{any_detail, assistant_line, parse_claude};
 use orchestration_hub::agent_event::AgentEvent;
 use proptest::prelude::*;
 use serde_json::{Value, json};
+use temporary_paths::temporary_path;
 
 type KnownTool = (&'static str, &'static str, &'static str);
 
@@ -48,13 +50,19 @@ fn any_relative_path() -> impl Strategy<Value = String> {
     "[a-zA-Z0-9_.-]{1,12}(/[a-zA-Z0-9_.-]{1,12}){0,4}"
 }
 
+fn any_temporary_path(
+    pattern_inside_temporary_folder: &'static str,
+) -> impl Strategy<Value = String> {
+    pattern_inside_temporary_folder.prop_map(|inside| temporary_path(&inside))
+}
+
 fn any_path_outside_the_workspace() -> impl Strategy<Value = String> {
     prop_oneof![
         Just("/workspace".to_string()),
         Just("/workspace/".to_string()),
         "/workspaces/[a-z]{1,8}",
-        "/tmp/workspace/[a-z]{1,8}",
-        "/(home|Users)/[a-z]{1,8}(/[a-z.]{1,8}){0,3}",
+        any_temporary_path("workspace/[a-z]{1,8}"),
+        any_temporary_path("[a-z]{1,8}(/[a-z.]{1,8}){0,3}"),
         "workspace/[a-z]{1,8}",
     ]
 }

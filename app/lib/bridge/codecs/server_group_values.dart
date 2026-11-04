@@ -29,25 +29,58 @@ enum ThisDeviceStanding implements WireNamed {
   }
 }
 
+final class BackupCopyView implements JsonEncodable {
+  const BackupCopyView({
+    required this.changesBehind,
+    required this.verifiedAt,
+  });
+
+  factory BackupCopyView.fromJson(Object? json) {
+    final JsonObject fields = decodeObject(json);
+    return BackupCopyView(
+      changesBehind: readField(fields, 'changes_behind', decodeInteger),
+      verifiedAt: readField(fields, 'verified_at', decodeMoment),
+    );
+  }
+
+  final int changesBehind;
+  final DateTime verifiedAt;
+
+  @override
+  JsonObject toJson() {
+    return <String, Object?>{
+      'changes_behind': changesBehind,
+      'verified_at': encodeMoment(verifiedAt),
+    };
+  }
+}
+
 final class AppServerView implements JsonEncodable {
-  const AppServerView({required this.deviceId, required this.standing});
+  const AppServerView({
+    required this.deviceId,
+    required this.standing,
+    required this.copy,
+  });
 
   factory AppServerView.fromJson(Object? json) {
     final JsonObject fields = decodeObject(json);
     return AppServerView(
       deviceId: readField(fields, 'device_id', decodeDeviceId),
       standing: readField(fields, 'standing', ServerStanding.decode),
+      copy: readOptionalField(fields, 'copy', BackupCopyView.fromJson),
     );
   }
 
   final DeviceId deviceId;
   final ServerStanding standing;
+  final BackupCopyView? copy;
 
   @override
   JsonObject toJson() {
     return <String, Object?>{
       'device_id': deviceId.value,
       'standing': standing.wireName,
+      'copy': copy?.toJson(),
     };
   }
 }

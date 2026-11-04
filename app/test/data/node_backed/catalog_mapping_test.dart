@@ -115,6 +115,7 @@ void main() {
       expect(device.name, wire.name);
       expect(mapDeviceRoleToNode(device.role), wire.role);
       expect(device.keyKind.name, wire.keyKind.name);
+      expect(device.kind.name, wire.kind.name);
       expect(device.signingPublicKey, wire.signingPublicKey);
       expect(device.sealingPublicKey, wire.sealingPublicKey);
       expect(device.workspaces, wire.workspaces);

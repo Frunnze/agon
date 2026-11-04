@@ -1,5 +1,6 @@
 use std::sync::{Arc, PoisonError, RwLockWriteGuard};
 
+use orchestration_api::server_group::ServerGroupView;
 use orchestration_core::server_group::ServerGroup;
 
 use super::{DeviceSession, Node};
@@ -55,10 +56,10 @@ impl Node {
     pub async fn refresh_server_group(
         &self,
         session: &DeviceSession,
-    ) -> Result<ServerGroup, NodeError> {
+    ) -> Result<ServerGroupView, NodeError> {
         let view = session.client().read_server_group().await?;
         self.remember_server_group(&view.group)?;
-        Ok(view.group)
+        Ok(view)
     }
 
     pub(crate) fn reconnect_app_server(&self) -> Result<(), NodeError> {

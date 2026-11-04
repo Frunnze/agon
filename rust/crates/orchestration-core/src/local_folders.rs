@@ -34,6 +34,11 @@ pub enum LocalFolderProblem {
     MalformedAddress(String),
     #[error("the local folders of a project must all be on one computer")]
     SeveralDevices,
+    #[error(
+        "{0:?} cannot name a new folder: it is empty, . or .., or has a \
+         folder separator or a control character"
+    )]
+    UnsafeFolderName(String),
 }
 
 #[must_use]
@@ -113,6 +118,18 @@ pub fn find_folder_device(
         folder_device = Some(folder.device_id);
     }
     Ok(folder_device)
+}
+
+pub fn validate_new_folder_name(name: &str) -> Result<(), LocalFolderProblem> {
+    let is_blank = name.trim().is_empty();
+    let is_reserved = RESERVED_FOLDER_PARTS.contains(&name);
+    let has_unsafe_character = name.chars().any(|character| {
+        character.is_control() || FOLDER_SEPARATORS.contains(&character)
+    });
+    if is_blank || is_reserved || has_unsafe_character {
+        return Err(LocalFolderProblem::UnsafeFolderName(name.to_owned()));
+    }
+    Ok(())
 }
 
 fn validate_device_id(device_id: &DeviceId) -> Result<(), LocalFolderProblem> {

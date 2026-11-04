@@ -4,12 +4,6 @@ import 'package:agent_orchestration/bridge/codecs/json_values.dart';
 import 'package:agent_orchestration/bridge/commands/node_command.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 
-List<Object?> _encodeChosenFolders(List<DraftedRepository> chosenFolders) {
-  return <Object?>[
-    for (final DraftedRepository folder in chosenFolders) folder.toJson(),
-  ];
-}
-
 final class DraftChange implements JsonEncodable {
   const DraftChange({required this.draft, required this.note});
 
@@ -29,7 +23,6 @@ final class DraftItemCommand implements NodeCommand<DraftingTaskView> {
     required this.wish,
     required this.startedFrom,
     required this.change,
-    required this.chosenFolders,
   });
 
   final WorkspaceId workspaceId;
@@ -37,7 +30,6 @@ final class DraftItemCommand implements NodeCommand<DraftingTaskView> {
   final String wish;
   final String? startedFrom;
   final DraftChange? change;
-  final List<DraftedRepository> chosenFolders;
 
   @override
   String get name => 'draft_item';
@@ -50,7 +42,6 @@ final class DraftItemCommand implements NodeCommand<DraftingTaskView> {
       'request': wish,
       'started_from': startedFrom,
       'change': change?.toJson(),
-      'chosen_folders': _encodeChosenFolders(chosenFolders),
     };
   }
 
@@ -65,13 +56,11 @@ final class ItemDraftStatusCommand implements NodeCommand<ItemDraftStatus> {
     required this.workspaceId,
     required this.taskId,
     required this.kind,
-    required this.chosenFolders,
   });
 
   final WorkspaceId workspaceId;
   final TaskId taskId;
   final DraftKind kind;
-  final List<DraftedRepository> chosenFolders;
 
   @override
   String get name => 'item_draft_status';
@@ -82,7 +71,6 @@ final class ItemDraftStatusCommand implements NodeCommand<ItemDraftStatus> {
       'workspace_id': workspaceId.value,
       'task_id': taskId.value,
       'kind': kind.wireName,
-      'chosen_folders': _encodeChosenFolders(chosenFolders),
     };
   }
 

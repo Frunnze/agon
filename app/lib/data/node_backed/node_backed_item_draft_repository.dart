@@ -11,7 +11,6 @@ import 'package:agent_orchestration/bridge/commands/run_commands.dart' as node;
 import 'package:agent_orchestration/bridge/node/node_command_channel.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/item_draft.dart';
-import 'package:agent_orchestration/data/models/project.dart';
 import 'package:agent_orchestration/data/models/workflow.dart';
 import 'package:agent_orchestration/data/node_backed/mapping.dart';
 import 'package:agent_orchestration/data/node_backed/node_command_execution.dart';
@@ -61,7 +60,6 @@ final class NodeBackedItemDraftRepository implements ItemDraftRepository {
           workspaceId: workspaceId,
           taskId: started.taskId,
           kind: mapDraftKindToNode(request.kind),
-          chosenFolders: _mapChosenFoldersToNode(request),
         ),
         drafterKind: mapAgentKindFromNode(started.drafter),
       );
@@ -116,17 +114,7 @@ final class NodeBackedItemDraftRepository implements ItemDraftRepository {
       wish: request.wish,
       startedFrom: request.startedFrom,
       change: wireChange,
-      chosenFolders: _mapChosenFoldersToNode(request),
     );
-  }
-
-  List<node.DraftedRepository> _mapChosenFoldersToNode(
-    ItemDraftRequest request,
-  ) {
-    return <node.DraftedRepository>[
-      for (final RepositoryDraft folder in request.chosenFolders)
-        mapRepositoryDraftToNode(folder),
-    ];
   }
 
   Stream<ItemDraftProgress> _pollDraft({

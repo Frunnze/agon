@@ -16,8 +16,6 @@ import '../support/form_finders.dart';
 import '../support/random_inputs.dart';
 import '../support/runner_pages.dart';
 
-const String _emptyRunnersTitle = 'No runners yet';
-
 String? _randomProblem(Random random) {
   if (random.nextBool()) {
     return null;
@@ -64,7 +62,7 @@ void main() {
           : galleryRunners;
       final bool offersLocal = random.nextBool();
 
-      await openRunnersTab(
+      await openDevicesWithRunners(
         tester,
         runners: buildOfferingRunners(
           runners: runners,
@@ -87,11 +85,6 @@ void main() {
         find.text(runLocallyLabel),
         canAddLocal ? findsOneWidget : findsNothing,
       );
-      final bool isEmptyState = runners.isEmpty && !hasProblem;
-      expect(
-        find.text(_emptyRunnersTitle),
-        isEmptyState ? findsOneWidget : findsNothing,
-      );
     }
   });
 
@@ -109,7 +102,7 @@ void main() {
         ],
         problem: problem,
       );
-      await openRunnersTab(tester, runners: runners);
+      await openDevicesWithRunners(tester, runners: runners);
 
       await tapVisible(tester, find.text(runLocallyLabel));
       await pumpFrames(tester);
