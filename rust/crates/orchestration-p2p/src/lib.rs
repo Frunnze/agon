@@ -1,5 +1,6 @@
 #![allow(clippy::missing_errors_doc)]
 
+pub mod board_retry;
 pub mod frame_codec;
 pub mod peer_address;
 pub mod peer_configuration;

@@ -5,6 +5,7 @@ use crate::support::hosting_steps::{NO_SERVER_ACCEPTED_CODE, read_status};
 use crate::support::pairing_steps::{
     approve_into_first_workspace, join_on_local_network,
 };
+use crate::support::public_board_turn::wait_for_public_board_turn;
 use crate::support::rendezvous_lookup::{
     generate_unissued_code, look_up_code,
 };
@@ -53,6 +54,8 @@ fn start_pairing_or_panic(device: &TestDevice) -> (Value, String) {
 
 #[test]
 fn test_join_with_code_property_the_code_alone_joins_from_another_network() {
+    let _board_turn = wait_for_public_board_turn();
+
     let workspace = prepare_workspace_with(start_device_crossing_networks());
     let joining = start_device_crossing_networks();
     let (session, code) = start_pairing_or_panic(&workspace.device);
@@ -83,6 +86,8 @@ fn test_join_with_code_property_the_code_alone_joins_from_another_network() {
 
 #[test]
 fn test_join_with_code_property_a_wrong_code_finds_no_server() {
+    let _board_turn = wait_for_public_board_turn();
+
     let joining = start_device_crossing_networks();
     let Ok(unissued_code) = generate_unissued_code() else {
         panic!("a code is generated");
@@ -95,6 +100,8 @@ fn test_join_with_code_property_a_wrong_code_finds_no_server() {
 
 #[test]
 fn test_cancel_pairing_property_the_published_record_is_withdrawn() {
+    let _board_turn = wait_for_public_board_turn();
+
     let workspace = prepare_workspace_with(start_device_crossing_networks());
     let (session, code) = start_pairing_or_panic(&workspace.device);
 
@@ -113,6 +120,8 @@ fn test_cancel_pairing_property_the_published_record_is_withdrawn() {
 
 #[test]
 fn test_start_pairing_property_a_local_only_device_publishes_nothing() {
+    let _board_turn = wait_for_public_board_turn();
+
     let Ok(local_device) = TestDevice::start() else {
         panic!("the device starts");
     };
