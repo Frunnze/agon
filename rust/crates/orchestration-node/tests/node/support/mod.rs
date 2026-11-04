@@ -20,6 +20,7 @@ pub mod item_drafting_desk;
 pub mod login_runner;
 pub mod node_process;
 pub mod pairing_steps;
+pub mod public_board_turn;
 pub mod relay_server;
 pub mod rendezvous_lookup;
 pub mod runner_access;

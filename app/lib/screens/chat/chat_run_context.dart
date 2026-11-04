@@ -2,6 +2,7 @@ import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/run.dart';
 import 'package:agent_orchestration/data/models/task.dart';
 import 'package:agent_orchestration/data/models/workflow.dart';
+import 'package:agent_orchestration/data/rules/run_step_agents.dart';
 import 'package:agent_orchestration/presentation/device_names.dart';
 import 'package:agent_orchestration/presentation/run_text.dart';
 
@@ -50,16 +51,17 @@ final class ChatRunContext {
 
   String _describeAgentKind() {
     final TaskDoer doer = task.doer;
-    final Workflow? stepWorkflow = workflow;
-    final WorkflowAgentId? agentId = currentStep.agentId;
-
     if (doer is OneAgentDoer) {
       return doer.agent.label;
     }
-    if (stepWorkflow == null || agentId == null) {
+
+    final WorkflowAgent? agent = findRunStepAgent(
+      step: currentStep,
+      workflow: workflow,
+    );
+    if (agent == null) {
       return _unassignedAgentName;
     }
-    final WorkflowAgent agent = stepWorkflow.findAgent(agentId);
     if (agent.stepKind == StepKind.person) {
       return _personStepName;
     }

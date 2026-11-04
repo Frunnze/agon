@@ -46,7 +46,7 @@ pub fn retry_run_record(record: &RunRecord) -> Result<RunRecord, ServerError> {
     Ok(RunRecord {
         run: reopen_run(&record.run, reset_steps),
         pinned_steps,
-        follow_ups: record.follow_ups.clone(),
+        ..record.clone()
     })
 }
 

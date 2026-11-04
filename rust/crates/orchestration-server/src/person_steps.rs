@@ -83,7 +83,7 @@ fn list_open_steps(
         let Ok(workspace_id) = find_task_workspace(state, task) else {
             continue;
         };
-        let Some(workflow) = find_run_workflow(state, run) else {
+        let Some(workflow) = find_run_workflow(state, record) else {
             continue;
         };
         if !is_workspace_member(state, caller_id, workspace_id) {
@@ -126,7 +126,7 @@ fn record_person_answer(
         .get(&record.run.task_id)
         .ok_or(ServerError::NotFound("the task"))?;
     require_task_access(state, caller_id, task)?;
-    let workflow = find_run_workflow(state, &record.run)
+    let workflow = find_run_workflow(state, record)
         .ok_or_else(|| ServerError::Conflict(NO_WORKFLOW.to_owned()))?;
     let step = record
         .run

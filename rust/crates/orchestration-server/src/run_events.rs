@@ -54,7 +54,7 @@ fn record_run_events(
             "the runner holds no step of this run",
         ));
     }
-    let workflow = find_run_workflow(state, &record.run).cloned();
+    let workflow = find_run_workflow(state, record).cloned();
     let mut changed = record.clone();
     for event in &request.events {
         let before = changed.run.clone();

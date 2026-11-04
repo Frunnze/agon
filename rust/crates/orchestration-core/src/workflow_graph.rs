@@ -119,6 +119,24 @@ pub fn forward_reachable_agents(
 }
 
 #[must_use]
+pub fn loops_rerunning_agent(
+    workflow: &Workflow,
+    agent_id: WorkflowAgentId,
+) -> Vec<&AgentConnection> {
+    let mut rerunning_loops = Vec::new();
+    for connection in &workflow.connections {
+        if !connection.is_loop() {
+            continue;
+        }
+        let rerun_agents = forward_reachable_agents(workflow, connection.to);
+        if rerun_agents.contains(&agent_id) {
+            rerunning_loops.push(connection);
+        }
+    }
+    rerunning_loops
+}
+
+#[must_use]
 pub fn find_agent_by_id(
     workflow: &Workflow,
     agent_id: WorkflowAgentId,

@@ -211,12 +211,20 @@ final class Workflow {
   final WorkflowSignature? signature;
 
   WorkflowAgent findAgent(WorkflowAgentId agentId) {
+    final WorkflowAgent? agent = findAgentIfPresent(agentId);
+    if (agent == null) {
+      throw StateError('Workflow $name has no agent $agentId');
+    }
+    return agent;
+  }
+
+  WorkflowAgent? findAgentIfPresent(WorkflowAgentId agentId) {
     for (final WorkflowAgent agent in agents) {
       if (agent.id == agentId) {
         return agent;
       }
     }
-    throw StateError('Workflow $name has no agent $agentId');
+    return null;
   }
 
   Workflow withName(String newName) {

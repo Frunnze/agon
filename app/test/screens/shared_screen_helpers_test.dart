@@ -7,6 +7,7 @@ import 'package:agent_orchestration/data/gallery/gallery_devices.dart';
 import 'package:agent_orchestration/data/gallery/gallery_runs.dart';
 import 'package:agent_orchestration/data/gallery/gallery_tasks.dart';
 import 'package:agent_orchestration/data/gallery/gallery_workflows.dart';
+import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/run.dart';
 import 'package:agent_orchestration/data/models/runner.dart';
 import 'package:agent_orchestration/data/models/task.dart';
@@ -21,6 +22,7 @@ import 'package:agent_orchestration/widgets/route_line_painter.dart';
 import 'package:agent_orchestration/widgets/status_label.dart';
 
 import '../support/random_inputs.dart';
+import '../support/random_workflows.dart';
 
 final DeviceNames _deviceNames = DeviceNames(galleryDevices);
 
@@ -32,20 +34,20 @@ void main() {
       final Run run = pickOne(random, galleryRuns);
       final RunStep step = pickOne(random, run.steps);
       final Task task = pickOne(random, galleryTasks);
-      final Workflow? workflow = step.agentId == null
+      final Workflow? workflow = random.nextBool()
           ? null
-          : galleryWorkflows.first;
+          : keepRandomAgents(random, galleryWorkflows.first);
       final RunnerTarget target = findStepTarget(
         step: step,
         task: task,
         workflow: workflow,
       );
 
-      if (workflow == null) {
-        expect(target, task.runsOn);
-      } else {
-        expect(target, workflow.findAgent(step.agentId!).runsOn);
-      }
+      final WorkflowAgentId? agentId = step.agentId;
+      final WorkflowAgent? agent = agentId == null
+          ? null
+          : workflow?.findAgentIfPresent(agentId);
+      expect(target, agent?.runsOn ?? task.runsOn);
     }
   });
 
@@ -109,7 +111,9 @@ void main() {
       final ChatRunContext context = ChatRunContext(
         run: run,
         task: task,
-        workflow: task.doer is WorkflowDoer ? galleryWorkflows.first : null,
+        workflow: task.doer is WorkflowDoer
+            ? keepRandomAgents(random, galleryWorkflows.first)
+            : null,
         deviceNames: _deviceNames,
       );
 

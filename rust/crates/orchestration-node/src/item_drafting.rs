@@ -8,6 +8,7 @@ mod drafting_prompt;
 mod format_instructions;
 mod item_answers;
 mod item_draft;
+mod kept_step_ids;
 mod library_checks;
 mod problem_sentences;
 mod project_checks;
@@ -34,4 +35,5 @@ pub use item_answers::parse_item_answer;
 pub use item_draft::{
     ItemDraft, ProjectDraft, RepositoryDraft, RuleDraft, SkillDraft, WorkDraft,
 };
+pub use kept_step_ids::keep_stored_step_ids;
 pub use workflow_checks::check_new_workflow_draft;

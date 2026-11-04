@@ -86,10 +86,12 @@ pub struct WorkflowRecord {
     pub changed_by: Option<DeviceId>,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RunRecord {
     pub run: Run,
     pub pinned_steps: BTreeMap<String, DeviceId>,
     #[serde(default)]
     pub follow_ups: BTreeMap<String, FollowUp>,
+    #[serde(default)]
+    pub started_workflow: Option<Workflow>,
 }

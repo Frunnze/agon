@@ -3,14 +3,14 @@ use orchestration_core::approval::ApprovalPolicy;
 use orchestration_core::approval_levels::{
     ApprovalLevels, resolve_approval_policy,
 };
-use orchestration_core::identifiers::{SkillId, WorkflowId};
+use orchestration_core::identifiers::{SkillId, WorkflowAgentId, WorkflowId};
 use orchestration_core::step_outcomes::list_step_choices;
 use orchestration_core::task::TaskDoer;
 use orchestration_core::workflow::{
     AgentKind, StepKind, Workflow, WorkflowAgent,
 };
 use orchestration_core::workflow_graph::{
-    WorkflowProblem, upstream_agents, validate_workflow,
+    WorkflowProblem, loops_rerunning_agent, upstream_agents, validate_workflow,
 };
 use thiserror::Error;
 
@@ -24,6 +24,7 @@ pub struct StepPlan {
     pub approval_policy: ApprovalPolicy,
     pub upstream_step_names: Vec<String>,
     pub outcome_choices: Vec<String>,
+    pub loop_round_limit: Option<u32>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Error)]
@@ -106,6 +107,7 @@ fn plan_one_agent_step(
         ),
         upstream_step_names: Vec::new(),
         outcome_choices: Vec::new(),
+        loop_round_limit: None,
     })
 }
 
@@ -155,5 +157,17 @@ fn plan_agent_step(
         ),
         upstream_step_names,
         outcome_choices: list_step_choices(workflow, agent.id),
+        loop_round_limit: find_loop_round_limit(workflow, agent.id),
     })
+}
+
+fn find_loop_round_limit(
+    workflow: &Workflow,
+    agent_id: WorkflowAgentId,
+) -> Option<u32> {
+    let rerunning_loops = loops_rerunning_agent(workflow, agent_id);
+    let [only_loop] = rerunning_loops.as_slice() else {
+        return None;
+    };
+    only_loop.round_limit
 }

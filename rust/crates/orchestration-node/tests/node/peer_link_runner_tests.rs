@@ -8,6 +8,7 @@ use crate::support::hosted_runner::{
     run_a_task_to_done, start_host_pairing, start_runner_beside_host,
 };
 use crate::support::hosting_steps::PEER_SCHEME_PREFIX;
+use crate::support::public_board_turn::wait_for_public_board_turn;
 use crate::support::rendezvous_lookup::look_up_code;
 use crate::support::test_device::{RELAY_DEFAULT, RELAY_DISABLED, read_text};
 
@@ -64,6 +65,7 @@ fn a_local_runner_pairs_with_the_code_and_works_over_the_peer_link() {
 
 #[test]
 fn a_runner_with_only_the_published_record_works_over_the_peer_link() {
+    let _board_turn = wait_for_public_board_turn();
     let nodes = start_or_panic(RELAY_DEFAULT);
     let Ok(session) = start_host_pairing(&nodes) else {
         panic!("pairing starts");

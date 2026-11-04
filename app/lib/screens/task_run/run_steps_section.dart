@@ -1,10 +1,10 @@
 import 'package:flutter/widgets.dart';
 
-import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/run.dart';
 import 'package:agent_orchestration/data/models/runner.dart';
 import 'package:agent_orchestration/data/models/task.dart';
 import 'package:agent_orchestration/data/models/workflow.dart';
+import 'package:agent_orchestration/data/rules/run_step_agents.dart';
 import 'package:agent_orchestration/presentation/device_names.dart';
 import 'package:agent_orchestration/presentation/run_text.dart';
 import 'package:agent_orchestration/presentation/step_round_text.dart';
@@ -33,11 +33,11 @@ RunnerTarget findStepTarget({
   required Task task,
   required Workflow? workflow,
 }) {
-  final WorkflowAgentId? agentId = step.agentId;
-  if (agentId == null || workflow == null) {
-    return task.runsOn;
-  }
-  return workflow.findAgent(agentId).runsOn;
+  final WorkflowAgent? agent = findRunStepAgent(
+    step: step,
+    workflow: workflow,
+  );
+  return agent?.runsOn ?? task.runsOn;
 }
 
 class RunStepsSection extends StatefulWidget {
@@ -129,12 +129,11 @@ class _RunStepsSectionState extends State<RunStepsSection> {
   }
 
   bool _isPersonStep(RunStep step) {
-    final WorkflowAgentId? agentId = step.agentId;
-    final Workflow? workflow = widget.workflow;
-    if (agentId == null || workflow == null) {
-      return false;
-    }
-    return workflow.findAgent(agentId).stepKind == StepKind.person;
+    final WorkflowAgent? agent = findRunStepAgent(
+      step: step,
+      workflow: widget.workflow,
+    );
+    return agent?.stepKind == StepKind.person;
   }
 
   List<TextSegment> _describeSubtitle(RunStep step) {

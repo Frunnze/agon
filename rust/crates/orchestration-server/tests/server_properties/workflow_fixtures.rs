@@ -108,3 +108,22 @@ pub fn workflow_with_connections(
         signature: None,
     }
 }
+
+pub async fn change_and_sign_workflow(
+    test: &TestServer,
+    account: &Account,
+    workflow: Workflow,
+) -> Workflow {
+    let path = format!("/workflows/{}", workflow.id.0);
+    let request = SaveWorkflowRequest { workflow };
+    let response = test.put(&account.owner, &path, &request).await;
+    assert_eq!(response.status, StatusCode::OK, "{response:?}");
+    let changed: Workflow = response.json();
+    let document = render_workflow_document(&changed);
+    let signature = sign_document(&account.owner, &document);
+    let sign_path = format!("/workflows/{}/signature", changed.id.0);
+    let sign_request = SignWorkflowRequest { signature };
+    let signed = test.post(&account.owner, &sign_path, &sign_request).await;
+    assert_eq!(signed.status, StatusCode::OK, "{signed:?}");
+    changed
+}

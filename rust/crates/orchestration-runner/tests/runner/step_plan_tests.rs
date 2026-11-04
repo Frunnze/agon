@@ -1,6 +1,7 @@
 use orchestration_core::approval::ApprovalPolicy;
 use orchestration_core::identifiers::{SkillId, WorkflowId};
 use orchestration_core::task::{Task, TaskDoer};
+use orchestration_core::workflow::AgentConnection;
 use orchestration_runner::step_plan::{AssignmentProblem, plan_assigned_step};
 use proptest::collection::vec;
 use proptest::prelude::*;
@@ -9,12 +10,16 @@ use uuid::Uuid;
 use crate::assignments::{
     any_agent_kind, assignment_for, claude_task, task_for,
 };
+use crate::loop_runs::{
+    DRAFT_INDEX, GATE_INDEX, STEP_COUNT, gate_loop_assignment,
+};
 use crate::support::to_case_error;
 use crate::workflows::{
-    WORKFLOW_NUMBER, agent_name, any_workflow_shape, build_workflow,
+    WORKFLOW_NUMBER, agent_id, agent_name, any_workflow_shape, build_workflow,
 };
 
 const TASK_NUMBER: u128 = 0x0101;
+const SECOND_LOOP_OUTCOME: &str = "redo";
 
 fn workflow_task() -> Task {
     let doer = TaskDoer::Workflow {
@@ -57,6 +62,35 @@ proptest! {
         expected.sort();
         upstream.sort();
         prop_assert_eq!(upstream, expected);
+        prop_assert_eq!(step.loop_round_limit, None);
+    }
+
+    #[test]
+    fn test_plan_assigned_step_property_knows_the_limit_of_a_lone_loop(
+        round_limit in 1_u32..=10,
+        chosen_index in 0..STEP_COUNT,
+        has_second_loop in any::<bool>(),
+    ) {
+        let mut assignment =
+            gate_loop_assignment(round_limit).map_err(to_case_error)?;
+        if let (true, Some(workflow)) =
+            (has_second_loop, assignment.workflow.as_mut())
+        {
+            workflow.connections.push(AgentConnection {
+                condition: Some(SECOND_LOOP_OUTCOME.to_owned()),
+                round_limit: Some(1),
+                ..AgentConnection::plain(
+                    agent_id(GATE_INDEX),
+                    agent_id(DRAFT_INDEX),
+                )
+            });
+        }
+        assignment.step_name = agent_name(chosen_index);
+
+        let step = plan_assigned_step(&assignment).map_err(to_case_error)?;
+
+        let expected = (!has_second_loop).then_some(round_limit);
+        prop_assert_eq!(step.loop_round_limit, expected);
     }
 
     #[test]

@@ -4,6 +4,7 @@ use orchestration_core::run::{ChatAuthor, Run, RunStatus};
 use orchestration_core::run_lifecycle::is_run_finished;
 use orchestration_core::scope_rules::workspace_scope_includes;
 use orchestration_core::workflow::Workflow;
+use orchestration_core::workflow_graph::validate_workflow;
 use orchestration_core::workflow_layout::lay_out_workflow;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -14,7 +15,9 @@ use super::workflow_commands::{
 use super::workflow_view::WorkflowView;
 use crate::command_reply::encode_reply;
 use crate::content_sealing::{WorkspaceKeyring, open_run, open_workflow};
-use crate::item_drafting::{check_new_workflow_draft, cut_json_object};
+use crate::item_drafting::{
+    check_new_workflow_draft, cut_json_object, keep_stored_step_ids,
+};
 use crate::node::{DeviceSession, Node};
 use crate::node_error::NodeError;
 use crate::server_client::SignedServerClient;
@@ -151,20 +154,22 @@ async fn save_draft(
     };
 
     let opened = open_workflow(&session.keyring, &stored.workflow)?;
+    validate_workflow(drafted)?;
+    let changed = keep_stored_step_ids(drafted, &opened);
     let opened_without_signature = Workflow {
         signature: None,
         ..opened
     };
-    if opened_without_signature == *drafted {
+    if opened_without_signature == changed {
         return Ok(());
     }
     let request = prepare_workflow_resave(
         session,
         workspace_id,
-        drafted,
+        &changed,
         &stored.workflow,
     )?;
-    client.update_workflow(drafted.id, &request).await
+    client.update_workflow(changed.id, &request).await
 }
 
 fn list_workflow_names(

@@ -80,3 +80,16 @@ Workflow randomAcyclicWorkflow(Random random) {
     signature: null,
   );
 }
+
+Workflow keepRandomAgents(Random random, Workflow workflow) {
+  final List<WorkflowAgent> keptAgents = <WorkflowAgent>[];
+  for (final WorkflowAgent agent in workflow.agents) {
+    if (random.nextBool()) {
+      keptAgents.add(agent);
+    }
+  }
+  return workflow.withGraph(
+    agents: keptAgents,
+    connections: const <AgentConnection>[],
+  );
+}

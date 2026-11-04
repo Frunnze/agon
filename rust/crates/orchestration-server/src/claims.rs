@@ -22,7 +22,9 @@ use crate::device_registration::name_device;
 use crate::error::ServerError;
 use crate::memberships::is_workspace_member;
 use crate::request_ledger::Presence;
-use crate::run_starts::{describe_run, describe_run_detail, run_workflow};
+use crate::run_starts::{
+    describe_run, describe_run_detail, find_run_workflow,
+};
 use crate::runners::present_runners;
 use crate::server::SharedServer;
 use crate::stored_state::{RunRecord, StoredState};
@@ -105,7 +107,7 @@ fn find_claimable_step(
         Some(project) => &project.repositories,
         None => &[],
     };
-    let workflow = run_workflow(state, task);
+    let workflow = find_run_workflow(state, record);
     let eligible_runners =
         eligible_runners(state, runners, task, workspace_id, repositories);
 
@@ -188,20 +190,24 @@ fn assign_step(
         }
     }
     record.pinned_steps.remove(step_name);
-    let run = record.run.clone();
     let follow_up = record.follow_ups.get(step_name).copied();
     if let Some(runner) = state.runners.get_mut(runner_id) {
         runner.slots_busy = runner.slots_busy.saturating_add(1);
     }
-    build_assignment(state, run, step_name, follow_up)
+    build_assignment(state, run_id, step_name, follow_up)
 }
 
 fn build_assignment(
     state: &StoredState,
-    run: Run,
+    run_id: RunId,
     step_name: &str,
     follow_up: Option<FollowUp>,
 ) -> Result<RunAssignment, ServerError> {
+    let record = state
+        .runs
+        .get(&run_id)
+        .ok_or(ServerError::NotFound("the run"))?;
+    let run = record.run.clone();
     let task = state
         .tasks
         .get(&run.task_id)
@@ -214,7 +220,7 @@ fn build_assignment(
     };
     Ok(RunAssignment {
         step_name: step_name.to_owned(),
-        workflow: run_workflow(state, task).cloned(),
+        workflow: find_run_workflow(state, record).cloned(),
         task: task.clone(),
         workspace_id,
         workspace_approval_policy: find_workspace_approval_policy(

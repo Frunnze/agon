@@ -60,6 +60,7 @@ mod step_claim_tests;
 mod takeover_tests;
 mod test_client;
 mod workflow_fixtures;
+mod workflow_snapshot_tests;
 mod workflow_tests;
 mod workspace_approval_tests;
 mod workspace_deletion_tests;

@@ -1,3 +1,5 @@
+use std::sync::{Mutex, PoisonError};
+
 use orchestration_p2p::peer_configuration::{
     PeerConfiguration, RelayChoice, SECRET_KEY_LENGTH,
 };
@@ -10,6 +12,8 @@ use tokio::runtime::{Builder, Runtime};
 const FIELD_COUNT: usize = 3;
 const OVERSIZED_FIELD_COUNT: usize = 12;
 const OVERSIZED_FIELD_LENGTH: usize = 200;
+
+static PUBLIC_BOARD_TURN: Mutex<()> = Mutex::new(());
 
 type BoardOutcome<Found> = Result<Found, PeerError>;
 type SecretKeyBytes = [u8; SECRET_KEY_LENGTH];
@@ -36,6 +40,10 @@ fn sample_fields() -> RecordFields {
 fn with_board<Found>(
     use_board: impl AsyncFnOnce(&RecordBoard) -> BoardOutcome<Found>,
 ) -> BoardOutcome<Found> {
+    let _board_turn = PUBLIC_BOARD_TURN
+        .lock()
+        .unwrap_or_else(PoisonError::into_inner);
+
     let runtime = build_runtime().map_err(PeerError::Stream)?;
     runtime.block_on(async {
         let endpoint = PeerEndpoint::bind(PeerConfiguration {

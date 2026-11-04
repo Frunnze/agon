@@ -66,6 +66,7 @@ fn queue_follow_up(record: &RunRecord, follow_up_step: &RunStep) -> RunRecord {
         run: reopen_run(&record.run, steps),
         pinned_steps,
         follow_ups,
+        started_workflow: record.started_workflow.clone(),
     }
 }
 

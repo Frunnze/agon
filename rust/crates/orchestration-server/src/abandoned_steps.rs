@@ -10,7 +10,7 @@ use crate::claims::target_for_step;
 use crate::error::ServerError;
 use crate::request_ledger::Presence;
 use crate::run_changes::{is_step_finished, requeue_step};
-use crate::run_starts::{describe_run, run_workflow, sync_task_status};
+use crate::run_starts::{describe_run, find_run_workflow, sync_task_status};
 use crate::server::Server;
 use crate::stored_state::{RunRecord, StoredState};
 
@@ -121,7 +121,7 @@ fn is_pinned_to(
     let Some(task) = state.tasks.get(&record.run.task_id) else {
         return false;
     };
-    let workflow = run_workflow(state, task);
+    let workflow = find_run_workflow(state, record);
     let target = target_for_step(record, step, task, workflow);
     let holder_target = RunnerTarget::SpecificRunner {
         device_id: holder.clone(),

@@ -54,6 +54,7 @@ pub fn start_run(
         run: run.clone(),
         pinned_steps: BTreeMap::new(),
         follow_ups: BTreeMap::new(),
+        started_workflow: workflow.cloned(),
     };
     state.runs.insert(run.id, record);
     sync_task_status(state, task_id, run.status);
@@ -83,11 +84,14 @@ pub fn run_workflow<'state>(
         .and_then(|record| record.last_signed.as_ref())
 }
 
-pub fn find_run_workflow<'state>(
-    state: &'state StoredState,
-    run: &Run,
-) -> Option<&'state Workflow> {
-    let task = state.tasks.get(&run.task_id)?;
+pub fn find_run_workflow<'found>(
+    state: &'found StoredState,
+    record: &'found RunRecord,
+) -> Option<&'found Workflow> {
+    if let Some(started_workflow) = &record.started_workflow {
+        return Some(started_workflow);
+    }
+    let task = state.tasks.get(&record.run.task_id)?;
     run_workflow(state, task)
 }
 
@@ -118,7 +122,7 @@ fn describe_project_place(project: &Project) -> String {
 
 pub fn describe_run(state: &StoredState, run: &Run) -> String {
     let task = state.tasks.get(&run.task_id);
-    let workflow = find_run_workflow(state, run);
+    let workflow = task.and_then(|task| run_workflow(state, task));
     let name = match (workflow, task) {
         (Some(workflow), _) => workflow.name.clone(),
         (None, Some(task)) => task.title.clone(),

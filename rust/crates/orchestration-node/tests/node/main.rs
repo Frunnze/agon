@@ -37,6 +37,7 @@ mod item_answer_properties;
 mod item_draft_check_properties;
 mod item_draft_command_tests;
 mod item_draft_place_tests;
+mod kept_step_id_properties;
 mod leftover_flow_tests;
 mod library_draft_check_properties;
 mod library_edit_flow_tests;

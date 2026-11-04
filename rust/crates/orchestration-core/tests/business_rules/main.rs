@@ -17,6 +17,7 @@ mod protected_files_tests;
 mod repository_address_tests;
 mod repository_file_tests;
 mod repository_path_tests;
+mod rerunning_loop_tests;
 mod routing_fixtures;
 mod run_fixtures;
 mod run_link_tests;

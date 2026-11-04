@@ -213,6 +213,20 @@ void main() {
     }
   });
 
+  test('test_find_agent_if_present_property_null_only_when_missing', () {
+    final Random random = seededRandom(1112);
+
+    for (int i = 0; i < propertyIterations; i += 1) {
+      final Workflow workflow = pickOne(random, galleryWorkflows);
+      final WorkflowAgent agent = pickOne(random, workflow.agents);
+      final WorkflowAgentId missingId = WorkflowAgentId(
+        'gone-${randomText(random)}',
+      );
+      expect(workflow.findAgentIfPresent(agent.id), agent);
+      expect(workflow.findAgentIfPresent(missingId), isNull);
+    }
+  });
+
   test('test_with_repositories_property_replaces_the_list', () {
     final Random random = seededRandom(1111);
 

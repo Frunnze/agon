@@ -78,6 +78,7 @@ fn step_pinning(
         approval_policy: ApprovalPolicy::NeverAsk,
         upstream_step_names: Vec::new(),
         outcome_choices: Vec::new(),
+        loop_round_limit: None,
     }
 }
 

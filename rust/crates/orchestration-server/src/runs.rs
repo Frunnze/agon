@@ -195,7 +195,7 @@ fn retry_stored_run(
     now: DateTime<Utc>,
 ) -> Result<Change<Run>, ServerError> {
     let retried = retry_run_record(find_run(state, run_id)?)?;
-    let settled_run = match find_run_workflow(state, &retried.run) {
+    let settled_run = match find_run_workflow(state, &retried) {
         Some(workflow) => settle_waiting_steps(&retried.run, workflow, now),
         None => retried.run.clone(),
     };
