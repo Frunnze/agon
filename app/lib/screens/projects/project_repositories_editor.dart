@@ -90,6 +90,10 @@ final class ProjectRepositoriesEditor extends ChangeNotifier {
     if (parent == null || _isDisposed) {
       return;
     }
+    planNewFolder(parent);
+  }
+
+  void planNewFolder(String parent) {
     _newFolderParent = parent;
     notifyListeners();
   }

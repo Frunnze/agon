@@ -95,7 +95,7 @@ void main() {
     debugDefaultTargetPlatformOverride = null;
   });
 
-  testWidgets('a cancelled folder pick adds no repo', (
+  testWidgets('a cancelled folder pick names the repo after the project', (
     WidgetTester tester,
   ) async {
     debugDefaultTargetPlatformOverride = TargetPlatform.macOS;
@@ -106,8 +106,12 @@ void main() {
     await _tapText(tester, _createProjectLabel);
 
     expect(page.picker.chooseCount, 1);
-    expect(find.text(_noRepositoryProblem), findsOneWidget);
-    expect(page.listCreatedProjects(), isEmpty);
+    expect(find.text(_noRepositoryProblem), findsNothing);
+    final Project created = page.listCreatedProjects().single;
+    expect(
+      _readOnlyRepositoryPath(created),
+      '$fixedNewProjectsFolder/billing',
+    );
     debugDefaultTargetPlatformOverride = null;
   });
 
@@ -167,7 +171,7 @@ void main() {
     debugDefaultTargetPlatformOverride = null;
   });
 
-  testWidgets('a cancelled place or a removed new folder adds nothing', (
+  testWidgets('a cancelled place or a removed new folder uses the default', (
     WidgetTester tester,
   ) async {
     debugDefaultTargetPlatformOverride = TargetPlatform.linux;
@@ -183,9 +187,12 @@ void main() {
     await _tapText(tester, _removeLabel);
     await _tapText(tester, _createProjectLabel);
 
-    expect(find.text(_newFolderNote), findsNothing);
-    expect(find.text(_noRepositoryProblem), findsOneWidget);
-    expect(page.listCreatedProjects(), isEmpty);
+    expect(find.text(_noRepositoryProblem), findsNothing);
+    final Project created = page.listCreatedProjects().single;
+    expect(
+      _readOnlyRepositoryPath(created),
+      '$fixedNewProjectsFolder/billing',
+    );
     debugDefaultTargetPlatformOverride = null;
   });
 

@@ -180,10 +180,22 @@ class _ProjectFormState extends State<ProjectForm> {
     _nameProblem = null;
   }
 
+  Future<void> _planFirstRepositoryFolder() async {
+    final FolderPicker? folderPicker = widget.folderPicker;
+    if (folderPicker == null || !_repositoriesEditor.hasNoRepository) {
+      return;
+    }
+
+    final String parent = await folderPicker.prepareNewProjectsFolder();
+    _repositoriesEditor.planNewFolder(parent);
+  }
+
   Future<void> _submit(SubmitFormAction<DraftedProject> action) async {
     final String name = _nameController.text.trim();
     final String? nameProblem = describeNameProblem(name);
-    final String? repositoryProblem = _repositoriesEditor.hasNoRepository
+    final bool canNameFirstRepository = widget.folderPicker != null;
+    final String? repositoryProblem =
+        _repositoriesEditor.hasNoRepository && !canNameFirstRepository
         ? _noRepositoryProblem
         : null;
     setState(() => _nameProblem = nameProblem);
@@ -194,6 +206,7 @@ class _ProjectFormState extends State<ProjectForm> {
 
     setState(() => _isSubmitting = true);
     try {
+      await _planFirstRepositoryFolder();
       final bool isNewFolderReady = await _repositoriesEditor.createNewFolder(
         name,
       );
