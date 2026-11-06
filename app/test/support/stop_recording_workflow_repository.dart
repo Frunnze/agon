@@ -63,7 +63,11 @@ final class StopRecordingWorkflowRepository extends ChangeNotifier
   }
 
   @override
-  Future<Workflow> changeWorkflow(WorkflowId workflowId, String request) {
+  Future<Workflow> changeWorkflow(
+    WorkflowId workflowId,
+    String request,
+    AgentKind agent,
+  ) {
     throw UnimplementedError();
   }
 

@@ -1,3 +1,4 @@
+import 'package:agent_orchestration/background/runner_presence.dart';
 import 'package:agent_orchestration/data/clock.dart';
 import 'package:agent_orchestration/data/folder_picker.dart';
 import 'package:agent_orchestration/data/qr_code_scanner.dart';
@@ -41,6 +42,7 @@ final class AppDependencies {
     required this.itemDraftRepository,
     required this.qrCodeScanner,
     required this.folderPicker,
+    required this.runnerPresence,
   });
 
   final Clock clock;
@@ -63,4 +65,5 @@ final class AppDependencies {
   final ItemDraftRepository itemDraftRepository;
   final QrCodeScanner qrCodeScanner;
   final FolderPicker folderPicker;
+  final RunnerPresence? runnerPresence;
 }

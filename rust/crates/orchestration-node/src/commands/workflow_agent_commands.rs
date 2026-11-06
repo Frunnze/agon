@@ -37,6 +37,7 @@ pub(super) enum WorkflowAgentCommand {
         workspace_id: WorkspaceId,
         workflow_id: WorkflowId,
         request: String,
+        agent: AgentKind,
     },
     FillAgentSettings {
         workspace_id: WorkspaceId,
@@ -56,6 +57,7 @@ struct AgentTaskPlan {
     workspace_id: WorkspaceId,
     workflow_id: WorkflowId,
     task: Task,
+    agent: AgentKind,
 }
 
 pub(super) async fn handle_workflow_agent_command(
@@ -81,13 +83,20 @@ pub(super) async fn handle_workflow_agent_command(
             AgentTaskPlan {
                 workspace_id,
                 workflow_id,
-                task: build_agent_task(workspace_id, title, details),
+                task: build_agent_task(
+                    workspace_id,
+                    title,
+                    details,
+                    DRAFTING_AGENT_KIND,
+                ),
+                agent: DRAFTING_AGENT_KIND,
             }
         }
         WorkflowAgentCommand::ChangeWorkflow {
             workspace_id,
             workflow_id,
             request,
+            agent,
         } => {
             require_text(&request, "change request")?;
             let stored = read_stored_workflow(&client, workflow_id).await?;
@@ -97,7 +106,8 @@ pub(super) async fn handle_workflow_agent_command(
             AgentTaskPlan {
                 workspace_id,
                 workflow_id,
-                task: build_agent_task(workspace_id, title, details),
+                task: build_agent_task(workspace_id, title, details, agent),
+                agent,
             }
         }
         WorkflowAgentCommand::FillAgentSettings {
@@ -121,7 +131,13 @@ pub(super) async fn handle_workflow_agent_command(
             AgentTaskPlan {
                 workspace_id,
                 workflow_id,
-                task: build_agent_task(workspace_id, title, details),
+                task: build_agent_task(
+                    workspace_id,
+                    title,
+                    details,
+                    DRAFTING_AGENT_KIND,
+                ),
+                agent: DRAFTING_AGENT_KIND,
             }
         }
     };
@@ -137,7 +153,7 @@ pub(super) async fn handle_workflow_agent_command(
     encode_reply(&WorkflowAgentTaskView {
         workflow_id: plan.workflow_id,
         task_id: plan.task.id,
-        drafter: DRAFTING_AGENT_KIND,
+        drafter: plan.agent,
     })
 }
 
@@ -155,15 +171,14 @@ pub(super) fn build_agent_task(
     workspace_id: WorkspaceId,
     title: String,
     details: String,
+    agent: AgentKind,
 ) -> Task {
     Task {
         id: TaskId(generate_uuid()),
         title,
         details,
         place: TaskPlace::InWorkspace { workspace_id },
-        doer: TaskDoer::OneAgent {
-            agent: DRAFTING_AGENT_KIND,
-        },
+        doer: TaskDoer::OneAgent { agent },
         runs_on: RunnerTarget::AnyFreeRunner,
         agent_place: None,
         skills: Vec::new(),

@@ -26,6 +26,7 @@ Widget buildSettingsScreen({
     auditRepository: dependencies.auditRepository,
     clock: dependencies.clock,
     navigation: navigation,
+    runnerPresence: dependencies.runnerPresence,
   );
 }
 

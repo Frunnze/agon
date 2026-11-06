@@ -35,6 +35,8 @@ Widget buildWorkflowDetailScreen({
     workspaceRepository: dependencies.workspaceRepository,
     deviceRepository: dependencies.deviceRepository,
     runnerRepository: dependencies.runnerRepository,
+    projectRepository: dependencies.projectRepository,
+    taskRepository: dependencies.taskRepository,
     clock: dependencies.clock,
     navigation: navigation,
   );

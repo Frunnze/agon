@@ -36,19 +36,17 @@ Future<StartedApp> startNodeApp() async {
     qrCodeScanner: const CameraQrCodeScanner(),
     folderPicker: buildPlatformFolderPicker(defaultTargetPlatform),
     workspaceChoiceStore: const SharedPreferencesWorkspaceChoiceStore(),
-  );
-  return startAppOnNode(
-    channel: channel,
-    nodeDependencies: nodeDependencies,
     runnerPresence: buildPlatformRunnerPresence(defaultTargetPlatform),
   );
+  return startAppOnNode(channel: channel, nodeDependencies: nodeDependencies);
 }
 
 Future<StartedApp> startAppOnNode({
   required NodeCommandChannel channel,
   required NodeDependencies nodeDependencies,
-  required RunnerPresence? runnerPresence,
 }) async {
+  final RunnerPresence? runnerPresence = nodeDependencies.app.runnerPresence;
+
   final node.StatusView status = await executeNodeCommand(
     channel,
     const node.StatusCommand(),

@@ -158,6 +158,7 @@ fn a_changed_workflow_is_saved_as_an_unsigned_change() {
         "workspace_id": workspace_id,
         "workflow_id": workflow_id,
         "request": "Plan the release instead",
+        "agent": "claude_code",
     });
     let draft = start_or_panic(&desk, &change);
     let changed = drafted_workflow_json(&workflow_id, CHANGED_AGENT_TASK);

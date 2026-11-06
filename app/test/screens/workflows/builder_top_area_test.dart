@@ -7,7 +7,7 @@ import 'package:agent_orchestration/data/fakes.dart';
 import 'package:agent_orchestration/screens/workflow_builder.dart';
 import 'package:agent_orchestration/shell/app_navigation.dart';
 import 'package:agent_orchestration/shell/app_route.dart';
-import 'package:agent_orchestration/theme/app_typography.dart';
+import 'package:agent_orchestration/widgets/app_button.dart';
 
 import '../../support/app_harness.dart';
 import '../../support/builder_harness.dart';
@@ -16,14 +16,13 @@ import '../../support/widget_harness.dart';
 
 const double _narrowestDesktopWidth = 1000;
 const double _widestDesktopWidth = 2200;
+const double _narrowestOneRowWidth = 1300;
 const double _shortestDesktopHeight = 700;
 const double _tallestDesktopHeight = 1400;
 const double _desktopHeightSpan =
     _tallestDesktopHeight - _shortestDesktopHeight;
 const double _smallestDesktopCanvasShare = 0.65;
 const double _smallestPhoneCanvasShare = 0.5;
-const double _singleSmallLineHeight =
-    AppFontSizes.small * AppLineHeights.body;
 
 Size _pickDesktopSize(Random random) {
   final double width = randomWidth(
@@ -116,10 +115,45 @@ void main() {
     );
   });
 
-  testWidgets('test_drafted_note_property_stays_one_line', (
+  testWidgets('test_builder_toolbar_property_one_row_without_ask_field', (
     WidgetTester tester,
   ) async {
     final Random random = seededRandom(9103);
+
+    for (int i = 0; i < widgetPropertyIterations; i += 1) {
+      final Size size = Size(
+        randomWidth(
+          random,
+          least: _narrowestOneRowWidth,
+          most: _widestDesktopWidth,
+        ),
+        _tallestDesktopHeight,
+      );
+      await openPipelineBuilder(
+        tester,
+        size: size,
+        dependencies: buildGalleryDependencies(),
+      );
+
+      final Rect toolbar = tester.getRect(find.byType(BuilderToolbar));
+      final Rect addAgentButton = tester.getRect(
+        find.widgetWithText(AppButton, addAgentLabel),
+      );
+      expect(toolbar.height, addAgentButton.height, reason: '$size');
+      expect(
+        find.descendant(
+          of: find.byType(BuilderToolbar),
+          matching: find.byType(TextField),
+        ),
+        findsNothing,
+      );
+    }
+  });
+
+  testWidgets('test_builder_toolbar_property_ask_button_ends_its_row', (
+    WidgetTester tester,
+  ) async {
+    final Random random = seededRandom(9104);
 
     for (int i = 0; i < widgetPropertyIterations; i += 1) {
       final double width = randomWidth(
@@ -130,17 +164,69 @@ void main() {
       await pumpScrollableAtWidth(
         tester,
         width: width,
-        child: const DraftedNote(),
+        child: BuilderToolbar(
+          onAgentAdded: () {},
+          onPersonStepAdded: () {},
+          onChatOpened: () {},
+        ),
       );
 
-      expect(tester.takeException(), isNull, reason: 'width $width');
-      expect(
-        tester.getSize(find.byType(DraftedNote)).height,
-        lessThanOrEqualTo(_singleSmallLineHeight),
-        reason: 'width $width',
+      final Rect toolbar = tester.getRect(find.byType(BuilderToolbar));
+      final Rect addButtons = tester.getRect(find.byType(AddStepButtons));
+      final Rect askButton = tester.getRect(
+        find.widgetWithText(AppButton, askAnAgentLabel),
       );
-      expect(find.text(draftedNoteTitle), findsOneWidget);
-      expect(find.text(draftedNoteText), findsOneWidget);
+      expect(tester.takeException(), isNull, reason: 'width $width');
+      expect(askButton.right, lessThanOrEqualTo(toolbar.right + 0.5));
+      final bool sharesTheRow = askButton.top < addButtons.bottom;
+      if (sharesTheRow) {
+        expect(askButton.right, closeTo(toolbar.right, 0.5), reason: '$width');
+      } else {
+        expect(askButton.top, greaterThan(addButtons.bottom), reason: '$width');
+      }
+    }
+  });
+
+  testWidgets('test_builder_toolbar_property_each_button_calls_its_own', (
+    WidgetTester tester,
+  ) async {
+    final Random random = seededRandom(9105);
+    final List<String> labels = <String>[
+      addAgentLabel,
+      addPersonStepLabel,
+      askAnAgentLabel,
+    ];
+
+    for (int i = 0; i < widgetPropertyIterations; i += 1) {
+      final Map<String, int> pressCounts = <String, int>{
+        for (final String label in labels) label: 0,
+      };
+      final double width = randomWidth(
+        random,
+        least: narrowestWidth,
+        most: widestWidth,
+      );
+      await pumpScrollableAtWidth(
+        tester,
+        width: width,
+        child: BuilderToolbar(
+          onAgentAdded: () => pressCounts[addAgentLabel] =
+              pressCounts[addAgentLabel]! + 1,
+          onPersonStepAdded: () => pressCounts[addPersonStepLabel] =
+              pressCounts[addPersonStepLabel]! + 1,
+          onChatOpened: () => pressCounts[askAnAgentLabel] =
+              pressCounts[askAnAgentLabel]! + 1,
+        ),
+      );
+      final String pressed = pickOne(random, labels);
+
+      await tester.tap(find.widgetWithText(AppButton, pressed));
+      await tester.pump();
+
+      for (final String label in labels) {
+        final int expectedCount = label == pressed ? 1 : 0;
+        expect(pressCounts[label], expectedCount, reason: label);
+      }
     }
   });
 }

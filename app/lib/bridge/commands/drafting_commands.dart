@@ -1,5 +1,6 @@
 import 'package:agent_orchestration/bridge/codecs/drafting_task_views.dart';
 import 'package:agent_orchestration/bridge/codecs/json_values.dart';
+import 'package:agent_orchestration/bridge/codecs/workflow_values.dart';
 import 'package:agent_orchestration/bridge/codecs/workflow_views.dart';
 import 'package:agent_orchestration/bridge/commands/node_command.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
@@ -37,11 +38,13 @@ final class ChangeWorkflowCommand
     required this.workspaceId,
     required this.workflowId,
     required this.request,
+    required this.agent,
   });
 
   final WorkspaceId workspaceId;
   final WorkflowId workflowId;
   final String request;
+  final AgentKind agent;
 
   @override
   String get name => 'change_workflow';
@@ -52,6 +55,7 @@ final class ChangeWorkflowCommand
       'workspace_id': workspaceId.value,
       'workflow_id': workflowId.value,
       'request': request,
+      'agent': agent.wireName,
     };
   }
 

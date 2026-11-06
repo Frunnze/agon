@@ -45,6 +45,12 @@ void _expectMirrorsNode(
   }
 }
 
+const Map<AgentKind, String> _agentWireNames = <AgentKind, String>{
+  AgentKind.claudeCode: 'claude_code',
+  AgentKind.codex: 'codex',
+  AgentKind.geminiCli: 'gemini_cli',
+};
+
 void main() {
   test('test_load_property_mirrors_node_workflows_and_changes', () async {
     final Random random = seededRandom(9901);
@@ -162,11 +168,14 @@ void main() {
     for (int i = 0; i < _draftIterations; i += 1) {
       final Workflow before = repository.findWorkflow(workflowId);
       if (random.nextBool()) {
+        final AgentKind agent = pickOne(random, AgentKind.values);
         final Workflow changed = await repository.changeWorkflow(
           workflowId,
           'Add a review step $i',
+          agent,
         );
         expect(changed.agents.length, before.agents.length + 1);
+        expect(simulated.changeAgents.last, _agentWireNames[agent]);
       } else {
         final WorkflowAgent agent = pickOne(random, before.agents);
         final Workflow filled = await repository.fillAgentSettings(
@@ -179,9 +188,68 @@ void main() {
       _expectMirrorsNode(repository, simulated);
     }
     await expectLater(
-      repository.changeWorkflow(workflowId, '   '),
+      repository.changeWorkflow(workflowId, '   ', AgentKind.codex),
       throwsArgumentError,
     );
+    repository.dispose();
+  });
+
+  test('test_change_workflow_property_blank_never_reaches_node', () async {
+    final Random random = seededRandom(9906);
+    final SimulatedWorkflowNode simulated = SimulatedWorkflowNode(
+      pollsBeforeDraftIsDone: 1,
+    );
+    simulated.addWorkflow(name: 'flow', state: signedState);
+    final NodeBackedWorkflowRepository repository =
+        buildSimulatedWorkflowRepository(simulated);
+    await repository.load();
+    final WorkflowId workflowId = repository.listWorkflows().single.id;
+
+    for (int i = 0; i < _draftIterations; i += 1) {
+      final String blank = ' ' * random.nextInt(5);
+
+      await expectLater(
+        repository.changeWorkflow(
+          workflowId,
+          blank,
+          pickOne(random, AgentKind.values),
+        ),
+        throwsArgumentError,
+      );
+
+      expect(simulated.changeAgents, isEmpty);
+    }
+    repository.dispose();
+  });
+
+  test('test_change_workflow_property_a_refusal_leaves_the_workflow', () async {
+    final Random random = seededRandom(9907);
+    final SimulatedWorkflowNode simulated = SimulatedWorkflowNode(
+      pollsBeforeDraftIsDone: 1,
+    );
+    simulated.addWorkflow(name: 'flow', state: signedState);
+    simulated.failingCommands.add('change_workflow');
+    final NodeBackedWorkflowRepository repository =
+        buildSimulatedWorkflowRepository(simulated);
+    await repository.load();
+    final WorkflowId workflowId = repository.listWorkflows().single.id;
+
+    for (int i = 0; i < _draftIterations; i += 1) {
+      final Workflow before = repository.findWorkflow(workflowId);
+
+      await expectLater(
+        repository.changeWorkflow(
+          workflowId,
+          'Add a review step $i',
+          pickOne(random, AgentKind.values),
+        ),
+        throwsStateError,
+      );
+
+      final Workflow after = repository.findWorkflow(workflowId);
+      expect(after.agents.length, before.agents.length);
+      expect(repository.findPendingChange(workflowId), isNull);
+    }
     repository.dispose();
   });
 }

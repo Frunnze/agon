@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:agent_orchestration/data/app_dependencies.dart';
@@ -15,38 +14,9 @@ import '../../support/app_harness.dart';
 import '../../support/builder_harness.dart';
 import '../../support/form_finders.dart';
 
-const String _askHint = 'Ask the agent, e.g. add a test step after ios';
 const WorkflowId _signedWorkflowId = GalleryWorkflowIds.release;
 
 void main() {
-  testWidgets('asking the agent changes the workflow', (
-    WidgetTester tester,
-  ) async {
-    final AppDependencies dependencies = buildGalleryDependencies();
-    await openPipelineBuilder(
-      tester,
-      size: tallDesktopSize,
-      dependencies: dependencies,
-    );
-    final Finder askField = find.byWidgetPredicate(
-      (Widget widget) =>
-          widget is TextField && widget.decoration?.hintText == _askHint,
-    );
-
-    await tester.tap(find.text('Ask'));
-    await pumpFrames(tester);
-    expect(find.text('Say what the agent should change'), findsOneWidget);
-
-    await tester.enterText(askField, 'add a test step after ios');
-    await tester.tap(find.text('Ask'));
-    await pumpFrames(tester);
-
-    final Workflow changed = readPipeline(dependencies);
-    expect(changed.agents.length, 6);
-    expect(changed.agents.last.task, 'add a test step after ios');
-    expect(findDiagramNode('requested-step'), findsOneWidget);
-  });
-
   testWidgets('removing an agent drops it and its arrows', (
     WidgetTester tester,
   ) async {

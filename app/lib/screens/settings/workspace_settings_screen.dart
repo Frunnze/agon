@@ -2,11 +2,14 @@ import 'dart:async';
 
 import 'package:flutter/widgets.dart';
 
+import 'package:agent_orchestration/background/runner_presence.dart';
 import 'package:agent_orchestration/data/clock.dart';
+import 'package:agent_orchestration/data/models/device.dart';
 import 'package:agent_orchestration/data/models/workspace.dart';
 import 'package:agent_orchestration/data/repository/audit_repository.dart';
 import 'package:agent_orchestration/data/repository/device_repository.dart';
 import 'package:agent_orchestration/data/repository/workspace_repository.dart';
+import 'package:agent_orchestration/data/rules/device_roles.dart';
 import 'package:agent_orchestration/screens/settings.dart';
 import 'package:agent_orchestration/screens/shared/deletion_prompts.dart';
 import 'package:agent_orchestration/screens/shared/deletion_review.dart';
@@ -40,6 +43,7 @@ class WorkspaceSettingsScreen extends StatefulWidget {
     required this.auditRepository,
     required this.clock,
     required this.navigation,
+    required this.runnerPresence,
     super.key,
   });
 
@@ -48,6 +52,7 @@ class WorkspaceSettingsScreen extends StatefulWidget {
   final AuditRepository auditRepository;
   final Clock clock;
   final AppNavigation navigation;
+  final RunnerPresence? runnerPresence;
 
   @override
   State<WorkspaceSettingsScreen> createState() =>
@@ -73,6 +78,7 @@ class _WorkspaceSettingsScreenState extends State<WorkspaceSettingsScreen> {
     final String workspaceName = workspace.name;
     final String? peerAddressProblem = widget.deviceRepository
         .findPeerAddressProblem();
+    final RunnerPresence? startAtLoginPresence = _findStartAtLoginPresence();
 
     return AppPage(
       children: <Widget>[
@@ -96,8 +102,18 @@ class _WorkspaceSettingsScreenState extends State<WorkspaceSettingsScreen> {
           onSelected: _selectTab,
         ),
         _buildTab(),
+        if (_selectedTab == SettingsTab.server && startAtLoginPresence != null)
+          StartAtLoginSection(runnerPresence: startAtLoginPresence),
       ],
     );
+  }
+
+  RunnerPresence? _findStartAtLoginPresence() {
+    final DeviceRole role = widget.deviceRepository.currentDevice().role;
+    if (!roleRunsTasks(role)) {
+      return null;
+    }
+    return widget.runnerPresence;
   }
 
   Widget _buildDeleteButton(BuildContext context, Workspace workspace) {

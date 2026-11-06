@@ -126,7 +126,12 @@ void main() {
           .last;
       expect(find.byType(WorkflowBuilderScreen), findsOneWidget);
       expect(find.text(drafted.name), findsWidgets);
-      expect(find.text('Drafted from your description'), findsOneWidget);
+      final AppRoute builderRoute = navigation.routes.last;
+      expect(builderRoute, isA<WorkflowBuilderRoute>());
+      expect(
+        (builderRoute as WorkflowBuilderRoute).opening,
+        BuilderOpening.afterDrafting,
+      );
       expect(navigation.routes.first, _workflowsRoute);
       expect(navigation.routes.length, 2);
     });

@@ -1,5 +1,3 @@
-use std::fs;
-
 use orchestration_core::workspace::AgentAccess;
 use orchestration_node::item_drafting::{
     DraftingContext, ItemDraft, ProjectDraft, RepositoryDraft,
@@ -20,7 +18,6 @@ use crate::support::test_device::fail;
 const PROJECT_CASES: u32 = 8;
 const PROJECT_NAME_PATTERN: &str = "[a-z][a-z0-9]{2,8}";
 const BRANCH_PATTERN: &str = "[a-z][a-z0-9-]{0,8}[a-z0-9]";
-const INNER_FOLDER_NAME: &str = "inner";
 const NO_REPOSITORY: &str =
     "Repos: none found. Ask for changes and say where the code is.";
 const FOREIGN_FOLDER_NAME: &str = "app-on-another-computer";
@@ -74,14 +71,6 @@ fn folder_problems_are_written_as_sentences() {
     let parent = temporary_folder();
     let parent_path = parent.path().display().to_string();
     let missing_path = format!("{parent_path}/missing");
-    let Ok(git_folder) = create_git_folder(parent.path(), "main") else {
-        panic!("the git folder is made");
-    };
-    let inner_folder = git_folder.join(INNER_FOLDER_NAME);
-    let Ok(()) = fs::create_dir_all(&inner_folder) else {
-        panic!("the inner folder is made");
-    };
-    let inner_path = inner_folder.display().to_string();
     let foreign_folder = parent.path().join(FOREIGN_FOLDER_NAME);
     let foreign_path = foreign_folder.display().to_string();
     let foreign_address = format!("local:{FOREIGN_DEVICE_ID}:{foreign_path}");
@@ -89,7 +78,6 @@ fn folder_problems_are_written_as_sentences() {
         "billing",
         vec![
             repository(&missing_path, "main"),
-            repository(&inner_path, "main"),
             repository(&foreign_address, "main"),
             repository("ftp://github.com/acme/app", "main"),
             repository("https://github.com/acme/app", " "),
@@ -101,14 +89,11 @@ fn folder_problems_are_written_as_sentences() {
     let missing_folder = format!(
         "the folder {missing_path} does not exist or this app cannot open it"
     );
-    let inner_problem =
-        format!("the folder {inner_path} is not a git repository");
     let foreign_problem = format!(
         "the folder {foreign_path} is on another computer, so add it there"
     );
     let expected = vec![
         describe_repository_problem(&missing_folder),
-        describe_repository_problem(&inner_problem),
         describe_repository_problem(&foreign_problem),
         describe_repository_problem(
             "only https and git@ addresses are supported, not ftp",

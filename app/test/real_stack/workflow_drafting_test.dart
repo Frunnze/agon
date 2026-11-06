@@ -6,6 +6,7 @@ import 'package:agent_orchestration/bridge/codecs/workflow_views.dart' as node;
 import 'package:agent_orchestration/bridge/codecs/workspace_values.dart'
     as node;
 import 'package:agent_orchestration/data/models/identifiers.dart';
+import 'package:agent_orchestration/screens/workflow_builder/workflow_change_chat.dart';
 
 import '../support/form_finders.dart';
 import 'support/real_stack.dart';
@@ -25,7 +26,6 @@ const String _draftingStartedRecord = 'drafting-started';
 const String _drafterStatus = 'Claude Code is drafting on $runnerDeviceName';
 const String _newWorkflowTitle = 'New workflow';
 const String _draftingSummary = 'Drafting from your description';
-const String _draftedBanner = 'Drafted from your description';
 const String _draftingTaskTitle = 'Draft new workflow';
 
 Future<void> _startDraftFromWords(
@@ -110,7 +110,7 @@ void main() {
       expect(find.text('Stop drafting'), findsOneWidget);
 
       runner.releaseAgent();
-      await waitUntilShown(tester, find.text(_draftedBanner));
+      await waitUntilShown(tester, find.text(draftedWorkflowGreeting));
       await waitUntilGone(tester, find.text(_draftingSummary));
       await waitUntilShown(tester, findDiagramAgent(draftedAgentName));
       expect(findPageTitle(_draftedName), findsOneWidget);

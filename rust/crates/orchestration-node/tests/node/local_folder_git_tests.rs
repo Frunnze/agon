@@ -65,6 +65,10 @@ fn read_latest_subject(folder: &Path) -> Result<String, String> {
     run_git(folder, &["log", "-1", "--format=%s"])
 }
 
+fn read_commit_history(folder: &Path) -> Result<String, String> {
+    run_git(folder, &["log", "--format=%H"])
+}
+
 fn read_working_state(folder: &Path) -> Result<String, String> {
     let head = run_git(folder, &["rev-parse", "HEAD"])?;
     let status = run_git(folder, &["status", "--porcelain"])?;
@@ -177,30 +181,35 @@ fn test_check_local_folder_property_leaves_a_folder_with_commits_untouched() {
 }
 
 #[test]
-fn test_check_local_folder_property_refuses_a_folder_inside_a_repository() {
+fn test_check_local_folder_property_starts_git_inside_another_repository() {
     let prepared = prepared_or_panic();
     let mut runner = TestRunner::new(Config::with_cases(GIT_CASES));
     let strategy = (FOLDER_NAME_PATTERN, folder_files_strategy());
 
     let outcome = runner.run(&strategy, |(name, files)| {
         let parent = TempDir::new().map_err(fail)?;
-        let repository =
+        let outer_repository =
             create_named_git_folder(parent.path(), &name, STARTED_BRANCH)
                 .map_err(fail)?;
-        let inner_folder = repository.join(INNER_FOLDER_NAME);
+        let inner_folder = outer_repository.join(INNER_FOLDER_NAME);
         write_files(&inner_folder, &files).map_err(fail)?;
-        let state_before = read_working_state(&repository).map_err(fail)?;
+        let outer_commits_before =
+            read_commit_history(&outer_repository).map_err(fail)?;
         let inner_path = inner_folder.display().to_string();
 
-        let refused = check_folder(&prepared, &inner_path);
+        let checked = check_folder(&prepared, &inner_path).map_err(fail)?;
 
-        let expected =
-            format!("the folder {inner_path} is not a git repository");
-        prop_assert_eq!(refused, Err(expected));
-        prop_assert!(!inner_folder.join(GIT_FOLDER_NAME).exists());
+        prop_assert_eq!(&checked["has_started_git"], &json!(true));
+        prop_assert_eq!(&checked["default_branch"], &json!(STARTED_BRANCH));
+        prop_assert!(inner_folder.join(GIT_FOLDER_NAME).is_dir());
+        prop_assert_eq!(count_commits(&inner_folder).map_err(fail)?, "1");
         prop_assert_eq!(
-            read_working_state(&repository).map_err(fail)?,
-            state_before
+            list_committed_files(&inner_folder).map_err(fail)?,
+            list_file_names(&files)
+        );
+        prop_assert_eq!(
+            read_commit_history(&outer_repository).map_err(fail)?,
+            outer_commits_before
         );
         Ok(())
     });

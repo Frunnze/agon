@@ -16,7 +16,6 @@ pub(crate) fn start_git_when_missing(
     folder: &Path,
 ) -> Result<bool, NodeError> {
     if !folder.join(GIT_FOLDER_NAME).is_dir() {
-        refuse_folder_inside_repository(folder)?;
         run_git(folder, &["init", "--quiet"])?;
     }
     if has_commits(folder)? {
@@ -24,17 +23,6 @@ pub(crate) fn start_git_when_missing(
     }
     make_first_commit(folder)?;
     Ok(true)
-}
-
-fn refuse_folder_inside_repository(folder: &Path) -> Result<(), NodeError> {
-    let is_inside_repository = folder
-        .ancestors()
-        .any(|ancestor| ancestor.join(GIT_FOLDER_NAME).exists());
-    if is_inside_repository {
-        let path = folder.display().to_string();
-        return Err(NodeError::NotGitRepository(path));
-    }
-    Ok(())
 }
 
 fn has_commits(folder: &Path) -> Result<bool, NodeError> {

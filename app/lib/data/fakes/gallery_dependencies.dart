@@ -128,5 +128,6 @@ AppDependencies buildGalleryDependencies() {
     ),
     qrCodeScanner: const CameraQrCodeScanner(),
     folderPicker: buildPlatformFolderPicker(defaultTargetPlatform),
+    runnerPresence: null,
   );
 }

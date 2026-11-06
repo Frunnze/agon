@@ -9,6 +9,7 @@ import 'package:agent_orchestration/data/models/run.dart';
 import 'package:agent_orchestration/data/models/workflow.dart';
 import 'package:agent_orchestration/screens/new_items/change_request_composer.dart';
 import 'package:agent_orchestration/screens/shared/person_step_card.dart';
+import 'package:agent_orchestration/screens/workflow_builder/workflow_chat_panel.dart';
 import 'package:agent_orchestration/shell/app_route.dart';
 import 'package:agent_orchestration/shell/app_section.dart';
 
@@ -20,7 +21,6 @@ import '../support/random_inputs.dart';
 import '../support/widget_harness.dart';
 
 const SectionRoute _approvalsRoute = SectionRoute(AppSection.approvals);
-const String _askHint = 'Ask the agent, e.g. add a test step after ios';
 const String _askedChange = 'add a test step after ios';
 
 Finder _findTextFieldHinted(String hint) {
@@ -92,7 +92,10 @@ void main() {
       dependencies: dependencies,
     );
 
-    await tester.enterText(_findTextFieldHinted(_askHint), _askedChange);
+    await tester.enterText(
+      _findTextFieldHinted(chatRequestExample),
+      _askedChange,
+    );
     final bool isHandled = await pressEnter(tester);
     await pumpFrames(tester);
 

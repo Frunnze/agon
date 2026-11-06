@@ -1,5 +1,6 @@
 export 'workflow_builder/agent_node_box.dart';
 export 'workflow_builder/agent_settings_panel.dart';
+export 'workflow_builder/builder_cancellation.dart';
 export 'workflow_builder/builder_header.dart';
 export 'workflow_builder/builder_layout.dart';
 export 'workflow_builder/builder_panel.dart';
@@ -27,5 +28,8 @@ export 'workflow_builder/person_step_panel.dart';
 export 'workflow_builder/read_only_workflow_diagram.dart';
 export 'workflow_builder/step_name_field.dart';
 export 'workflow_builder/workflow_builder_screen.dart';
+export 'workflow_builder/workflow_change_chat.dart';
+export 'workflow_builder/workflow_chat_panel.dart';
 export 'workflow_builder/workflow_diagram.dart';
+export 'workflow_builder/workflow_diagram_editor.dart';
 export 'workflow_builder/zoomable_canvas.dart';

@@ -137,6 +137,7 @@ fn a_workflow_changed_by_the_agent_is_saved_laid_out() {
         "workspace_id": workspace_id,
         "workflow_id": workflow_id,
         "request": "Check the plan while building it",
+        "agent": "claude_code",
     });
     let draft = start_or_panic(&desk, &change);
     finish_or_panic(&desk, &draft, &drafted_fork_json(&workflow_id));

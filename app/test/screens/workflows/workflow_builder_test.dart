@@ -16,18 +16,13 @@ const String _sameAsProjectHint =
     "Uses the project's setting, or the workspace's.";
 const String _askHint = 'Asks you before each command and each push.';
 const String _autoHint = 'Runs commands and pushes without asking you.';
-const String _draftedNote =
-    'Check each agent before you sign. Change anything by hand: drag between '
-    'dots, add agents, or edit the settings.';
 const List<String> _builderTexts = <String>[
   'feature-pipeline',
   '5 agents · all workspaces · not signed yet',
   'Cancel',
   'Sign and save',
-  'Drafted from your description',
-  _draftedNote,
   'Add agent',
-  'Ask',
+  'Ask an agent',
   'plan',
   'backend',
   'ios',

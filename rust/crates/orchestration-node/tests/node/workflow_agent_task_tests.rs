@@ -12,6 +12,11 @@ use crate::support::test_device::{fail, read_text};
 use crate::support::test_server::RecordedRequest;
 
 const AGENT_TASK_CASES: u32 = 4;
+const AGENT_KINDS: [(AgentKind, &str); 3] = [
+    (AgentKind::ClaudeCode, "claude_code"),
+    (AgentKind::Codex, "codex"),
+    (AgentKind::GeminiCli, "gemini_cli"),
+];
 const PLANNING_AGENT_ID: &str = "00000000-0000-0000-0000-000000000011";
 const UNKNOWN_AGENT_ID: &str = "00000000-0000-0000-0000-000000000099";
 const CANVAS_UNITS: &str = "position is in canvas pixels";
@@ -49,6 +54,25 @@ fn create_planning_workflow(desk: &DraftingDesk) -> Result<String, String> {
         "Plan the feature",
     ))?;
     read_text(&workflow, "/workflow/id")
+}
+
+fn agent_kind_strategy() -> impl Strategy<Value = (AgentKind, &'static str)> {
+    proptest::sample::select(AGENT_KINDS.to_vec())
+}
+
+fn change_workflow(
+    desk: &DraftingDesk,
+    workflow_id: &str,
+    change_request: &str,
+    agent_name: &str,
+) -> Result<Value, String> {
+    desk.prepared.device.run(&json!({
+        "command": "change_workflow",
+        "workspace_id": desk.prepared.workspace_id,
+        "workflow_id": workflow_id,
+        "request": change_request,
+        "agent": agent_name,
+    }))
 }
 
 fn fill_agent_settings(
@@ -136,17 +160,13 @@ proptest! {
     #[test]
     fn test_change_workflow_property_queues_the_request_and_workflow(
         change_request in secret_text_strategy(),
+        (_, agent_name) in agent_kind_strategy(),
     ) {
         let desk = open_desk_or_panic();
         let workflow_id = create_planning_workflow(&desk).map_err(fail)?;
 
-        desk.prepared.device.run(&json!({
-            "command": "change_workflow",
-            "workspace_id": desk.prepared.workspace_id,
-            "workflow_id": workflow_id,
-            "request": change_request,
-        }))
-        .map_err(fail)?;
+        change_workflow(&desk, &workflow_id, &change_request, agent_name)
+            .map_err(fail)?;
         let assignment = desk.claim_drafting_run().map_err(fail)?;
 
         let details = &assignment.task.details;
@@ -159,6 +179,81 @@ proptest! {
             assignment.task.approval_policy,
             Some(ApprovalPolicy::NeverAsk)
         );
+    }
+
+    #[test]
+    fn test_change_workflow_property_runs_the_chosen_agent(
+        change_request in secret_text_strategy(),
+        (agent, agent_name) in agent_kind_strategy(),
+    ) {
+        let desk = open_desk_or_panic();
+        let workflow_id = create_planning_workflow(&desk).map_err(fail)?;
+
+        let changing =
+            change_workflow(&desk, &workflow_id, &change_request, agent_name)
+                .map_err(fail)?;
+        let assignment = desk.claim_drafting_run().map_err(fail)?;
+
+        prop_assert_eq!(&changing["drafter"], agent_name);
+        prop_assert_eq!(
+            &assignment.task.doer,
+            &TaskDoer::OneAgent { agent }
+        );
+        let queued_task_id = assignment.task.id.0.to_string();
+        prop_assert_eq!(
+            changing["task_id"].as_str(),
+            Some(queued_task_id.as_str())
+        );
+    }
+
+    #[test]
+    fn test_change_workflow_property_refuses_a_request_without_an_agent(
+        change_request in secret_text_strategy(),
+    ) {
+        let desk = open_desk_or_panic();
+        let workflow_id = create_planning_workflow(&desk).map_err(fail)?;
+        let uploads_before = desk
+            .prepared
+            .server
+            .recorded_requests()
+            .iter()
+            .filter(|request| is_task_upload(request))
+            .count();
+
+        let refused = desk.prepared.device.run(&json!({
+            "command": "change_workflow",
+            "workspace_id": desk.prepared.workspace_id,
+            "workflow_id": workflow_id,
+            "request": change_request,
+        }));
+
+        prop_assert!(refused.is_err());
+        let uploads_after = desk
+            .prepared
+            .server
+            .recorded_requests()
+            .iter()
+            .filter(|request| is_task_upload(request))
+            .count();
+        prop_assert_eq!(uploads_after, uploads_before);
+    }
+
+    #[test]
+    fn test_change_workflow_property_refuses_an_unknown_agent(
+        change_request in secret_text_strategy(),
+        unknown_agent_name in "[a-z]{3,10}_agent",
+    ) {
+        let desk = open_desk_or_panic();
+        let workflow_id = create_planning_workflow(&desk).map_err(fail)?;
+
+        let refused = change_workflow(
+            &desk,
+            &workflow_id,
+            &change_request,
+            &unknown_agent_name,
+        );
+
+        prop_assert!(refused.is_err());
     }
 }
 

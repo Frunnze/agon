@@ -28,10 +28,13 @@ final class SimulatedWorkflowNode {
   final int pollsBeforeDraftIsDone;
   final List<Map<String, Object?>> views = <Map<String, Object?>>[];
   final List<SimulatedCommand> draftCommands = <SimulatedCommand>[];
+  final List<Object?> changeAgents = <Object?>[];
   final Set<String> failingCommands = <String>{};
   final List<Object?> cancelledRunIds = <Object?>[];
   final List<Object?> deletedTaskIds = <Object?>[];
   final Map<String, _PendingDraft> _drafts = <String, _PendingDraft>{};
+  final Map<Object?, Map<String, Object?>> _signedWorkflows =
+      <Object?, Map<String, Object?>>{};
   int draftStatusPollCount = 0;
   int _createdCount = 0;
 
@@ -111,6 +114,11 @@ final class SimulatedWorkflowNode {
         ? null
         : views[index]['workflow'] as Map<String, Object?>;
     final Object? signature = stored?['signature'];
+    final bool isSignedNow =
+        index >= 0 && views[index]['signature_state'] == signedState;
+    if (stored != null && isSignedNow) {
+      _signedWorkflows[workflowId] = stored;
+    }
     final Map<String, Object?> kept = <String, Object?>{
       ...workflow,
       'signature': signature,
@@ -135,11 +143,23 @@ final class SimulatedWorkflowNode {
   }
 
   Object? _signWorkflow(SimulatedCommand command) {
+    _signedWorkflows.remove(command['workflow_id']);
     return _replaceState(command['workflow_id'], signedState);
   }
 
   Object? _discardChange(SimulatedCommand command) {
-    return _replaceState(command['workflow_id'], signedState);
+    final Object? workflowId = command['workflow_id'];
+    final Map<String, Object?>? signedWorkflow = _signedWorkflows.remove(
+      workflowId,
+    );
+    if (signedWorkflow != null) {
+      final Map<String, Object?> view = _findView(workflowId);
+      views[views.indexOf(view)] = buildSimulatedWorkflowView(
+        signedWorkflow,
+        signedState,
+      );
+    }
+    return _replaceState(workflowId, signedState);
   }
 
   Map<String, Object?> _replaceState(Object? workflowId, String state) {
@@ -174,6 +194,11 @@ final class SimulatedWorkflowNode {
   }
 
   Object? _changeWorkflow(SimulatedCommand command) {
+    final Object? agent = command['agent'];
+    if (agent is! String) {
+      throw StateError('change_workflow needs an agent');
+    }
+    changeAgents.add(agent);
     final Map<String, Object?> workflow = <String, Object?>{
       ..._findView(command['workflow_id'])['workflow'] as Map<String, Object?>,
     };

@@ -16,8 +16,6 @@ const String _computerHint =
     'Paste a GitHub address, choose a folder on this computer or create a '
     'new one. Add as many as needed.';
 const String _phoneHint = 'Paste a GitHub address. Add as many as needed.';
-const String _computerPlaceholder = 'github.com/acme/repo or /path/to/folder';
-const String _phonePlaceholder = 'github.com/acme/repo';
 const String _removeLabel = 'Remove';
 
 final class LocalFolderActions {
@@ -73,8 +71,8 @@ class NewProjectReposField extends StatelessWidget {
           problem: addressProblem,
           onChanged: onAddressChanged,
           placeholder: folderActions == null
-              ? _phonePlaceholder
-              : _computerPlaceholder,
+              ? phoneRepositoryPlaceholder
+              : computerRepositoryPlaceholder,
           onAdded: onAddressAdded,
         ),
         if (folderActions != null)

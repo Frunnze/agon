@@ -145,7 +145,12 @@ async fn queue_drafting_task(
     )?;
 
     let title = format!("Draft new {}", order.kind.name());
-    let task = build_agent_task(order.workspace_id, title, details);
+    let task = build_agent_task(
+        order.workspace_id,
+        title,
+        details,
+        DRAFTING_AGENT_KIND,
+    );
     queue_task(session, &client, order.workspace_id, &task, TaskStart::Now)
         .await?;
     Ok(task)

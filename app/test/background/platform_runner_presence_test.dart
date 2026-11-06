@@ -5,6 +5,7 @@ import 'package:agent_orchestration/background/channel_presence.dart';
 import 'package:agent_orchestration/background/platform_runner_presence.dart';
 import 'package:agent_orchestration/background/runner_presence.dart';
 import 'package:agent_orchestration/background/xdg_autostart_login_item.dart';
+import 'package:agent_orchestration/storage.dart';
 
 void main() {
   test(
@@ -17,9 +18,17 @@ void main() {
           case TargetPlatform.macOS:
             expect(presence?.loginItem, isA<ChannelLoginItem>());
             expect(presence?.trayPresence, isA<ChannelTrayPresence>());
+            expect(
+              presence?.startAtLoginChoiceStore,
+              isA<SharedPreferencesStartAtLoginChoiceStore>(),
+            );
           case TargetPlatform.linux:
             expect(presence?.loginItem, isA<XdgAutostartLoginItem>());
             expect(presence?.trayPresence, isA<ChannelTrayPresence>());
+            expect(
+              presence?.startAtLoginChoiceStore,
+              isA<SharedPreferencesStartAtLoginChoiceStore>(),
+            );
           case TargetPlatform.windows:
           case TargetPlatform.iOS:
           case TargetPlatform.android:

@@ -10,6 +10,7 @@ import 'package:agent_orchestration/bridge/commands/task_commands.dart'
 import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/project.dart';
 import 'package:agent_orchestration/screens/new_items/new_item_texts.dart';
+import 'package:agent_orchestration/screens/workflow_builder/workflow_change_chat.dart';
 
 import '../support/form_finders.dart';
 import 'support/real_stack.dart';
@@ -165,7 +166,7 @@ void main() {
         find.text('Draft workflow'),
         expected: find.text('Drafting from your description'),
       );
-      await waitUntilShown(tester, find.text('Drafted from your description'));
+      await waitUntilShown(tester, find.text(draftedWorkflowGreeting));
       await waitUntilShown(tester, findPageTitle(_workflowName));
       _expectNothingLeftOnServer(stack, runner);
 

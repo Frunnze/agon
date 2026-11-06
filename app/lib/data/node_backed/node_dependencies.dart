@@ -1,3 +1,4 @@
+import 'package:agent_orchestration/background/runner_presence.dart';
 import 'package:agent_orchestration/bridge/node/node_command_channel.dart';
 import 'package:agent_orchestration/data/app_dependencies.dart';
 import 'package:agent_orchestration/data/clock.dart';
@@ -26,6 +27,7 @@ NodeDependencies buildNodeDependencies({
   required QrCodeScanner qrCodeScanner,
   required FolderPicker folderPicker,
   required WorkspaceChoiceStore workspaceChoiceStore,
+  required RunnerPresence? runnerPresence,
 }) {
   final NodeBackedWorkspaceRepository workspaceRepository =
       NodeBackedWorkspaceRepository(
@@ -116,6 +118,7 @@ NodeDependencies buildNodeDependencies({
     ),
     qrCodeScanner: qrCodeScanner,
     folderPicker: folderPicker,
+    runnerPresence: runnerPresence,
   );
   final NodeSynchronization synchronization = NodeSynchronization(
     channel: channel,

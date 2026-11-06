@@ -173,6 +173,7 @@ void main() {
       final Workflow changed = await repository.changeWorkflow(
         workflow.id,
         '  $request  ',
+        pickOne(random, AgentKind.values),
       );
       final WorkflowAgent added = changed.agents.last;
 
@@ -202,7 +203,11 @@ void main() {
     }
     _expectSoundWorkflows(repository);
     await expectLater(
-      repository.changeWorkflow(GalleryWorkflowIds.release, ' '),
+      repository.changeWorkflow(
+        GalleryWorkflowIds.release,
+        ' ',
+        AgentKind.claudeCode,
+      ),
       throwsArgumentError,
     );
   });
@@ -244,4 +249,51 @@ void main() {
       }
     },
   );
+
+  test('test_change_workflow_property_agent_choice_keeps_the_change', () async {
+    final Random random = seededRandom(8410);
+
+    for (int i = 0; i < propertyIterations; i += 1) {
+      final String request = 'add ${randomWordPhrase(random)} step';
+      final List<int> agentCounts = <int>[];
+
+      for (final AgentKind agent in AgentKind.values) {
+        final FakeWorkflowRepository repository =
+            buildGalleryWorkflowRepository();
+        final Workflow changed = await repository.changeWorkflow(
+          GalleryWorkflowIds.release,
+          request,
+          agent,
+        );
+        agentCounts.add(changed.agents.length);
+        expect(changed.agents.last.task, request);
+      }
+
+      expect(agentCounts.toSet(), hasLength(1));
+    }
+  });
+
+  test('test_change_workflow_property_refuses_every_blank_request', () async {
+    final Random random = seededRandom(8411);
+
+    for (int i = 0; i < propertyIterations; i += 1) {
+      final FakeWorkflowRepository repository =
+          buildGalleryWorkflowRepository();
+      final Workflow before = repository.findWorkflow(
+        GalleryWorkflowIds.release,
+      );
+      final String blank = ' ' * random.nextInt(6);
+
+      await expectLater(
+        repository.changeWorkflow(
+          GalleryWorkflowIds.release,
+          blank,
+          pickOne(random, AgentKind.values),
+        ),
+        throwsArgumentError,
+      );
+
+      expect(repository.findWorkflow(GalleryWorkflowIds.release), before);
+    }
+  });
 }

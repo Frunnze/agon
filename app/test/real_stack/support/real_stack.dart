@@ -237,6 +237,9 @@ final class RealStack {
     );
     final node.AccountSummary? account = await prepareNode(channel, server);
 
+    final RecordedRunnerPresence runnerPresence = RecordedRunnerPresence(
+      isStartAtLoginChosen: true,
+    );
     final NodeDependencies nodeDependencies = buildNodeDependencies(
       channel: channel,
       clock: const SystemClock(),
@@ -245,12 +248,11 @@ final class RealStack {
       workspaceChoiceStore: MemoryWorkspaceChoiceStore(
         chosenWorkspaceId: null,
       ),
+      runnerPresence: runnerPresence.presence,
     );
-    final RecordedRunnerPresence runnerPresence = RecordedRunnerPresence();
     final StartedApp started = await startAppOnNode(
       channel: channel,
       nodeDependencies: nodeDependencies,
-      runnerPresence: runnerPresence.presence,
     );
     final RealStack stack = RealStack._(
       workingDirectory: workingDirectory,

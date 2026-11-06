@@ -25,7 +25,11 @@ abstract interface class WorkflowRepository implements Listenable {
 
   Future<void> stopDrafting(WorkflowDraft draft);
 
-  Future<Workflow> changeWorkflow(WorkflowId workflowId, String request);
+  Future<Workflow> changeWorkflow(
+    WorkflowId workflowId,
+    String request,
+    AgentKind agent,
+  );
 
   Future<Workflow> fillAgentSettings(
     WorkflowId workflowId,

@@ -3,72 +3,39 @@ import 'package:flutter/material.dart';
 import 'package:agent_orchestration/icons/app_icon_kind.dart';
 import 'package:agent_orchestration/theme/app_spacing.dart';
 import 'package:agent_orchestration/widgets/app_button.dart';
-import 'package:agent_orchestration/widgets/forms/message_field.dart';
 
-const double _sideBySideMinimumWidth = 720;
 const String addAgentLabel = 'Add agent';
 const String addPersonStepLabel = 'Add a person step';
+const String askAnAgentLabel = 'Ask an agent';
 
 class BuilderToolbar extends StatelessWidget {
   const BuilderToolbar({
-    required this.askController,
     required this.onAgentAdded,
     required this.onPersonStepAdded,
-    required this.onAsked,
+    required this.onChatOpened,
     super.key,
   });
 
-  final TextEditingController askController;
   final VoidCallback onAgentAdded;
   final VoidCallback onPersonStepAdded;
-  final VoidCallback? onAsked;
+  final VoidCallback onChatOpened;
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(builder: _buildToolbar);
-  }
-
-  Widget _buildToolbar(BuildContext context, BoxConstraints limits) {
-    final Widget addButton = AddStepButtons(
-      onAgentAdded: onAgentAdded,
-      onPersonStepAdded: onPersonStepAdded,
-    );
-    final Widget askRow = Row(
-      crossAxisAlignment: CrossAxisAlignment.end,
+    return Wrap(
+      alignment: WrapAlignment.spaceBetween,
+      spacing: AppSpacing.space2,
+      runSpacing: AppSpacing.space2,
       children: <Widget>[
-        Expanded(
-          child: MessageField(
-            controller: askController,
-            hintText: 'Ask the agent, e.g. add a test step after ios',
-            fieldLabel: 'Ask the agent to change the workflow',
-            onSend: onAsked,
-          ),
+        AddStepButtons(
+          onAgentAdded: onAgentAdded,
+          onPersonStepAdded: onPersonStepAdded,
         ),
-        const SizedBox(width: AppSpacing.space2),
         AppButton.secondary(
-          label: 'Ask',
+          label: askAnAgentLabel,
           icon: AppIconKind.draft,
-          onPressed: onAsked,
+          onPressed: onChatOpened,
         ),
-      ],
-    );
-
-    if (limits.maxWidth >= _sideBySideMinimumWidth) {
-      return Row(
-        children: <Widget>[
-          addButton,
-          const SizedBox(width: AppSpacing.space4),
-          Expanded(child: askRow),
-        ],
-      );
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        addButton,
-        const SizedBox(height: AppSpacing.space2),
-        askRow,
       ],
     );
   }

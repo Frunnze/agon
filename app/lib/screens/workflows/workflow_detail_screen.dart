@@ -4,10 +4,13 @@ import 'package:flutter/widgets.dart';
 
 import 'package:agent_orchestration/data/clock.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
+import 'package:agent_orchestration/data/models/project.dart';
 import 'package:agent_orchestration/data/models/runner.dart';
 import 'package:agent_orchestration/data/models/workflow.dart';
 import 'package:agent_orchestration/data/repository/device_repository.dart';
+import 'package:agent_orchestration/data/repository/project_repository.dart';
 import 'package:agent_orchestration/data/repository/runner_repository.dart';
+import 'package:agent_orchestration/data/repository/task_repository.dart';
 import 'package:agent_orchestration/data/repository/workflow_repository.dart';
 import 'package:agent_orchestration/data/repository/workspace_repository.dart';
 import 'package:agent_orchestration/data/rules/workflow_graph.dart';
@@ -17,6 +20,7 @@ import 'package:agent_orchestration/screens/shared/deletion_prompts.dart';
 import 'package:agent_orchestration/screens/shared/deletion_review.dart';
 import 'package:agent_orchestration/screens/shared/muted_note.dart';
 import 'package:agent_orchestration/screens/workflows.dart';
+import 'package:agent_orchestration/screens/workflows/workflow_quick_start.dart';
 import 'package:agent_orchestration/shell/app_navigation.dart';
 import 'package:agent_orchestration/shell/app_route.dart';
 import 'package:agent_orchestration/shell/app_section.dart';
@@ -40,6 +44,8 @@ class WorkflowDetailScreen extends StatelessWidget {
     required this.workspaceRepository,
     required this.deviceRepository,
     required this.runnerRepository,
+    required this.projectRepository,
+    required this.taskRepository,
     required this.clock,
     required this.navigation,
     super.key,
@@ -50,6 +56,8 @@ class WorkflowDetailScreen extends StatelessWidget {
   final WorkspaceRepository workspaceRepository;
   final DeviceRepository deviceRepository;
   final RunnerRepository runnerRepository;
+  final ProjectRepository projectRepository;
+  final TaskRepository taskRepository;
   final Clock clock;
   final AppNavigation navigation;
 
@@ -105,13 +113,20 @@ class WorkflowDetailScreen extends StatelessWidget {
                 ),
               ),
             ),
-            AppButton.primary(
+            AppButton.secondary(
               label: 'Use in a task',
               icon: AppIconKind.tasks,
               onPressed: signature == null
                   ? null
                   : () =>
                         navigation.openRoute(NewWorkflowTaskRoute(workflowId)),
+            ),
+            AppButton.primary(
+              label: startNowLabel,
+              icon: AppIconKind.play,
+              onPressed: signature == null
+                  ? null
+                  : () => unawaited(_startNow(workflow)),
             ),
           ],
         ),
@@ -161,5 +176,21 @@ class WorkflowDetailScreen extends StatelessWidget {
       ),
       end: buildRunnerMatchLabel(agent.runsOn, runners),
     );
+  }
+
+  Future<void> _startNow(Workflow workflow) async {
+    final WorkspaceId workspaceId = workspaceRepository.currentWorkspace().id;
+    final List<Project> projects = projectRepository.listProjects(workspaceId);
+    if (projects.isEmpty) {
+      navigation.openRoute(const NewProjectRoute());
+      return;
+    }
+
+    final RunId runId = await startWorkflowNow(
+      taskRepository: taskRepository,
+      workflow: workflow,
+      projectId: projects.first.id,
+    );
+    navigation.openRoute(TaskRunRoute(runId));
   }
 }

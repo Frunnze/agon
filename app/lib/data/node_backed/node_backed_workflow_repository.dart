@@ -198,6 +198,7 @@ final class NodeBackedWorkflowRepository extends ChangeNotifier
   Future<Workflow> changeWorkflow(
     WorkflowId workflowId,
     String request,
+    AgentKind agent,
   ) async {
     final String trimmedRequest = request.trim();
     if (trimmedRequest.isEmpty) {
@@ -212,6 +213,7 @@ final class NodeBackedWorkflowRepository extends ChangeNotifier
         workspaceId: workspaceId,
         workflowId: workflowId,
         request: trimmedRequest,
+        agent: mapAgentKindToNode(agent),
       ),
     );
     return _storeView(changed);

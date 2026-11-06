@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:agent_orchestration/bridge/codecs/workflow_values.dart' as node;
 import 'package:agent_orchestration/bridge/codecs/workflow_views.dart' as node;
 import 'package:agent_orchestration/bridge/commands/drafting_commands.dart'
     as node;
@@ -191,6 +192,7 @@ void main() {
               workspaceId: _workspaceId,
               workflowId: WorkflowId(workflowId),
               request: 'Add a step',
+              agent: node.AgentKind.codex,
             ),
           );
 

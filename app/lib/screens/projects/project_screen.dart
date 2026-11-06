@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import 'package:agent_orchestration/data/folder_picker.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/project.dart';
 import 'package:agent_orchestration/data/models/workspace.dart';
@@ -53,6 +54,7 @@ class ProjectScreen extends StatelessWidget {
     required this.taskRepository,
     required this.ruleRepository,
     required this.deviceRepository,
+    required this.folderPicker,
     required this.navigation,
     super.key,
   });
@@ -63,6 +65,7 @@ class ProjectScreen extends StatelessWidget {
   final TaskRepository taskRepository;
   final RuleRepository ruleRepository;
   final DeviceRepository deviceRepository;
+  final FolderPicker? folderPicker;
   final AppNavigation navigation;
 
   @override
@@ -119,6 +122,8 @@ class ProjectScreen extends StatelessWidget {
                 context: context,
                 project: project,
                 projectRepository: projectRepository,
+                deviceRepository: deviceRepository,
+                folderPicker: folderPicker,
               ),
             ),
           ],

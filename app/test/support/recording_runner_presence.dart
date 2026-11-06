@@ -2,6 +2,8 @@ import 'package:agent_orchestration/background/login_item.dart';
 import 'package:agent_orchestration/background/runner_presence.dart';
 import 'package:agent_orchestration/background/tray_presence.dart';
 
+import 'memory_start_at_login_choice_store.dart';
+
 const String refusedLoginItemMessage = 'the login item was refused';
 const String refusedTrayMessage = 'the tray was refused';
 const String registerCall = 'register';
@@ -68,15 +70,23 @@ final class RefusingTrayPresence implements TrayPresence {
 }
 
 final class RecordedRunnerPresence {
-  RecordedRunnerPresence()
+  RecordedRunnerPresence({required bool isStartAtLoginChosen})
     : loginItem = RecordingLoginItem(),
-      trayPresence = RecordingTrayPresence();
+      trayPresence = RecordingTrayPresence(),
+      choiceStore = MemoryStartAtLoginChoiceStore(
+        isStartAtLoginChosen: isStartAtLoginChosen,
+      );
 
   final RecordingLoginItem loginItem;
   final RecordingTrayPresence trayPresence;
+  final MemoryStartAtLoginChoiceStore choiceStore;
 
   RunnerPresence get presence {
-    return RunnerPresence(loginItem: loginItem, trayPresence: trayPresence);
+    return RunnerPresence(
+      loginItem: loginItem,
+      trayPresence: trayPresence,
+      startAtLoginChoiceStore: choiceStore,
+    );
   }
 
   bool get isKeptInBackground {

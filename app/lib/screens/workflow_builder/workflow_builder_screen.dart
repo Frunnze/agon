@@ -16,6 +16,7 @@ import 'package:agent_orchestration/screens/workflows.dart';
 import 'package:agent_orchestration/shell/app_navigation.dart';
 import 'package:agent_orchestration/shell/app_route.dart';
 import 'package:agent_orchestration/shell/app_section.dart';
+import 'package:agent_orchestration/theme/layout_size.dart';
 import 'package:agent_orchestration/widgets/status_label.dart';
 
 const SectionRoute _workflowsRoute = SectionRoute(AppSection.workflows);
@@ -47,22 +48,48 @@ class WorkflowBuilderScreen extends StatefulWidget {
 }
 
 class _WorkflowBuilderScreenState extends State<WorkflowBuilderScreen> {
-  final TextEditingController _askController = TextEditingController();
   late final Workflow _openedVersion;
+  late final WorkflowChange? _openedChange;
+  late final WorkflowChangeChat _chat = WorkflowChangeChat(
+    workflowId: widget.workflowId,
+    greeting: _isOpenedAfterDrafting()
+        ? draftedWorkflowGreeting
+        : openWorkflowGreeting,
+    changeWorkflow: widget.workflowRepository.changeWorkflow,
+  );
+  late final WorkflowDiagramEditor _editor = WorkflowDiagramEditor(
+    workflowRepository: widget.workflowRepository,
+    workflowId: widget.workflowId,
+  );
+  bool? _isChatOpenByChoice;
   BuilderSelection? _selection;
   String? _notice;
-  bool _isAsking = false;
 
   @override
   void initState() {
     super.initState();
     _openedVersion = _readWorkflow();
+    _openedChange = widget.workflowRepository.findPendingChange(
+      widget.workflowId,
+    );
   }
 
   @override
   void dispose() {
-    _askController.dispose();
+    _chat.dispose();
     super.dispose();
+  }
+
+  bool _isOpenedAfterDrafting() {
+    return widget.opening == BuilderOpening.afterDrafting;
+  }
+
+  bool _isChatOpen(BuildContext context) {
+    final bool? choice = _isChatOpenByChoice;
+    if (choice != null) {
+      return choice;
+    }
+    return _isOpenedAfterDrafting() && LayoutSize.of(context).isLarge;
   }
 
   Workflow _readWorkflow() {
@@ -105,14 +132,11 @@ class _WorkflowBuilderScreenState extends State<WorkflowBuilderScreen> {
           onCancel: _cancel,
           onSigned: _signAndSave,
         ),
-        if (widget.opening == BuilderOpening.afterDrafting)
-          const DraftedNote(),
         BuilderToolbar(
-          askController: _askController,
           onAgentAdded: () => _addStep(buildBlankAgent(_readWorkflow())),
           onPersonStepAdded: () =>
               _addStep(buildBlankPersonStep(_readWorkflow())),
-          onAsked: _isAsking ? null : _askAgent,
+          onChatOpened: _openChat,
         ),
         if (notice != null)
           StatusLabel(
@@ -131,15 +155,27 @@ class _WorkflowBuilderScreenState extends State<WorkflowBuilderScreen> {
           onConnectionSelected: (AgentConnection connection) =>
               _select(SelectedConnection(connection)),
           onSelectionCleared: () => _select(null),
-          onAgentMoved: _moveAgent,
+          onAgentMoved: _editor.moveAgent,
           onAgentsConnected: _connectAgents,
         ),
-        panel: _buildPanel(workflow, deviceNames),
+        panel: _buildPanel(context, workflow, deviceNames),
       ),
     );
   }
 
-  Widget? _buildPanel(Workflow workflow, DeviceNames deviceNames) {
+  Widget? _buildPanel(
+    BuildContext context,
+    Workflow workflow,
+    DeviceNames deviceNames,
+  ) {
+    final Widget? selectionPanel = _buildSelectionPanel(workflow, deviceNames);
+    if (selectionPanel != null || !_isChatOpen(context)) {
+      return selectionPanel;
+    }
+    return WorkflowChatPanel(chat: _chat, onClosed: _closeChat);
+  }
+
+  Widget? _buildSelectionPanel(Workflow workflow, DeviceNames deviceNames) {
     return buildBuilderPanel(
       workflow: workflow,
       selection: _selection,
@@ -149,12 +185,12 @@ class _WorkflowBuilderScreenState extends State<WorkflowBuilderScreen> {
         deviceNames: deviceNames,
       ),
       actions: BuilderPanelActions(
-        onAgentChanged: _changeAgent,
+        onAgentChanged: _editor.changeAgent,
         onFillInRequested: (WorkflowAgentId agentId) => widget
             .workflowRepository
             .fillAgentSettings(widget.workflowId, agentId),
         onAgentRemoved: _removeAgent,
-        onConnectionChanged: _changeConnection,
+        onConnectionChanged: _editor.changeConnection,
         onConnectionRemoved: _removeConnection,
         onLoopAdded: _addLoop,
         onDone: () => _select(null),
@@ -166,34 +202,23 @@ class _WorkflowBuilderScreenState extends State<WorkflowBuilderScreen> {
     setState(() => _selection = selection);
   }
 
+  void _openChat() {
+    setState(() {
+      _isChatOpenByChoice = true;
+      _selection = null;
+    });
+  }
+
+  void _closeChat() {
+    setState(() => _isChatOpenByChoice = false);
+  }
+
   Future<void> _addStep(WorkflowAgent blank) async {
     setState(() {
       _selection = SelectedStep(blank.id);
       _notice = null;
     });
-    await widget.workflowRepository.saveWorkflow(
-      addAgent(_readWorkflow(), blank),
-    );
-  }
-
-  Future<void> _changeAgent(WorkflowAgent agent) async {
-    final Workflow changed = replaceAgent(_readWorkflow(), agent);
-
-    await widget.workflowRepository.saveWorkflow(changed);
-  }
-
-  Future<void> _moveAgent(
-    WorkflowAgentId agentId,
-    CanvasPosition position,
-  ) async {
-    final Workflow workflow = _readWorkflow();
-    final WorkflowAgent moved = workflow
-        .findAgent(agentId)
-        .copyWith(position: position);
-
-    await widget.workflowRepository.saveWorkflow(
-      replaceAgent(workflow, moved),
-    );
+    await _editor.addStep(blank);
   }
 
   Future<void> _connectAgents(AgentConnection connection) async {
@@ -211,62 +236,31 @@ class _WorkflowBuilderScreenState extends State<WorkflowBuilderScreen> {
       }
     });
     if (problem == null && !isLoop) {
-      await widget.workflowRepository.saveWorkflow(
-        connectAgents(workflow, connection),
-      );
+      await _editor.connect(connection);
     }
   }
 
   Future<void> _addLoop(AgentConnection loop) async {
     _select(SelectedConnection(loop));
-    await widget.workflowRepository.saveWorkflow(
-      connectAgents(_readWorkflow(), loop),
-    );
-  }
-
-  Future<void> _changeConnection(AgentConnection connection) async {
-    await widget.workflowRepository.saveWorkflow(
-      replaceConnection(_readWorkflow(), connection),
-    );
+    await _editor.connect(loop);
   }
 
   Future<void> _removeConnection(AgentConnection connection) async {
     _select(null);
-    await widget.workflowRepository.saveWorkflow(
-      removeConnection(_readWorkflow(), connection),
-    );
+    await _editor.removeConnection(connection);
   }
 
   Future<void> _removeAgent(WorkflowAgentId agentId) async {
     _select(null);
-    await widget.workflowRepository.saveWorkflow(
-      removeAgent(_readWorkflow(), agentId),
-    );
-  }
-
-  Future<void> _askAgent() async {
-    final String request = _askController.text.trim();
-    if (request.isEmpty) {
-      setState(() => _notice = 'Say what the agent should change');
-      return;
-    }
-
-    setState(() {
-      _isAsking = true;
-      _notice = null;
-    });
-    await widget.workflowRepository.changeWorkflow(widget.workflowId, request);
-    _askController.clear();
-    if (mounted) {
-      setState(() => _isAsking = false);
-    }
+    await _editor.removeAgent(agentId);
   }
 
   Future<void> _cancel() async {
-    final bool isEdited = !hasSameDesign(_readWorkflow(), _openedVersion);
-    if (isEdited) {
-      await widget.workflowRepository.saveWorkflow(_openedVersion);
-    }
+    await restoreOpenedWorkflow(
+      workflowRepository: widget.workflowRepository,
+      openedVersion: _openedVersion,
+      openedChange: _openedChange,
+    );
     widget.navigation.closeRoute();
   }
 

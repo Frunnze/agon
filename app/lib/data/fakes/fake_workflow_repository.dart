@@ -213,6 +213,7 @@ final class FakeWorkflowRepository extends ChangeNotifier
   Future<Workflow> changeWorkflow(
     WorkflowId workflowId,
     String request,
+    AgentKind agent,
   ) async {
     final String trimmedRequest = request.trim();
     if (trimmedRequest.isEmpty) {

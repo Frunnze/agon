@@ -104,7 +104,7 @@ void main() {
     }
   });
 
-  testWidgets('test_builder_toolbar_property_ask_button_matches_the_field', (
+  testWidgets('test_builder_toolbar_property_buttons_share_one_height', (
     WidgetTester tester,
   ) async {
     final Random random = seededRandom(9504);
@@ -112,25 +112,31 @@ void main() {
     for (int i = 0; i < widgetPropertyIterations; i += 1) {
       final double width = randomWidth(
         random,
-        least: narrowestWidth,
+        least: phoneWidth,
         most: widestWidth,
       );
       await pumpScrollableAtWidth(
         tester,
         width: width,
         child: BuilderToolbar(
-          askController: TextEditingController(),
           onAgentAdded: () {},
           onPersonStepAdded: () {},
-          onAsked: () {},
+          onChatOpened: () {},
         ),
       );
-      final double fieldHeight = tester.getSize(find.byType(TextField)).height;
-      final double askHeight = tester
-          .getSize(find.widgetWithText(AppButton, 'Ask'))
+      final double addAgentHeight = tester
+          .getSize(find.widgetWithText(AppButton, addAgentLabel))
           .height;
 
-      expect(askHeight, fieldHeight, reason: 'width $width');
+      for (final String label in <String>[
+        addPersonStepLabel,
+        askAnAgentLabel,
+      ]) {
+        final double height = tester
+            .getSize(find.widgetWithText(AppButton, label))
+            .height;
+        expect(height, addAgentHeight, reason: '$label at width $width');
+      }
     }
   });
 

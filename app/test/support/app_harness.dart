@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:agent_orchestration/app.dart';
+import 'package:agent_orchestration/background/runner_presence.dart';
 import 'package:agent_orchestration/data/app_dependencies.dart';
 import 'package:agent_orchestration/data/clock.dart';
 import 'package:agent_orchestration/data/fakes.dart';
@@ -72,6 +73,7 @@ AppDependencies replaceRepositories(
   ItemDraftRepository? itemDraftRepository,
   QrCodeScanner? qrCodeScanner,
   FolderPicker? folderPicker,
+  RunnerPresence? runnerPresence,
 }) {
   return AppDependencies(
     clock: base.clock,
@@ -94,6 +96,7 @@ AppDependencies replaceRepositories(
     itemDraftRepository: itemDraftRepository ?? base.itemDraftRepository,
     qrCodeScanner: qrCodeScanner ?? base.qrCodeScanner,
     folderPicker: folderPicker ?? base.folderPicker,
+    runnerPresence: runnerPresence ?? base.runnerPresence,
   );
 }
 
