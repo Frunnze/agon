@@ -23,19 +23,22 @@ class CountBadge extends StatelessWidget {
         minHeight: _badgeExtent,
       ),
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.space1),
-      alignment: Alignment.center,
       decoration: BoxDecoration(
         color: AppColors.attention,
         borderRadius: BorderRadius.circular(AppRadii.pill),
       ),
-      child: Text(
-        '$count',
-        style: const TextStyle(
-          color: AppColors.paper,
-          fontSize: AppFontSizes.caption,
-          fontWeight: FontWeight.w700,
-          height: 1,
-          fontFeatures: <FontFeature>[FontFeature.tabularFigures()],
+      child: Center(
+        widthFactor: 1,
+        heightFactor: 1,
+        child: Text(
+          '$count',
+          style: const TextStyle(
+            color: AppColors.paper,
+            fontSize: AppFontSizes.caption,
+            fontWeight: FontWeight.w700,
+            height: 1,
+            fontFeatures: <FontFeature>[FontFeature.tabularFigures()],
+          ),
         ),
       ),
     );

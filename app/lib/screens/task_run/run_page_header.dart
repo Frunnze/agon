@@ -7,7 +7,6 @@ import 'package:agent_orchestration/data/models/task.dart';
 import 'package:agent_orchestration/data/repository/task_repository.dart';
 import 'package:agent_orchestration/data/rules/run_lifecycle.dart';
 import 'package:agent_orchestration/icons/app_icon_kind.dart';
-import 'package:agent_orchestration/presentation/run_text.dart';
 import 'package:agent_orchestration/screens/shared/deletion_prompts.dart';
 import 'package:agent_orchestration/screens/shared/deletion_review.dart';
 import 'package:agent_orchestration/shell/app_navigation.dart';
@@ -105,7 +104,7 @@ class RunPageHeader extends StatelessWidget {
       ?deleteButton,
       askButton,
       AppButton.primary(
-        label: 'Retry ${findCurrentStep(run).name}',
+        label: 'Retry',
         icon: AppIconKind.retry,
         onPressed: () => unawaited(_retryRun()),
       ),

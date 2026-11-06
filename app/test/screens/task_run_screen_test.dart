@@ -43,7 +43,7 @@ void expectFailedRun() {
     findsOneWidget,
   );
   expect(find.text('Ask the agent'), findsOneWidget);
-  expect(find.text('Retry build-ios'), findsOneWidget);
+  expect(find.text('Retry'), findsOneWidget);
   expect(find.text('build-ios failed on mac-studio'), findsOneWidget);
   expect(
     find.text(
@@ -104,7 +104,7 @@ void main() {
       dependencies: dependencies,
     );
 
-    await tester.tap(find.text('Retry build-ios'));
+    await tester.tap(find.text('Retry'));
     await pumpFrames(tester);
 
     expect(find.text('release #43'), findsOneWidget);
@@ -137,6 +137,6 @@ void main() {
       GalleryRunIds.release42,
     );
     expect(cancelled.status, RunStatus.cancelled);
-    expect(find.text('Retry build-ios'), findsOneWidget);
+    expect(find.text('Retry'), findsOneWidget);
   });
 }

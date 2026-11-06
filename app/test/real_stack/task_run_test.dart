@@ -14,7 +14,7 @@ import 'support/task_steps.dart';
 
 const String _blockedTitle = 'Wait for release before the build';
 const String _failingTitle = 'Fail once then fix the build';
-const String _retryLabel = 'Retry $agentStepName';
+const String _retryLabel = 'Retry';
 const String _readableLogTitle = 'Show a readable log of the tests';
 const String _ranTestsLine = 'Ran npm test';
 const String _testsErrorLine = 'npm ERR! missing script: test';
