@@ -63,7 +63,12 @@ const List<CommandShape> workflowCommandShapes = <CommandShape>[
   ),
   CommandShape(
     commandName: 'change_workflow',
-    argumentFields: <String>{'workspace_id', 'workflow_id', 'request'},
+    argumentFields: <String>{
+      'workspace_id',
+      'workflow_id',
+      'request',
+      'agent',
+    },
     buildCommand: _buildChangeWorkflow,
     buildReplyJson: randomWorkflowAgentTaskJson,
     encodeReply: encodeValueReply,
@@ -126,6 +131,7 @@ NodeCommand<Object?> _buildChangeWorkflow(Random random) {
     workspaceId: randomWorkspaceId(random),
     workflowId: randomWorkflowId(random),
     request: randomText(random),
+    agent: pickOne(random, AgentKind.values),
   );
 }
 

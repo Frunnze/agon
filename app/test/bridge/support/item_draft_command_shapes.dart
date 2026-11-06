@@ -12,12 +12,7 @@ import 'random_catalog_json.dart';
 import 'random_typed_values.dart';
 import 'random_work_json.dart';
 
-const List<String> nodeDraftKinds = <String>[
-  'task',
-  'job',
-  'skill',
-  'rule',
-];
+const List<String> nodeDraftKinds = <String>['task', 'job', 'skill', 'rule'];
 
 const List<CommandShape> itemDraftCommandShapes = <CommandShape>[
   CommandShape(
@@ -35,11 +30,7 @@ const List<CommandShape> itemDraftCommandShapes = <CommandShape>[
   ),
   CommandShape(
     commandName: 'item_draft_status',
-    argumentFields: <String>{
-      'workspace_id',
-      'task_id',
-      'kind',
-    },
+    argumentFields: <String>{'workspace_id', 'task_id', 'kind'},
     buildCommand: _buildItemDraftStatus,
     buildReplyJson: randomItemDraftStatusJson,
     encodeReply: encodeValueReply,
