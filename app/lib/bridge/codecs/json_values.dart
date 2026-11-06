@@ -2,6 +2,12 @@ typedef JsonObject = Map<String, Object?>;
 
 typedef JsonValueDecoder<Value> = Value Function(Object? json);
 
+final RegExp _rfc3339Moment = RegExp(
+  r'^(?<year>\d{4})-(?<month>\d{2})-(?<day>\d{2})[Tt]'
+  r'(?<hour>\d{2}):(?<minute>\d{2}):(?<second>\d{2})(?:\.\d+)?'
+  r'(?:[Zz]|[+-](?<offsetHours>\d{2}):(?<offsetMinutes>\d{2}))$',
+);
+
 abstract interface class JsonEncodable {
   Object? toJson();
 }
@@ -47,11 +53,37 @@ bool decodeFlag(Object? json) {
 
 DateTime decodeMoment(Object? json) {
   final String text = decodeText(json);
+  final RegExpMatch? parts = _rfc3339Moment.firstMatch(text);
   final DateTime? moment = DateTime.tryParse(text);
-  if (moment == null) {
+  if (parts == null || moment == null || !_hasRealCalendarParts(parts)) {
     throw FormatException('expected an RFC 3339 moment, found $text');
   }
-  return moment.toUtc();
+  return moment;
+}
+
+bool _hasRealCalendarParts(RegExpMatch parts) {
+  final int year = int.parse(parts.namedGroup('year')!);
+  final int month = int.parse(parts.namedGroup('month')!);
+  final int day = int.parse(parts.namedGroup('day')!);
+  final int hour = int.parse(parts.namedGroup('hour')!);
+  final int minute = int.parse(parts.namedGroup('minute')!);
+  final int second = int.parse(parts.namedGroup('second')!);
+  final int offsetHours = int.parse(parts.namedGroup('offsetHours') ?? '0');
+  final int offsetMinutes = int.parse(
+    parts.namedGroup('offsetMinutes') ?? '0',
+  );
+
+  final bool isRealMonth = month >= 1 && month <= DateTime.monthsPerYear;
+  final int daysInMonth = DateTime.utc(year, month + 1, 0).day;
+  final bool isRealDay = day >= 1 && day <= daysInMonth;
+  final bool isRealTime =
+      hour < Duration.hoursPerDay &&
+      minute < Duration.minutesPerHour &&
+      second < Duration.secondsPerMinute;
+  final bool isRealOffset =
+      offsetHours < Duration.hoursPerDay &&
+      offsetMinutes < Duration.minutesPerHour;
+  return isRealMonth && isRealDay && isRealTime && isRealOffset;
 }
 
 String encodeMoment(DateTime moment) {

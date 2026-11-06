@@ -24,6 +24,17 @@ enum DraftKind implements WireNamed {
 }
 
 const String _kindField = 'kind';
+const Set<DraftKind> _workDraftKinds = <DraftKind>{
+  DraftKind.task,
+  DraftKind.job,
+};
+
+DraftKind _requireWorkKind(DraftKind kind) {
+  if (!_workDraftKinds.contains(kind)) {
+    throw ArgumentError.value(kind, 'kind', 'a work draft is a task or a job');
+  }
+  return kind;
+}
 
 sealed class ItemDraft implements JsonEncodable {
   const ItemDraft();
@@ -42,7 +53,7 @@ sealed class ItemDraft implements JsonEncodable {
 
 final class WorkItemDraft extends ItemDraft {
   WorkItemDraft({
-    required this.kind,
+    required DraftKind kind,
     required this.title,
     required this.details,
     required this.projectId,
@@ -53,7 +64,8 @@ final class WorkItemDraft extends ItemDraft {
     required this.usesAutomaticSkills,
     required this.approvalPolicy,
     required this.schedule,
-  }) : skills = List<SkillId>.unmodifiable(skills);
+  }) : kind = _requireWorkKind(kind),
+       skills = List<SkillId>.unmodifiable(skills);
 
   factory WorkItemDraft.fromFields(DraftKind kind, JsonObject fields) {
     return WorkItemDraft(

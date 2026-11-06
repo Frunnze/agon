@@ -39,7 +39,7 @@ enum RunStatus implements WireNamed {
 }
 
 final class RunStep implements JsonEncodable {
-  const RunStep({
+  RunStep({
     required this.name,
     required this.agentId,
     required this.runner,
@@ -49,8 +49,8 @@ final class RunStep implements JsonEncodable {
     required this.result,
     required this.outcome,
     required this.loopSource,
-    required this.earlierRounds,
-  });
+    required List<EarlierRound> earlierRounds,
+  }) : earlierRounds = List<EarlierRound>.unmodifiable(earlierRounds);
 
   factory RunStep.fromJson(Object? json) {
     final JsonObject fields = decodeObject(json);
