@@ -20,8 +20,17 @@ Conversation buildConversationFromRun(Run run) {
     messages: run.chat,
     link: run.link,
     linkLostAt: run.linkLostAt,
-    agentActivity: AgentActivity.idle,
+    agentActivity: _describeAgentActivity(run),
   );
+}
+
+AgentActivity _describeAgentActivity(Run run) {
+  for (final RunStep step in run.steps) {
+    if (step.status == StepStatus.running) {
+      return AgentActivity.replying;
+    }
+  }
+  return AgentActivity.idle;
 }
 
 final class NodeBackedChatRepository implements ChatRepository {

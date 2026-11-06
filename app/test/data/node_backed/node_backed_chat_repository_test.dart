@@ -120,9 +120,30 @@ void main() {
       expect(conversation.messages, run.chat);
       expect(conversation.link, run.link);
       expect(conversation.linkLostAt, run.linkLostAt);
-      expect(conversation.agentActivity, AgentActivity.idle);
     }
   });
+
+  test(
+    'test_build_conversation_from_run_property_replying_while_a_step_runs',
+    () {
+      final Random random = seededRandom(9926);
+      for (int i = 0; i < propertyIterations; i += 1) {
+        final Run run = mapRunFromNode(
+          node.Run.fromJson(randomRunJson(random)),
+        );
+        final bool hasRunningStep = run.steps.any(
+          (RunStep step) => step.status == StepStatus.running,
+        );
+        final AgentActivity expectedActivity = hasRunningStep
+            ? AgentActivity.replying
+            : AgentActivity.idle;
+
+        final Conversation conversation = buildConversationFromRun(run);
+
+        expect(conversation.agentActivity, expectedActivity);
+      }
+    },
+  );
 
   test('test_find_conversation_property_unknown_run_is_record_not_found', () {
     final Random random = seededRandom(9925);

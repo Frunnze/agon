@@ -38,6 +38,10 @@ class ConversationView extends StatelessWidget {
       );
     }
 
+    if (_isWorkingBeforeItsNextWords()) {
+      items.add(_buildWorkingAgentLine());
+    }
+
     if (items.isEmpty) {
       return const SingleChildScrollView(
         child: EmptyState(
@@ -94,12 +98,28 @@ class ConversationView extends StatelessWidget {
             conversation.agentActivity == AgentActivity.replying &&
             identical(message, conversation.messages.last);
         return AgentMessageView(
-          message: message,
+          text: message.text,
           cursor: isReplying
               ? CursorVisibility.shown
               : CursorVisibility.hidden,
         );
     }
+  }
+
+  bool _isWorkingBeforeItsNextWords() {
+    if (conversation.agentActivity != AgentActivity.replying) {
+      return false;
+    }
+
+    final List<ChatMessage> messages = conversation.messages;
+    if (messages.isEmpty) {
+      return true;
+    }
+    return messages.last.author != ChatAuthor.agent;
+  }
+
+  Widget _buildWorkingAgentLine() {
+    return const AgentMessageView(text: '', cursor: CursorVisibility.shown);
   }
 
   Widget _buildLostLinkBanner(DateTime linkLostAt) {

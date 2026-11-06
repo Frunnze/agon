@@ -63,12 +63,12 @@ class ToolStepView extends StatelessWidget {
 
 class AgentMessageView extends StatelessWidget {
   const AgentMessageView({
-    required this.message,
+    required this.text,
     required this.cursor,
     super.key,
   });
 
-  final ChatMessage message;
+  final String text;
   final CursorVisibility cursor;
 
   @override
@@ -90,7 +90,7 @@ class AgentMessageView extends StatelessWidget {
             Text.rich(
               TextSpan(
                 children: <InlineSpan>[
-                  TextSpan(text: message.text),
+                  TextSpan(text: text),
                   if (cursor == CursorVisibility.shown)
                     const WidgetSpan(child: BlinkingCursor()),
                 ],
