@@ -40,6 +40,12 @@ final class AppWindowList extends ChangeNotifier implements RunWindowOpener {
 
   @override
   void openRunWindow({required RunId runId, required String title}) {
+    final OpenAppWindow? openedRunWindow = _findRunWindow(runId);
+    if (openedRunWindow != null) {
+      openedRunWindow.nativeWindow.bringToFront();
+      return;
+    }
+
     final NativeWindowShape shape = NativeWindowShape(
       title: title,
       size: runWindowSize,
@@ -57,6 +63,19 @@ final class AppWindowList extends ChangeNotifier implements RunWindowOpener {
       return;
     }
     _windows.first.nativeWindow.bringToFront();
+  }
+
+  OpenAppWindow? _findRunWindow(RunId runId) {
+    final TaskRunRoute runRoute = TaskRunRoute(runId);
+
+    for (final OpenAppWindow window in _windows) {
+      final AppWindowPage page = window.page;
+      if (page is RunWindowPage && page.navigation.routes.contains(runRoute)) {
+        return window;
+      }
+    }
+
+    return null;
   }
 
   void _open({required AppWindowPage page, required NativeWindowShape shape}) {

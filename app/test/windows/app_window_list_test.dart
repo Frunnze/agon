@@ -15,12 +15,18 @@ import '../support/random_inputs.dart';
 import '../support/recording_native_windows.dart';
 
 const int _largestWindowCount = 6;
+const int _runChoiceCount = 3;
+const int _largestStepCount = 12;
 
 AppWindowList _buildWindowList(RecordingNativeWindows nativeWindows) {
   return AppWindowList(nativeWindows: nativeWindows);
 }
 
-void _openRandomWindow(AppWindowList windowList, Random random) {
+void _openRandomWindow(
+  AppWindowList windowList,
+  Random random, {
+  required int windowNumber,
+}) {
   switch (random.nextInt(3)) {
     case 0:
       windowList.openStartingWindow();
@@ -28,7 +34,7 @@ void _openRandomWindow(AppWindowList windowList, Random random) {
       windowList.openSectionWindow();
     default:
       windowList.openRunWindow(
-        runId: RunId('run-${random.nextInt(99)}'),
+        runId: RunId('run-$windowNumber'),
         title: randomText(random),
       );
   }
@@ -40,6 +46,28 @@ List<AppNavigation> _listSectionNavigations(AppWindowList windowList) {
       if (window.page case SectionWindowPage(:final AppNavigation navigation))
         navigation,
   ];
+}
+
+int _countRunWindows(AppWindowList windowList, RunId runId) {
+  final TaskRunRoute runRoute = TaskRunRoute(runId);
+  int runWindowCount = 0;
+
+  for (final OpenAppWindow window in windowList.windows) {
+    final AppWindowPage page = window.page;
+    if (page is RunWindowPage && page.navigation.routes.contains(runRoute)) {
+      runWindowCount += 1;
+    }
+  }
+
+  return runWindowCount;
+}
+
+void _closeRandomWindow(AppWindowList windowList, Random random) {
+  final List<OpenAppWindow> windows = windowList.windows;
+  final OpenAppWindow closing = windows[random.nextInt(windows.length)];
+  final RecordingNativeWindow closingNativeWindow =
+      closing.nativeWindow as RecordingNativeWindow;
+  closingNativeWindow.closeByPerson();
 }
 
 void main() {
@@ -58,9 +86,10 @@ void main() {
         windowList,
       );
       expect(navigations.length, windowCount);
-      expect(Set<AppNavigation>.identity()..addAll(navigations), hasLength(
-        windowCount,
-      ));
+      expect(
+        Set<AppNavigation>.identity()..addAll(navigations),
+        hasLength(windowCount),
+      );
       final AppNavigation moved = navigations[random.nextInt(windowCount)];
       moved.openRoute(const TaskRunRoute(RunId('run-moved')));
       for (final AppNavigation navigation in navigations) {
@@ -97,6 +126,76 @@ void main() {
     }
   });
 
+  test('test_open_run_window_property_repeat_brings_same_window_front', () {
+    final Random random = seededRandom(4106);
+    for (int i = 0; i < propertyIterations; i += 1) {
+      final RecordingNativeWindows nativeWindows = RecordingNativeWindows();
+      final AppWindowList windowList = _buildWindowList(nativeWindows);
+      final RunId runId = RunId('run-${random.nextInt(999)}');
+      final int pressCount = 2 + random.nextInt(_largestWindowCount);
+
+      for (int pressed = 0; pressed < pressCount; pressed += 1) {
+        windowList.openRunWindow(runId: runId, title: randomText(random));
+      }
+
+      final RecordingNativeWindow runWindow = nativeWindows.opened.single;
+      expect(runWindow.frontRequests, pressCount - 1);
+      expect(windowList.windows.single.nativeWindow, runWindow);
+    }
+  });
+
+  test('test_open_run_window_property_keeps_one_window_per_run', () {
+    final Random random = seededRandom(4107);
+    for (int i = 0; i < propertyIterations; i += 1) {
+      final AppWindowList windowList = _buildWindowList(
+        RecordingNativeWindows(),
+      );
+      final List<RunId> runChoices = <RunId>[
+        for (int choice = 0; choice < _runChoiceCount; choice += 1)
+          RunId('run-$choice'),
+      ];
+      final int stepCount = 1 + random.nextInt(_largestStepCount);
+
+      for (int step = 0; step < stepCount; step += 1) {
+        final bool closesWindow =
+            windowList.windows.isNotEmpty && random.nextBool();
+        if (closesWindow) {
+          _closeRandomWindow(windowList, random);
+          continue;
+        }
+        final RunId runId = runChoices[random.nextInt(_runChoiceCount)];
+        windowList.openRunWindow(runId: runId, title: randomText(random));
+        expect(_countRunWindows(windowList, runId), 1);
+      }
+
+      for (final RunId runId in runChoices) {
+        expect(_countRunWindows(windowList, runId), lessThanOrEqualTo(1));
+      }
+    }
+  });
+
+  test('test_open_run_window_property_closed_run_window_opens_again', () {
+    final Random random = seededRandom(4108);
+    for (int i = 0; i < propertyIterations; i += 1) {
+      final RecordingNativeWindows nativeWindows = RecordingNativeWindows();
+      final AppWindowList windowList = _buildWindowList(nativeWindows);
+      final RunId runId = RunId('run-${random.nextInt(999)}');
+      final int reopenCount = 1 + random.nextInt(_largestWindowCount);
+
+      windowList.openRunWindow(runId: runId, title: randomText(random));
+      for (int reopened = 0; reopened < reopenCount; reopened += 1) {
+        nativeWindows.opened.last.closeByPerson();
+        windowList.openRunWindow(runId: runId, title: randomText(random));
+      }
+
+      expect(nativeWindows.opened, hasLength(reopenCount + 1));
+      expect(
+        windowList.windows.single.nativeWindow,
+        nativeWindows.opened.last,
+      );
+    }
+  });
+
   test('test_open_starting_window_property_main_windows_named_agon', () {
     final RecordingNativeWindows nativeWindows = RecordingNativeWindows();
     final AppWindowList windowList = _buildWindowList(nativeWindows);
@@ -117,7 +216,7 @@ void main() {
       final AppWindowList windowList = _buildWindowList(nativeWindows);
       final int windowCount = 1 + random.nextInt(_largestWindowCount);
       for (int opened = 0; opened < windowCount; opened += 1) {
-        _openRandomWindow(windowList, random);
+        _openRandomWindow(windowList, random, windowNumber: opened);
       }
       final List<RecordingNativeWindow> closed = <RecordingNativeWindow>[
         for (final RecordingNativeWindow window in nativeWindows.opened)
@@ -146,7 +245,7 @@ void main() {
       final AppWindowList windowList = _buildWindowList(nativeWindows);
       final int windowCount = random.nextInt(_largestWindowCount);
       for (int opened = 0; opened < windowCount; opened += 1) {
-        _openRandomWindow(windowList, random);
+        _openRandomWindow(windowList, random, windowNumber: opened);
       }
       if (random.nextBool()) {
         for (final RecordingNativeWindow window in nativeWindows.opened) {
@@ -178,7 +277,7 @@ void main() {
       final int windowCount = 1 + random.nextInt(_largestWindowCount);
 
       for (int opened = 0; opened < windowCount; opened += 1) {
-        _openRandomWindow(windowList, random);
+        _openRandomWindow(windowList, random, windowNumber: opened);
       }
       nativeWindows.opened.first.closeByPerson();
 
