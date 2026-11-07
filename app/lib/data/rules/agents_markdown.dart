@@ -1,14 +1,13 @@
-import 'dart:convert';
-
 import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/library.dart';
 import 'package:agent_orchestration/data/rules/scope_rules.dart';
+import 'package:agent_orchestration/data/rules/unicode_white_space.dart';
 
 const String _rulesHeader = '# Rules\n\n';
 const String _titleBullet = '- ';
 const String _detailIndent = '  ';
+const String _lineBreak = '\n';
 const List<String> _sentenceEndings = <String>['.', '!', '?'];
-final RegExp _whitespaceRun = RegExp(r'\s+');
 
 String renderAgentsMarkdown({
   required List<Rule> rules,
@@ -23,7 +22,7 @@ String renderAgentsMarkdown({
       workspaceId: workspaceId,
       projectId: projectId,
     );
-    final bool hasTitle = rule.title.trim().isNotEmpty;
+    final bool hasTitle = trimUnicodeWhiteSpace(rule.title).isNotEmpty;
     if (rule.enabled && applies && hasTitle) {
       ruleSections.write(_renderRule(rule));
     }
@@ -36,15 +35,15 @@ String renderAgentsMarkdown({
 }
 
 String _renderRule(Rule rule) {
-  final String title = rule.title.trim().split(_whitespaceRun).join(' ');
+  final String title = collapseUnicodeWhiteSpace(rule.title);
   final bool endsSentence = _sentenceEndings.any(title.endsWith);
   final String titleLine = endsSentence
       ? '$_titleBullet$title'
       : '$_titleBullet$title.';
   final List<String> lines = <String>[titleLine];
 
-  for (final String detailLine in LineSplitter.split(rule.details)) {
-    final String trimmedLine = detailLine.trim();
+  for (final String detailLine in rule.details.split(_lineBreak)) {
+    final String trimmedLine = trimUnicodeWhiteSpace(detailLine);
     if (trimmedLine.isNotEmpty) {
       lines.add('$_detailIndent$trimmedLine');
     }

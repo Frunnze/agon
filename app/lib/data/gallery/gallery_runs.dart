@@ -8,8 +8,11 @@ import 'package:agent_orchestration/data/models/runner.dart';
 
 const String gallerySessionId = '7c1e3f5a9b2d4e6f8a1c3e5b7d9fa90f';
 const String _buildStepName = 'build-ios';
-const String _oneAgentStepName = 'claude-code';
+const String _claudeCodeStepName = 'claude-code';
+const String _geminiCliStepName = 'gemini-cli';
 const String galleryKeptBranch = 'task/rename-the-billing-module-7b3e';
+const String galleryShipRelease24Branch = 'task/ship-release-2-4-9e07';
+const String galleryShipRelease23Branch = 'task/ship-release-2-3-5c18';
 
 WorkflowAgentId _releaseAgentId(int index) => releaseAgents[index].id;
 
@@ -24,7 +27,7 @@ LogLine _buildErrorLine(DateTime at, String text) {
 LogLine _buildAgentLine(DateTime at, String text) {
   return LogLine(
     at: at,
-    stepName: _oneAgentStepName,
+    stepName: _claudeCodeStepName,
     text: text,
     isError: false,
   );
@@ -94,7 +97,7 @@ final Run galleryRunningRun = Run(
   link: RunnerLink.direct,
   linkLostAt: null,
   agentSession: gallerySessionId,
-  worktreeBranch: 'task/ship-release-2-4',
+  worktreeBranch: galleryShipRelease24Branch,
   startedBy: GalleryDeviceIds.airLaptop,
   startedAt: galleryToday(14, 5, 40),
   finishedAt: null,
@@ -172,7 +175,7 @@ final Run galleryFailedRun = Run(
   link: RunnerLink.direct,
   linkLostAt: null,
   agentSession: null,
-  worktreeBranch: 'task/ship-release-2-3',
+  worktreeBranch: galleryShipRelease23Branch,
   startedBy: GalleryDeviceIds.airLaptop,
   startedAt: galleryYesterday(18, 20),
   finishedAt: galleryYesterday(18, 31, 14),
@@ -187,7 +190,7 @@ final Run galleryFinishedRun = Run(
   status: RunStatus.done,
   steps: <RunStep>[
     RunStep(
-      name: 'agent',
+      name: _geminiCliStepName,
       agentId: null,
       runner: GalleryDeviceIds.officeServer,
       status: StepStatus.done,
@@ -220,7 +223,7 @@ final Run galleryNotPushedRun = Run(
   status: RunStatus.done,
   steps: <RunStep>[
     RunStep(
-      name: _oneAgentStepName,
+      name: _claudeCodeStepName,
       agentId: null,
       runner: GalleryDeviceIds.officeServer,
       status: StepStatus.done,

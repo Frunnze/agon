@@ -1,4 +1,5 @@
 import 'package:agent_orchestration/data/models/pairing.dart';
+import 'package:agent_orchestration/data/rules/setup_input_rules.dart';
 
 const String _invitationScheme = 'agent-orchestration';
 const String _invitationPath = 'pair';
@@ -38,6 +39,12 @@ PairingInvitation decodePairingInvitation(String text) {
   final String? serverAddress = fields[_serverField];
   if (code == null || serverAddress == null) {
     throw FormatException('This pairing code is incomplete', text);
+  }
+  if (describeServerAddressProblem(serverAddress) != null) {
+    throw FormatException(
+      'This pairing code has a broken server address',
+      text,
+    );
   }
   return PairingInvitation(code: code, serverAddress: serverAddress);
 }

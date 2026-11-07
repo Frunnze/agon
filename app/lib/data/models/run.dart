@@ -203,4 +203,26 @@ final class Run {
       notes: notes,
     );
   }
+
+  Run withFailure(RunFailure? nextFailure) {
+    return Run(
+      id: id,
+      taskId: taskId,
+      number: number,
+      status: status,
+      steps: steps,
+      log: log,
+      chat: chat,
+      failure: nextFailure,
+      link: link,
+      linkLostAt: linkLostAt,
+      agentSession: agentSession,
+      worktreeBranch: worktreeBranch,
+      startedBy: startedBy,
+      startedAt: startedAt,
+      finishedAt: finishedAt,
+      loopRounds: loopRounds,
+      notes: notes,
+    );
+  }
 }

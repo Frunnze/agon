@@ -8,6 +8,8 @@ import 'package:agent_orchestration/bridge/node/node_command_channel.dart';
 import 'package:agent_orchestration/data/node_backed.dart';
 
 const int _sequenceBeforeAnyChange = 0;
+const Duration _firstResubscribeDelay = Duration(seconds: 1);
+const int _resubscribeDelayGrowth = 2;
 
 typedef AppServerRecheck = Future<void> Function();
 
@@ -29,8 +31,16 @@ final class NodeSynchronization {
   final Duration _retryDelay;
   final AppServerRecheck _recheckAppServer;
   StreamSubscription<void>? _changeSubscription;
+  Timer? _pendingResubscription;
+  int _lifecycleRequestCount = 0;
+  int _lastKnownSequence = _sequenceBeforeAnyChange;
+  Duration _resubscribeDelay = _firstResubscribeDelay;
 
   Future<void> start() async {
+    _lifecycleRequestCount += 1;
+    final int thisStartRequest = _lifecycleRequestCount;
+    await _stopFollowingChanges();
+
     final node.EventsResponse latest = await executeNodeCommand(
       _channel,
       node.PollEventsCommand(after: _sequenceBeforeAnyChange),
@@ -39,23 +49,55 @@ final class NodeSynchronization {
       await repository.load();
     }
 
+    final bool isSuperseded = thisStartRequest != _lifecycleRequestCount;
+    if (isSuperseded) {
+      return;
+    }
+
+    _lastKnownSequence = latest.latestSequence;
+    _followChanges();
+  }
+
+  Future<void> stop() async {
+    _lifecycleRequestCount += 1;
+    await _stopFollowingChanges();
+  }
+
+  Future<void> _stopFollowingChanges() async {
+    _pendingResubscription?.cancel();
+    final Future<void>? cancelling = _changeSubscription?.cancel();
+    _changeSubscription = null;
+    await cancelling;
+  }
+
+  void _followChanges() {
     final NodeChangeFeed feed = NodeChangeFeed(
       channel: _channel,
       retryDelay: _retryDelay,
       onRecovered: _recheckAppServerInBackground,
     );
     _changeSubscription = feed
-        .watchChanges(afterSequence: latest.latestSequence)
+        .watchChanges(afterSequence: _lastKnownSequence)
         .asyncMap(_applyChange)
-        .listen(null, onError: _handleFeedProblem);
+        .listen(
+          null,
+          onError: _handleFeedProblem,
+          onDone: _followChangesAfterBackoff,
+        );
   }
 
-  Future<void> stop() async {
-    await _changeSubscription?.cancel();
-    _changeSubscription = null;
+  void _followChangesAfterBackoff() {
+    final Duration delay = _resubscribeDelay < _retryDelay
+        ? _resubscribeDelay
+        : _retryDelay;
+
+    _resubscribeDelay = delay * _resubscribeDelayGrowth;
+    _pendingResubscription = Timer(delay, _followChanges);
   }
 
   Future<void> _applyChange(node.ChangeNotification notification) async {
+    _lastKnownSequence = notification.sequence;
+
     await Future.wait(<Future<void>>[
       for (final NodeSynchronized repository in _repositories)
         repository.applyChange(notification.topic),

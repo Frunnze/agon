@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import 'package:agent_orchestration/data/clock.dart';
 import 'package:agent_orchestration/data/fakes.dart';
+import 'package:agent_orchestration/data/fakes/fake_workspace_contents.dart';
 import 'package:agent_orchestration/data/gallery/gallery_workspaces.dart';
 import 'package:agent_orchestration/data/models/app_server_group.dart';
 import 'package:agent_orchestration/data/models/approval.dart';
@@ -9,17 +10,21 @@ import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/workspace.dart';
 import 'package:agent_orchestration/data/repository/record_not_found.dart';
 import 'package:agent_orchestration/data/repository/workspace_repository.dart';
+import 'package:agent_orchestration/data/rules/naming.dart';
+import 'package:agent_orchestration/data/rules/protected_patterns.dart';
 
 const String _workspaceKind = 'workspace';
+const String _createdWorkspacePrefix = 'created-workspace-';
 const String _lastWorkspaceProblem = 'The last workspace cannot be deleted.';
 const String _notClientProblem =
     'only a client device can keep a backup of the app server';
-const String _noGroupProblem = 'the app server keeps no backups';
+const String _noActiveServerProblem = 'the app server keeps no backups';
 const String _alreadyHostingProblem =
     'this device already keeps the app server';
 const String _activeServerProblem = 'this device is the active app server';
-const String _noBackupProblem =
-    'this device keeps no backup of the app server';
+const String _notKeepingProblem = 'this device keeps no app server';
+
+String _identifyWorkspace(Workspace workspace) => workspace.id.value;
 
 final class FakeWorkspaceRepository extends ChangeNotifier
     implements WorkspaceRepository {
@@ -36,6 +41,11 @@ final class FakeWorkspaceRepository extends ChangeNotifier
        _appServerGroup = appServerGroup,
        _currentDeviceId = currentDeviceId,
        _clock = clock {
+    refuseDuplicateIdentifiers(
+      workspaces,
+      identify: _identifyWorkspace,
+      kind: _workspaceKind,
+    );
     _findWorkspace(currentWorkspaceId);
   }
 
@@ -46,6 +56,11 @@ final class FakeWorkspaceRepository extends ChangeNotifier
   AppServerStatus _appServerStatus;
   AppServerGroup _appServerGroup;
   int _createdWorkspaceCount = 0;
+  FakeWorkspaceContents? _contents;
+
+  void linkContents(FakeWorkspaceContents contents) {
+    _contents = contents;
+  }
 
   @override
   List<Workspace> listWorkspaces() => _workspaces;
@@ -64,14 +79,15 @@ final class FakeWorkspaceRepository extends ChangeNotifier
 
   @override
   Future<Workspace> createWorkspace({required String name}) async {
-    if (name.trim().isEmpty) {
-      throw ArgumentError.value(name, 'name', 'Name the workspace');
+    final String trimmedName = name.trim();
+    final String? nameProblem = describeNameProblem(trimmedName);
+    if (nameProblem != null) {
+      throw ArgumentError.value(name, 'name', nameProblem);
     }
 
-    _createdWorkspaceCount += 1;
     final Workspace workspace = Workspace(
-      id: WorkspaceId('created-workspace-$_createdWorkspaceCount'),
-      name: name.trim(),
+      id: _claimCreatedWorkspaceId(),
+      name: trimmedName,
       appServerAddress: _appServerStatus.address,
       protectedFiles: galleryDefaultProtectedFiles,
       approvalPolicy: ApprovalPolicy.neverAsk,
@@ -87,6 +103,11 @@ final class FakeWorkspaceRepository extends ChangeNotifier
     required WorkspaceId workspaceId,
     required List<String> patterns,
   }) async {
+    final String? problem = describeProtectedFilesProblem(patterns);
+    if (problem != null) {
+      throw ArgumentError.value(patterns, 'patterns', problem);
+    }
+
     return _replaceProtectedFiles(
       workspaceId: workspaceId,
       patterns: patterns,
@@ -139,10 +160,11 @@ final class FakeWorkspaceRepository extends ChangeNotifier
 
   @override
   Future<void> deleteWorkspace(WorkspaceId workspaceId) async {
-    _findWorkspace(workspaceId);
+    final Workspace deleted = _findWorkspace(workspaceId);
     if (_workspaces.length == 1) {
       throw StateError(_lastWorkspaceProblem);
     }
+    _contents?.refuseRunningWork(deleted);
 
     _workspaces = removeRecord(
       _workspaces,
@@ -151,6 +173,12 @@ final class FakeWorkspaceRepository extends ChangeNotifier
     if (_currentWorkspaceId == workspaceId) {
       _currentWorkspaceId = _workspaces.first.id;
     }
+    await _contents?.removeContents(
+      deletedWorkspaceId: workspaceId,
+      remainingWorkspaceIds: <WorkspaceId>{
+        for (final Workspace workspace in _workspaces) workspace.id,
+      },
+    );
     notifyListeners();
   }
 
@@ -177,11 +205,11 @@ final class FakeWorkspaceRepository extends ChangeNotifier
     if (!_appServerGroup.canKeepBackup) {
       throw StateError(_notClientProblem);
     }
-    if (_appServerGroup.members.isEmpty) {
-      throw StateError(_noGroupProblem);
-    }
     if (_appServerGroup.thisDeviceStanding != ThisDeviceStanding.none) {
       throw StateError(_alreadyHostingProblem);
+    }
+    if (!_hasActiveServer()) {
+      throw StateError(_noActiveServerProblem);
     }
 
     final AppServerMember thisBackup = AppServerMember(
@@ -201,7 +229,7 @@ final class FakeWorkspaceRepository extends ChangeNotifier
       throw StateError(_activeServerProblem);
     }
     if (_appServerGroup.thisDeviceStanding == ThisDeviceStanding.none) {
-      throw StateError(_noBackupProblem);
+      throw StateError(_notKeepingProblem);
     }
 
     return _replaceAppServerGroup(
@@ -224,6 +252,29 @@ final class FakeWorkspaceRepository extends ChangeNotifier
     );
     notifyListeners();
     return _appServerGroup;
+  }
+
+  bool _hasActiveServer() {
+    return _appServerGroup.members.any(
+      (AppServerMember member) => member.standing == ServerStanding.active,
+    );
+  }
+
+  WorkspaceId _claimCreatedWorkspaceId() {
+    WorkspaceId candidate;
+    do {
+      _createdWorkspaceCount += 1;
+      candidate = WorkspaceId(
+        '$_createdWorkspacePrefix$_createdWorkspaceCount',
+      );
+    } while (_isListed(candidate));
+    return candidate;
+  }
+
+  bool _isListed(WorkspaceId workspaceId) {
+    return _workspaces.any(
+      (Workspace workspace) => workspace.id == workspaceId,
+    );
   }
 
   Workspace _findWorkspace(WorkspaceId workspaceId) {

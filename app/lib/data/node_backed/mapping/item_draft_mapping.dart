@@ -49,18 +49,25 @@ DraftedItem mapDraftedItemFromNode(node.ItemDraft draft) {
 node.ItemDraft mapDraftedItemToNode(DraftedItem item, DraftKind kind) {
   return switch (item) {
     DraftedWork() => _mapWorkToNode(item, kind),
-    DraftedSkill(:final SkillDraft skill) => node.SkillItemDraft(
-      name: skill.name,
-      summary: skill.summary,
-      instructions: skill.instructions,
-      scope: mapScopeToNode(skill.scope),
-      usage: mapSkillUsageToNode(skill.usage),
-      improvement: mapSkillImprovementToNode(skill.improvement),
-    ),
-    DraftedRule(:final RuleDraft rule) => node.RuleItemDraft(
-      title: rule.title,
-      details: rule.details,
-      scope: mapScopeToNode(rule.scope),
+    DraftedSkill(:final SkillDraft skill) when kind == DraftKind.skill =>
+      node.SkillItemDraft(
+        name: skill.name,
+        summary: skill.summary,
+        instructions: skill.instructions,
+        scope: mapScopeToNode(skill.scope),
+        usage: mapSkillUsageToNode(skill.usage),
+        improvement: mapSkillImprovementToNode(skill.improvement),
+      ),
+    DraftedRule(:final RuleDraft rule) when kind == DraftKind.rule =>
+      node.RuleItemDraft(
+        title: rule.title,
+        details: rule.details,
+        scope: mapScopeToNode(rule.scope),
+      ),
+    DraftedSkill() || DraftedRule() => throw ArgumentError.value(
+      kind,
+      'kind',
+      'does not match the drafted item',
     ),
   };
 }

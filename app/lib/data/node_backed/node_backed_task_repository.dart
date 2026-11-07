@@ -14,6 +14,7 @@ import 'package:agent_orchestration/bridge/commands/run_commands.dart' as node;
 import 'package:agent_orchestration/bridge/commands/task_commands.dart'
     as node;
 import 'package:agent_orchestration/bridge/node/node_command_channel.dart';
+import 'package:agent_orchestration/data/clock.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/run.dart';
 import 'package:agent_orchestration/data/models/task.dart';
@@ -34,9 +35,11 @@ final class NodeBackedTaskRepository extends ChangeNotifier
     required WorkspaceRepository workspaceRepository,
     required Duration livePollInterval,
     required JobRepository jobRepository,
+    required Clock clock,
   }) : _channel = channel,
        _workspaceRepository = workspaceRepository,
-       _jobRepository = jobRepository {
+       _jobRepository = jobRepository,
+       _clock = clock {
     _workspaceRepository.addListener(_loadAfterWorkspaceChange);
     _liveWatches = NodeRunWatches(
       channel: channel,
@@ -48,6 +51,7 @@ final class NodeBackedTaskRepository extends ChangeNotifier
   final NodeCommandChannel _channel;
   final WorkspaceRepository _workspaceRepository;
   final JobRepository _jobRepository;
+  final Clock _clock;
   late final NodeRunWatches _liveWatches;
   final FetchSequence _taskFetches = FetchSequence();
   List<Task> _tasks = const <Task>[];
@@ -219,7 +223,8 @@ final class NodeBackedTaskRepository extends ChangeNotifier
     if (run == null) {
       return;
     }
-    _storeRun(applyLiveRunView(run: run, view: view));
+    final DateTime receivedAt = _clock.now().toUtc();
+    _storeRun(applyLiveRunView(run: run, view: view, at: receivedAt));
     notifyListeners();
   }
 

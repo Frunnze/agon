@@ -86,7 +86,7 @@ String? _describeRoundLimitProblem(
 String? _describeConditionProblem(
   Workflow workflow,
   AgentConnection connection,
-  Set<String> seenOutcomes,
+  Set<(WorkflowAgentId, String)> seenOutcomes,
 ) {
   final String? condition = connection.condition;
   if (condition == null) {
@@ -96,8 +96,7 @@ String? _describeConditionProblem(
     final String ends = _describeEnds(workflow, connection);
     return 'Fix the outcome "$condition" $ends: use $_outcomeFormatRule';
   }
-  final String outcomeKey = '${connection.from.value} $condition';
-  if (!seenOutcomes.add(outcomeKey)) {
+  if (!seenOutcomes.add((connection.from, condition))) {
     final String fromName = workflow.findAgent(connection.from).name;
     return 'Two connections from $fromName share the outcome $condition';
   }
@@ -129,8 +128,21 @@ String? _describeLoopDirectionProblem(Workflow workflow) {
   return null;
 }
 
+String? _describeRepeatedPairProblem(Workflow workflow) {
+  final Set<(WorkflowAgentId, WorkflowAgentId)> seenPairs =
+      <(WorkflowAgentId, WorkflowAgentId)>{};
+  for (final AgentConnection connection in workflow.connections) {
+    if (!seenPairs.add((connection.from, connection.to))) {
+      final String ends = _describeEnds(workflow, connection);
+      return 'There are two connections $ends; keep one';
+    }
+  }
+  return null;
+}
+
 String? describeConnectionsProblem(Workflow workflow) {
-  final Set<String> seenOutcomes = <String>{};
+  final Set<(WorkflowAgentId, String)> seenOutcomes =
+      <(WorkflowAgentId, String)>{};
   for (final AgentConnection connection in workflow.connections) {
     final String? problem =
         _describeRoundLimitProblem(workflow, connection) ??
@@ -143,5 +155,6 @@ String? describeConnectionsProblem(Workflow workflow) {
   if (_hasForwardCycle(workflow)) {
     return _cycleProblem;
   }
-  return _describeLoopDirectionProblem(workflow);
+  return _describeLoopDirectionProblem(workflow) ??
+      _describeRepeatedPairProblem(workflow);
 }

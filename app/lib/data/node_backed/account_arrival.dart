@@ -19,14 +19,18 @@ final class AccountArrival {
   final Listenable _accountSignals;
   final Completer<node.AccountSummary> _arrival =
       Completer<node.AccountSummary>();
+  bool _hasStartedWaiting = false;
 
   Future<node.AccountSummary> waitForAccount() {
-    _accountSignals.addListener(_checkForAccount);
+    if (!_hasStartedWaiting) {
+      _hasStartedWaiting = true;
+      _accountSignals.addListener(_checkForAccount);
+    }
     return _arrival.future;
   }
 
   void _checkForAccount() {
-    unawaited(_completeWhenAccountExists());
+    startBackgroundNodeWork(_completeWhenAccountExists);
   }
 
   Future<void> _completeWhenAccountExists() async {

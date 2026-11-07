@@ -106,7 +106,7 @@ class RunPageHeader extends StatelessWidget {
       AppButton.primary(
         label: 'Retry',
         icon: AppIconKind.retry,
-        onPressed: () => unawaited(_retryRun()),
+        onPressed: _retryRun,
       ),
     ];
   }
@@ -146,8 +146,7 @@ class RunPageHeader extends StatelessWidget {
     unawaited(taskRepository.cancelRun(run.id));
   }
 
-  Future<void> _retryRun() async {
-    final Run retried = await taskRepository.retryRun(run.id);
-    navigation.replaceRoute(TaskRunRoute(retried.id));
+  void _retryRun() {
+    unawaited(taskRepository.retryRun(run.id));
   }
 }

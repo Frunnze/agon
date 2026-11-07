@@ -8,6 +8,12 @@ import 'package:agent_orchestration/data/repository/runner_repository.dart';
 
 const String _runnerKind = 'runner';
 const String _notARunnerProblem = 'this device cannot run tasks';
+const String _noOffersProblem =
+    'a runner offers at least one place for agents to run';
+const List<AgentPlace> _placesInNodeOrder = <AgentPlace>[
+  AgentPlace.localProcess,
+  AgentPlace.container,
+];
 
 final class FakeRunnerRepository extends ChangeNotifier
     implements RunnerRepository {
@@ -16,7 +22,7 @@ final class FakeRunnerRepository extends ChangeNotifier
     required List<PlaceOffer>? thisDeviceOffers,
     required String? thisRunnerProblem,
   }) : _runners = List<Runner>.unmodifiable(runners),
-       _thisDeviceOffers = thisDeviceOffers,
+       _thisDeviceOffers = _copyOffers(thisDeviceOffers),
        _thisRunnerProblem = thisRunnerProblem;
 
   List<Runner> _runners;
@@ -58,17 +64,20 @@ final class FakeRunnerRepository extends ChangeNotifier
     if (previousOffers == null) {
       throw StateError(_notARunnerProblem);
     }
-
-    _thisDeviceOffers = List<PlaceOffer>.unmodifiable(<PlaceOffer>[
-      for (final AgentPlace place in offers)
-        PlaceOffer(
-          place: place,
-          problem: _findPreviousProblem(previousOffers, place),
-        ),
-    ]);
-    if (offers.contains(AgentPlace.localProcess)) {
-      _thisRunnerProblem = null;
+    if (offers.isEmpty) {
+      throw StateError(_noOffersProblem);
     }
+
+    final List<PlaceOffer> chosenOffers = <PlaceOffer>[
+      for (final AgentPlace place in _placesInNodeOrder)
+        if (offers.contains(place))
+          PlaceOffer(
+            place: place,
+            problem: _findPreviousProblem(previousOffers, place),
+          ),
+    ];
+    _thisDeviceOffers = List<PlaceOffer>.unmodifiable(chosenOffers);
+    _thisRunnerProblem = _findBlockingProblem(chosenOffers);
     notifyListeners();
   }
 
@@ -93,4 +102,20 @@ String? _findPreviousProblem(
     }
   }
   return null;
+}
+
+String? _findBlockingProblem(List<PlaceOffer> offers) {
+  for (final PlaceOffer offer in offers) {
+    if (offer.problem == null) {
+      return null;
+    }
+  }
+  return offers.first.problem;
+}
+
+List<PlaceOffer>? _copyOffers(List<PlaceOffer>? offers) {
+  if (offers == null) {
+    return null;
+  }
+  return List<PlaceOffer>.unmodifiable(offers);
 }

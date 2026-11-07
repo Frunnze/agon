@@ -17,7 +17,8 @@ final class FakeItemDraftRepository implements ItemDraftRepository {
   final Map<DraftKind, ItemDraft> _drafts;
   final DeviceId _drafterDeviceId;
   final Duration _stepDelay;
-  final Set<ItemDraftRequest> _runningDrafts = <ItemDraftRequest>{};
+  final Map<ItemDraftRequest, Object> _runningDrafts =
+      <ItemDraftRequest, Object>{};
 
   @override
   Stream<ItemDraftProgress> draftItem(ItemDraftRequest request) async* {
@@ -28,14 +29,15 @@ final class FakeItemDraftRepository implements ItemDraftRepository {
     if (draft == null) {
       throw StateError('No ${request.kind.name} draft is prepared');
     }
-    if (_runningDrafts.contains(request)) {
+    if (_runningDrafts.containsKey(request)) {
       throw StateError('This ${request.kind.name} is already being drafted');
     }
 
-    _runningDrafts.add(request);
+    final Object run = Object();
+    _runningDrafts[request] = run;
     try {
       await Future<void>.delayed(_stepDelay);
-      if (!_runningDrafts.contains(request)) {
+      if (!_isStillRunning(request, run)) {
         return;
       }
       yield DraftRunning(
@@ -44,20 +46,26 @@ final class FakeItemDraftRepository implements ItemDraftRepository {
       );
 
       await Future<void>.delayed(_stepDelay);
-      if (!_runningDrafts.contains(request)) {
+      if (!_isStillRunning(request, run)) {
         return;
       }
       yield DraftFinished(draft);
     } finally {
-      _runningDrafts.remove(request);
+      if (_isStillRunning(request, run)) {
+        _runningDrafts.remove(request);
+      }
     }
   }
 
   @override
   Future<void> stopDrafting(ItemDraftRequest request) async {
-    final bool wasRunning = _runningDrafts.remove(request);
-    if (!wasRunning) {
+    final Object? stoppedRun = _runningDrafts.remove(request);
+    if (stoppedRun == null) {
       throw StateError('No ${request.kind.name} is being drafted');
     }
+  }
+
+  bool _isStillRunning(ItemDraftRequest request, Object run) {
+    return identical(_runningDrafts[request], run);
   }
 }

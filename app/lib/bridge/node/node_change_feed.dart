@@ -29,18 +29,28 @@ final class NodeChangeFeed {
 
     final StreamController<ChangeNotification> notifications =
         StreamController<ChangeNotification>();
-    notifications.onListen = () =>
-        unawaited(_pollWhileListened(notifications, afterSequence));
+    final _ListenerPause listenerPause = _ListenerPause();
+    notifications.onListen = () => unawaited(
+      _pollWhileListened(notifications, afterSequence, listenerPause),
+    );
+    notifications.onResume = listenerPause.end;
+    notifications.onCancel = listenerPause.end;
     return notifications.stream;
   }
 
   Future<void> _pollWhileListened(
     StreamController<ChangeNotification> notifications,
     int afterSequence,
+    _ListenerPause listenerPause,
   ) async {
     int nextAfterSequence = afterSequence;
     bool isRecovering = false;
     while (notifications.hasListener) {
+      if (notifications.isPaused) {
+        await listenerPause.waitForEnd();
+        continue;
+      }
+
       final EventsResponse events;
       try {
         events = await channel.execute(
@@ -56,6 +66,10 @@ final class NodeChangeFeed {
         break;
       }
 
+      if (!notifications.hasListener) {
+        break;
+      }
+
       if (isRecovering) {
         isRecovering = false;
         onRecovered();
@@ -66,5 +80,21 @@ final class NodeChangeFeed {
       nextAfterSequence = events.latestSequence;
     }
     await notifications.close();
+  }
+}
+
+final class _ListenerPause {
+  Completer<void>? _ending;
+
+  Future<void> waitForEnd() {
+    final Completer<void> ending = Completer<void>();
+    _ending = ending;
+    return ending.future;
+  }
+
+  void end() {
+    final Completer<void>? ending = _ending;
+    _ending = null;
+    ending?.complete();
   }
 }

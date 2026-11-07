@@ -13,7 +13,6 @@ import 'package:agent_orchestration/data/node_backed/mapping.dart';
 import 'package:agent_orchestration/data/repository/record_not_found.dart';
 import 'package:agent_orchestration/data/repository/skill_repository.dart';
 import 'package:agent_orchestration/data/repository/workspace_repository.dart';
-import 'package:agent_orchestration/data/rules/naming.dart';
 import 'package:agent_orchestration/data/rules/skill_names.dart';
 
 const String _skillKind = 'skill';
@@ -70,7 +69,7 @@ final class NodeBackedSkillRepository extends ChangeNotifier
 
   @override
   Future<Skill> createSkill(SkillDraft draft) async {
-    _requireValidName(draft.name);
+    requireValidSkillName(draft.name);
     requireFreeSkillName(name: draft.name, otherSkills: _skills);
 
     final node.Skill created = await executeNodeCommand(
@@ -90,7 +89,7 @@ final class NodeBackedSkillRepository extends ChangeNotifier
 
   @override
   Future<Skill> updateSkill(SkillId skillId, SkillDraft draft) async {
-    _requireValidName(draft.name);
+    requireValidSkillName(draft.name);
     final List<Skill> otherSkills = removeRecord(
       _skills,
       matches: (Skill skill) => skill.id == skillId,
@@ -173,12 +172,5 @@ final class NodeBackedSkillRepository extends ChangeNotifier
     return List<Skill>.unmodifiable(<Skill>[
       for (final node.Skill skill in skills) mapSkillFromNode(skill),
     ]);
-  }
-}
-
-void _requireValidName(String name) {
-  final String? nameProblem = describeNameProblem(name);
-  if (nameProblem != null) {
-    throw ArgumentError.value(name, 'name', nameProblem);
   }
 }

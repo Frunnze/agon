@@ -13,6 +13,8 @@ import 'package:agent_orchestration/data/rules/run_lifecycle.dart';
 
 const String _taskKind = 'task';
 const String _runKind = 'run';
+const String _createdTaskPrefix = 'created-task-';
+const String _createdRunPrefix = 'created-run-';
 
 final class FakeTaskRepository extends ChangeNotifier
     implements TaskRepository {
@@ -78,9 +80,11 @@ final class FakeTaskRepository extends ChangeNotifier
 
   @override
   Future<Task> createTask(TaskDraft draft) async {
-    _createdRecordCount += 1;
+    final Set<String> takenIdentifiers = <String>{
+      for (final Task stored in _tasks) stored.id.value,
+    };
     final Task task = Task.fromDraft(
-      id: TaskId('created-task-$_createdRecordCount'),
+      id: TaskId(_nextFreeIdentifier(_createdTaskPrefix, takenIdentifiers)),
       draft: draft,
       schedule: null,
       status: TaskStatus.toDo,
@@ -111,16 +115,14 @@ final class FakeTaskRepository extends ChangeNotifier
   @override
   Future<Run> startTask(TaskId taskId) async {
     final Task task = findTask(taskId);
-    final bool hasActiveRun = listRuns(taskId).any(isRunActive);
-    if (hasActiveRun) {
-      throw StateError('Task ${task.title} is already running');
-    }
+    _refuseSecondActiveRun(task);
+    final Workflow? workflow = _findSignedWorkflowFor(task);
 
     final Run run = createRun(
       runId: _nextRunId(),
       task: task,
-      workflow: _findWorkflowFor(task),
-      number: _nextRunNumber(task),
+      workflow: workflow,
+      number: _nextRunNumber(task.id),
       startedBy: _currentDeviceId,
       at: _clock.now(),
     );
@@ -143,20 +145,15 @@ final class FakeTaskRepository extends ChangeNotifier
 
   @override
   Future<Run> retryRun(RunId runId) async {
-    final Run failedRun = findRun(runId);
-    final Task task = findTask(failedRun.taskId);
-    final Run retried = buildRetriedRun(
-      run: failedRun,
-      runId: _nextRunId(),
-      number: _nextRunNumber(task),
-      startedBy: _currentDeviceId,
-      at: _clock.now(),
-    );
+    final Run stoppedRun = findRun(runId);
+    final Task task = findTask(stoppedRun.taskId);
+    _refuseSecondActiveRun(task);
+    final Run reopened = buildRetriedRun(stoppedRun, _clock.now());
 
-    _runs = appendRecord(_runs, retried);
+    _replaceRun(reopened);
     _replaceTask(task.withStatus(TaskStatus.running));
     notifyListeners();
-    return retried;
+    return reopened;
   }
 
   @override
@@ -203,25 +200,52 @@ final class FakeTaskRepository extends ChangeNotifier
     notifyListeners();
   }
 
-  Workflow? _findWorkflowFor(Task task) {
-    final TaskDoer doer = task.doer;
-    if (doer is WorkflowDoer) {
-      return _workflowRepository.findWorkflow(doer.workflowId);
+  void _refuseSecondActiveRun(Task task) {
+    final bool hasActiveRun = listRuns(task.id).any(isRunActive);
+    if (hasActiveRun) {
+      throw StateError('Task ${task.title} is already running');
     }
-    return null;
+  }
+
+  Workflow? _findSignedWorkflowFor(Task task) {
+    final TaskDoer doer = task.doer;
+    if (doer is! WorkflowDoer) {
+      return null;
+    }
+
+    final Workflow workflow = _workflowRepository.findWorkflow(
+      doer.workflowId,
+    );
+    final WorkflowChange? unsignedChange = _workflowRepository
+        .findPendingChange(workflow.id);
+    if (workflow.signature == null || unsignedChange != null) {
+      throw StateError('Workflow ${workflow.name} is not signed');
+    }
+    return workflow;
   }
 
   RunId _nextRunId() {
-    _createdRecordCount += 1;
-    return RunId('created-run-$_createdRecordCount');
+    final Set<String> takenIdentifiers = <String>{
+      for (final Run run in _runs) run.id.value,
+    };
+    return RunId(_nextFreeIdentifier(_createdRunPrefix, takenIdentifiers));
   }
 
-  int _nextRunNumber(Task task) {
+  String _nextFreeIdentifier(String prefix, Set<String> takenIdentifiers) {
+    while (true) {
+      _createdRecordCount += 1;
+      final String candidate = '$prefix$_createdRecordCount';
+      if (!takenIdentifiers.contains(candidate)) {
+        return candidate;
+      }
+    }
+  }
+
+  int _nextRunNumber(TaskId taskId) {
     int highestNumber = 0;
 
     for (final Run run in _runs) {
-      final bool sharesDoer = findTask(run.taskId).doer == task.doer;
-      if (sharesDoer && run.number > highestNumber) {
+      if (run.taskId == taskId && run.number > highestNumber) {
         highestNumber = run.number;
       }
     }

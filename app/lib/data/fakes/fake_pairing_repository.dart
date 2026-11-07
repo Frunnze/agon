@@ -21,15 +21,18 @@ final class FakePairingRepository extends ChangeNotifier
     required Clock clock,
     required FakeDeviceRepository deviceRepository,
     required PairingOutcome joinOutcome,
+    required String? startedPairingRendezvousProblem,
   }) : _session = session,
        _request = request,
        _clock = clock,
        _deviceRepository = deviceRepository,
-       _joinOutcome = joinOutcome;
+       _joinOutcome = joinOutcome,
+       _startedPairingRendezvousProblem = startedPairingRendezvousProblem;
 
   final Clock _clock;
   final FakeDeviceRepository _deviceRepository;
   final PairingOutcome _joinOutcome;
+  final String? _startedPairingRendezvousProblem;
   PairingSession? _session;
   PairingRequest? _request;
 
@@ -49,7 +52,7 @@ final class FakePairingRepository extends ChangeNotifier
       code: _freshPairingCode,
       createdAt: now,
       expiresAt: now.add(_pairingLifetime),
-      rendezvousProblem: null,
+      rendezvousProblem: _startedPairingRendezvousProblem,
     );
 
     _session = session;
@@ -68,6 +71,18 @@ final class FakePairingRepository extends ChangeNotifier
     }
 
     final PairingRequest request = _requirePendingRequest();
+    final Device approver = _deviceRepository.currentDevice();
+    final bool isApproverInEvery = workspaces.every(
+      approver.workspaces.contains,
+    );
+    if (!isApproverInEvery) {
+      throw ArgumentError.value(
+        workspaces,
+        'workspaces',
+        'This device is not in every chosen workspace',
+      );
+    }
+
     final DateTime now = _clock.now();
     final Device device = Device(
       id: DeviceId('paired-${request.deviceName}'),
@@ -77,9 +92,9 @@ final class FakePairingRepository extends ChangeNotifier
       keyKind: request.keyKind,
       signingPublicKey: _fakePublicKey,
       sealingPublicKey: _fakePublicKey,
-      workspaces: workspaces,
+      workspaces: workspaces.toSet().toList(),
       pairedAt: now,
-      approvedBy: _deviceRepository.currentDevice().id,
+      approvedBy: approver.id,
       lastSeen: now,
       revoked: false,
     );
@@ -120,6 +135,10 @@ final class FakePairingRepository extends ChangeNotifier
     if (problem != null) {
       throw FormatException(problem, code);
     }
+    final String? nameProblem = describeNameProblem(deviceName);
+    if (nameProblem != null) {
+      throw ArgumentError(nameProblem);
+    }
 
     return PairingOutcome(
       deviceName: deviceName,
@@ -155,6 +174,9 @@ final class FakePairingRepository extends ChangeNotifier
     final PairingRequest? request = _request;
     if (request == null) {
       throw StateError('No device is waiting to be paired');
+    }
+    if (findActiveSession() == null) {
+      throw StateError(noShowingPairingCode);
     }
     return request;
   }

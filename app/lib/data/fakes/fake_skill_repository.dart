@@ -4,13 +4,17 @@ import 'package:agent_orchestration/data/clock.dart';
 import 'package:agent_orchestration/data/fakes.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/library.dart';
+import 'package:agent_orchestration/data/models/scope.dart';
 import 'package:agent_orchestration/data/models/skill_change.dart';
 import 'package:agent_orchestration/data/repository/record_not_found.dart';
 import 'package:agent_orchestration/data/repository/skill_repository.dart';
+import 'package:agent_orchestration/data/rules/scope_cleanup.dart';
 import 'package:agent_orchestration/data/rules/skill_names.dart';
 import 'package:agent_orchestration/data/rules/skill_undo.dart';
 
 const String _skillKind = 'skill';
+const String _createdSkillPrefix = 'created-skill-';
+const int _keptSkillChanges = 20;
 
 final class FakeSkillRepository extends ChangeNotifier
     implements SkillRepository {
@@ -37,11 +41,11 @@ final class FakeSkillRepository extends ChangeNotifier
 
   @override
   Future<Skill> createSkill(SkillDraft draft) async {
+    requireValidSkillName(draft.name);
     requireFreeSkillName(name: draft.name, otherSkills: _skills);
 
-    _createdSkillCount += 1;
     final Skill skill = Skill(
-      id: SkillId('created-skill-$_createdSkillCount'),
+      id: _nextFreeSkillId(),
       name: draft.name,
       summary: draft.summary,
       instructions: draft.instructions,
@@ -59,6 +63,7 @@ final class FakeSkillRepository extends ChangeNotifier
 
   @override
   Future<Skill> updateSkill(SkillId skillId, SkillDraft draft) async {
+    requireValidSkillName(draft.name);
     final Skill original = findSkill(skillId);
     final List<Skill> otherSkills = removeRecord(
       _skills,
@@ -69,14 +74,14 @@ final class FakeSkillRepository extends ChangeNotifier
     final bool hasNewInstructions =
         draft.instructions != original.instructions;
     final List<SkillChange> history = hasNewInstructions
-        ? <SkillChange>[
+        ? _keepLatestChanges(<SkillChange>[
             ...original.history,
             SkillChange(
               origin: const PersonEdit(),
               savedAt: _clock.now(),
               replacedInstructions: original.instructions,
             ),
-          ]
+          ])
         : original.history;
     final Skill updated = Skill(
       id: skillId,
@@ -127,6 +132,38 @@ final class FakeSkillRepository extends ChangeNotifier
     return _replaceSkill(restored);
   }
 
+  void forgetWorkspace({
+    required WorkspaceId deletedWorkspaceId,
+    required Set<WorkspaceId> remainingWorkspaceIds,
+  }) {
+    final List<Skill> keptSkills = <Skill>[];
+    for (final Skill skill in _skills) {
+      final Scope scope = forgetWorkspaceInScope(
+        skill.scope,
+        deletedWorkspaceId,
+      );
+      if (!isSeenInNoWorkspace(scope.workspaces, remainingWorkspaceIds)) {
+        keptSkills.add(_withScope(skill, scope));
+      }
+    }
+
+    _skills = List<Skill>.unmodifiable(keptSkills);
+    notifyListeners();
+  }
+
+  SkillId _nextFreeSkillId() {
+    while (true) {
+      _createdSkillCount += 1;
+      final SkillId candidate = SkillId(
+        '$_createdSkillPrefix$_createdSkillCount',
+      );
+      final bool isTaken = _skills.any((Skill skill) => skill.id == candidate);
+      if (!isTaken) {
+        return candidate;
+      }
+    }
+  }
+
   Skill _replaceSkill(Skill replacement) {
     _skills = replaceRecord(
       _skills,
@@ -136,4 +173,26 @@ final class FakeSkillRepository extends ChangeNotifier
     notifyListeners();
     return replacement;
   }
+}
+
+List<SkillChange> _keepLatestChanges(List<SkillChange> history) {
+  final int excess = history.length - _keptSkillChanges;
+  if (excess <= 0) {
+    return history;
+  }
+  return history.sublist(excess);
+}
+
+Skill _withScope(Skill skill, Scope scope) {
+  return Skill(
+    id: skill.id,
+    name: skill.name,
+    summary: skill.summary,
+    instructions: skill.instructions,
+    scope: scope,
+    usage: skill.usage,
+    source: skill.source,
+    improvement: skill.improvement,
+    history: skill.history,
+  );
 }

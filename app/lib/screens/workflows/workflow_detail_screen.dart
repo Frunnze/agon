@@ -79,6 +79,11 @@ class WorkflowDetailScreen extends StatelessWidget {
       deviceRepository.listDevices(),
     );
     final WorkflowSignature? signature = workflow.signature;
+    final SignatureState signatureState = findSignatureState(
+      workflow,
+      workflowRepository.findPendingChange(workflowId),
+    );
+    final bool canStartNow = signatureState == SignatureState.signed;
 
     return AppPage(
       children: <Widget>[
@@ -124,9 +129,9 @@ class WorkflowDetailScreen extends StatelessWidget {
             AppButton.primary(
               label: startNowLabel,
               icon: AppIconKind.play,
-              onPressed: signature == null
-                  ? null
-                  : () => unawaited(_startNow(workflow)),
+              onPressed: canStartNow
+                  ? () => unawaited(_startNow(workflow))
+                  : null,
             ),
           ],
         ),

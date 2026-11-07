@@ -106,8 +106,6 @@ final class ItemDraft {
 
   final DraftedItem item;
   final List<String> problems;
-
-  bool get canBeApproved => problems.isEmpty;
 }
 
 final class ItemDraftChange {

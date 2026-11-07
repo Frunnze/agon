@@ -8,6 +8,7 @@ import 'package:agent_orchestration/data/repository/job_repository.dart';
 import 'package:agent_orchestration/data/repository/record_not_found.dart';
 
 const String _jobKind = 'job';
+const String _createdJobPrefix = 'created-job-';
 
 final class FakeJobRepository implements JobRepository {
   FakeJobRepository({
@@ -50,9 +51,8 @@ final class FakeJobRepository implements JobRepository {
 
   @override
   Future<Task> createJob(JobDraft draft) async {
-    _createdJobCount += 1;
     final Task job = Task.fromDraft(
-      id: TaskId('created-job-$_createdJobCount'),
+      id: _claimUnusedJobId(),
       draft: draft.task,
       schedule: draft.schedule,
       status: TaskStatus.toDo,
@@ -82,5 +82,19 @@ final class FakeJobRepository implements JobRepository {
   Future<void> deleteJob(TaskId jobId) async {
     findJob(jobId);
     await _taskRepository.deleteTask(jobId);
+  }
+
+  TaskId _claimUnusedJobId() {
+    TaskId candidate;
+    do {
+      _createdJobCount += 1;
+      candidate = TaskId('$_createdJobPrefix$_createdJobCount');
+    } while (_isStored(candidate));
+    return candidate;
+  }
+
+  bool _isStored(TaskId taskId) {
+    final List<Task> records = _taskRepository.listTasksAndJobs();
+    return records.any((Task record) => record.id == taskId);
   }
 }

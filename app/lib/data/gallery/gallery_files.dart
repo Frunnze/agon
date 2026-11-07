@@ -21,8 +21,8 @@ final Map<String, RepositoryFileSource> galleryFileSources =
           branches: const <String>['main', 'release'],
           taskBranches: const <String>[
             'task/fix-login-redirect-a41c',
-            'task/ship-release-2-4-9e07',
-            'task/ship-release-2-3-5c18',
+            galleryShipRelease24Branch,
+            galleryShipRelease23Branch,
             galleryKeptBranch,
           ],
         ),

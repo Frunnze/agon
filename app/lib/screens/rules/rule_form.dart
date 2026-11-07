@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import 'package:agent_orchestration/data/models/library.dart';
+import 'package:agent_orchestration/data/rules/unicode_white_space.dart';
 import 'package:agent_orchestration/presentation/scope_catalog.dart';
 import 'package:agent_orchestration/screens/shared/scope_fields.dart';
 import 'package:agent_orchestration/screens/shared/scope_selection.dart';
@@ -54,8 +55,8 @@ class _RuleFormState extends State<RuleForm> {
 
   RuleDraft _readRule() {
     return RuleDraft(
-      title: _titleController.text.trim(),
-      details: _detailsController.text.trim(),
+      title: trimUnicodeWhiteSpace(_titleController.text),
+      details: trimUnicodeWhiteSpace(_detailsController.text),
       scope: _scope.toScope(),
     );
   }

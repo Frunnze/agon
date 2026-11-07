@@ -1,5 +1,7 @@
+import 'package:agent_orchestration/data/rules/unicode_white_space.dart';
+
 void requireRuleTitle(String title) {
-  if (title.trim().isEmpty) {
+  if (trimUnicodeWhiteSpace(title).isEmpty) {
     throw ArgumentError.value(title, 'title', 'Write the rule');
   }
 }

@@ -10,6 +10,13 @@ import 'package:agent_orchestration/data/repository/record_not_found.dart';
 const String _approvalKind = 'approval request';
 const List<int> _fakeSignature = <int>[0];
 
+String _identifyApproval(ApprovalRequest request) => request.id.value;
+
+bool _asksToSign(ApprovalRequest request, WorkflowId workflowId) {
+  final ApprovalAction action = request.action;
+  return action is SignWorkflowAction && action.workflowId == workflowId;
+}
+
 final class FakeApprovalRepository extends ChangeNotifier
     implements ApprovalRepository {
   FakeApprovalRepository({
@@ -18,7 +25,13 @@ final class FakeApprovalRepository extends ChangeNotifier
     required DeviceId currentDeviceId,
   }) : _approvals = List<ApprovalRequest>.unmodifiable(approvals),
        _clock = clock,
-       _currentDeviceId = currentDeviceId;
+       _currentDeviceId = currentDeviceId {
+    refuseDuplicateIdentifiers(
+      approvals,
+      identify: _identifyApproval,
+      kind: _approvalKind,
+    );
+  }
 
   final Clock _clock;
   final DeviceId _currentDeviceId;
@@ -69,5 +82,13 @@ final class FakeApprovalRepository extends ChangeNotifier
     );
     notifyListeners();
     return decided;
+  }
+
+  void forgetSigningRequests(WorkflowId workflowId) {
+    _approvals = removeRecord(
+      _approvals,
+      matches: (ApprovalRequest request) => _asksToSign(request, workflowId),
+    );
+    notifyListeners();
   }
 }

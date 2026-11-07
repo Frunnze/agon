@@ -1,6 +1,6 @@
 import 'package:agent_orchestration/data/models/workflow.dart';
-import 'package:agent_orchestration/data/rules/connection_rules.dart';
 import 'package:agent_orchestration/data/rules/naming.dart';
+import 'package:agent_orchestration/data/rules/workflow_problems.dart';
 import 'package:agent_orchestration/widgets/forms/select_entry.dart';
 
 const String _chooseAgentLabel = 'Choose an agent';
@@ -53,17 +53,13 @@ String? describeAgentNameProblem({
 }
 
 String? describeSigningProblem(Workflow workflow) {
-  if (workflow.agents.isEmpty) {
-    return 'Add at least one agent';
-  }
-
   for (final WorkflowAgent agent in workflow.agents) {
     final String? problem = _describeStepProblem(agent);
     if (problem != null) {
       return problem;
     }
   }
-  return describeConnectionsProblem(workflow);
+  return describeWorkflowProblem(workflow);
 }
 
 String? _describeStepProblem(WorkflowAgent agent) {

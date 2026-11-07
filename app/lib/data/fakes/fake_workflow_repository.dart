@@ -2,15 +2,23 @@ import 'package:flutter/foundation.dart';
 
 import 'package:agent_orchestration/data/clock.dart';
 import 'package:agent_orchestration/data/fakes.dart';
+import 'package:agent_orchestration/data/fakes/fake_task_work.dart';
+import 'package:agent_orchestration/data/fakes/fake_workflow_checks.dart';
+import 'package:agent_orchestration/data/fakes/fake_workflow_drafting.dart';
+import 'package:agent_orchestration/data/fakes/workflow_signed_content.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/workflow.dart';
 import 'package:agent_orchestration/data/models/workflow_draft.dart';
 import 'package:agent_orchestration/data/repository/record_not_found.dart';
 import 'package:agent_orchestration/data/repository/workflow_repository.dart';
+import 'package:agent_orchestration/data/rules/scope_cleanup.dart';
 import 'package:agent_orchestration/data/rules/workflow_edits.dart';
+import 'package:agent_orchestration/data/rules/workflow_problems.dart';
 
 const String _workflowKind = 'workflow';
-const List<int> _fakeSignature = <int>[0];
+const String _workflowChangeKind = 'workflow change';
+const String _createdWorkflowPrefix = 'created-workflow-';
+const String _noSignedVersionProblem = 'the workflow has no signed version';
 
 final class FakeWorkflowRepository extends ChangeNotifier
     implements WorkflowRepository {
@@ -26,20 +34,41 @@ final class FakeWorkflowRepository extends ChangeNotifier
        _changes = List<WorkflowChange>.unmodifiable(changes),
        _clock = clock,
        _currentDeviceId = currentDeviceId,
-       _draftTemplate = draftTemplate,
-       _drafterDeviceId = drafterDeviceId,
-       _draftStepDelay = draftStepDelay;
+       _signedVersions = collectSignedVersions(workflows),
+       _drafting = FakeWorkflowDrafting(
+         template: draftTemplate,
+         drafterDeviceId: drafterDeviceId,
+         stepDelay: draftStepDelay,
+       ) {
+    refuseDuplicateIdentifiers(
+      workflows,
+      identify: identifyWorkflow,
+      kind: _workflowKind,
+    );
+    refuseDuplicateIdentifiers(
+      changes,
+      identify: identifyChangedWorkflow,
+      kind: _workflowChangeKind,
+    );
+  }
 
   final Clock _clock;
   final DeviceId _currentDeviceId;
-  final Workflow _draftTemplate;
-  final DeviceId _drafterDeviceId;
-  final Duration _draftStepDelay;
-  final Set<WorkflowDraft> _runningDrafts = <WorkflowDraft>{};
-  int _draftedWorkflowCount = 0;
+  final FakeWorkflowDrafting _drafting;
+  final Map<WorkflowId, Workflow> _signedVersions;
   int _createdWorkflowCount = 0;
   List<Workflow> _workflows;
   List<WorkflowChange> _changes;
+  FakeTaskWork? _taskWork;
+  FakeApprovalRepository? _approvalRepository;
+
+  void linkWork({
+    required FakeTaskWork taskWork,
+    required FakeApprovalRepository approvalRepository,
+  }) {
+    _taskWork = taskWork;
+    _approvalRepository = approvalRepository;
+  }
 
   @override
   List<Workflow> listWorkflows() => _workflows;
@@ -66,9 +95,10 @@ final class FakeWorkflowRepository extends ChangeNotifier
 
   @override
   Future<Workflow> createWorkflow(Workflow unsavedWorkflow) async {
-    _createdWorkflowCount += 1;
+    refuseWorkflowUploadProblem(unsavedWorkflow);
+
     final Workflow created = Workflow(
-      id: WorkflowId('created-workflow-$_createdWorkflowCount'),
+      id: _claimCreatedWorkflowId(),
       name: unsavedWorkflow.name,
       availability: unsavedWorkflow.availability,
       agents: unsavedWorkflow.agents,
@@ -83,42 +113,26 @@ final class FakeWorkflowRepository extends ChangeNotifier
 
   @override
   Future<Workflow> saveWorkflow(Workflow workflow) async {
-    final bool isKnown = _workflows.any(
-      (Workflow existing) => existing.id == workflow.id,
-    );
-
-    if (isKnown) {
-      _storeWorkflow(workflow);
-    } else {
-      _workflows = appendRecord(_workflows, workflow);
-    }
-    notifyListeners();
-    return workflow;
+    return _storeEdit(workflow);
   }
 
   @override
   Future<Workflow> signWorkflow(WorkflowId workflowId) async {
     final Workflow workflow = findWorkflow(workflowId);
-    final WorkflowChange? change = findPendingChange(workflowId);
-    final String signedDocument =
-        change?.changedDocument ??
-        workflow.signature?.signedDocument ??
-        'name: ${workflow.name}\n';
-    final Workflow signed = Workflow(
-      id: workflow.id,
-      name: workflow.name,
-      availability: workflow.availability,
-      agents: workflow.agents,
-      connections: workflow.connections,
-      signature: WorkflowSignature(
+    refuseWorkflowProblem(workflow, describeWorkflowProblem(workflow));
+
+    final Workflow signed = replaceSignature(
+      workflow,
+      signFakeWorkflow(
+        workflow: workflow,
+        pendingChange: findPendingChange(workflowId),
         signedBy: _currentDeviceId,
-        signature: _fakeSignature,
-        signedDocument: signedDocument,
         signedAt: _clock.now(),
       ),
     );
 
     _storeWorkflow(signed);
+    _signedVersions[workflowId] = signed;
     _removeChange(workflowId);
     notifyListeners();
     return signed;
@@ -128,85 +142,60 @@ final class FakeWorkflowRepository extends ChangeNotifier
   Future<Workflow> discardChange(WorkflowId workflowId) async {
     if (findPendingChange(workflowId) == null) {
       throw RecordNotFound(
-        kind: 'workflow change',
+        kind: _workflowChangeKind,
         identifier: workflowId.value,
       );
     }
+    final Workflow? signedVersion = _signedVersions[workflowId];
+    if (signedVersion == null) {
+      throw StateError(_noSignedVersionProblem);
+    }
 
+    _storeWorkflow(signedVersion);
     _removeChange(workflowId);
     notifyListeners();
-    return findWorkflow(workflowId);
+    return signedVersion;
   }
 
   @override
   Future<void> deleteWorkflow(WorkflowId workflowId) async {
-    findWorkflow(workflowId);
+    final Workflow workflow = findWorkflow(workflowId);
+    if (_isInUse(workflowId)) {
+      throw StateError(
+        'workflow ${workflow.name} is still used by a task or job',
+      );
+    }
 
-    _workflows = removeRecord(
-      _workflows,
-      matches: (Workflow workflow) => workflow.id == workflowId,
-    );
-    _removeChange(workflowId);
-    notifyListeners();
+    _removeWorkflows(<WorkflowId>{workflowId});
+  }
+
+  void forgetUnseenWorkflows(Set<WorkspaceId> remainingWorkspaceIds) {
+    final Set<WorkflowId> unseenWorkflowIds = <WorkflowId>{};
+    for (final Workflow workflow in _workflows) {
+      final bool isUnseen = isSeenInNoWorkspace(
+        workflow.availability,
+        remainingWorkspaceIds,
+      );
+      if (isUnseen && !_isInUse(workflow.id)) {
+        unseenWorkflowIds.add(workflow.id);
+      }
+    }
+
+    _removeWorkflows(unseenWorkflowIds);
   }
 
   @override
-  Stream<WorkflowDraftProgress> draftWorkflow(WorkflowDraft draft) async* {
-    if (draft.description.trim().isEmpty) {
-      throw ArgumentError.value(
-        draft.description,
-        'description',
-        blankWorkflowDescriptionProblem,
-      );
-    }
-    if (_runningDrafts.contains(draft)) {
-      throw StateError('This workflow is already being drafted');
-    }
-
-    _draftedWorkflowCount += 1;
-    final Workflow drafted = buildDraftedWorkflow(
-      template: _draftTemplate,
-      chosenName: '${_draftTemplate.name}-$_draftedWorkflowCount',
-      workflowId: WorkflowId('drafted-workflow-$_draftedWorkflowCount'),
+  Stream<WorkflowDraftProgress> draftWorkflow(WorkflowDraft draft) {
+    return _drafting.streamDraftProgress(
+      draft: draft,
+      listedWorkflows: _workflows,
+      listDrafted: _listDraftedWorkflow,
     );
-
-    _runningDrafts.add(draft);
-    try {
-      yield* _streamDraft(draft, drafted);
-    } finally {
-      _runningDrafts.remove(draft);
-    }
   }
 
   @override
-  Future<void> stopDrafting(WorkflowDraft draft) async {
-    final bool wasRunning = _runningDrafts.remove(draft);
-    if (!wasRunning) {
-      throw StateError('No workflow is being drafted from these words');
-    }
-  }
-
-  Stream<WorkflowDraftProgress> _streamDraft(
-    WorkflowDraft draft,
-    Workflow drafted,
-  ) async* {
-    final int agentCount = drafted.agents.length;
-
-    for (int added = 0; added <= agentCount; added += 1) {
-      await Future<void>.delayed(_draftStepDelay);
-      if (!_runningDrafts.contains(draft)) {
-        return;
-      }
-      if (added == agentCount) {
-        _workflows = appendRecord(_workflows, drafted);
-        notifyListeners();
-      }
-      yield buildDraftProgress(
-        drafted: drafted,
-        addedAgentCount: added,
-        drafterDeviceId: _drafterDeviceId,
-      );
-    }
+  Future<void> stopDrafting(WorkflowDraft draft) {
+    return _drafting.stopDrafting(draft);
   }
 
   @override
@@ -224,9 +213,7 @@ final class FakeWorkflowRepository extends ChangeNotifier
       findWorkflow(workflowId),
       trimmedRequest,
     );
-    _storeWorkflow(changed);
-    notifyListeners();
-    return changed;
+    return _storeEdit(changed);
   }
 
   @override
@@ -239,11 +226,42 @@ final class FakeWorkflowRepository extends ChangeNotifier
       workflow.findAgent(agentId),
       workflow.name,
     );
-    final Workflow updated = replaceAgent(workflow, filled);
+    return _storeEdit(replaceAgent(workflow, filled));
+  }
 
-    _storeWorkflow(updated);
+  Workflow _storeEdit(Workflow edited) {
+    final Workflow stored = findWorkflow(edited.id);
+    refuseWorkflowUploadProblem(edited);
+
+    final Workflow kept = replaceSignature(edited, stored.signature);
+    _changes = recordUnsignedEdit(
+      changes: _changes,
+      stored: stored,
+      edited: kept,
+      changedBy: _currentDeviceId,
+      changedAt: _clock.now(),
+    );
+    _storeWorkflow(kept);
     notifyListeners();
-    return updated;
+    return kept;
+  }
+
+  WorkflowId _claimCreatedWorkflowId() {
+    WorkflowId candidate;
+    do {
+      _createdWorkflowCount += 1;
+      candidate = WorkflowId('$_createdWorkflowPrefix$_createdWorkflowCount');
+    } while (_isListed(candidate));
+    return candidate;
+  }
+
+  void _listDraftedWorkflow(Workflow drafted) {
+    _workflows = appendRecord(_workflows, drafted);
+    notifyListeners();
+  }
+
+  bool _isListed(WorkflowId workflowId) {
+    return _workflows.any((Workflow workflow) => workflow.id == workflowId);
   }
 
   void _storeWorkflow(Workflow workflow) {
@@ -254,11 +272,26 @@ final class FakeWorkflowRepository extends ChangeNotifier
     );
   }
 
+  bool _isInUse(WorkflowId workflowId) {
+    return _taskWork?.isWorkflowInUse(workflowId) ?? false;
+  }
+
+  void _removeWorkflows(Set<WorkflowId> workflowIds) {
+    _workflows = removeRecord(
+      _workflows,
+      matches: (Workflow workflow) => workflowIds.contains(workflow.id),
+    );
+    for (final WorkflowId workflowId in workflowIds) {
+      _removeChange(workflowId);
+      _approvalRepository?.forgetSigningRequests(workflowId);
+    }
+    notifyListeners();
+  }
+
   void _removeChange(WorkflowId workflowId) {
-    _changes = List<WorkflowChange>.unmodifiable(
-      _changes.where(
-        (WorkflowChange change) => change.workflowId != workflowId,
-      ),
+    _changes = removeRecord(
+      _changes,
+      matches: (WorkflowChange change) => change.workflowId == workflowId,
     );
   }
 }

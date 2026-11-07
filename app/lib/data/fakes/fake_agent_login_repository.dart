@@ -65,11 +65,10 @@ final class FakeAgentLoginRepository extends ChangeNotifier
       throw StateError(_noLoginProblem);
     }
 
-    final String typed = keys.replaceAll(_enterKey, '');
     _terminal = LoginTerminal(
       place: terminal.place,
       command: terminal.command,
-      lines: <String>[...terminal.lines, typed],
+      lines: <String>[...terminal.lines, ..._splitTypedLines(keys)],
       state: terminal.state,
       problem: terminal.problem,
     );
@@ -123,20 +122,38 @@ final class FakeAgentLoginRepository extends ChangeNotifier
       _keepContainerCredential(AgentCredentialKind.longLivedToken);
       return;
     }
-    _status = AgentLoginStatus(
-      claudeLogin: ClaudeLogin.loggedIn,
-      containerCredential: _status?.containerCredential,
-    );
-    notifyListeners();
+    _markClaudeLoggedIn();
   }
 
   void _keepContainerCredential(AgentCredentialKind? credential) {
-    _status = AgentLoginStatus(
-      claudeLogin: _status?.claudeLogin ?? ClaudeLogin.notLoggedIn,
-      containerCredential: credential,
-    );
+    final AgentLoginStatus? knownStatus = _status;
+    if (knownStatus != null) {
+      _status = AgentLoginStatus(
+        claudeLogin: knownStatus.claudeLogin,
+        containerCredential: credential,
+      );
+    }
     notifyListeners();
   }
+
+  void _markClaudeLoggedIn() {
+    final AgentLoginStatus? knownStatus = _status;
+    if (knownStatus != null) {
+      _status = AgentLoginStatus(
+        claudeLogin: ClaudeLogin.loggedIn,
+        containerCredential: knownStatus.containerCredential,
+      );
+    }
+    notifyListeners();
+  }
+}
+
+List<String> _splitTypedLines(String keys) {
+  final List<String> typedLines = keys.split(_enterKey);
+  if (keys.endsWith(_enterKey)) {
+    typedLines.removeLast();
+  }
+  return typedLines;
 }
 
 String _describeLoginCommand(AgentPlace place) {

@@ -1,9 +1,15 @@
+import 'dart:math';
+
+import 'package:agent_orchestration/data/fakes/control_characters.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/repository_files.dart';
 import 'package:agent_orchestration/data/repository/file_repository.dart';
 
 const String _pathSeparator = '/';
 const String _rootFolder = '';
+const String _currentFolder = '.';
+const String _parentFolder = '..';
+const String _foreignSeparator = '\\';
 
 final class FakeRepositoryFile {
   const FakeRepositoryFile({
@@ -47,9 +53,10 @@ final class FakeFileRepository implements FileRepository {
     required RepositoryBranchLocation location,
     required String folder,
   }) async {
-    final String prefix = folder == _rootFolder
+    final String normalizedFolder = _normalizeRepositoryPath(folder);
+    final String prefix = normalizedFolder == _rootFolder
         ? _rootFolder
-        : '$folder$_pathSeparator';
+        : '$normalizedFolder$_pathSeparator';
     final Map<String, RepositoryEntry> folders = <String, RepositoryEntry>{};
     final List<RepositoryEntry> files = <RepositoryEntry>[];
 
@@ -70,7 +77,8 @@ final class FakeFileRepository implements FileRepository {
       }
     }
 
-    if (folder != _rootFolder && folders.isEmpty && files.isEmpty) {
+    final bool isMissing = folders.isEmpty && files.isEmpty;
+    if (normalizedFolder != _rootFolder && isMissing) {
       throw StateError('the folder $folder does not exist');
     }
     return List<RepositoryEntry>.unmodifiable(<RepositoryEntry>[
@@ -84,10 +92,11 @@ final class FakeFileRepository implements FileRepository {
     required RepositoryBranchLocation location,
     required String path,
   }) async {
+    final String normalizedPath = _normalizeRepositoryPath(path);
     for (final FakeRepositoryFile file in _files) {
       final bool isRequested =
           file.repositoryAddress == location.repositoryAddress &&
-          file.path == path;
+          file.path == normalizedPath;
       if (isRequested) {
         return RepositoryFile(
           path: file.path,
@@ -123,11 +132,49 @@ List<RepositoryEntry> _sortByName(List<RepositoryEntry> entries) {
 }
 
 int _compareNames(RepositoryEntry first, RepositoryEntry second) {
-  final int ignoringCase = first.name.toLowerCase().compareTo(
+  final int ignoringCase = _compareCodePoints(
+    first.name.toLowerCase(),
     second.name.toLowerCase(),
   );
   if (ignoringCase != 0) {
     return ignoringCase;
   }
-  return first.name.compareTo(second.name);
+  return _compareCodePoints(first.name, second.name);
+}
+
+int _compareCodePoints(String first, String second) {
+  final List<int> firstCodePoints = first.runes.toList();
+  final List<int> secondCodePoints = second.runes.toList();
+  final int sharedLength = min(
+    firstCodePoints.length,
+    secondCodePoints.length,
+  );
+
+  for (int i = 0; i < sharedLength; i += 1) {
+    final int difference = firstCodePoints[i] - secondCodePoints[i];
+    if (difference != 0) {
+      return difference;
+    }
+  }
+  return firstCodePoints.length - secondCodePoints.length;
+}
+
+String _normalizeRepositoryPath(String path) {
+  final bool isAbsolute = path.startsWith(_pathSeparator);
+  final bool hasForbiddenCharacter =
+      path.contains(_foreignSeparator) || hasControlCharacter(path);
+  if (isAbsolute || hasForbiddenCharacter) {
+    throw StateError('the path $path cannot name a place in the repository');
+  }
+
+  final List<String> keptParts = <String>[];
+  for (final String part in path.split(_pathSeparator)) {
+    if (part == _parentFolder) {
+      throw StateError('the path $path leaves the repository');
+    }
+    if (part.isNotEmpty && part != _currentFolder) {
+      keptParts.add(part);
+    }
+  }
+  return keptParts.join(_pathSeparator);
 }

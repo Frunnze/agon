@@ -14,6 +14,7 @@ import 'package:agent_orchestration/data/repository/record_not_found.dart';
 import 'package:agent_orchestration/data/repository/rule_repository.dart';
 import 'package:agent_orchestration/data/repository/workspace_repository.dart';
 import 'package:agent_orchestration/data/rules/rule_titles.dart';
+import 'package:agent_orchestration/data/rules/unicode_white_space.dart';
 
 const String _ruleKind = 'rule';
 const Set<node.ChangeArea> _ruleAreas = <node.ChangeArea>{
@@ -75,7 +76,7 @@ final class NodeBackedRuleRepository extends ChangeNotifier
       _channel,
       node.CreateRuleCommand(
         workspaceId: _workspaceRepository.currentWorkspace().id,
-        title: draft.title.trim(),
+        title: trimUnicodeWhiteSpace(draft.title),
         details: draft.details,
         scope: mapScopeToNode(draft.scope),
       ),
@@ -92,7 +93,7 @@ final class NodeBackedRuleRepository extends ChangeNotifier
       node.UpdateRuleCommand(
         workspaceId: _workspaceRepository.currentWorkspace().id,
         ruleId: ruleId,
-        title: draft.title.trim(),
+        title: trimUnicodeWhiteSpace(draft.title),
         details: draft.details,
         scope: mapScopeToNode(draft.scope),
       ),

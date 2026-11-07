@@ -67,6 +67,7 @@ NodeDependencies buildNodeDependencies({
     workspaceRepository: workspaceRepository,
     livePollInterval: _livePollInterval,
     jobRepository: jobRepository,
+    clock: clock,
   );
   final NodeBackedRunnerRepository runnerRepository =
       NodeBackedRunnerRepository(

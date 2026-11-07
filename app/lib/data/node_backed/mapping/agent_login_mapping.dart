@@ -1,8 +1,7 @@
 import 'package:agent_orchestration/bridge/codecs/agent_login_values.dart'
     as node;
-import 'package:agent_orchestration/bridge/node/runner_settings.dart' as node;
 import 'package:agent_orchestration/data/models/agent_login.dart';
-import 'package:agent_orchestration/data/models/runner.dart';
+import 'package:agent_orchestration/data/node_backed/mapping/agent_place_mapping.dart';
 
 AgentLoginStatus mapAgentLoginStatusFromNode(node.AgentLoginStatusView view) {
   final node.AgentCredentialKind? credential = view.containerCredential;
@@ -16,7 +15,7 @@ AgentLoginStatus mapAgentLoginStatusFromNode(node.AgentLoginStatusView view) {
 
 LoginTerminal mapLoginTerminalFromNode(node.AgentLoginView view) {
   return LoginTerminal(
-    place: _mapPlace(view.place),
+    place: mapAgentPlaceFromNode(view.place),
     command: view.command,
     lines: view.lines,
     state: _mapLoginState(view.state),
@@ -45,12 +44,5 @@ LoginTerminalState _mapLoginState(node.LoginState state) {
     node.LoginState.running => LoginTerminalState.running,
     node.LoginState.finished => LoginTerminalState.finished,
     node.LoginState.failed => LoginTerminalState.failed,
-  };
-}
-
-AgentPlace _mapPlace(node.AgentPlace place) {
-  return switch (place) {
-    node.AgentPlace.container => AgentPlace.container,
-    node.AgentPlace.localProcess => AgentPlace.localProcess,
   };
 }

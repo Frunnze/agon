@@ -56,6 +56,7 @@ final class NodeBackedItemDraftRepository implements ItemDraftRepository {
       final node.DraftingTaskView started = await running.start;
       yield* _pollDraft(
         request: request,
+        running: running,
         statusCommand: node.ItemDraftStatusCommand(
           workspaceId: workspaceId,
           taskId: started.taskId,
@@ -64,7 +65,9 @@ final class NodeBackedItemDraftRepository implements ItemDraftRepository {
         drafterKind: mapAgentKindFromNode(started.drafter),
       );
     } finally {
-      _runningDrafts.remove(request);
+      if (_isStillRunning(request, running)) {
+        _runningDrafts.remove(request);
+      }
     }
   }
 
@@ -89,7 +92,9 @@ final class NodeBackedItemDraftRepository implements ItemDraftRepository {
       _channel,
       node.CancelRunCommand(runId: draftingRun.id),
     );
-    _runningDrafts.remove(request);
+    if (_isStillRunning(request, running)) {
+      _runningDrafts.remove(request);
+    }
     await executeNodeCommand(
       _channel,
       node.DeleteTaskCommand(taskId: started.taskId),
@@ -117,20 +122,28 @@ final class NodeBackedItemDraftRepository implements ItemDraftRepository {
     );
   }
 
+  bool _isStillRunning(ItemDraftRequest request, _RunningItemDraft running) {
+    return identical(_runningDrafts[request], running);
+  }
+
   Stream<ItemDraftProgress> _pollDraft({
     required ItemDraftRequest request,
+    required _RunningItemDraft running,
     required node.ItemDraftStatusCommand statusCommand,
     required AgentKind drafterKind,
   }) async* {
-    while (_runningDrafts.containsKey(request)) {
+    while (_isStillRunning(request, running)) {
       final node.ItemDraftStatus status;
       try {
         status = await executeNodeCommand(_channel, statusCommand);
       } on Object {
-        if (!_runningDrafts.containsKey(request)) {
+        if (!_isStillRunning(request, running)) {
           return;
         }
         rethrow;
+      }
+      if (!_isStillRunning(request, running)) {
+        return;
       }
 
       if (status case node.ItemDraftDone()) {
@@ -143,6 +156,9 @@ final class NodeBackedItemDraftRepository implements ItemDraftRepository {
         node.ListRunsCommand(taskId: statusCommand.taskId),
       );
       final DeviceId? drafterDeviceId = findDrafterDeviceId(runs);
+      if (!_isStillRunning(request, running)) {
+        return;
+      }
       if (drafterDeviceId != null) {
         yield DraftRunning(
           drafterKind: drafterKind,

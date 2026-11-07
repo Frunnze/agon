@@ -2,6 +2,7 @@ import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/workflow.dart';
 import 'package:agent_orchestration/data/models/workflow_draft.dart';
 import 'package:agent_orchestration/data/rules/workflow_edits.dart';
+import 'package:agent_orchestration/data/rules/workflow_graph.dart';
 
 const AgentKind fakeDrafterKind = AgentKind.claudeCode;
 const String _requestedAgentName = 'requested-step';
@@ -58,9 +59,12 @@ Workflow appendRequestedAgent(Workflow workflow, String request) {
   final List<AgentConnection> connections = <AgentConnection>[
     ...workflow.connections,
   ];
+  final List<AgentConnection> forwardConnections = listForwardConnections(
+    workflow,
+  );
 
   for (final WorkflowAgent agent in workflow.agents) {
-    final bool feedsNothing = workflow.connections.every(
+    final bool feedsNothing = forwardConnections.every(
       (AgentConnection connection) => connection.from != agent.id,
     );
     if (feedsNothing) {

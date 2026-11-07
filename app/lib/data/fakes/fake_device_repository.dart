@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import 'package:agent_orchestration/data/fakes.dart';
+import 'package:agent_orchestration/data/fakes/control_characters.dart';
 import 'package:agent_orchestration/data/models/device.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/project.dart';
@@ -9,8 +10,14 @@ import 'package:agent_orchestration/data/repository/record_not_found.dart';
 import 'package:agent_orchestration/data/rules/local_folder_address.dart';
 
 const String _deviceKind = 'device';
+const String _workspaceMemberKind = 'workspace member';
 const String _unixRoot = '/';
+const String _folderSeparator = '/';
+const String _currentFolder = '.';
+const String _parentFolder = '..';
 const String _fakeCheckedOutBranch = 'main';
+final RegExp _folderSeparators = RegExp(r'[\\/]');
+final RegExp _trailingNoise = RegExp(r'[\s\\/]+$');
 
 final class FakeDeviceRepository extends ChangeNotifier
     implements DeviceRepository {
@@ -53,13 +60,7 @@ final class FakeDeviceRepository extends ChangeNotifier
 
   @override
   Future<CheckedFolder> checkLocalFolder(String path) async {
-    String folderPath = path.trim();
-    if (!folderPath.startsWith(_unixRoot)) {
-      throw StateError('the folder "$path" is not an absolute path');
-    }
-    while (folderPath.length > 1 && folderPath.endsWith(_unixRoot)) {
-      folderPath = folderPath.substring(0, folderPath.length - 1);
-    }
+    final String folderPath = _normalizeFolderPath(path);
 
     return CheckedFolder(
       repository: RepositoryDraft(
@@ -78,7 +79,9 @@ final class FakeDeviceRepository extends ChangeNotifier
     required String parent,
     required String name,
   }) async {
-    final String folderPath = '$parent/$name';
+    _requireSafeFolderName(name);
+    final String parentPath = _normalizeFolderPath(parent);
+    final String folderPath = '$parentPath$_folderSeparator$name';
     if (_createdFolderPaths.contains(folderPath)) {
       throw StateError(
         'the folder $folderPath already exists, so choose another name or '
@@ -118,7 +121,12 @@ final class FakeDeviceRepository extends ChangeNotifier
       throw StateError('This device cannot revoke itself');
     }
 
-    return _storeDevice(findDevice(deviceId).asRevoked());
+    final Device device = findDevice(deviceId);
+    if (device.revoked) {
+      throw StateError('Device ${device.name} is already revoked');
+    }
+
+    return _storeDevice(device.asRevoked());
   }
 
   @override
@@ -127,8 +135,11 @@ final class FakeDeviceRepository extends ChangeNotifier
     WorkspaceId workspaceId,
   ) async {
     final Device device = findDevice(deviceId);
+    if (device.revoked) {
+      throw StateError('Device ${device.name} is revoked');
+    }
     if (device.workspaces.contains(workspaceId)) {
-      return device;
+      throw StateError('Device ${device.name} is already in the workspace');
     }
 
     return _storeDevice(
@@ -142,6 +153,12 @@ final class FakeDeviceRepository extends ChangeNotifier
     WorkspaceId workspaceId,
   ) async {
     final Device device = findDevice(deviceId);
+    if (!device.workspaces.contains(workspaceId)) {
+      throw RecordNotFound(
+        kind: _workspaceMemberKind,
+        identifier: deviceId.value,
+      );
+    }
     final List<WorkspaceId> remaining = device.workspaces
         .where((WorkspaceId candidate) => candidate != workspaceId)
         .toList();
@@ -157,5 +174,42 @@ final class FakeDeviceRepository extends ChangeNotifier
     );
     notifyListeners();
     return device;
+  }
+}
+
+String _normalizeFolderPath(String path) {
+  final String trimmedPath = path.trim();
+  if (!trimmedPath.startsWith(_unixRoot)) {
+    throw StateError('the folder "$path" is not an absolute path');
+  }
+
+  final String belowRoot = trimmedPath
+      .substring(_unixRoot.length)
+      .replaceFirst(_trailingNoise, '');
+  final List<String> parts = belowRoot.split(_folderSeparators);
+  final bool hasUnsafePart = parts.any(_isUnsafeFolderPart);
+  if (hasUnsafePart || hasControlCharacter(trimmedPath)) {
+    throw StateError(
+      'the folder "$path" has a control character, an empty part, a . or '
+      'a .. part',
+    );
+  }
+  return '$_unixRoot$belowRoot';
+}
+
+bool _isUnsafeFolderPart(String part) {
+  return part.isEmpty || part == _currentFolder || part == _parentFolder;
+}
+
+void _requireSafeFolderName(String name) {
+  final bool isPadded = name.trim() != name;
+  final bool isReserved = name == _currentFolder || name == _parentFolder;
+  final bool hasUnsafeCharacter =
+      name.contains(_folderSeparators) || hasControlCharacter(name);
+  if (name.isEmpty || isPadded || isReserved || hasUnsafeCharacter) {
+    throw StateError(
+      '"$name" cannot name a new folder: it is empty, . or .., starts or '
+      'ends with a space, or has a folder separator or a control character',
+    );
   }
 }

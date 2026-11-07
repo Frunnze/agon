@@ -91,11 +91,11 @@ final class TextFilePreview extends FilePreview {
 }
 
 final class ImageFilePreview extends FilePreview {
-  const ImageFilePreview({
+  ImageFilePreview({
     required this.width,
     required this.height,
-    required this.bytes,
-  });
+    required Uint8List bytes,
+  }) : bytes = Uint8List.fromList(bytes).asUnmodifiableView();
 
   final int width;
   final int height;

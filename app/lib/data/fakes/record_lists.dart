@@ -51,3 +51,23 @@ List<T> removeRecord<T>(
 
   return List<T>.unmodifiable(remaining);
 }
+
+void refuseDuplicateIdentifiers<T>(
+  Iterable<T> records, {
+  required String Function(T record) identify,
+  required String kind,
+}) {
+  final Set<String> seenIdentifiers = <String>{};
+
+  for (final T record in records) {
+    final String identifier = identify(record);
+    final bool isFirstSighting = seenIdentifiers.add(identifier);
+    if (!isFirstSighting) {
+      throw ArgumentError.value(
+        identifier,
+        'records',
+        'More than one $kind has this id',
+      );
+    }
+  }
+}
