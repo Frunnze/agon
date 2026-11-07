@@ -71,6 +71,7 @@ const List<WireCodec> _accountCodecs = <WireCodec>[
       'account',
       'pending_join',
       'peer',
+      'rendezvous_problem',
       'runner_settings',
     },
   ),

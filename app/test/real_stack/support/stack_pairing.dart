@@ -17,10 +17,11 @@ Future<RunnerDevice> startPairedRunner(
     tester,
     deviceName: runnerDeviceName,
   );
-  final node.PairingRequestScreen session = await askNode(
+  final node.StartedPairing started = await askNode(
     tester,
     () => stack.channel.execute(const node.StartPairingCommand()),
   );
+  final node.PairingRequestScreen session = started.screen;
   await askNode(
     tester,
     () => runner.joinWithCode(

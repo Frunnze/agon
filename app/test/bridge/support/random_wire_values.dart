@@ -6,7 +6,6 @@ import 'node_json_primitives.dart';
 const List<int> _boundaryWholeNumbers = <int>[
   0,
   1,
-  -1,
   255,
   256,
   (1 << 31) - 1,

@@ -4,6 +4,7 @@ import '../../support/random_inputs.dart';
 import 'node_json_primitives.dart';
 import 'node_wire_names.dart';
 import 'random_catalog_json.dart';
+import 'random_wire_counts.dart';
 
 Map<String, Object?> randomAccountSummaryJson(Random random) {
   return <String, Object?>{
@@ -36,6 +37,7 @@ Map<String, Object?> randomStatusViewJson(Random random) {
     'account': randomOptional(random, randomAccountSummaryJson),
     'pending_join': randomOptional(random, randomPendingJoinJson),
     'peer': randomOptional(random, randomPeerAnnouncementJson),
+    'rendezvous_problem': randomOptional(random, randomText),
     'runner_settings': randomOptional(random, randomRunnerSettingsJson),
     'app_servers': randomAppServersJson(random),
   };
@@ -66,7 +68,7 @@ Map<String, Object?> randomAppServersJson(Random random) {
 
 Map<String, Object?> randomPeerAddressJson(Random random) {
   return <String, Object?>{
-    'endpoint_public_key': randomBytes(random),
+    'endpoint_public_key': randomEndpointPublicKey(random),
     'direct_addresses': randomTexts(random),
     'relay_url': randomOptional(random, randomText),
   };
@@ -98,6 +100,7 @@ Map<String, Object?> randomRunnerSettingsJson(Random random) {
     'slot_capacity': randomCount(random),
     'sandbox': randomSandboxSettingsJson(random),
     'clone_url_template': randomOptional(random, randomText),
+    'passed_environment': randomTexts(random),
   };
 }
 
@@ -105,6 +108,7 @@ Map<String, Object?> randomJoiningDeviceJson(Random random) {
   return <String, Object?>{
     'name': randomText(random),
     'role': pickOne(random, nodeDeviceRoles),
+    'kind': pickOne(random, nodeDeviceKinds),
     'key_kind': pickOne(random, nodeHardwareKeyKinds),
     'sealing_public_key': randomBytes(random),
     'fingerprint_words': randomTexts(random),
@@ -118,6 +122,13 @@ Map<String, Object?> randomPairingRequestScreenJson(Random random) {
     'started_at': randomMomentText(random),
     'expires_at': randomMomentText(random),
     'joining': randomOptional(random, randomJoiningDeviceJson),
+  };
+}
+
+Map<String, Object?> randomStartedPairingJson(Random random) {
+  return <String, Object?>{
+    ...randomPairingRequestScreenJson(random),
+    'rendezvous_problem': randomOptional(random, randomText),
   };
 }
 

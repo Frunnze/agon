@@ -30,6 +30,7 @@ node.RunnerSettings _blockedContainerRunner() {
       allowedHosts: const <String>[],
     ),
     cloneUrlTemplate: null,
+    passedEnvironment: const <String>[],
   );
 }
 

@@ -188,6 +188,7 @@ void main() {
           slotCapacity: 1,
           sandbox: const LocalProcessSandbox(),
           cloneUrlTemplate: null,
+          passedEnvironment: const <String>[],
         ),
       ),
     );

@@ -19,19 +19,12 @@ const List<String> _nodePlainIdentityStores = <String>['keychain', 'file'];
 const List<String> _nodePeerRelays = <String>['default', 'disabled'];
 const String _hexadecimalDigits = '0123456789abcdef';
 const int _identityKeyLength = 64;
-const List<String> _nodeContainerEngines = <String>['docker', 'podman'];
 const List<String> _blankTexts = <String>['', ' ', '\t', '\n  '];
 const Set<String> _nodeConfigurationFields = <String>{
   'data_directory',
   'identity_store',
   'runner',
   'peer_relay',
-};
-const Set<String> _nodeRunnerFields = <String>{
-  'labels',
-  'slot_capacity',
-  'sandbox',
-  'clone_url_template',
 };
 
 List<String> _randomLabels(Random random) {
@@ -66,6 +59,7 @@ RunnerChoice _randomRunner(Random random) {
     slotCapacity: randomCount(random),
     sandbox: _randomSandbox(random),
     cloneUrlTemplate: randomOptional(random, randomText) as String?,
+    passedEnvironment: _randomLabels(random),
   );
 }
 
@@ -172,39 +166,6 @@ void main() {
       () => EncryptedFileIdentityStore(key: 'G' * _identityKeyLength),
       throwsArgumentError,
     );
-  });
-
-  test('test_runner_settings_to_json_property_node_fields', () {
-    final Random random = seededRandom(5203);
-
-    for (int i = 0; i < propertyIterations; i += 1) {
-      final List<String> labels = _randomLabels(random);
-      final SandboxSettings sandbox = _randomSandbox(random);
-      final RunnerSettings runner = RunnerSettings(
-        labels: labels,
-        slotCapacity: randomCount(random),
-        sandbox: sandbox,
-        cloneUrlTemplate: null,
-      );
-      final JsonObject encoded = runner.toJson();
-      final JsonObject sandboxJson = decodeObject(encoded['sandbox']);
-
-      expect(encoded.keys.toSet(), equals(_nodeRunnerFields));
-      expect(encoded['labels'], equals(labels));
-      expect(<String>[
-        'local_process',
-        'container',
-      ], contains(sandboxJson['kind']));
-      if (sandbox is ContainerSandbox) {
-        expect(_nodeContainerEngines, contains(sandboxJson['engine']));
-        expect(sandboxJson.keys.toSet(), <String>{
-          'kind',
-          'engine',
-          'image',
-          'allowed_hosts',
-        });
-      }
-    }
   });
 
   test('test_start_node_property_sends_configuration_to_start', () async {

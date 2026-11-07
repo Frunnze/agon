@@ -49,6 +49,7 @@ const List<_ReplyContract> _replyContracts = <_ReplyContract>[
         'account',
         'pending_join',
         'peer',
+        'rendezvous_problem',
         'runner_settings',
       ],
       defaultedListFields: _noFields,

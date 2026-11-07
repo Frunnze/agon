@@ -257,8 +257,11 @@ void main() {
       if (step.status == StepStatus.waitingForPerson) {
         expect(text, startsWith('Asked you '));
       }
-      if (step.status == StepStatus.skipped) {
+      if (step.status == StepStatus.skipped && step.startedAt == null) {
         expect(text, 'Did not start');
+      }
+      if (step.status == StepStatus.skipped && step.startedAt != null) {
+        expect(text, startsWith('Stopped after '));
       }
     }
   });
@@ -279,8 +282,11 @@ void main() {
       );
 
       expect(text, isNotEmpty);
-      if (step.status == StepStatus.skipped) {
+      if (step.status == StepStatus.skipped && step.startedAt == null) {
         expect(text, 'Did not start');
+      }
+      if (step.status == StepStatus.skipped && step.startedAt != null) {
+        expect(text, startsWith('Stopped after '));
       }
       if (step.status == StepStatus.running) {
         expect(text, endsWith(' so far'));

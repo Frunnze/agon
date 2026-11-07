@@ -179,7 +179,11 @@ void main() {
         projectId: GalleryProjectIds.acmeApp,
       );
 
-      expect(markdown, startsWith('# Rules\n\n- '));
+      if (rule.title.trim().isEmpty) {
+        expect(markdown, isEmpty);
+      } else {
+        expect(markdown, startsWith('# Rules\n\n- '));
+      }
     }
   });
 

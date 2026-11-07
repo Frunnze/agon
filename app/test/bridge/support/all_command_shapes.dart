@@ -58,6 +58,8 @@ const List<String> nodeCommandNames = <String>[
   'create_project',
   'list_repositories',
   'create_repository',
+  'check_local_folder',
+  'create_local_folder',
   'list_skills',
   'create_skill',
   'update_skill',

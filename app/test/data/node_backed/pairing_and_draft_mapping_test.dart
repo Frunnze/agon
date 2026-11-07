@@ -38,7 +38,10 @@ void main() {
           node.PairingRequestScreen.fromJson(
             randomPairingRequestScreenJson(random),
           );
-      final PairingSession session = mapPairingSessionFromNode(screen);
+      final PairingSession session = mapPairingSessionFromNode(
+        screen,
+        rendezvousProblem: null,
+      );
       expect(session.code, screen.displayCode);
       expect(session.expiresAt, screen.expiresAt);
       expect(session.createdAt, screen.startedAt);

@@ -63,10 +63,11 @@ Future<void> _rejectJoiningRunner(
     tester,
     deviceName: _rejectedRunnerName,
   );
-  final node.PairingRequestScreen session = await askNode(
+  final node.StartedPairing started = await askNode(
     tester,
     () => stack.channel.execute(const node.StartPairingCommand()),
   );
+  final node.PairingRequestScreen session = started.screen;
   await askNode(
     tester,
     () => stranger.joinWithCode(

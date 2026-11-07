@@ -55,9 +55,10 @@ Future<void> _pairBackupNode(
   final node.StatusView status = await stack.channel.execute(
     const node.StatusCommand(),
   );
-  final node.PairingRequestScreen session = await stack.channel.execute(
+  final node.StartedPairing started = await stack.channel.execute(
     const node.StartPairingCommand(),
   );
+  final node.PairingRequestScreen session = started.screen;
   await backupNode.run(<String, Object?>{
     'command': 'join_with_code',
     'server_address': status.hostedServerAddress,

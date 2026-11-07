@@ -75,10 +75,11 @@ void main() {
           ),
         ),
       );
-      final node.PairingRequestScreen session = await askNode(
+      final node.StartedPairing started = await askNode(
         tester,
         () => _askHost(host, const node.StartPairingCommand()),
       );
+      final node.PairingRequestScreen session = started.screen;
 
       await tapWhenShown(tester, find.text('Client only'));
       await tapAndWait(

@@ -80,7 +80,7 @@ const List<CommandShape> accountCommandShapes = <CommandShape>[
     commandName: 'start_pairing',
     argumentFields: <String>{},
     buildCommand: _buildStartPairing,
-    buildReplyJson: randomPairingRequestScreenJson,
+    buildReplyJson: randomStartedPairingJson,
     encodeReply: encodeValueReply,
   ),
   CommandShape(

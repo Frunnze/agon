@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:agent_orchestration/bridge/codecs/json_values.dart';
 import 'package:agent_orchestration/bridge/codecs/library_values.dart';
 import 'package:agent_orchestration/bridge/codecs/workspace_values.dart';
 import 'package:agent_orchestration/bridge/commands/library_commands.dart';
@@ -9,9 +10,12 @@ import 'package:agent_orchestration/data/models/identifiers.dart';
 
 import '../../support/random_inputs.dart';
 import 'command_shape.dart';
+import 'hostile_texts.dart';
 import 'node_json_primitives.dart';
 import 'random_catalog_json.dart';
 import 'random_typed_values.dart';
+
+const String _placeholderProjectsFolder = '<home>/projects';
 
 const List<CommandShape> catalogCommandShapes = <CommandShape>[
   CommandShape(
@@ -46,6 +50,20 @@ const List<CommandShape> catalogCommandShapes = <CommandShape>[
     buildCommand: _buildCreateRepository,
     buildReplyJson: randomRepositoryJson,
     encodeReply: encodeValueReply,
+  ),
+  CommandShape(
+    commandName: 'check_local_folder',
+    argumentFields: <String>{'path'},
+    buildCommand: _buildCheckLocalFolder,
+    buildReplyJson: randomCheckedLocalFolderJson,
+    encodeReply: encodeCheckedLocalFolderReply,
+  ),
+  CommandShape(
+    commandName: 'create_local_folder',
+    argumentFields: <String>{'parent', 'name'},
+    buildCommand: _buildCreateLocalFolder,
+    buildReplyJson: randomCheckedLocalFolderJson,
+    encodeReply: encodeCheckedLocalFolderReply,
   ),
   CommandShape(
     commandName: 'list_skills',
@@ -125,6 +143,37 @@ NodeCommand<Object?> _buildCreateRepository(Random random) {
     projectId: randomProjectId(random),
     repository: Repository.fromJson(randomRepositoryJson(random)),
   );
+}
+
+NodeCommand<Object?> _buildCheckLocalFolder(Random random) {
+  final String folderName = randomHostileText(random);
+  return CheckLocalFolderCommand(
+    path: '$_placeholderProjectsFolder/$folderName',
+  );
+}
+
+NodeCommand<Object?> _buildCreateLocalFolder(Random random) {
+  return CreateLocalFolderCommand(
+    parent: _placeholderProjectsFolder,
+    folderName: randomHostileText(random),
+  );
+}
+
+JsonObject randomCheckedLocalFolderJson(Random random) {
+  return <String, Object?>{
+    'address': randomHostileText(random),
+    'default_branch': randomHostileText(random),
+    'has_started_git': random.nextBool(),
+  };
+}
+
+JsonObject encodeCheckedLocalFolderReply(Object? decodedReply) {
+  final CheckedLocalFolder folder = decodedReply! as CheckedLocalFolder;
+  return <String, Object?>{
+    'address': folder.address,
+    'default_branch': folder.defaultBranch,
+    'has_started_git': folder.hasStartedGit,
+  };
 }
 
 NodeCommand<Object?> _buildListSkills(Random random) {

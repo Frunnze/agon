@@ -16,6 +16,7 @@ const WireFields _joiningDeviceFields = WireFields(
   requiredFields: <String>[
     'name',
     'role',
+    'kind',
     'key_kind',
     'sealing_public_key',
     'fingerprint_words',
@@ -32,6 +33,7 @@ JoiningDevice _buildJoiningDevice(
   return JoiningDevice(
     name: randomText(random),
     role: pickOne(random, DeviceRole.values),
+    kind: pickOne(random, DeviceKind.values),
     keyKind: pickOne(random, HardwareKeyKind.values),
     sealingPublicKey: sealingPublicKey,
     fingerprintWords: fingerprintWords,

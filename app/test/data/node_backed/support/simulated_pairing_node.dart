@@ -33,6 +33,7 @@ final class SimulatedPairingNode {
   final List<Object?> cancelledCodes = <Object?>[];
   final List<Object?> joinServerAddresses = <Object?>[];
   bool hasAccount = false;
+  String? rendezvousProblem;
 
   late final NodeCommandChannel channel = buildSimulatedChannel(answer);
 
@@ -59,7 +60,10 @@ final class SimulatedPairingNode {
 
   Object? _startPairing(SimulatedCommand command) {
     pairingRequestPollCount = 0;
-    return _buildPairingScreen(joining: null);
+    return <String, Object?>{
+      ..._buildPairingScreen(joining: null),
+      'rendezvous_problem': rendezvousProblem,
+    };
   }
 
   Object? _readPairingRequest(SimulatedCommand command) {
@@ -195,6 +199,7 @@ final class SimulatedPairingNode {
 const Map<String, Object?> _joiningJson = <String, Object?>{
   'name': 'joining-phone',
   'role': 'runner',
+  'kind': 'phone',
   'key_kind': 'secure_enclave',
   'sealing_public_key': simulatedJoiningKey,
   'fingerprint_words': simulatedWords,

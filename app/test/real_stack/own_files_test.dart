@@ -26,6 +26,7 @@ node.RunnerSettings _runAgentsHere() {
     slotCapacity: 1,
     sandbox: const node.LocalProcessSandbox(),
     cloneUrlTemplate: null,
+    passedEnvironment: const <String>[],
   );
 }
 
