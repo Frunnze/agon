@@ -12,6 +12,7 @@ import '../../support/random_inputs.dart';
 import 'support/notification_counter.dart';
 import 'support/rule_inputs.dart';
 import 'support/skill_inputs.dart';
+import 'support/workspace_inputs.dart';
 import 'support/workspace_scope_inputs.dart';
 
 const String _typePrefix = 'test_fake_skill_repository';
@@ -19,6 +20,7 @@ const String _typePrefix = 'test_fake_skill_repository';
 typedef _SkillForgetting = ({
   List<Skill> seeded,
   FakeSkillRepository repository,
+  WorkspaceId currentWorkspaceId,
   WorkspaceId deletedWorkspaceId,
   Set<WorkspaceId> remainingWorkspaceIds,
 });
@@ -42,7 +44,10 @@ Skill _withRandomScope(
 }
 
 _SkillForgetting _planSkillForgetting(Random random) {
-  final List<WorkspaceId> workspaceIds = randomWorkspaceIds(random);
+  final SeededWorkspaces workspaces = seedRandomWorkspaces(random);
+  final List<WorkspaceId> workspaceIds = listWorkspaceIds(
+    workspaces.workspaces,
+  );
   final List<Skill> seeded = <Skill>[
     for (final Skill skill in randomSeededSkills(random))
       _withRandomScope(random, skill, workspaceIds),
@@ -50,7 +55,8 @@ _SkillForgetting _planSkillForgetting(Random random) {
   final WorkspaceId deletedWorkspaceId = pickOne(random, workspaceIds);
   return (
     seeded: seeded,
-    repository: buildSkillRepository(seeded),
+    repository: buildSkillRepositoryIn(seeded, workspaces.repository),
+    currentWorkspaceId: workspaces.repository.currentWorkspace().id,
     deletedWorkspaceId: deletedWorkspaceId,
     remainingWorkspaceIds: randomRemainingWorkspaceIds(
       random,
@@ -74,10 +80,15 @@ List<String> _predictListingAfterForget(_SkillForgetting forgetting) {
       skill.scope,
       forgetting.deletedWorkspaceId,
     );
-    if (!isModelSeenInNoWorkspace(
+    final bool isKept = !isModelSeenInNoWorkspace(
       scope.workspaces,
       forgetting.remainingWorkspaceIds,
-    )) {
+    );
+    final bool isListed = isModelUsableInWorkspace(
+      scope.workspaces,
+      forgetting.currentWorkspaceId,
+    );
+    if (isKept && isListed) {
       expected.add('${describeSkill(skill)} ${describeScope(scope)}');
     }
   }

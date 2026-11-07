@@ -47,19 +47,26 @@ void main() {
     }
   });
 
-  test('${_typePrefix}_constructor_property_keeps_the_given_request', () {
+  test('${_typePrefix}_constructor_property_keeps_the_given_request_'
+      'while_live', () {
     final Random random = seededRandom(65102);
 
     for (int i = 0; i < propertyIterations; i += 1) {
       final DateTime now = randomPairingMoment(random);
       final PairingRequest request = randomPairingRequest(random);
+      final PairingSession? session = random.nextBool()
+          ? randomPairingSession(random, now)
+          : null;
       final PairingSetup setup = buildPairingSetup(
-        session: random.nextBool() ? randomPairingSession(random, now) : null,
+        session: session,
         request: request,
         now: now,
       );
 
-      expect(identical(setup.pairing.findPendingRequest(), request), isTrue);
+      expect(
+        identical(setup.pairing.findPendingRequest(), request),
+        isLiveAt(session, now),
+      );
     }
   });
 

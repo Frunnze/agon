@@ -58,7 +58,7 @@ AppDependencies buildDependenciesWithJobs(List<Task> jobs) {
     runs: galleryRuns,
     clock: base.clock,
     currentDeviceId: GalleryDeviceIds.airLaptop,
-    workflowRepository: base.workflowRepository,
+    workflowRepository: base.workflowRepository as FakeWorkflowRepository,
   );
 
   return replaceRepositories(
@@ -76,7 +76,11 @@ AppDependencies buildDependenciesWithSkills(List<Skill> skills) {
 
   return replaceRepositories(
     base,
-    skillRepository: FakeSkillRepository(skills: skills, clock: base.clock),
+    skillRepository: FakeSkillRepository(
+      skills: skills,
+      clock: base.clock,
+      workspaceRepository: base.workspaceRepository,
+    ),
   );
 }
 
@@ -131,6 +135,7 @@ AppDependencies buildDependenciesWithWorkflows(List<Workflow> workflows) {
       draftTemplate: galleryWorkflows.first,
       drafterDeviceId: GalleryDeviceIds.officeServer,
       draftStepDelay: Duration.zero,
+      workspaceRepository: base.workspaceRepository,
     ),
   );
 }

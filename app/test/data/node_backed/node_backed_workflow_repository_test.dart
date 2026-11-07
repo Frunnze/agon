@@ -222,34 +222,37 @@ void main() {
     repository.dispose();
   });
 
-  test('test_change_workflow_property_a_refusal_leaves_the_workflow', () async {
-    final Random random = seededRandom(9907);
-    final SimulatedWorkflowNode simulated = SimulatedWorkflowNode(
-      pollsBeforeDraftIsDone: 1,
-    );
-    simulated.addWorkflow(name: 'flow', state: signedState);
-    simulated.failingCommands.add('change_workflow');
-    final NodeBackedWorkflowRepository repository =
-        buildSimulatedWorkflowRepository(simulated);
-    await repository.load();
-    final WorkflowId workflowId = repository.listWorkflows().single.id;
-
-    for (int i = 0; i < _draftIterations; i += 1) {
-      final Workflow before = repository.findWorkflow(workflowId);
-
-      await expectLater(
-        repository.changeWorkflow(
-          workflowId,
-          'Add a review step $i',
-          pickOne(random, AgentKind.values),
-        ),
-        throwsStateError,
+  test(
+    'test_change_workflow_property_a_refusal_leaves_the_workflow',
+    () async {
+      final Random random = seededRandom(9907);
+      final SimulatedWorkflowNode simulated = SimulatedWorkflowNode(
+        pollsBeforeDraftIsDone: 1,
       );
+      simulated.addWorkflow(name: 'flow', state: signedState);
+      simulated.failingCommands.add('change_workflow');
+      final NodeBackedWorkflowRepository repository =
+          buildSimulatedWorkflowRepository(simulated);
+      await repository.load();
+      final WorkflowId workflowId = repository.listWorkflows().single.id;
 
-      final Workflow after = repository.findWorkflow(workflowId);
-      expect(after.agents.length, before.agents.length);
-      expect(repository.findPendingChange(workflowId), isNull);
-    }
-    repository.dispose();
-  });
+      for (int i = 0; i < _draftIterations; i += 1) {
+        final Workflow before = repository.findWorkflow(workflowId);
+
+        await expectLater(
+          repository.changeWorkflow(
+            workflowId,
+            'Add a review step $i',
+            pickOne(random, AgentKind.values),
+          ),
+          throwsStateError,
+        );
+
+        final Workflow after = repository.findWorkflow(workflowId);
+        expect(after.agents.length, before.agents.length);
+        expect(repository.findPendingChange(workflowId), isNull);
+      }
+      repository.dispose();
+    },
+  );
 }

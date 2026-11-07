@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:agent_orchestration/data/fakes.dart';
 import 'package:agent_orchestration/data/fakes/fake_task_work.dart';
+import 'package:agent_orchestration/data/gallery/gallery_workspaces.dart';
 import 'package:agent_orchestration/data/models/approval.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/run.dart';
@@ -9,6 +10,7 @@ import 'package:agent_orchestration/data/models/schedule.dart';
 import 'package:agent_orchestration/data/models/scope.dart';
 import 'package:agent_orchestration/data/models/task.dart';
 import 'package:agent_orchestration/data/models/workflow.dart';
+import 'package:agent_orchestration/data/models/workspace.dart';
 
 import '../../../support/fake_task_work_links.dart';
 import '../../../support/random_inputs.dart';
@@ -16,6 +18,7 @@ import '../../../support/sample_records.dart';
 import 'approval_inputs.dart';
 import 'task_inputs.dart';
 import 'workflow_inputs.dart';
+import 'workspace_inputs.dart';
 
 const List<WorkspaceId> usageWorkspaceIds = <WorkspaceId>[
   WorkspaceId('usage-workspace-0'),
@@ -30,6 +33,7 @@ const int _largestWorkCount = 6;
 const int _largestApprovalCount = 7;
 
 typedef WorkflowUsage = ({
+  WorkspaceId currentWorkspaceId,
   FakeWorkflowRepository workflowRepository,
   FakeApprovalRepository approvalRepository,
   FakeTaskRepository taskRepository,
@@ -180,6 +184,24 @@ List<Workflow> _randomUsageWorkflows(Random random) {
   return workflows;
 }
 
+FakeWorkspaceRepository _buildUsageWorkspaces(Random random) {
+  final List<Workspace> workspaces = <Workspace>[
+    for (final WorkspaceId workspaceId in usageWorkspaceIds)
+      Workspace(
+        id: workspaceId,
+        name: workspaceId.value,
+        appServerAddress: galleryAppServerStatus.address,
+        protectedFiles: const <String>[],
+        approvalPolicy: ApprovalPolicy.neverAsk,
+      ),
+  ];
+  return buildWorkspaceRepository(
+    workspaces: workspaces,
+    currentWorkspaceId: pickOne(random, usageWorkspaceIds),
+    appServerGroup: randomAppServerGroup(random),
+  );
+}
+
 WorkflowUsage seedWorkflowUsage(Random random) {
   final List<Workflow> workflows = _randomUsageWorkflows(random);
   final List<WorkflowId> workflowIds = listWorkflowIds(workflows);
@@ -190,9 +212,11 @@ WorkflowUsage seedWorkflowUsage(Random random) {
   );
   final List<Task> work = randomWorkUsing(random, workflowIds);
 
-  final FakeWorkflowRepository workflowRepository = buildWorkflowRepository(
+  final FakeWorkspaceRepository workspaces = _buildUsageWorkspaces(random);
+  final FakeWorkflowRepository workflowRepository = buildWorkflowRepositoryIn(
     workflows: workflows,
     changes: changes,
+    workspaceRepository: workspaces,
   );
   final FakeTaskRepository taskRepository = buildTaskRepository(
     tasks: work,
@@ -201,6 +225,7 @@ WorkflowUsage seedWorkflowUsage(Random random) {
   );
 
   return (
+    currentWorkspaceId: workspaces.currentWorkspace().id,
     workflowRepository: workflowRepository,
     approvalRepository: buildApprovalRepository(random, approvals),
     taskRepository: taskRepository,

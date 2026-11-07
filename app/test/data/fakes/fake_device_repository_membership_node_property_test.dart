@@ -6,6 +6,7 @@ import 'package:agent_orchestration/data/fakes.dart';
 import 'package:agent_orchestration/data/models/device.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/node_backed.dart';
+import 'package:agent_orchestration/data/repository/app_server_refusal.dart';
 import 'package:agent_orchestration/data/repository/device_repository.dart';
 import 'package:agent_orchestration/data/repository/record_not_found.dart';
 
@@ -21,10 +22,18 @@ const int _sequenceIterations = 40;
 const int _largestOtherDeviceCount = 5;
 const int _longestSequence = 10;
 const int _unknownTargetOdds = 6;
+const String _succeededKind = 'succeeded';
+const String _nodeRefusalKind = 'node';
+const String _missingRecordKind = 'missing';
+const String _deviceRefusalKind = 'device';
+const Set<String> _everyKind = <String>{
+  _succeededKind,
+  _nodeRefusalKind,
+  _missingRecordKind,
+  _deviceRefusalKind,
+};
 
 enum _MembershipAction { revoke, join, leave }
-
-enum _Outcome { succeeded, refusedWithStateError, refusedAsMissingRecord }
 
 typedef _MembershipStep = ({
   _MembershipAction action,
@@ -106,27 +115,32 @@ Future<Device> _applyStep(DeviceRepository repository, _MembershipStep step) {
   }
 }
 
-_Outcome _reportSucceeded(Device changed) => _Outcome.succeeded;
+String _describeSuccess(Device changed) => _succeededKind;
 
-_Outcome _reportStateError(Object error) => _Outcome.refusedWithStateError;
+bool _isRefusal(Object problem) {
+  return problem is StateError || problem is RecordNotFound;
+}
 
-_Outcome _reportMissingRecord(Object error) => _Outcome.refusedAsMissingRecord;
+String _describeRefusal(Object problem) {
+  if (problem is AppServerRefusal) {
+    return '$_nodeRefusalKind ${problem.status} ${problem.message}';
+  }
+  if (problem is RecordNotFound) {
+    return '$_missingRecordKind ${problem.kind} ${problem.identifier}';
+  }
+  final StateError refusal = problem as StateError;
+  return '$_deviceRefusalKind ${refusal.message}';
+}
 
-bool _isStateError(Object error) => error is StateError;
-
-bool _isMissingRecord(Object error) => error is RecordNotFound;
-
-Future<_Outcome> _runStep(DeviceRepository repository, _MembershipStep step) {
-  final Future<_Outcome> succeeded = _applyStep(
+Future<String> _runStep(DeviceRepository repository, _MembershipStep step) {
+  final Future<String> succeeded = _applyStep(
     repository,
     step,
-  ).then(_reportSucceeded);
-  final Future<_Outcome> stateChecked = succeeded.catchError(
-    _reportStateError,
-    test: _isStateError,
-  );
-  return stateChecked.catchError(_reportMissingRecord, test: _isMissingRecord);
+  ).then(_describeSuccess);
+  return succeeded.catchError(_describeRefusal, test: _isRefusal);
 }
+
+String _readKind(String outcome) => outcome.split(' ').first;
 
 List<Object?> _describeDevices(List<Device> devices) {
   final List<Object?> descriptions = <Object?>[];
@@ -144,11 +158,11 @@ List<Object?> _describeDevices(List<Device> devices) {
   return descriptions;
 }
 
-Future<Set<_Outcome>> _runAgreeingSequences(
+Future<Set<String>> _runAgreeingSequences(
   Random random,
   List<_MembershipAction> actions,
 ) async {
-  final Set<_Outcome> seenOutcomes = <_Outcome>{};
+  final Set<String> seenKinds = <String>{};
   for (int i = 0; i < _sequenceIterations; i += 1) {
     final _Pair pair = await _buildPair(random);
     final int stepCount = 1 + random.nextInt(_longestSequence);
@@ -159,61 +173,66 @@ Future<Set<_Outcome>> _runAgreeingSequences(
         pair.fake.listDevices(),
         pickOne(random, actions),
       );
-      final _Outcome fakeOutcome = await _runStep(pair.fake, step);
-      final _Outcome nodeOutcome = await _runStep(pair.nodeBacked, step);
+      final String fakeOutcome = await _runStep(pair.fake, step);
+      final String nodeOutcome = await _runStep(pair.nodeBacked, step);
 
       expect(fakeOutcome, nodeOutcome, reason: '$step');
       expect(
         _describeDevices(pair.fake.listDevices()),
         _describeDevices(pair.nodeBacked.listDevices()),
       );
-      seenOutcomes.add(fakeOutcome);
+      seenKinds.add(_readKind(fakeOutcome));
     }
   }
-  return seenOutcomes;
+  return seenKinds;
 }
 
 void main() {
   test('test_revoke_device_property_refuses_the_same_steps_as_the_node_'
       'backed_repository', () async {
-    final Set<_Outcome> seenOutcomes = await _runAgreeingSequences(
+    final Set<String> seenKinds = await _runAgreeingSequences(
       seededRandom(71401),
       const <_MembershipAction>[_MembershipAction.revoke],
     );
 
-    expect(seenOutcomes, _Outcome.values.toSet());
+    expect(seenKinds, <String>{
+      _succeededKind,
+      _nodeRefusalKind,
+      _missingRecordKind,
+    });
   });
 
   test('test_add_device_to_workspace_property_refuses_the_same_steps_as_the_'
       'node_backed_repository', () async {
-    final Set<_Outcome> seenOutcomes = await _runAgreeingSequences(
+    final Set<String> seenKinds = await _runAgreeingSequences(
       seededRandom(71402),
       const <_MembershipAction>[_MembershipAction.join],
     );
 
-    expect(seenOutcomes, _Outcome.values.toSet());
+    expect(seenKinds, _everyKind);
   });
 
   test('test_remove_device_from_workspace_property_refuses_the_same_steps_as_'
       'the_node_backed_repository', () async {
-    final Set<_Outcome> seenOutcomes = await _runAgreeingSequences(
+    final Set<String> seenKinds = await _runAgreeingSequences(
       seededRandom(71403),
       const <_MembershipAction>[_MembershipAction.leave],
     );
 
-    expect(seenOutcomes, <_Outcome>{
-      _Outcome.succeeded,
-      _Outcome.refusedAsMissingRecord,
+    expect(seenKinds, <String>{
+      _succeededKind,
+      _nodeRefusalKind,
+      _missingRecordKind,
     });
   });
 
   test('test_fake_device_repository_property_mixed_membership_sequences_end_'
       'like_the_node_backed_repository', () async {
-    final Set<_Outcome> seenOutcomes = await _runAgreeingSequences(
+    final Set<String> seenKinds = await _runAgreeingSequences(
       seededRandom(71404),
       _MembershipAction.values,
     );
 
-    expect(seenOutcomes, _Outcome.values.toSet());
+    expect(seenKinds, _everyKind);
   });
 }

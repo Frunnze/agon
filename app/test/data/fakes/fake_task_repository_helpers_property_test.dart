@@ -131,7 +131,7 @@ void main() {
   });
 
   test(
-    'test_refuse_second_active_run_property_start_names_the_task',
+    'test_refuse_second_active_run_property_start_names_the_task_kind',
     () async {
       final Random random = seededRandom(67604);
 
@@ -149,7 +149,8 @@ void main() {
             isA<StateError>().having(
               (StateError error) => error.message,
               'message',
-              contains(task.title),
+              'the ${task.schedule == null ? 'task' : 'job'} is already '
+                  'running',
             ),
           ),
         );

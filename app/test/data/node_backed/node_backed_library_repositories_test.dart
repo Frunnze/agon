@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:agent_orchestration/bridge/codecs/change_values.dart' as node;
+import 'package:agent_orchestration/bridge/node/node_command_channel.dart';
 import 'package:agent_orchestration/data/clock.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/library.dart';
@@ -13,7 +14,9 @@ import 'package:agent_orchestration/data/repository/record_not_found.dart';
 
 import '../../support/memory_workspace_choice_store.dart';
 import '../../support/random_inputs.dart';
+import 'support/identifier_ordered_records.dart';
 import 'support/simulated_catalog_node.dart';
+import 'support/simulated_node_replies.dart';
 import 'support/simulated_scopes.dart';
 
 typedef _OpenedLibrary = ({
@@ -25,19 +28,22 @@ typedef _OpenedLibrary = ({
 const int _pumpCount = 50;
 
 Future<_OpenedLibrary> _openLibrary(SimulatedCatalogNode simulated) async {
+  final NodeCommandChannel channel = buildSimulatedChannel(
+    IdentifierOrderedCatalogNode(simulated).answer,
+  );
   final NodeBackedWorkspaceRepository workspaces =
       NodeBackedWorkspaceRepository(
-        channel: simulated.channel,
+        channel: channel,
         clock: FixedClock(DateTime.utc(2026, 10, 31)),
         retryInterval: const Duration(seconds: 30),
         choiceStore: MemoryWorkspaceChoiceStore(chosenWorkspaceId: null),
       );
   final NodeBackedSkillRepository skills = NodeBackedSkillRepository(
-    channel: simulated.channel,
+    channel: channel,
     workspaceRepository: workspaces,
   );
   final NodeBackedRuleRepository rules = NodeBackedRuleRepository(
-    channel: simulated.channel,
+    channel: channel,
     workspaceRepository: workspaces,
   );
   await workspaces.load();
@@ -56,10 +62,13 @@ List<String> _listNodeIds(
   List<Map<String, Object?>> records,
   WorkspaceId workspaceId,
 ) {
-  return <String>[
+  final List<String> recordIds = <String>[
     for (final Map<String, Object?> record in records)
-      if (record['workspace'] == workspaceId.value) record['id'] as String,
+      if (isSimulatedScopeInWorkspace(record, workspaceId.value))
+        record['id'] as String,
   ];
+  recordIds.sort();
+  return recordIds;
 }
 
 SkillDraft _buildSkillDraft(String name) {

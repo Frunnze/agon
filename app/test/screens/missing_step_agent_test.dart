@@ -18,6 +18,7 @@ import 'package:agent_orchestration/data/models/workflow.dart';
 import 'package:agent_orchestration/shell/app_route.dart';
 
 import '../support/app_harness.dart';
+import '../support/fake_task_work_links.dart';
 import '../support/random_inputs.dart';
 import '../support/recording_native_windows.dart';
 import '../support/run_window_harness.dart';
@@ -124,6 +125,7 @@ AppDependencies _buildDependencies({
     draftTemplate: galleryWorkflows[_featurePipelineIndex],
     drafterDeviceId: GalleryDeviceIds.officeServer,
     draftStepDelay: Duration.zero,
+    workspaceRepository: buildAcmeWorkspaceRepository(),
   );
   final FakeTaskRepository taskRepository = FakeTaskRepository(
     tasks: <Task>[...galleryTasks, ...galleryJobs],

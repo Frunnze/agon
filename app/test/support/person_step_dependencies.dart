@@ -104,7 +104,7 @@ AppDependencies buildDependenciesWithQuestion({required List<RunNote> notes}) {
     runs: runs,
     clock: base.clock,
     currentDeviceId: GalleryDeviceIds.airLaptop,
-    workflowRepository: base.workflowRepository,
+    workflowRepository: base.workflowRepository as FakeWorkflowRepository,
   );
 
   return replaceRepositories(

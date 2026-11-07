@@ -139,7 +139,7 @@ List<Run> randomSeededRuns(Random random, List<Task> tasks) {
 FakeTaskRepository buildTaskRepository({
   required List<Task> tasks,
   required List<Run> runs,
-  required WorkflowRepository workflows,
+  required FakeWorkflowRepository workflows,
 }) {
   return FakeTaskRepository(
     tasks: tasks,

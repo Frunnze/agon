@@ -32,6 +32,8 @@ final class SimulatedWorkflowNode {
   final Set<String> failingCommands = <String>{};
   final List<Object?> cancelledRunIds = <Object?>[];
   final List<Object?> deletedTaskIds = <Object?>[];
+  final Map<String, Map<String, Object?>> tasks =
+      <String, Map<String, Object?>>{};
   final Map<String, _PendingDraft> _drafts = <String, _PendingDraft>{};
   final Map<Object?, Map<String, Object?>> _signedWorkflows =
       <Object?, Map<String, Object?>>{};
@@ -42,7 +44,7 @@ final class SimulatedWorkflowNode {
 
   late final Map<String, SimulatedHandler> _handlers =
       <String, SimulatedHandler>{
-        'list_workflows': (SimulatedCommand command) => views,
+        'list_workflows': _listAvailableWorkflows,
         'save_workflow': _saveWorkflow,
         'sign_workflow': _signWorkflow,
         'discard_workflow_change': _discardChange,
@@ -54,7 +56,11 @@ final class SimulatedWorkflowNode {
         'cancel_run': _cancelRun,
         'delete_task': _deleteTask,
         'delete_workflow': (SimulatedCommand command) =>
-            deleteSimulatedWorkflow(views: views, command: command),
+            deleteSimulatedWorkflow(
+              views: views,
+              tasks: tasks,
+              command: command,
+            ),
       };
 
   String answer(String inputJson) {
@@ -69,23 +75,25 @@ final class SimulatedWorkflowNode {
     required String name,
     required String state,
   }) {
-    final String workflowId = _nextIdentifier('workflow');
-    final Map<String, Object?> workflow = <String, Object?>{
-      'id': workflowId,
-      'name': name,
-      'availability': <String, Object?>{'kind': 'all_workspaces'},
-      'agents': <Object?>[
-        buildSimulatedAgentJson('$workflowId-agent', 'build'),
-      ],
-      'connections': <Object?>[],
-      'signature': state == unsignedState ? null : simulatedSignatureJson,
-    };
+    final Map<String, Object?> workflow = buildSeededWorkflowJson(
+      workflowId: _nextIdentifier('workflow'),
+      name: name,
+      state: state,
+    );
     final Map<String, Object?> view = buildSimulatedWorkflowView(
       workflow,
       state,
     );
     views.add(view);
     return view;
+  }
+
+  Object? _listAvailableWorkflows(SimulatedCommand command) {
+    return <Object?>[
+      for (final Map<String, Object?> view in views)
+        if (isSimulatedWorkflowAvailableIn(view, command['workspace_id']))
+          view,
+    ];
   }
 
   String _nextIdentifier(String kind) {
@@ -283,36 +291,10 @@ final class SimulatedWorkflowNode {
   }
 
   Object? _listRuns(SimulatedCommand command) {
-    if (!_drafts.containsKey(command['task_id'])) {
+    final Object? taskId = command['task_id'];
+    if (!_drafts.containsKey(taskId)) {
       return <Object?>[];
     }
-    return <Object?>[
-      <String, Object?>{
-        'id': _runIdOf(command['task_id']),
-        'task_id': command['task_id'],
-        'number': 1,
-        'status': 'running',
-        'steps': <Object?>[
-          <String, Object?>{
-            'name': 'Claude Code',
-            'agent_id': null,
-            'runner': simulatedDrafterId,
-            'status': 'running',
-            'started_at': simulatedMoment,
-            'finished_at': null,
-            'result': null,
-          },
-        ],
-        'log': <Object?>[],
-        'chat': <Object?>[],
-        'failure': null,
-        'link': 'direct',
-        'agent_session': null,
-        'worktree_branch': null,
-        'started_by': simulatedDrafterId,
-        'started_at': simulatedMoment,
-        'finished_at': null,
-      },
-    ];
+    return <Object?>[buildSimulatedDraftRunJson(taskId, _runIdOf(taskId))];
   }
 }

@@ -110,7 +110,7 @@ AppDependencies buildDependenciesWithoutTasks() {
       runs: const <Run>[],
       clock: base.clock,
       currentDeviceId: GalleryDeviceIds.airLaptop,
-      workflowRepository: base.workflowRepository,
+      workflowRepository: base.workflowRepository as FakeWorkflowRepository,
     ),
     approvalRepository: FakeApprovalRepository(
       approvals: const <ApprovalRequest>[],

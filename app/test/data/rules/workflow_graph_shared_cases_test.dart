@@ -12,6 +12,7 @@ import 'package:agent_orchestration/data/rules/workflow_graph.dart';
 import 'package:agent_orchestration/data/rules/workflow_problems.dart';
 
 import '../../support/random_inputs.dart';
+import 'support/workflow_run_planning.dart';
 
 const String _sharedCasesPath =
     '../rust/crates/orchestration-core/tests/fixtures/'
@@ -28,6 +29,7 @@ class _SharedGraphCase {
     required this.workflow,
     required this.order,
     required this.isValid,
+    required this.runSteps,
     required this.reachedFromFirst,
   });
 
@@ -35,6 +37,7 @@ class _SharedGraphCase {
   final Workflow workflow;
   final List<String> order;
   final bool isValid;
+  final List<String>? runSteps;
   final Set<String> reachedFromFirst;
 }
 
@@ -120,6 +123,9 @@ _SharedGraphCase _readSharedCase(Object? entry) {
     ),
     order: _readNames(fields['order']),
     isValid: fields['is_valid']! as bool,
+    runSteps: fields['run_steps'] == null
+        ? null
+        : _readNames(fields['run_steps']),
     reachedFromFirst: _readNames(fields['reached_from_first']).toSet(),
   );
 }
@@ -178,6 +184,45 @@ void main() {
         sharedCase.reachedFromFirst,
         reason: sharedCase.description,
       );
+    }
+  });
+
+  test('test_plan_steps_property_agrees_with_the_shared_table', () {
+    final Random random = seededRandom(61874);
+
+    for (final _SharedGraphCase sharedCase in sharedCases) {
+      final List<String>? runSteps = sharedCase.runSteps;
+      if (runSteps == null) {
+        continue;
+      }
+
+      final List<String> names = listRunStepNames(
+        planWorkflowRun(random, sharedCase.workflow),
+      );
+
+      expect(names, runSteps, reason: sharedCase.description);
+    }
+  });
+
+  test('test_plan_steps_property_shared_table_ignores_storage_order', () {
+    final Random random = seededRandom(61875);
+
+    for (int i = 0; i < propertyIterations; i += 1) {
+      final _SharedGraphCase sharedCase = pickOne(random, sharedCases);
+      final List<String>? runSteps = sharedCase.runSteps;
+      if (runSteps == null) {
+        continue;
+      }
+      final Workflow reordered = shuffleStorageOrder(
+        random,
+        sharedCase.workflow,
+      );
+
+      final List<String> names = listRunStepNames(
+        planWorkflowRun(random, reordered),
+      );
+
+      expect(names, runSteps, reason: sharedCase.description);
     }
   });
 

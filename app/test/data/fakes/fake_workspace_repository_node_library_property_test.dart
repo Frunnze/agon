@@ -9,6 +9,7 @@ import 'package:agent_orchestration/data/fakes/fake_workspace_contents.dart';
 import 'package:agent_orchestration/data/gallery/gallery_identifiers.dart';
 import 'package:agent_orchestration/data/gallery/gallery_moments.dart';
 import 'package:agent_orchestration/data/models/approval.dart';
+import 'package:agent_orchestration/data/models/device.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/library.dart';
 import 'package:agent_orchestration/data/models/scope.dart';
@@ -22,6 +23,7 @@ import '../../support/fake_task_work_links.dart';
 import '../../support/memory_workspace_choice_store.dart';
 import '../../support/random_inputs.dart';
 import '../node_backed/support/simulated_catalog_node.dart';
+import 'support/device_inputs.dart';
 import 'support/rule_inputs.dart';
 import 'support/skill_inputs.dart';
 import 'support/workflow_inputs.dart';
@@ -53,7 +55,10 @@ Object? _encodeScope(Scope scope) {
   return jsonDecode(jsonEncode(mapScopeToNode(scope).toJson()));
 }
 
-FakeWorkspaceContents _buildContents(FakeRuleRepository ruleRepository) {
+FakeWorkspaceContents _buildContents(
+  FakeRuleRepository ruleRepository,
+  List<String> memberWorkspaceIds,
+) {
   final FakeWorkflowRepository workflowRepository = buildWorkflowRepository(
     workflows: const <Workflow>[],
     changes: const <WorkflowChange>[],
@@ -75,6 +80,16 @@ FakeWorkspaceContents _buildContents(FakeRuleRepository ruleRepository) {
     skillRepository: buildSkillRepository(const <Skill>[]),
     ruleRepository: ruleRepository,
     workflowRepository: workflowRepository,
+    deviceRepository: buildDeviceRepository(<Device>[
+      randomDeviceWithId(
+        Random(0),
+        deviceTestThisDevice,
+        isRevoked: false,
+      ).withWorkspaces(<WorkspaceId>[
+        for (final String workspaceId in memberWorkspaceIds)
+          WorkspaceId(workspaceId),
+      ]),
+    ]),
   );
 }
 
@@ -135,7 +150,7 @@ Future<_World> _buildWorld(Random random) async {
     clock: FixedClock(galleryNow),
     workspaceRepository: fakeWorkspaces,
   );
-  fakeWorkspaces.linkContents(_buildContents(fakeRules));
+  fakeWorkspaces.linkContents(_buildContents(fakeRules, workspaceIds));
   return (
     fakeWorkspaces: fakeWorkspaces,
     fakeRules: fakeRules,

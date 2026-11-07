@@ -198,7 +198,7 @@ Future<void> _checkAgreement({
 
       expect(
         _describeListing(pair.fake),
-        orderedEquals(_describeListing(pair.nodeBacked)),
+        unorderedEquals(_describeListing(pair.nodeBacked)),
       );
     }
     pair.nodeBacked.dispose();

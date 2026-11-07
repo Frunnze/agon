@@ -1,6 +1,6 @@
+import 'simulated_deletions.dart';
 import 'simulated_node_replies.dart';
 
-const String _workspaceField = 'workspace';
 const String _personEditKind = 'person_edit';
 const List<String> _skillFields = <String>[
   'name',
@@ -13,10 +13,15 @@ const List<String> _skillFields = <String>[
 const List<String> _ruleFields = <String>['title', 'details', 'scope'];
 
 final class SimulatedLibraryEdits {
-  SimulatedLibraryEdits({required this.skills, required this.rules});
+  SimulatedLibraryEdits({
+    required this.skills,
+    required this.rules,
+    required this.tasks,
+  });
 
   final List<Map<String, Object?>> skills;
   final List<Map<String, Object?>> rules;
+  final Map<String, Map<String, Object?>> tasks;
 
   Object? updateSkill(SimulatedCommand command) {
     final Map<String, Object?> skill = findSimulatedRecord(
@@ -34,6 +39,7 @@ final class SimulatedLibraryEdits {
       identifier: command['skill_id'],
     );
     skills.remove(skill);
+    forgetSimulatedSkillsInTasks(tasks, <Object?>{skill['id']});
     return null;
   }
 
@@ -57,7 +63,7 @@ final class SimulatedLibraryEdits {
 
     skill['instructions'] = latest['replaced_instructions'];
     skill['history'] = history.sublist(0, history.length - 1);
-    return _withoutWorkspace(skill);
+    return skill;
   }
 
   Object? updateRule(SimulatedCommand command) {
@@ -88,11 +94,5 @@ Map<String, Object?> _copyFields(
   for (final String field in fields) {
     record[field] = command[field];
   }
-  return _withoutWorkspace(record);
-}
-
-Map<String, Object?> _withoutWorkspace(Map<String, Object?> record) {
-  final Map<String, Object?> reply = Map<String, Object?>.of(record);
-  reply.remove(_workspaceField);
-  return reply;
+  return record;
 }

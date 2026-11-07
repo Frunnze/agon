@@ -6,6 +6,7 @@ import 'package:agent_orchestration/bridge/codecs/change_values.dart' as node;
 import 'package:agent_orchestration/data/models/device.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/node_backed.dart';
+import 'package:agent_orchestration/data/repository/app_server_refusal.dart';
 import 'package:agent_orchestration/data/repository/record_not_found.dart';
 
 import '../../bridge/support/node_json_primitives.dart';
@@ -64,9 +65,14 @@ Matcher _expectedRevokeOutcome(Device device) {
   return completes;
 }
 
-Matcher _expectedJoinOutcome(Device device, WorkspaceId workspaceId) {
+Matcher _expectedJoinOutcome({
+  required Device device,
+  required WorkspaceId workspaceId,
+  required Device thisDevice,
+}) {
   final bool isMember = device.workspaces.contains(workspaceId);
-  if (device.revoked || isMember) {
+  final bool holdsKey = thisDevice.workspaces.contains(workspaceId);
+  if (!holdsKey || device.revoked || isMember) {
     return throwsStateError;
   }
   return completes;
@@ -76,20 +82,24 @@ Matcher _expectedLeaveOutcome(Device device, WorkspaceId workspaceId) {
   if (device.workspaces.contains(workspaceId)) {
     return completes;
   }
-  return throwsA(isA<RecordNotFound>());
+  return throwsA(isA<AppServerRefusal>());
 }
 
-WorkspaceId _pickWorkspace(Random random, Device device) {
-  if (device.workspaces.isEmpty || random.nextBool()) {
+WorkspaceId _pickWorkspace(Random random, List<WorkspaceId> known) {
+  if (known.isEmpty || random.nextInt(3) == 0) {
     return WorkspaceId(randomUuidText(random));
   }
-  return pickOne(random, device.workspaces);
+  return pickOne(random, known);
 }
 
 Future<void> _takeStep(Random random, _Fixture fixture) async {
   final NodeBackedDeviceRepository repository = fixture.repository;
   final Device device = pickOne(random, repository.listDevices());
-  final WorkspaceId workspaceId = _pickWorkspace(random, device);
+  final Device thisDevice = repository.currentDevice();
+  final WorkspaceId workspaceId = _pickWorkspace(random, <WorkspaceId>[
+    ...device.workspaces,
+    ...thisDevice.workspaces,
+  ]);
 
   switch (pickOne(random, _DeviceStep.values)) {
     case _DeviceStep.revoke:
@@ -100,7 +110,11 @@ Future<void> _takeStep(Random random, _Fixture fixture) async {
     case _DeviceStep.addWorkspace:
       await expectLater(
         repository.addDeviceToWorkspace(device.id, workspaceId),
-        _expectedJoinOutcome(device, workspaceId),
+        _expectedJoinOutcome(
+          device: device,
+          workspaceId: workspaceId,
+          thisDevice: thisDevice,
+        ),
       );
     case _DeviceStep.removeWorkspace:
       await expectLater(
@@ -133,17 +147,23 @@ void main() {
   test('test_add_device_to_workspace_property_device_joins_it', () async {
     final Random random = seededRandom(9942);
     final _Fixture fixture = _buildFixture(random);
-    await fixture.repository.load();
+    final List<Object?> heldWorkspaces =
+        fixture.node.devices[_thisDeviceId]!['workspaces']! as List<Object?>;
     for (int i = 0; i < _sequenceIterations; i += 1) {
       final WorkspaceId workspaceId = WorkspaceId(randomUuidText(random));
+      heldWorkspaces.add(workspaceId.value);
+      final String joinerId = fixture.node.addDeviceFromElsewhere(random);
+      fixture.node.devices[joinerId]!['revoked'] = false;
+      await fixture.repository.load();
+
       final Device joined = await fixture.repository.addDeviceToWorkspace(
-        const DeviceId(_thisDeviceId),
+        DeviceId(joinerId),
         workspaceId,
       );
       expect(joined.workspaces, contains(workspaceId));
 
       final Device left = await fixture.repository.removeDeviceFromWorkspace(
-        const DeviceId(_thisDeviceId),
+        DeviceId(joinerId),
         workspaceId,
       );
       expect(left.workspaces, isNot(contains(workspaceId)));

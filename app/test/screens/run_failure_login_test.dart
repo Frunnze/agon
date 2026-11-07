@@ -76,7 +76,8 @@ Future<AppNavigation> _openFailedRun(
         runs: runs,
         clock: dependencies.clock,
         currentDeviceId: _thisDeviceId,
-        workflowRepository: dependencies.workflowRepository,
+        workflowRepository:
+            dependencies.workflowRepository as FakeWorkflowRepository,
       ),
       runnerRepository: FakeRunnerRepository(
         runners: <Runner>[

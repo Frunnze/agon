@@ -212,7 +212,7 @@ void main() {
 
     expect(tester.takeException(), isNull);
     expect(find.text('Start now did not work'), findsOneWidget);
-    expect(find.text('Task Ship release 2.4 is already running'), findsOne);
+    expect(find.text('the task is already running'), findsOne);
     expect(navigation.currentRoute, formRoute);
   });
 

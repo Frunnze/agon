@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:agent_orchestration/bridge/codecs/change_values.dart' as node;
+import 'package:agent_orchestration/bridge/node/node_command_channel.dart';
 import 'package:agent_orchestration/data/clock.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/project.dart';
@@ -12,7 +13,9 @@ import 'package:agent_orchestration/data/repository/record_not_found.dart';
 
 import '../../support/memory_workspace_choice_store.dart';
 import '../../support/random_inputs.dart';
+import 'support/identifier_ordered_records.dart';
 import 'support/simulated_catalog_node.dart';
+import 'support/simulated_node_replies.dart';
 
 const int _followIterations = 15;
 const int _followPumps = 200;
@@ -23,15 +26,18 @@ typedef _OpenedProjects = ({
 });
 
 Future<_OpenedProjects> _openProjects(SimulatedCatalogNode simulated) async {
+  final NodeCommandChannel channel = buildSimulatedChannel(
+    IdentifierOrderedCatalogNode(simulated).answer,
+  );
   final NodeBackedWorkspaceRepository workspaces =
       NodeBackedWorkspaceRepository(
-        channel: simulated.channel,
+        channel: channel,
         clock: FixedClock(DateTime.utc(2026, 10, 31)),
         retryInterval: const Duration(seconds: 30),
         choiceStore: MemoryWorkspaceChoiceStore(chosenWorkspaceId: null),
       );
   final NodeBackedProjectRepository projects = NodeBackedProjectRepository(
-    channel: simulated.channel,
+    channel: channel,
     workspaceRepository: workspaces,
   );
   await workspaces.load();
@@ -56,11 +62,13 @@ List<String> _listNodeProjectIds(
   SimulatedCatalogNode simulated,
   WorkspaceId workspaceId,
 ) {
-  return <String>[
+  final List<String> projectIds = <String>[
     for (final Map<String, Object?> project in simulated.projects)
       if (project['workspace_id'] == workspaceId.value)
         project['id'] as String,
   ];
+  projectIds.sort();
+  return projectIds;
 }
 
 List<String> _listProjectIds(

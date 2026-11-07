@@ -88,7 +88,7 @@ void main() {
 
       _expectSignedByAClient(
         deviceId: signature.signedBy,
-        at: signature.signedAt,
+        at: signature.signedAt!,
       );
       expect(signature.signedDocument, startsWith('name: ${workflow.name}\n'));
       if (signedSteps.isNotEmpty) {
@@ -117,7 +117,7 @@ void main() {
       expect(signature, isNotNull, reason: workflow.name);
       expect(change.signedDocument, signature!.signedDocument);
       expect(change.changedDocument, isNot(change.signedDocument));
-      expect(change.changedAt.isAfter(signature.signedAt), isTrue);
+      expect(change.changedAt!.isAfter(signature.signedAt!), isTrue);
     }
   });
 
@@ -125,7 +125,10 @@ void main() {
     for (final WorkflowChange change in galleryWorkflowChanges) {
       final Workflow workflow = findGalleryWorkflow(change.workflowId);
 
-      _expectSignedByAClient(deviceId: change.changedBy, at: change.changedAt);
+      _expectSignedByAClient(
+        deviceId: change.changedBy!,
+        at: change.changedAt!,
+      );
       expect(change.summary.trim(), isNotEmpty);
       expect(change.differences, isNotEmpty);
       expect(change.changedDocument, startsWith('name: ${workflow.name}\n'));

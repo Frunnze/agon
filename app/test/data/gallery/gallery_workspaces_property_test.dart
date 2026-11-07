@@ -42,7 +42,7 @@ void main() {
       expect(address, galleryAppServerStatus.address);
     }
     expect(
-      galleryAppServerStatus.lastConnectedAt.isAfter(galleryNow),
+      galleryAppServerStatus.lastConnectedAt!.isAfter(galleryNow),
       isFalse,
     );
   });

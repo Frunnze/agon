@@ -18,6 +18,7 @@ const List<String> _rustClaudeLogins = <String>[
   'logged_in',
   'not_logged_in',
   'not_installed',
+  'unknown',
 ];
 const List<String> _rustCredentialKinds = <String>[
   'long_lived_token',

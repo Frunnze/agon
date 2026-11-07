@@ -7,6 +7,7 @@ import 'package:agent_orchestration/data/fakes/fake_workspace_contents.dart';
 import 'package:agent_orchestration/data/gallery/gallery_identifiers.dart';
 import 'package:agent_orchestration/data/gallery/gallery_moments.dart';
 import 'package:agent_orchestration/data/models/approval.dart';
+import 'package:agent_orchestration/data/models/device.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/library.dart';
 import 'package:agent_orchestration/data/models/project.dart';
@@ -16,6 +17,7 @@ import 'package:agent_orchestration/data/models/workspace.dart';
 
 import '../../../support/fake_task_work_links.dart';
 import '../../../support/random_inputs.dart';
+import 'device_inputs.dart';
 import 'project_work_inputs.dart';
 import 'skill_inputs.dart';
 import 'workflow_inputs.dart';
@@ -37,6 +39,7 @@ typedef WorkspaceWorld = ({
   FakeRuleRepository ruleRepository,
   FakeWorkflowRepository workflowRepository,
   FakeWorkspaceRepository workspaceRepository,
+  FakeDeviceRepository deviceRepository,
   FakeWorkspaceContents contents,
 });
 
@@ -156,17 +159,36 @@ FakeWorkspaceRepository _buildWorkspaces(Random random) {
   );
 }
 
+FakeDeviceRepository _buildMemberDevices(
+  Random random,
+  FakeWorkspaceRepository workspaceRepository,
+) {
+  final Device thisDevice = randomDeviceWithId(
+    random,
+    thisWorkspaceDeviceId,
+    isRevoked: false,
+  ).withWorkspaces(listWorldWorkspaceIds(workspaceRepository));
+  return FakeDeviceRepository(
+    devices: <Device>[thisDevice],
+    currentDeviceId: thisWorkspaceDeviceId,
+    peerAddressProblem: null,
+    gitlessFolderPaths: const <String>{},
+  );
+}
+
 WorkspaceWorld buildWorkspaceWorld(Random random) {
   final ProjectWorkSeed work = randomProjectWork(random);
   final List<Project> projects = _randomProjects(random);
   final List<Rule> rules = _randomRules(random);
   final List<Skill> skills = _randomSkills(random);
   final List<Workflow> workflows = _randomWorkflows(random);
+  final FakeWorkspaceRepository workspaceRepository = _buildWorkspaces(random);
   final FakeTaskRepository taskRepository = buildProjectWorkRepository(work);
   final FakeTaskWork taskWork = buildTaskWorkOver(taskRepository);
-  final FakeWorkflowRepository workflowRepository = buildWorkflowRepository(
+  final FakeWorkflowRepository workflowRepository = buildWorkflowRepositoryIn(
     workflows: workflows,
     changes: const <WorkflowChange>[],
+    workspaceRepository: workspaceRepository,
   );
   workflowRepository.linkWork(
     taskWork: taskWork,
@@ -180,12 +202,23 @@ WorkspaceWorld buildWorkspaceWorld(Random random) {
     projects: projects,
     taskWork: taskWork,
   );
-  final FakeWorkspaceRepository workspaceRepository = _buildWorkspaces(random);
-  final FakeSkillRepository skillRepository = buildSkillRepository(skills);
+  final FakeSkillRepository skillRepository = buildSkillRepositoryIn(
+    skills,
+    workspaceRepository,
+  );
+  skillRepository.linkTasks(taskRepository);
   final FakeRuleRepository ruleRepository = FakeRuleRepository(
     rules: rules,
     clock: FixedClock(galleryNow),
     workspaceRepository: workspaceRepository,
+  );
+  projectRepository.linkLibrary(
+    skillRepository: skillRepository,
+    ruleRepository: ruleRepository,
+  );
+  final FakeDeviceRepository deviceRepository = _buildMemberDevices(
+    random,
+    workspaceRepository,
   );
   final FakeWorkspaceContents contents = FakeWorkspaceContents(
     projectRepository: projectRepository,
@@ -193,6 +226,7 @@ WorkspaceWorld buildWorkspaceWorld(Random random) {
     skillRepository: skillRepository,
     ruleRepository: ruleRepository,
     workflowRepository: workflowRepository,
+    deviceRepository: deviceRepository,
   );
   workspaceRepository.linkContents(contents);
   return (
@@ -207,6 +241,7 @@ WorkspaceWorld buildWorkspaceWorld(Random random) {
     ruleRepository: ruleRepository,
     workflowRepository: workflowRepository,
     workspaceRepository: workspaceRepository,
+    deviceRepository: deviceRepository,
     contents: contents,
   );
 }

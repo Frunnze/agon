@@ -2,14 +2,17 @@ import 'dart:math';
 
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:agent_orchestration/bridge/node/node_command_failure.dart';
+import 'package:agent_orchestration/data/node_backed.dart';
 import 'package:agent_orchestration/startup/forgotten_device_problem.dart';
 
 import '../support/random_inputs.dart';
 
+const String _noAccountMessage = 'this device has no account yet';
 const List<String> _forgottenDeviceMessages = <String>[
   'the app server answered 401: the device is not paired',
   'the app server answered 403: the device has been revoked',
-  'this device has no account yet',
+  _noAccountMessage,
 ];
 
 const List<String> _otherStartupMessages = <String>[
@@ -19,6 +22,13 @@ const List<String> _otherStartupMessages = <String>[
   'the app server answered 500: the device is not paired',
   'could not delete the device identity, nothing was forgotten: denied',
 ];
+
+Object _translate(String nodeMessage) {
+  final String? kind = nodeMessage == _noAccountMessage
+      ? noAccountFailureKind
+      : null;
+  return translateNodeFailure(NodeCommandFailure(nodeMessage, kind: kind));
+}
 
 Object _wrapInOtherProblem(Random random, String message) {
   final List<Object> otherProblems = <Object>[
@@ -38,7 +48,7 @@ void main() {
       for (int i = 0; i < propertyIterations; i += 1) {
         final String message = pickOne(random, _forgottenDeviceMessages);
 
-        expect(isForgottenDeviceProblem(StateError(message)), isTrue);
+        expect(isForgottenDeviceProblem(_translate(message)), isTrue);
       }
     },
   );
@@ -48,7 +58,7 @@ void main() {
     for (int i = 0; i < propertyIterations; i += 1) {
       final String message = pickOne(random, _otherStartupMessages);
 
-      expect(isForgottenDeviceProblem(StateError(message)), isFalse);
+      expect(isForgottenDeviceProblem(_translate(message)), isFalse);
     }
   });
 
@@ -58,8 +68,8 @@ void main() {
       final String message = pickOne(random, _forgottenDeviceMessages);
       final String noise = 'x${randomText(random)}';
 
-      expect(isForgottenDeviceProblem(StateError('$noise$message')), isFalse);
-      expect(isForgottenDeviceProblem(StateError('$message$noise')), isFalse);
+      expect(isForgottenDeviceProblem(_translate('$noise$message')), isFalse);
+      expect(isForgottenDeviceProblem(_translate('$message$noise')), isFalse);
     }
   });
 
@@ -79,7 +89,7 @@ void main() {
       final String message = randomText(random);
       final bool isKnownMessage = _forgottenDeviceMessages.contains(message);
 
-      expect(isForgottenDeviceProblem(StateError(message)), isKnownMessage);
+      expect(isForgottenDeviceProblem(_translate(message)), isKnownMessage);
       expect(
         isForgottenDeviceProblem(_wrapInOtherProblem(random, message)),
         isFalse,

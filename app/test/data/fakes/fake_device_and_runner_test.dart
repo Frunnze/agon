@@ -9,6 +9,7 @@ import 'package:agent_orchestration/data/gallery/gallery_runners.dart';
 import 'package:agent_orchestration/data/models/device.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/runner.dart';
+import 'package:agent_orchestration/data/repository/app_server_refusal.dart';
 import 'package:agent_orchestration/data/repository/record_not_found.dart';
 
 import '../../support/random_inputs.dart';
@@ -49,9 +50,12 @@ void main() {
         pickOne(random, galleryDevices).id,
       );
       final WorkspaceId workspaceId = pickOne(random, _workspaceIds);
+      final bool holdsKey = repository.currentDevice().workspaces.contains(
+        workspaceId,
+      );
       if (device.workspaces.contains(workspaceId)) {
         await repository.removeDeviceFromWorkspace(device.id, workspaceId);
-      } else if (!device.revoked) {
+      } else if (!device.revoked && holdsKey) {
         await repository.addDeviceToWorkspace(device.id, workspaceId);
       }
       expect(repository.listDevices().length, galleryDevices.length);
@@ -147,7 +151,13 @@ void main() {
       } else {
         await expectLater(
           repository.removeDeviceFromWorkspace(device.id, workspaceId),
-          throwsA(isA<RecordNotFound>()),
+          throwsA(
+            isA<AppServerRefusal>().having(
+              (AppServerRefusal refusal) => refusal.status,
+              'status',
+              404,
+            ),
+          ),
         );
       }
 

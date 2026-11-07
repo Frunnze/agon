@@ -50,21 +50,6 @@ Scope? _keepScopeLikeServer(
   return Scope(workspaces: workspaces, projects: scope.projects);
 }
 
-List<LibraryEntry> expectSkillsAfterDeleting(
-  WorkspaceWorld world,
-  WorkspaceId deleted,
-  Set<WorkspaceId> remaining,
-) {
-  final List<LibraryEntry> entries = <LibraryEntry>[];
-  for (final Skill skill in world.skills) {
-    final Scope? kept = _keepScopeLikeServer(skill.scope, deleted, remaining);
-    if (kept != null) {
-      entries.add((identifier: skill.id.value, scope: describeScope(kept)));
-    }
-  }
-  return entries;
-}
-
 List<LibraryEntry> expectRulesAfterDeleting(
   WorkspaceWorld world,
   WorkspaceId deleted,

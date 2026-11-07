@@ -161,13 +161,16 @@ void main() {
           for (final WorkspaceId workspaceId in sampleDeviceWorkspaceIds)
             if (!chosen.workspaces.contains(workspaceId)) workspaceId,
         ];
-        if (chosen.revoked || outside.isEmpty) {
+        final bool isThisDevice = chosen.id == deviceTestThisDevice;
+        if (chosen.revoked || outside.isEmpty || isThisDevice) {
           continue;
         }
+        final WorkspaceId joined = pickOne(random, outside);
+        counted.repository.grantWorkspaceToCurrentDevice(joined);
 
         final Device changed = await counted.repository.addDeviceToWorkspace(
           chosen.id,
-          pickOne(random, outside),
+          joined,
         );
 
         expect(counted.repository.findDevice(chosen.id), same(changed));

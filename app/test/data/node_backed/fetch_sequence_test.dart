@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:agent_orchestration/data/node_backed.dart';
 
 import '../../support/random_inputs.dart';
+import 'support/finished_local_change.dart';
 
 const int _largestFetchCount = 8;
 
@@ -45,22 +46,25 @@ void main() {
     }
   });
 
-  test('test_record_local_change_property_only_later_fetches_count', () {
-    final Random random = seededRandom(10001);
-    for (int i = 0; i < propertyIterations; i += 1) {
-      final FetchSequence sequence = FetchSequence();
-      final int earlierCount = random.nextInt(_largestFetchCount);
-      final List<int> earlier = <int>[
-        for (int j = 0; j < earlierCount; j += 1) sequence.startFetch(),
-      ];
+  test(
+    'test_finish_local_change_property_at_once_only_later_fetches_count',
+    () {
+      final Random random = seededRandom(10001);
+      for (int i = 0; i < propertyIterations; i += 1) {
+        final FetchSequence sequence = FetchSequence();
+        final int earlierCount = random.nextInt(_largestFetchCount);
+        final List<int> earlier = <int>[
+          for (int j = 0; j < earlierCount; j += 1) sequence.startFetch(),
+        ];
 
-      sequence.recordLocalChange();
-      final int later = sequence.startFetch();
+        finishLocalChangeAtOnce(sequence);
+        final int later = sequence.startFetch();
 
-      for (final int fetch in earlier) {
-        expect(sequence.acceptIfNewest(fetch), isFalse);
+        for (final int fetch in earlier) {
+          expect(sequence.acceptIfNewest(fetch), isFalse);
+        }
+        expect(sequence.acceptIfNewest(later), isTrue);
       }
-      expect(sequence.acceptIfNewest(later), isTrue);
-    }
-  });
+    },
+  );
 }

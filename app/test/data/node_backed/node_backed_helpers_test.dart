@@ -72,9 +72,9 @@ void main() {
             ? AppServerState.online
             : AppServerState.unreachable,
       );
-      final DateTime expectedConnection = status.serverReachable
+      final DateTime? expectedConnection = status.serverReachable
           ? observedAt
-          : previous?.lastConnectedAt ?? observedAt;
+          : previous?.lastConnectedAt;
       expect(mapped?.lastConnectedAt, expectedConnection);
     }
   });

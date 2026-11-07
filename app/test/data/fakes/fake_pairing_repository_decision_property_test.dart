@@ -236,7 +236,7 @@ void main() {
       );
 
       expect(setup.devices.listDevices().length, deviceCountBefore);
-      expect(setup.pairing.findPendingRequest(), isNotNull);
+      expect(setup.pairing.findPendingRequest(), isNull);
     }
   });
 
@@ -248,13 +248,14 @@ void main() {
       final PairingSetup setup = random.nextBool()
           ? buildWaitingPairingSetup(random)
           : _buildExpiredSetup(random);
+      final PairingRequest? before = setup.pairing.findPendingRequest();
 
       await expectLater(
         setup.pairing.approvePairing(const <WorkspaceId>[]),
         throwsArgumentError,
       );
 
-      expect(setup.pairing.findPendingRequest(), isNotNull);
+      expect(identical(setup.pairing.findPendingRequest(), before), isTrue);
     }
   });
 }

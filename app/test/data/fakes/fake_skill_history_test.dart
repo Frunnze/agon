@@ -12,6 +12,7 @@ import 'package:agent_orchestration/data/models/library.dart';
 import 'package:agent_orchestration/data/models/scope.dart';
 import 'package:agent_orchestration/data/models/skill_change.dart';
 
+import '../../support/fake_task_work_links.dart';
 import '../../support/random_inputs.dart';
 
 const String _currentInstructions = 'Current instructions.';
@@ -53,7 +54,11 @@ Skill _buildSkill(List<SkillChange> history) {
 }
 
 FakeSkillRepository _buildRepository(List<Skill> skills) {
-  return FakeSkillRepository(skills: skills, clock: FixedClock(galleryNow));
+  return FakeSkillRepository(
+    skills: skills,
+    clock: FixedClock(galleryNow),
+    workspaceRepository: buildAcmeWorkspaceRepository(),
+  );
 }
 
 SkillDraft _buildDraft(Skill skill, String instructions) {

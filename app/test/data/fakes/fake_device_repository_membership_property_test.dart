@@ -4,12 +4,14 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:agent_orchestration/data/models/device.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
+import 'package:agent_orchestration/data/repository/app_server_refusal.dart';
 import 'package:agent_orchestration/data/repository/record_not_found.dart';
 
 import '../../support/random_inputs.dart';
 import 'support/device_inputs.dart';
 
-const String _workspaceMemberKind = 'workspace member';
+const int _notFoundStatus = 404;
+const String _missingMemberReason = 'the workspace member was not found';
 
 WorkspaceId _randomFreshWorkspace(Random random) {
   return WorkspaceId('fresh-${randomText(random)}');
@@ -17,6 +19,20 @@ WorkspaceId _randomFreshWorkspace(Random random) {
 
 DeviceId _randomUnknownDevice(Random random) {
   return DeviceId('unknown-${randomText(random)}');
+}
+
+Matcher _isMissingMember() {
+  return isA<AppServerRefusal>()
+      .having(
+        (AppServerRefusal refusal) => refusal.status,
+        'status',
+        _notFoundStatus,
+      )
+      .having(
+        (AppServerRefusal refusal) => refusal.message,
+        'reason',
+        _missingMemberReason,
+      );
 }
 
 void main() {
@@ -97,25 +113,27 @@ void main() {
 
     for (int i = 0; i < propertyIterations; i += 1) {
       final CountedDevices counted = buildCountedDeviceRepository(random);
+      final Device? target = pickActiveOtherDevice(random, counted.seeds);
+      if (target == null) {
+        continue;
+      }
       final WorkspaceId fresh = _randomFreshWorkspace(random);
+      counted.repository.grantWorkspaceToCurrentDevice(fresh);
 
-      await counted.repository.addDeviceToWorkspace(
-        deviceTestThisDevice,
-        fresh,
-      );
+      await counted.repository.addDeviceToWorkspace(target.id, fresh);
       await expectLater(
-        counted.repository.addDeviceToWorkspace(deviceTestThisDevice, fresh),
+        counted.repository.addDeviceToWorkspace(target.id, fresh),
         throwsStateError,
       );
 
       final List<WorkspaceId> joined = counted.repository
-          .currentDevice()
+          .findDevice(target.id)
           .workspaces;
       final Iterable<WorkspaceId> freshEntries = joined.where(
         (WorkspaceId joinedId) => joinedId == fresh,
       );
       expect(freshEntries, hasLength(1));
-      expect(counted.notifications.count, 1);
+      expect(counted.notifications.count, 2);
     }
   });
 
@@ -157,6 +175,8 @@ void main() {
       }
       final WorkspaceId first = _randomFreshWorkspace(random);
       final WorkspaceId second = WorkspaceId('${first.value}-second');
+      counted.repository.grantWorkspaceToCurrentDevice(first);
+      counted.repository.grantWorkspaceToCurrentDevice(second);
 
       await counted.repository.addDeviceToWorkspace(target.id, first);
       final Device revoked = await counted.repository.revokeDevice(target.id);
@@ -187,19 +207,7 @@ void main() {
           device.id,
           _randomFreshWorkspace(random),
         ),
-        throwsA(
-          isA<RecordNotFound>()
-              .having(
-                (RecordNotFound refusal) => refusal.kind,
-                'kind',
-                _workspaceMemberKind,
-              )
-              .having(
-                (RecordNotFound refusal) => refusal.identifier,
-                'identifier',
-                device.id.value,
-              ),
-        ),
+        throwsA(_isMissingMember()),
       );
       expect(counted.repository.listDevices(), orderedEquals(counted.seeds));
       expect(counted.notifications.count, 0);
@@ -224,7 +232,7 @@ void main() {
       );
       await expectLater(
         counted.repository.removeDeviceFromWorkspace(device.id, left),
-        throwsA(isA<RecordNotFound>()),
+        throwsA(_isMissingMember()),
       );
 
       expect(counted.repository.findDevice(device.id), same(after));

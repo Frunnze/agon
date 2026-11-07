@@ -23,6 +23,7 @@ const List<String> _nodeClaudeLogins = <String>[
   'logged_in',
   'not_logged_in',
   'not_installed',
+  'unknown',
 ];
 const List<String> _nodeAgentCredentialKinds = <String>[
   'long_lived_token',

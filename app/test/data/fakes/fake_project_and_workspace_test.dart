@@ -10,6 +10,7 @@ import 'package:agent_orchestration/data/gallery/gallery_workspaces.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/project.dart';
 import 'package:agent_orchestration/data/models/workspace.dart';
+import 'package:agent_orchestration/data/repository/app_server_refusal.dart';
 import 'package:agent_orchestration/data/repository/record_not_found.dart';
 import 'package:agent_orchestration/data/rules/naming.dart';
 
@@ -153,7 +154,13 @@ void main() {
       expect(after.repositories.length, project.repositories.length - 1);
       await expectLater(
         repository.removeRepository(project.id, removed.address),
-        throwsA(isA<RecordNotFound>()),
+        throwsA(
+          isA<AppServerRefusal>().having(
+            (AppServerRefusal refusal) => refusal.status,
+            'status',
+            404,
+          ),
+        ),
       );
     }
   });

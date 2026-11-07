@@ -1,4 +1,5 @@
 import 'package:agent_orchestration/bridge/node/node_command_channel.dart';
+import 'package:agent_orchestration/bridge/node/node_command_failure.dart';
 
 import 'simulated_deletions.dart';
 import 'simulated_library_edits.dart';
@@ -7,6 +8,7 @@ import 'simulated_project_edits.dart';
 import 'simulated_protected_files.dart';
 import 'simulated_scopes.dart';
 import 'simulated_server_group.dart';
+import 'simulated_work_node.dart' show SimulatedWorkNode;
 
 const String simulatedServerAddress = 'http://127.0.0.1:7070';
 const String simulatedDeviceId = 'simulated-this-device';
@@ -24,6 +26,9 @@ final class SimulatedCatalogNode {
   final SimulatedServerGroup serverGroup = SimulatedServerGroup(
     thisDeviceId: simulatedDeviceId,
   );
+  final SimulatedWorkNode work = SimulatedWorkNode(
+    thisDeviceId: simulatedDeviceId,
+  );
   int _createdCount = 0;
 
   late final NodeCommandChannel channel = buildSimulatedChannel(answer);
@@ -32,6 +37,8 @@ final class SimulatedCatalogNode {
     projects: projects,
     skills: skills,
     rules: rules,
+    tasks: work.tasks,
+    runs: work.runs,
   );
   late final SimulatedProjectEdits _projectEdits = SimulatedProjectEdits(
     projects: projects,
@@ -40,6 +47,7 @@ final class SimulatedCatalogNode {
   late final SimulatedLibraryEdits _libraryEdits = SimulatedLibraryEdits(
     skills: skills,
     rules: rules,
+    tasks: work.tasks,
   );
   late final SimulatedProtectedFiles _protectedFiles = SimulatedProtectedFiles(
     workspaces: workspaces,
@@ -58,7 +66,7 @@ final class SimulatedCatalogNode {
         'remove_repository': _projectEdits.removeRepository,
         'delete_project': _deletions.deleteProject,
         'delete_workspace': _deletions.deleteWorkspace,
-        'list_skills': _listForWorkspace(skills),
+        'list_skills': _listUsableSkills,
         'create_skill': _createSkill,
         'update_skill': _libraryEdits.updateSkill,
         'delete_skill': _libraryEdits.deleteSkill,
@@ -106,11 +114,10 @@ final class SimulatedCatalogNode {
   }) {
     final Map<String, Object?> skill = <String, Object?>{
       'id': nextIdentifier('skill'),
-      'workspace': workspaceId,
       'name': name,
       'summary': 'Summary of $name',
       'instructions': 'Instructions of $name',
-      'scope': _everywhere,
+      'scope': buildSimulatedScopeOnlyIn(workspaceId),
       'usage': 'when_chosen',
       'source': 'created',
       'improvement': 'never',
@@ -126,10 +133,9 @@ final class SimulatedCatalogNode {
   }) {
     final Map<String, Object?> rule = <String, Object?>{
       'id': nextIdentifier('rule'),
-      'workspace': workspaceId,
       'title': title,
       'details': 'Details of $title',
-      'scope': _everywhere,
+      'scope': buildSimulatedScopeOnlyIn(workspaceId),
       'enabled': true,
       'added_at': simulatedMoment,
     };
@@ -204,19 +210,17 @@ final class SimulatedCatalogNode {
     ];
   }
 
-  SimulatedHandler _listForWorkspace(List<Map<String, Object?>> records) {
-    return (SimulatedCommand command) => <Object?>[
-      for (final Map<String, Object?> record in records)
-        if (record['workspace'] == command['workspace_id'])
-          _withoutWorkspace(record),
+  Object? _listUsableSkills(SimulatedCommand command) {
+    return <Object?>[
+      for (final Map<String, Object?> skill in skills)
+        if (isSimulatedScopeInWorkspace(skill, command['workspace_id'])) skill,
     ];
   }
 
   Object? _listUsableRules(SimulatedCommand command) {
     return <Object?>[
       for (final Map<String, Object?> rule in rules)
-        if (isSimulatedScopeInWorkspace(rule, command['workspace_id']))
-          _withoutWorkspace(rule),
+        if (isSimulatedScopeInWorkspace(rule, command['workspace_id'])) rule,
     ];
   }
 
@@ -230,7 +234,7 @@ final class SimulatedCatalogNode {
     skill['scope'] = command['scope'];
     skill['usage'] = command['usage'];
     skill['improvement'] = command['improvement'];
-    return _withoutWorkspace(skill);
+    return skill;
   }
 
   Object? _createRule(SimulatedCommand command) {
@@ -240,7 +244,7 @@ final class SimulatedCatalogNode {
     );
     rule['details'] = command['details'];
     rule['scope'] = command['scope'];
-    return _withoutWorkspace(rule);
+    return rule;
   }
 
   Object? _setRuleEnabled(SimulatedCommand command) {
@@ -255,19 +259,10 @@ final class SimulatedCatalogNode {
 
   void _requireAccount() {
     if (!hasAccount) {
-      throw const SimulatedNodeFailure('this device has no account yet');
+      throw const SimulatedNodeFailure.ofKind(
+        'this device has no account yet',
+        kind: noAccountFailureKind,
+      );
     }
   }
-}
-
-const Map<String, Object?> _everywhere = <String, Object?>{
-  'workspaces': <String, Object?>{'kind': 'all_workspaces'},
-  'projects': <String, Object?>{'kind': 'all_projects'},
-};
-
-Map<String, Object?> _withoutWorkspace(Map<String, Object?> record) {
-  return <String, Object?>{
-    for (final MapEntry<String, Object?> entry in record.entries)
-      if (entry.key != 'workspace') entry.key: entry.value,
-  };
 }

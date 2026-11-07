@@ -7,8 +7,10 @@ import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/library.dart';
 import 'package:agent_orchestration/data/models/scope.dart';
 import 'package:agent_orchestration/data/models/skill_change.dart';
+import 'package:agent_orchestration/data/repository/workspace_repository.dart';
 import 'package:agent_orchestration/data/rules/naming.dart';
 
+import '../../../support/fake_task_work_links.dart';
 import '../../../support/random_inputs.dart';
 
 const String seededSkillIdPrefix = 'seeded-skill-';
@@ -107,11 +109,19 @@ List<Skill> randomSeededSkills(Random random) {
   ];
 }
 
-FakeSkillRepository buildSkillRepository(List<Skill> skills) {
+FakeSkillRepository buildSkillRepositoryIn(
+  List<Skill> skills,
+  WorkspaceRepository workspaceRepository,
+) {
   return FakeSkillRepository(
     skills: skills,
     clock: FixedClock(skillClockMoment),
+    workspaceRepository: workspaceRepository,
   );
+}
+
+FakeSkillRepository buildSkillRepository(List<Skill> skills) {
+  return buildSkillRepositoryIn(skills, buildAcmeWorkspaceRepository());
 }
 
 String describeSkill(Skill skill) {

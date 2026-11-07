@@ -122,7 +122,7 @@ void main() {
         continue;
       }
       expect(change.signedDocument, signature.signedDocument);
-      dependencies.deviceRepository.findDevice(change.changedBy);
+      dependencies.deviceRepository.findDevice(change.changedBy!);
       dependencies.deviceRepository.findDevice(signature.signedBy);
     }
   });

@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:agent_orchestration/data/node_backed.dart';
 
 import '../../support/random_inputs.dart';
+import 'support/finished_local_change.dart';
 
 const int _largestStepCount = 12;
 const int _raceIterations = 60;
@@ -69,7 +70,7 @@ final class _ShownValueStore {
   }
 
   void changeLocally(int value) {
-    fetches.recordLocalChange();
+    finishLocalChangeAtOnce(fetches);
     shownValue = value;
   }
 }

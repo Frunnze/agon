@@ -128,8 +128,11 @@ Future<void> changeRandomDeviceValidly(
   final Device device = pickOne(random, repository.listDevices());
   final WorkspaceId workspaceId = pickOne(random, sampleDeviceWorkspaceIds);
   final bool isOther = device.id != deviceTestThisDevice;
+  final bool holdsKey = repository.currentDevice().workspaces.contains(
+    workspaceId,
+  );
   final bool canJoin =
-      !device.revoked && !device.workspaces.contains(workspaceId);
+      holdsKey && !device.revoked && !device.workspaces.contains(workspaceId);
 
   if (isOther && !device.revoked && random.nextBool()) {
     await repository.revokeDevice(device.id);

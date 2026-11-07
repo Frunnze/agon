@@ -13,6 +13,7 @@ import 'support/project_work_inputs.dart';
 import 'support/workspace_inputs.dart';
 import 'support/workspace_world_inputs.dart';
 import 'support/workspace_world_models.dart';
+import 'support/workspace_world_visibility.dart';
 
 List<ProjectId> _listProjectIds(WorkspaceWorld world) {
   final List<ProjectId> projectIds = <ProjectId>[];
@@ -144,12 +145,12 @@ void main() {
         listWorkIds(world.taskRepository),
         expectWorkAfterDeleting(world, removed),
       );
-      expect(
-        describeSkillEntries(world.skillRepository.listSkills()),
-        expectSkillsAfterDeleting(world, deleted, remaining),
+      await expectSkillsListedInEachWorkspace(
+        world,
+        predictSkillsKeptAfterDeleting(world.skills, deleted, remaining),
       );
-      expect(
-        _listWorkflowIds(world),
+      await expectWorkflowsListedInEachWorkspace(
+        world,
         expectWorkflowsAfterDeleting(world, removed, remaining),
       );
     }
@@ -208,7 +209,9 @@ void main() {
         listWorkIds(world.taskRepository),
         hasLength(world.work.tasks.length),
       );
-      expect(_listWorkflowIds(world), hasLength(world.workflows.length));
+      await expectWorkflowsListedInEachWorkspace(world, <WorkflowId>[
+        for (final Workflow workflow in world.workflows) workflow.id,
+      ]);
     }
   });
 

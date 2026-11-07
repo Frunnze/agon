@@ -7,11 +7,13 @@ import 'package:agent_orchestration/data/gallery/gallery_moments.dart';
 import 'package:agent_orchestration/data/gallery/gallery_workflows.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/workflow.dart';
+import 'package:agent_orchestration/data/repository/workspace_repository.dart';
 import 'package:agent_orchestration/data/rules/naming.dart';
 import 'package:agent_orchestration/data/rules/workflow_edits.dart';
 import 'package:agent_orchestration/data/rules/workflow_problems.dart';
 import 'package:agent_orchestration/screens/workflows/workflow_text.dart';
 
+import '../../../support/fake_task_work_links.dart';
 import '../../../support/random_branching_workflows.dart';
 import '../../../support/random_inputs.dart';
 
@@ -32,9 +34,10 @@ const List<String> brokenStepNames = <String>['Step One', 'build ios', 'É'];
 
 typedef WorkflowBreaker = Workflow Function(Workflow workflow);
 
-FakeWorkflowRepository buildWorkflowRepository({
+FakeWorkflowRepository buildWorkflowRepositoryIn({
   required List<Workflow> workflows,
   required List<WorkflowChange> changes,
+  required WorkspaceRepository workspaceRepository,
 }) {
   return FakeWorkflowRepository(
     workflows: workflows,
@@ -44,6 +47,18 @@ FakeWorkflowRepository buildWorkflowRepository({
     draftTemplate: galleryWorkflows[featurePipelineIndex],
     drafterDeviceId: GalleryDeviceIds.officeServer,
     draftStepDelay: Duration.zero,
+    workspaceRepository: workspaceRepository,
+  );
+}
+
+FakeWorkflowRepository buildWorkflowRepository({
+  required List<Workflow> workflows,
+  required List<WorkflowChange> changes,
+}) {
+  return buildWorkflowRepositoryIn(
+    workflows: workflows,
+    changes: changes,
+    workspaceRepository: buildAcmeWorkspaceRepository(),
   );
 }
 

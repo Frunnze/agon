@@ -47,6 +47,7 @@ void main() {
     final FakeSkillRepository repository = FakeSkillRepository(
       skills: gallerySkills,
       clock: FixedClock(galleryNow),
+      workspaceRepository: buildAcmeWorkspaceRepository(),
     );
 
     for (int i = 0; i < propertyIterations; i += 1) {
@@ -79,6 +80,7 @@ void main() {
     final FakeSkillRepository repository = FakeSkillRepository(
       skills: gallerySkills,
       clock: FixedClock(galleryNow),
+      workspaceRepository: buildAcmeWorkspaceRepository(),
     );
 
     for (int i = 0; i < propertyIterations; i += 1) {
@@ -106,6 +108,7 @@ void main() {
       final FakeSkillRepository repository = FakeSkillRepository(
         skills: gallerySkills,
         clock: FixedClock(galleryNow),
+        workspaceRepository: buildAcmeWorkspaceRepository(),
       );
       final Skill deleted = pickOne(random, gallerySkills);
 

@@ -167,7 +167,7 @@ void main() {
         for (final Workflow workflow in usage.workflows)
           if (!unseen.contains(workflow.id)) workflow,
       ];
-      expect(usage.workflowRepository.listWorkflows(), orderedEquals(kept));
+      expectStoredWorkflows(usage, kept);
       expect(
         usage.approvalRepository.listApprovals(),
         orderedEquals(usage.approvals),

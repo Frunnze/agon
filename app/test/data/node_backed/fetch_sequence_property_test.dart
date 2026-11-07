@@ -5,12 +5,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:agent_orchestration/data/node_backed.dart';
 
 import '../../support/random_inputs.dart';
+import 'support/finished_local_change.dart';
 
 const int _largestStepCount = 12;
 const int _nothingShown = 0;
 const int _largestLocalChangeCount = 3;
 
-enum _Step { startFetch, recordLocalChange, accept }
+enum _Step { startFetch, finishChangeAtOnce, accept }
 
 typedef _StartedFetch = ({int fetch, int order});
 
@@ -24,7 +25,7 @@ final class _ReferenceSequence {
     return order;
   }
 
-  void recordLocalChange() {
+  void finishChangeAtOnce() {
     _newestOrder = _eventCount;
     _eventCount += 1;
   }
@@ -68,7 +69,7 @@ void main() {
       final int quietFetch = quiet.startFetch();
       final int stepCount = random.nextInt(_largestStepCount);
       for (int j = 0; j < stepCount; j += 1) {
-        busy.recordLocalChange();
+        finishLocalChangeAtOnce(busy);
         busy.acceptIfNewest(busy.startFetch());
       }
 
@@ -84,7 +85,7 @@ void main() {
       final int stepCount = random.nextInt(_largestStepCount);
       for (int j = 0; j < stepCount; j += 1) {
         if (random.nextBool()) {
-          sequence.recordLocalChange();
+          finishLocalChangeAtOnce(sequence);
         }
         fetches.add(sequence.startFetch());
       }
@@ -107,7 +108,7 @@ void main() {
           sequence.acceptIfNewest(fetch);
         }
         if (random.nextBool()) {
-          sequence.recordLocalChange();
+          finishLocalChangeAtOnce(sequence);
         }
       }
 
@@ -144,57 +145,66 @@ void main() {
     }
   });
 
-  test('test_record_local_change_property_drops_every_earlier_fetch', () {
-    final Random random = seededRandom(72407);
-    for (int i = 0; i < propertyIterations; i += 1) {
-      final FetchSequence sequence = FetchSequence();
-      final int fetchCount = random.nextInt(_largestStepCount);
-      final List<int> earlier = <int>[
-        for (int j = 0; j < fetchCount; j += 1) sequence.startFetch(),
-      ];
-      earlier.shuffle(random);
-      final int changeCount = 1 + random.nextInt(_largestLocalChangeCount);
-      for (int j = 0; j < changeCount; j += 1) {
-        sequence.recordLocalChange();
+  test(
+    'test_finish_local_change_property_at_once_drops_every_earlier_fetch',
+    () {
+      final Random random = seededRandom(72407);
+      for (int i = 0; i < propertyIterations; i += 1) {
+        final FetchSequence sequence = FetchSequence();
+        final int fetchCount = random.nextInt(_largestStepCount);
+        final List<int> earlier = <int>[
+          for (int j = 0; j < fetchCount; j += 1) sequence.startFetch(),
+        ];
+        earlier.shuffle(random);
+        final int changeCount = 1 + random.nextInt(_largestLocalChangeCount);
+        for (int j = 0; j < changeCount; j += 1) {
+          finishLocalChangeAtOnce(sequence);
+        }
+
+        for (final int fetch in earlier) {
+          expect(sequence.acceptIfNewest(fetch), isFalse);
+        }
       }
+    },
+  );
 
-      for (final int fetch in earlier) {
-        expect(sequence.acceptIfNewest(fetch), isFalse);
+  test(
+    'test_finish_local_change_property_at_once_later_fetches_count_in_order',
+    () {
+      final Random random = seededRandom(72408);
+      for (int i = 0; i < propertyIterations; i += 1) {
+        final FetchSequence sequence = FetchSequence();
+        finishLocalChangeAtOnce(sequence);
+        final int fetchCount = 1 + random.nextInt(_largestStepCount);
+        final List<int> later = <int>[
+          for (int j = 0; j < fetchCount; j += 1) sequence.startFetch(),
+        ];
+
+        for (final int fetch in later) {
+          expect(sequence.acceptIfNewest(fetch), isTrue);
+        }
       }
-    }
-  });
+    },
+  );
 
-  test('test_record_local_change_property_later_fetches_count_in_order', () {
-    final Random random = seededRandom(72408);
-    for (int i = 0; i < propertyIterations; i += 1) {
-      final FetchSequence sequence = FetchSequence();
-      sequence.recordLocalChange();
-      final int fetchCount = 1 + random.nextInt(_largestStepCount);
-      final List<int> later = <int>[
-        for (int j = 0; j < fetchCount; j += 1) sequence.startFetch(),
-      ];
+  test(
+    'test_finish_local_change_property_at_once_accepted_fetch_stays_old',
+    () {
+      final Random random = seededRandom(72409);
+      for (int i = 0; i < propertyIterations; i += 1) {
+        final FetchSequence sequence = FetchSequence();
+        final int first = sequence.startFetch();
+        final int second = sequence.startFetch();
+        final bool acceptsSecondFirst = random.nextBool();
+        sequence.acceptIfNewest(acceptsSecondFirst ? second : first);
 
-      for (final int fetch in later) {
-        expect(sequence.acceptIfNewest(fetch), isTrue);
+        finishLocalChangeAtOnce(sequence);
+
+        expect(sequence.acceptIfNewest(first), isFalse);
+        expect(sequence.acceptIfNewest(second), isFalse);
       }
-    }
-  });
-
-  test('test_record_local_change_property_accepted_fetch_stays_old', () {
-    final Random random = seededRandom(72409);
-    for (int i = 0; i < propertyIterations; i += 1) {
-      final FetchSequence sequence = FetchSequence();
-      final int first = sequence.startFetch();
-      final int second = sequence.startFetch();
-      final bool acceptsSecondFirst = random.nextBool();
-      sequence.acceptIfNewest(acceptsSecondFirst ? second : first);
-
-      sequence.recordLocalChange();
-
-      expect(sequence.acceptIfNewest(first), isFalse);
-      expect(sequence.acceptIfNewest(second), isFalse);
-    }
-  });
+    },
+  );
 
   test('test_accept_if_newest_property_follows_the_reference_model', () {
     final Random random = seededRandom(72410);
@@ -209,9 +219,9 @@ void main() {
           final int fetch = sequence.startFetch();
           started.add((fetch: fetch, order: reference.recordStart()));
         }
-        if (step == _Step.recordLocalChange) {
-          sequence.recordLocalChange();
-          reference.recordLocalChange();
+        if (step == _Step.finishChangeAtOnce) {
+          finishLocalChangeAtOnce(sequence);
+          reference.finishChangeAtOnce();
         }
         if (step == _Step.accept && started.isNotEmpty) {
           final _StartedFetch chosen = pickOne(random, started);

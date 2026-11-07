@@ -105,7 +105,7 @@ void main() {
         for (final Workflow workflow in usage.workflows)
           if (workflow.id != deleted.id) workflow,
       ];
-      expect(usage.workflowRepository.listWorkflows(), orderedEquals(kept));
+      expectStoredWorkflows(usage, kept);
       expect(usage.workflowRepository.findPendingChange(deleted.id), isNull);
       expect(
         usage.approvalRepository.listApprovals(),

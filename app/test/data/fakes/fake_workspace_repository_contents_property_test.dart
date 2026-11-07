@@ -11,6 +11,7 @@ import '../../support/random_inputs.dart';
 import 'support/project_work_inputs.dart';
 import 'support/workspace_world_inputs.dart';
 import 'support/workspace_world_models.dart';
+import 'support/workspace_world_visibility.dart';
 
 typedef _Deletion = ({
   WorkspaceWorld world,
@@ -50,13 +51,6 @@ List<ProjectId> _listProjectIds(WorkspaceWorld world) {
     }
   }
   return projectIds;
-}
-
-List<WorkflowId> _listWorkflowIds(WorkspaceWorld world) {
-  return <WorkflowId>[
-    for (final Workflow workflow in world.workflowRepository.listWorkflows())
-      workflow.id,
-  ];
 }
 
 Future<_Deletion> _deleteIdle(Random random) async {
@@ -100,11 +94,8 @@ void main() {
       expect(listWorkIds(world.taskRepository), <TaskId>[
         for (final Task task in world.work.tasks) task.id,
       ]);
-      expect(
-        describeSkillEntries(world.skillRepository.listSkills()),
-        describeSkillEntries(world.skills),
-      );
-      expect(_listWorkflowIds(world), <WorkflowId>[
+      await expectSkillsListedInEachWorkspace(world, world.skills);
+      await expectWorkflowsListedInEachWorkspace(world, <WorkflowId>[
         for (final Workflow workflow in world.workflows) workflow.id,
       ]);
     }
@@ -142,9 +133,13 @@ void main() {
       final _Deletion deletion = await _deleteIdle(random);
       final WorkspaceWorld world = deletion.world;
 
-      expect(
-        describeSkillEntries(world.skillRepository.listSkills()),
-        expectSkillsAfterDeleting(world, deletion.deleted, deletion.remaining),
+      await expectSkillsListedInEachWorkspace(
+        world,
+        predictSkillsKeptAfterDeleting(
+          world.skills,
+          deletion.deleted,
+          deletion.remaining,
+        ),
       );
       final List<LibraryEntry> keptRules = expectRulesAfterDeleting(
         world,
@@ -177,8 +172,8 @@ void main() {
     for (int i = 0; i < propertyIterations; i += 1) {
       final _Deletion deletion = await _deleteIdle(random);
 
-      expect(
-        _listWorkflowIds(deletion.world),
+      await expectWorkflowsListedInEachWorkspace(
+        deletion.world,
         expectWorkflowsAfterDeleting(
           deletion.world,
           deletion.removedProjects,

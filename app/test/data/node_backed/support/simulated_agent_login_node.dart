@@ -85,7 +85,7 @@ final class SimulatedAgentLoginNode {
   }
 
   String _typeKeys(String keys) {
-    if (login == null) {
+    if (login?['state'] != _runningState) {
       return encodeErrorReply('no Claude Code login is open');
     }
     typedKeys.add(keys);

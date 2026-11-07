@@ -5,7 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:agent_orchestration/data/fakes.dart';
 import 'package:agent_orchestration/data/models/device.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
-import 'package:agent_orchestration/data/repository/record_not_found.dart';
+import 'package:agent_orchestration/data/repository/app_server_refusal.dart';
 
 import '../../support/random_inputs.dart';
 import 'support/device_inputs.dart';
@@ -30,12 +30,21 @@ void main() {
 
     for (int i = 0; i < propertyIterations; i += 1) {
       final CountedDevices counted = buildCountedDeviceRepository(random);
-      final Device device = counted.repository.currentDevice();
+      final Device? device = pickActiveOtherDevice(random, counted.seeds);
+      if (device == null) {
+        continue;
+      }
       final List<WorkspaceId> outside = <WorkspaceId>[
         for (final WorkspaceId workspaceId in sampleDeviceWorkspaceIds)
           if (!device.workspaces.contains(workspaceId)) workspaceId,
       ];
+      if (outside.isEmpty) {
+        continue;
+      }
       final WorkspaceId joined = pickOne(random, outside);
+      counted.repository.grantWorkspaceToCurrentDevice(joined);
+      final List<Device> before = counted.repository.listDevices();
+      final int notificationsBefore = counted.notifications.count;
 
       final Device after = await counted.repository.addDeviceToWorkspace(
         device.id,
@@ -44,11 +53,11 @@ void main() {
 
       expect(after.workspaces, <WorkspaceId>[...device.workspaces, joined]);
       expectOtherDevicesUnchanged(
-        counted.seeds,
+        before,
         counted.repository.listDevices(),
         changedId: device.id,
       );
-      expect(counted.notifications.count, 1);
+      expect(counted.notifications.count, notificationsBefore + 1);
     }
   });
 
@@ -138,7 +147,13 @@ void main() {
 
       await expectLater(
         counted.repository.removeDeviceFromWorkspace(device.id, outsider),
-        throwsA(isA<RecordNotFound>()),
+        throwsA(
+          isA<AppServerRefusal>().having(
+            (AppServerRefusal refusal) => refusal.status,
+            'status',
+            404,
+          ),
+        ),
       );
       expect(counted.repository.findDevice(device.id), same(device));
       expect(counted.notifications.count, 0);
@@ -150,8 +165,12 @@ void main() {
 
     for (int i = 0; i < propertyIterations; i += 1) {
       final CountedDevices counted = buildCountedDeviceRepository(random);
-      final Device device = counted.repository.currentDevice();
+      final Device? device = pickActiveOtherDevice(random, counted.seeds);
+      if (device == null) {
+        continue;
+      }
       final WorkspaceId fresh = WorkspaceId('fresh-${randomText(random)}');
+      counted.repository.grantWorkspaceToCurrentDevice(fresh);
 
       await counted.repository.addDeviceToWorkspace(device.id, fresh);
       final Device after = await counted.repository.removeDeviceFromWorkspace(
@@ -160,7 +179,7 @@ void main() {
       );
 
       expect(after.workspaces, device.workspaces);
-      expect(counted.notifications.count, 2);
+      expect(counted.notifications.count, 3);
     }
   });
 
@@ -195,10 +214,7 @@ void main() {
       );
       counted.repository.addListener(watcher.record);
 
-      await counted.repository.addDeviceToWorkspace(
-        deviceTestThisDevice,
-        fresh,
-      );
+      counted.repository.grantWorkspaceToCurrentDevice(fresh);
 
       expect(watcher.seenJoined, <bool>[true]);
     }
@@ -209,14 +225,19 @@ void main() {
 
     for (int i = 0; i < propertyIterations; i += 1) {
       final CountedDevices counted = buildCountedDeviceRepository(random);
+      final Device? target = pickActiveOtherDevice(random, counted.seeds);
+      if (target == null) {
+        continue;
+      }
       final WorkspaceId fresh = WorkspaceId('fresh-${randomText(random)}');
+      counted.repository.grantWorkspaceToCurrentDevice(fresh);
 
       final Device joined = await counted.repository.addDeviceToWorkspace(
-        deviceTestThisDevice,
+        target.id,
         fresh,
       );
 
-      expect(counted.repository.currentDevice(), same(joined));
+      expect(counted.repository.findDevice(target.id), same(joined));
     }
   });
 }

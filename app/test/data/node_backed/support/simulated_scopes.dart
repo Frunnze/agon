@@ -6,6 +6,7 @@ const String _kindField = 'kind';
 const String _allWorkspacesKind = 'all_workspaces';
 const String _onlyWorkspacesKind = 'only_workspaces';
 const String _allProjectsKind = 'all_projects';
+const String _projectsField = 'projects';
 
 Map<String, Object?> _readWorkspaceScope(SimulatedScopedRecord record) {
   final Map<String, Object?> scope =
@@ -26,7 +27,7 @@ bool isSimulatedScopeInWorkspace(
   return listed.contains(workspaceId);
 }
 
-void forgetSimulatedWorkspace(
+List<SimulatedScopedRecord> forgetSimulatedWorkspace(
   List<SimulatedScopedRecord> records, {
   required Object? deletedWorkspaceId,
   required Set<Object?> remainingWorkspaceIds,
@@ -48,6 +49,27 @@ void forgetSimulatedWorkspace(
     }
   }
   records.removeWhere(unseenRecords.contains);
+  return unseenRecords;
+}
+
+void forgetSimulatedProjects(
+  List<SimulatedScopedRecord> records,
+  Set<Object?> deletedProjectIds,
+) {
+  for (final SimulatedScopedRecord record in records) {
+    final Map<String, Object?> scope =
+        record[_scopeField]! as Map<String, Object?>;
+    final Map<String, Object?> projectScope =
+        scope[_projectsField]! as Map<String, Object?>;
+    if (projectScope[_kindField] == _allProjectsKind) {
+      continue;
+    }
+    projectScope[_projectsField] = <Object?>[
+      for (final Object? listed
+          in projectScope[_projectsField]! as List<Object?>)
+        if (!deletedProjectIds.contains(listed)) listed,
+    ];
+  }
 }
 
 Map<String, Object?> buildSimulatedScopeOnlyIn(String workspaceId) {
@@ -56,6 +78,6 @@ Map<String, Object?> buildSimulatedScopeOnlyIn(String workspaceId) {
       _kindField: _onlyWorkspacesKind,
       _workspacesField: <Object?>[workspaceId],
     },
-    'projects': <String, Object?>{_kindField: _allProjectsKind},
+    _projectsField: <String, Object?>{_kindField: _allProjectsKind},
   };
 }

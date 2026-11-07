@@ -9,6 +9,7 @@ import 'package:agent_orchestration/data/models/run.dart';
 import 'package:agent_orchestration/data/models/task.dart';
 import 'package:agent_orchestration/data/models/workflow.dart';
 import 'package:agent_orchestration/data/rules/run_lifecycle.dart';
+import 'package:agent_orchestration/data/rules/workflow_graph.dart';
 
 import '../../support/random_inputs.dart';
 import '../../support/sample_records.dart';
@@ -70,7 +71,7 @@ void main() {
 
       final String expectedFirstStepName = isOneAgentTask
           ? nodeOneAgentStepNames[agent]!
-          : workflow.agents.first.name;
+          : orderAgents(workflow).first.name;
       expect(run.steps.first.name, expectedFirstStepName);
       expect(run.log.single.stepName, expectedFirstStepName);
     }
@@ -93,7 +94,7 @@ void main() {
       }
       final List<String> agentNames = <String>[];
       final List<WorkflowAgentId?> agentIds = <WorkflowAgentId?>[];
-      for (final WorkflowAgent workflowAgent in workflow.agents) {
+      for (final WorkflowAgent workflowAgent in orderAgents(workflow)) {
         agentNames.add(workflowAgent.name);
         agentIds.add(workflowAgent.id);
       }

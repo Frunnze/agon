@@ -4,8 +4,10 @@ import 'package:agent_orchestration/data/models/approval.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/task.dart';
 import 'package:agent_orchestration/data/models/workflow.dart';
+import 'package:agent_orchestration/data/repository/record_not_found.dart';
 
 import 'workflow_usage_inputs.dart';
+import 'workspace_scope_inputs.dart';
 
 bool isUsedByWork(List<Task> work, WorkflowId workflowId) {
   for (final Task task in work) {
@@ -68,19 +70,15 @@ void expectOnlyWorkflowsRemoved(
     usage.approvals,
     removedWorkflowIds,
   );
-  expect(
-    usage.workflowRepository.listWorkflows(),
-    orderedEquals(keptWorkflows),
-  );
+  expectStoredWorkflows(usage, keptWorkflows);
   expect(
     usage.approvalRepository.listApprovals(),
     orderedEquals(keptApprovals),
   );
 
   for (final WorkflowChange change in usage.changes) {
-    final WorkflowChange? found = usage.workflowRepository.findPendingChange(
-      change.workflowId,
-    );
+    final WorkflowChange? found = usage.workflowRepository
+        .findPendingChangeInAnyWorkspace(change.workflowId);
     final bool isRemoved = removedWorkflowIds.contains(change.workflowId);
     expect(found, isRemoved ? isNull : same(change));
   }
@@ -88,4 +86,29 @@ void expectOnlyWorkflowsRemoved(
 
 void expectWorkflowUsageUntouched(WorkflowUsage usage) {
   expectOnlyWorkflowsRemoved(usage, const <WorkflowId>{});
+}
+
+void expectStoredWorkflows(WorkflowUsage usage, List<Workflow> kept) {
+  final List<Workflow> listedHere = <Workflow>[
+    for (final Workflow workflow in kept)
+      if (isModelUsableInWorkspace(
+        workflow.availability,
+        usage.currentWorkspaceId,
+      ))
+        workflow,
+  ];
+  expect(usage.workflowRepository.listWorkflows(), orderedEquals(listedHere));
+  for (final Workflow workflow in usage.workflows) {
+    if (kept.contains(workflow)) {
+      expect(
+        usage.workflowRepository.findWorkflowInAnyWorkspace(workflow.id),
+        same(workflow),
+      );
+      continue;
+    }
+    expect(
+      () => usage.workflowRepository.findWorkflowInAnyWorkspace(workflow.id),
+      throwsA(isA<RecordNotFound>()),
+    );
+  }
 }

@@ -21,6 +21,7 @@ const String _revokedJoinRefusal =
     'the app server answered 409: the device is revoked';
 const String _alreadyMemberRefusal =
     'the app server answered 409: the device is already in the workspace';
+const String _missingKeyRefusal = 'this device holds no key for workspace';
 const String _notMemberRefusal =
     'the app server answered 404: the workspace member was not found';
 const String _genesisHash =
@@ -122,6 +123,10 @@ final class SimulatedDeviceNode {
   String _addWorkspace(WireRecord device, WireRecord command) {
     final List<Object?> workspaces =
         device[_workspacesField]! as List<Object?>;
+    final Object? workspaceId = command['workspace_id'];
+    if (!_holdsWorkspaceKey(workspaceId)) {
+      return encodeErrorReply('$_missingKeyRefusal $workspaceId');
+    }
     if (device[_revokedField] == true) {
       return encodeErrorReply(_revokedJoinRefusal);
     }
@@ -131,6 +136,15 @@ final class SimulatedDeviceNode {
 
     workspaces.add(command['workspace_id']);
     return encodeSuccessReply(null);
+  }
+
+  bool _holdsWorkspaceKey(Object? workspaceId) {
+    final WireRecord? thisDevice = devices[thisDeviceId];
+    if (thisDevice == null) {
+      return false;
+    }
+    final List<Object?> keys = thisDevice[_workspacesField]! as List<Object?>;
+    return keys.contains(workspaceId);
   }
 
   String _removeWorkspace(WireRecord device, WireRecord command) {

@@ -8,7 +8,6 @@ import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/node_backed.dart';
 import 'package:agent_orchestration/data/repository/device_repository.dart';
 
-import '../../bridge/support/node_json_primitives.dart';
 import '../../bridge/support/random_catalog_json.dart';
 import '../../support/random_inputs.dart';
 import '../node_backed/support/node_backed_harness.dart';
@@ -75,7 +74,7 @@ List<_DeviceView> _describeDevices(List<Device> devices) {
   return views;
 }
 
-_Change _pickValidChange(Random random, FakeDeviceRepository fake) {
+_Change? _pickValidChange(Random random, FakeDeviceRepository fake) {
   final Device device = pickOne(random, fake.listDevices());
   final bool canRevoke = device.id.value != _thisDeviceText && !device.revoked;
   final bool canLeave = device.workspaces.isNotEmpty;
@@ -88,14 +87,23 @@ _Change _pickValidChange(Random random, FakeDeviceRepository fake) {
     return (DeviceRepository repository) =>
         repository.removeDeviceFromWorkspace(device.id, left);
   }
-  final Device joiner = device.revoked ? fake.currentDevice() : device;
-  final WorkspaceId fresh = WorkspaceId(randomUuidText(random));
+  final List<WorkspaceId> joinable = <WorkspaceId>[
+    for (final WorkspaceId held in fake.currentDevice().workspaces)
+      if (!device.revoked && !device.workspaces.contains(held)) held,
+  ];
+  if (joinable.isEmpty) {
+    return null;
+  }
+  final WorkspaceId joined = pickOne(random, joinable);
   return (DeviceRepository repository) =>
-      repository.addDeviceToWorkspace(joiner.id, fresh);
+      repository.addDeviceToWorkspace(device.id, joined);
 }
 
 Future<void> _changeBoth(Random random, _Pair pair) async {
-  final _Change change = _pickValidChange(random, pair.fake);
+  final _Change? change = _pickValidChange(random, pair.fake);
+  if (change == null) {
+    return;
+  }
 
   final Device fromFake = await change(pair.fake);
   final Device fromNode = await change(pair.nodeBacked);

@@ -8,6 +8,7 @@ import 'package:agent_orchestration/data/gallery/gallery_workflows.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/workflow.dart';
 
+import 'fake_task_work_links.dart';
 import 'random_inputs.dart';
 
 const int _largestWorkflowCount = 5;
@@ -51,6 +52,7 @@ FakeWorkflowRepository buildSignatureStateRepository(
     draftTemplate: galleryWorkflows.first,
     drafterDeviceId: GalleryDeviceIds.officeServer,
     draftStepDelay: Duration.zero,
+    workspaceRepository: buildAcmeWorkspaceRepository(),
   );
 }
 

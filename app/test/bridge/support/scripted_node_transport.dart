@@ -39,3 +39,10 @@ String encodeSuccessReply(Object? okValue) {
 String encodeErrorReply(String message) {
   return jsonEncode(<String, Object?>{'error': message});
 }
+
+String encodeKindedErrorReply({
+  required String message,
+  required String kind,
+}) {
+  return jsonEncode(<String, Object?>{'error': message, 'error_kind': kind});
+}

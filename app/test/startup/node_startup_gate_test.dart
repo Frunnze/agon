@@ -5,7 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:agent_orchestration/app.dart';
+import 'package:agent_orchestration/bridge/node/node_command_failure.dart';
 import 'package:agent_orchestration/data/fakes.dart';
+import 'package:agent_orchestration/data/node_backed.dart';
 import 'package:agent_orchestration/shell/app_navigation.dart';
 import 'package:agent_orchestration/shell/app_route.dart';
 import 'package:agent_orchestration/shell/app_section.dart';
@@ -17,16 +19,52 @@ import 'package:agent_orchestration/startup/startup_pages.dart';
 import '../support/random_inputs.dart';
 import '../support/widget_harness.dart';
 
-const List<String> _forgottenDeviceMessages = <String>[
-  'the app server answered 401: the device is not paired',
-  'the app server answered 403: the device has been revoked',
-  'this device has no account yet',
+typedef _StartupProblem = ({
+  String nodeMessage,
+  String? nodeKind,
+  String shownText,
+});
+
+const List<_StartupProblem> _forgottenDeviceProblems = <_StartupProblem>[
+  (
+    nodeMessage: 'the app server answered 401: the device is not paired',
+    nodeKind: null,
+    shownText: 'the device is not paired',
+  ),
+  (
+    nodeMessage: 'the app server answered 403: the device has been revoked',
+    nodeKind: null,
+    shownText: 'the device has been revoked',
+  ),
+  (
+    nodeMessage: 'this device has no account yet',
+    nodeKind: noAccountFailureKind,
+    shownText: 'this device has no account yet',
+  ),
 ];
 
-const List<String> _otherStartupMessages = <String>[
-  'could not reach the app server',
-  'the app server answered 401: the request signature does not verify',
-  'the app server answered 500: internal error',
+const List<_StartupProblem> _otherStartupProblems = <_StartupProblem>[
+  (
+    nodeMessage: 'could not reach the app server',
+    nodeKind: null,
+    shownText: 'could not reach the app server',
+  ),
+  (
+    nodeMessage:
+        'the app server answered 401: the request signature does not verify',
+    nodeKind: null,
+    shownText: 'the request signature does not verify',
+  ),
+  (
+    nodeMessage: 'the app server answered 500: internal error',
+    nodeKind: null,
+    shownText: 'internal error',
+  ),
+  (
+    nodeMessage: 'this device has no account yet',
+    nodeKind: null,
+    shownText: 'this device has no account yet',
+  ),
 ];
 
 const String _identityKeptMessage =
@@ -70,7 +108,7 @@ final class _ScriptedStarts {
 final class _RecordedStarts {
   _RecordedStarts({required this.appProblem});
 
-  final String appProblem;
+  final _StartupProblem appProblem;
   final List<Completer<StartedApp>> appStarts = <Completer<StartedApp>>[];
   final List<Completer<StartedApp>> newDeviceStarts =
       <Completer<StartedApp>>[];
@@ -80,7 +118,11 @@ final class _RecordedStarts {
   Future<StartedApp> startAppAsNewDevice() => _recordStart(newDeviceStarts);
 
   void failLatestAppStart() {
-    appStarts.last.completeError(StateError(appProblem));
+    appStarts.last.completeError(
+      translateNodeFailure(
+        NodeCommandFailure(appProblem.nodeMessage, kind: appProblem.nodeKind),
+      ),
+    );
   }
 }
 
@@ -172,15 +214,16 @@ void main() {
       useViewSize(tester, const Size(desktopWidth, desktopHeight));
       for (int i = 0; i < widgetPropertyIterations; i += 1) {
         final bool isForgotten = random.nextBool();
-        final List<String> messages = isForgotten
-            ? _forgottenDeviceMessages
-            : _otherStartupMessages;
-        final String problem = pickOne(random, messages);
+        final List<_StartupProblem> problems = isForgotten
+            ? _forgottenDeviceProblems
+            : _otherStartupProblems;
+        final _StartupProblem problem = pickOne(random, problems);
         final _RecordedStarts starts = _RecordedStarts(appProblem: problem);
 
         await _pumpFailedGate(tester, iteration: i, starts: starts);
 
-        expect(find.text(problem), findsOneWidget);
+        expect(find.text(problem.shownText), findsOneWidget);
+        expect(find.textContaining('answered'), findsNothing);
         expect(find.text(retryStartupLabel), findsOneWidget);
         expect(
           find.text(setUpDeviceAgainLabel),
@@ -199,7 +242,7 @@ void main() {
     for (int i = 0; i < widgetPropertyIterations; i += 1) {
       final int retries = random.nextInt(3);
       final _RecordedStarts starts = _RecordedStarts(
-        appProblem: pickOne(random, _forgottenDeviceMessages),
+        appProblem: pickOne(random, _forgottenDeviceProblems),
       );
       await _pumpFailedGate(tester, iteration: i, starts: starts);
       for (int retry = 0; retry < retries; retry += 1) {
@@ -229,7 +272,7 @@ void main() {
   ) async {
     useViewSize(tester, const Size(desktopWidth, desktopHeight));
     final _RecordedStarts starts = _RecordedStarts(
-      appProblem: _forgottenDeviceMessages.first,
+      appProblem: _forgottenDeviceProblems.first,
     );
     await _pumpFailedGate(tester, iteration: 0, starts: starts);
 

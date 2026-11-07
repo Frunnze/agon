@@ -12,9 +12,20 @@ const String simulatedMoment = '2026-10-31T10:00:00Z';
 const String simulatedOutageMessage = 'could not reach the app server: down';
 
 final class SimulatedNodeFailure implements Exception {
-  const SimulatedNodeFailure(this.message);
+  const SimulatedNodeFailure(this.message) : kind = null;
+
+  const SimulatedNodeFailure.ofKind(this.message, {required String this.kind});
 
   final String message;
+  final String? kind;
+}
+
+String _encodeSimulatedFailure(SimulatedNodeFailure failure) {
+  final String? kind = failure.kind;
+  if (kind == null) {
+    return encodeErrorReply(failure.message);
+  }
+  return encodeKindedErrorReply(message: failure.message, kind: kind);
 }
 
 String answerSimulatedCommand({
@@ -35,7 +46,7 @@ String answerSimulatedCommand({
   try {
     return encodeSuccessReply(handler(command));
   } on SimulatedNodeFailure catch (failure) {
-    return encodeErrorReply(failure.message);
+    return _encodeSimulatedFailure(failure);
   }
 }
 

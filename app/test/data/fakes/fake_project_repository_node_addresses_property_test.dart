@@ -6,6 +6,7 @@ import 'package:agent_orchestration/data/fakes.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/project.dart';
 import 'package:agent_orchestration/data/node_backed.dart';
+import 'package:agent_orchestration/data/repository/app_server_refusal.dart';
 import 'package:agent_orchestration/data/repository/project_repository.dart';
 import 'package:agent_orchestration/data/repository/record_not_found.dart';
 
@@ -17,8 +18,16 @@ import 'support/project_inputs.dart';
 
 const int _sequenceIterations = 40;
 const int _longestSequence = 10;
-
-enum _Outcome { accepted, notFound, refused }
+const String _acceptedKind = 'accepted';
+const String _nodeRefusalKind = 'node';
+const String _missingRecordKind = 'missing';
+const String _localRefusalKind = 'refused';
+const Set<String> _everyKind = <String>{
+  _acceptedKind,
+  _nodeRefusalKind,
+  _missingRecordKind,
+  _localRefusalKind,
+};
 
 enum _Step { addRepository, removeRepository, createProject }
 
@@ -34,16 +43,30 @@ typedef _PlannedStep = ({
   ProjectDraft draft,
 });
 
-Future<_Outcome> _observe(Future<Object?> Function() action) async {
-  try {
-    await action();
-  } on RecordNotFound {
-    return _Outcome.notFound;
-  } on Object {
-    return _Outcome.refused;
-  }
-  return _Outcome.accepted;
+String _describeAccepted(Object? outcome) => _acceptedKind;
+
+bool _isRefusal(Object problem) {
+  return problem is StateError ||
+      problem is ArgumentError ||
+      problem is RecordNotFound;
 }
+
+String _describeRefusal(Object problem) {
+  if (problem is AppServerRefusal) {
+    return '$_nodeRefusalKind ${problem.status} ${problem.message}';
+  }
+  if (problem is RecordNotFound) {
+    return '$_missingRecordKind ${problem.kind} ${problem.identifier}';
+  }
+  return _localRefusalKind;
+}
+
+Future<String> _observe(Future<Object?> Function() action) {
+  final Future<String> accepted = action().then(_describeAccepted);
+  return accepted.catchError(_describeRefusal, test: _isRefusal);
+}
+
+String _readKind(String outcome) => outcome.split(' ').first;
 
 List<String> _describeListing(ProjectRepository repository) {
   return <String>[
@@ -140,7 +163,7 @@ void main() {
   test('test_fake_project_repository_remove_repository_property_agrees_'
       'with_the_node_on_spelled_and_missing_addresses', () async {
     final Random random = seededRandom(72601);
-    final Set<_Outcome> seenOutcomes = <_Outcome>{};
+    final Set<String> seenKinds = <String>{};
 
     for (int i = 0; i < _sequenceIterations; i += 1) {
       final _Pair pair = await _buildPair();
@@ -149,13 +172,13 @@ void main() {
       for (int step = 0; step < stepCount; step += 1) {
         final _PlannedStep planned = _planStep(random, pair);
 
-        final _Outcome fakeOutcome = await _observe(
+        final String fakeOutcome = await _observe(
           () => _apply(pair.fake, planned),
         );
-        final _Outcome nodeOutcome = await _observe(
+        final String nodeOutcome = await _observe(
           () => _apply(pair.nodeBacked, planned),
         );
-        seenOutcomes.add(nodeOutcome);
+        seenKinds.add(_readKind(nodeOutcome));
 
         expect(fakeOutcome, nodeOutcome, reason: '$planned');
         expect(
@@ -165,6 +188,6 @@ void main() {
       }
       pair.nodeBacked.dispose();
     }
-    expect(seenOutcomes, _Outcome.values.toSet());
+    expect(seenKinds, _everyKind);
   });
 }

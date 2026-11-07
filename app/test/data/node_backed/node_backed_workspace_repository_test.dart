@@ -11,7 +11,9 @@ import 'package:agent_orchestration/data/repository/record_not_found.dart';
 
 import '../../support/memory_workspace_choice_store.dart';
 import '../../support/random_inputs.dart';
+import 'support/identifier_ordered_records.dart';
 import 'support/simulated_catalog_node.dart';
+import 'support/simulated_node_replies.dart';
 
 const Duration _retryInterval = Duration(seconds: 30);
 final DateTime _now = DateTime.utc(2026, 10, 31, 12);
@@ -21,7 +23,9 @@ NodeBackedWorkspaceRepository _buildRepository(
   SimulatedCatalogNode simulated,
 ) {
   return NodeBackedWorkspaceRepository(
-    channel: simulated.channel,
+    channel: buildSimulatedChannel(
+      IdentifierOrderedCatalogNode(simulated).answer,
+    ),
     clock: FixedClock(_now),
     retryInterval: _retryInterval,
     choiceStore: MemoryWorkspaceChoiceStore(chosenWorkspaceId: null),
@@ -36,10 +40,12 @@ List<String> _listWorkspaceIds(NodeBackedWorkspaceRepository repository) {
 }
 
 List<String> _listNodeWorkspaceIds(SimulatedCatalogNode simulated) {
-  return <String>[
+  final List<String> workspaceIds = <String>[
     for (final Map<String, Object?> workspace in simulated.workspaces)
       workspace['id'] as String,
   ];
+  workspaceIds.sort();
+  return workspaceIds;
 }
 
 void main() {
@@ -156,7 +162,8 @@ void main() {
     await repository.load();
 
     for (int i = 0; i < propertyIterations; i += 1) {
-      final DateTime before = repository.findAppServerStatus().lastConnectedAt;
+      final AppServerStatus previous = repository.findAppServerStatus();
+      final DateTime? before = previous.lastConnectedAt;
       simulated.isServerReachable = random.nextBool();
       final AppServerStatus status = await repository.retryAppServer();
       expect(

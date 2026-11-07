@@ -13,11 +13,18 @@ import '../../bridge/support/random_work_json.dart';
 import '../../support/random_inputs.dart';
 
 const String _changedState = 'changed_not_signed';
+const String _signedState = 'signed';
+const String _notSignedState = 'not_signed_yet';
 
 Map<String, Object?> _randomConsistentViewJson(Random random) {
   final Map<String, Object?> json = randomWorkflowViewJson(random);
   final Map<String, Object?> workflow =
       json['workflow']! as Map<String, Object?>;
+  if (workflow['signature'] == null) {
+    json['signature_state'] = _notSignedState;
+  } else if (json['signature_state'] == _notSignedState) {
+    json['signature_state'] = _signedState;
+  }
   if (workflow['signature'] != null) {
     json['signed_at'] = randomMomentText(random);
   }
@@ -140,7 +147,7 @@ void main() {
     }
   });
 
-  test('test_map_workflow_from_node_property_needs_the_sign_moment', () {
+  test('test_map_workflow_from_node_property_unknown_sign_moment_is_kept', () {
     final Random random = seededRandom(9315);
     for (int i = 0; i < propertyIterations; i += 1) {
       final Map<String, Object?> json = _randomConsistentViewJson(random);
@@ -148,14 +155,15 @@ void main() {
       json['changed_at'] = null;
       final node.WorkflowView view = node.WorkflowView.fromJson(json);
       final bool isSigned = view.workflow.signature != null;
-      if (!isSigned) {
-        expect(mapWorkflowFromNode(view).signature, isNull);
-        continue;
-      }
-      expect(() => mapWorkflowFromNode(view), throwsFormatException);
-      if (view.signatureState == node.SignatureState.changedNotSigned) {
-        expect(() => mapPendingChangeFromNode(view), throwsFormatException);
-      }
+      final WorkflowSignature? signature = mapWorkflowFromNode(view).signature;
+
+      expect(signature == null, !isSigned);
+      expect(signature?.signedAt, isNull);
+      final WorkflowChange? change = mapPendingChangeFromNode(view);
+      final bool isChanged =
+          view.signatureState == node.SignatureState.changedNotSigned;
+      expect(change != null, isChanged);
+      expect(change?.changedAt, isNull);
     }
   });
 

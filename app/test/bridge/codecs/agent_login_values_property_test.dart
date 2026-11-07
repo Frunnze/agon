@@ -39,7 +39,12 @@ void main() {
       seed: 49220,
       choices: ClaudeLogin.values,
       decode: ClaudeLogin.decode,
-      nodeNames: <String>['logged_in', 'not_logged_in', 'not_installed'],
+      nodeNames: <String>[
+        'logged_in',
+        'not_logged_in',
+        'not_installed',
+        'unknown',
+      ],
     ),
   );
   testWireNameDecodeProperties(

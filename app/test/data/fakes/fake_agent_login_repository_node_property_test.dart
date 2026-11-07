@@ -25,6 +25,7 @@ const Map<ClaudeLogin, String> _nodeClaudeLogins = <ClaudeLogin, String>{
   ClaudeLogin.loggedIn: 'logged_in',
   ClaudeLogin.notLoggedIn: 'not_logged_in',
   ClaudeLogin.notInstalled: 'not_installed',
+  ClaudeLogin.unknown: 'unknown',
 };
 const Map<AgentCredentialKind, String> _nodeCredentials =
     <AgentCredentialKind, String>{

@@ -13,19 +13,12 @@ import 'workflow_repositories.dart';
 
 FakeTaskWork buildTaskWorkOf(AppDependencies dependencies) {
   return FakeTaskWork(
-    taskRepository: dependencies.taskRepository,
-    jobRepository: dependencies.jobRepository,
+    taskRepository: dependencies.taskRepository as FakeTaskRepository,
   );
 }
 
 FakeTaskWork buildTaskWorkOver(FakeTaskRepository taskRepository) {
-  return FakeTaskWork(
-    taskRepository: taskRepository,
-    jobRepository: FakeJobRepository(
-      taskRepository: taskRepository,
-      clock: FixedClock(galleryNow),
-    ),
-  );
+  return FakeTaskWork(taskRepository: taskRepository);
 }
 
 FakeTaskRepository buildEmptyTaskRepository() {
