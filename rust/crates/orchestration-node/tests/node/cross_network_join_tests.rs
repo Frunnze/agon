@@ -74,6 +74,7 @@ fn test_join_with_code_property_the_code_alone_joins_from_another_network() {
     let rendezvous_problem =
         starting_status.map(|status| status["rendezvous_problem"].clone());
     assert_eq!(rendezvous_problem, Ok(Value::Null));
+    assert_eq!(session.get("rendezvous_problem"), Some(&Value::Null));
     assert!(joined.is_ok(), "{joined:?}");
     assert!(approved.is_ok(), "{approved:?}");
     let state = join_status.map(|status| status["state"].clone());
@@ -126,9 +127,10 @@ fn test_start_pairing_property_a_local_only_device_publishes_nothing() {
         panic!("the device starts");
     };
     let workspace = prepare_workspace_with(local_device);
-    let (_session, code) = start_pairing_or_panic(&workspace.device);
+    let (session, code) = start_pairing_or_panic(&workspace.device);
 
     let record = look_up_code(&code);
 
     assert_eq!(record, Err(NO_SERVER_ACCEPTED_CODE.to_owned()));
+    assert_eq!(session.get("rendezvous_problem"), Some(&Value::Null));
 }

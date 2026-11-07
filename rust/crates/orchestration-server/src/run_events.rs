@@ -5,7 +5,7 @@ use orchestration_api::updates::ChangeTopic;
 use orchestration_api::work::{RunEvent, RunEventsRequest};
 use orchestration_core::identifiers::{DeviceId, RunId};
 use orchestration_core::run::{Run, RunFailure, StepStatus};
-use orchestration_core::run_lifecycle::apply_step_status;
+use orchestration_core::run_lifecycle::{apply_step_status, is_step_finished};
 use orchestration_core::run_links::record_link_change;
 use orchestration_core::run_routing::advance_newly_done_steps;
 use orchestration_core::step_results::record_step_result;
@@ -16,7 +16,6 @@ use crate::change::Change;
 use crate::error::ServerError;
 use crate::extractors::{PathValue, parse_json_body};
 use crate::follow_ups::append_chat_message;
-use crate::run_changes::is_step_finished;
 use crate::run_starts::{
     describe_run, describe_run_detail, find_run_workflow, sync_task_status,
 };

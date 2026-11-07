@@ -5,6 +5,7 @@ use orchestration_core::library::{
     Rule, Skill, SkillImprovement, SkillSource, SkillUsage,
 };
 use orchestration_core::naming::validate_name;
+use orchestration_core::rule_titles::validate_rule_title;
 use orchestration_core::scope::Scope;
 use serde::Deserialize;
 use serde_json::Value;
@@ -122,13 +123,6 @@ pub(super) async fn handle_library_edit_command(
     }
 }
 
-pub(super) fn require_rule_title(title: &str) -> Result<(), NodeError> {
-    if title.trim().is_empty() {
-        return Err(NodeError::EmptyText { field: "rule" });
-    }
-    Ok(())
-}
-
 async fn replace_skill(
     session: &DeviceSession,
     client: &SignedServerClient<'_>,
@@ -176,7 +170,7 @@ async fn replace_rule(
     workspace_id: WorkspaceId,
     rule: &Rule,
 ) -> Result<Rule, NodeError> {
-    require_rule_title(&rule.title)?;
+    validate_rule_title(&rule.title)?;
     let workspace_key = session.keyring.key_for(workspace_id)?;
     let request = SaveRuleRequest {
         rule: seal_rule(workspace_key, rule)?,

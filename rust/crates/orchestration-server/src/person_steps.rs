@@ -5,6 +5,7 @@ use orchestration_api::updates::ChangeTopic;
 use orchestration_api::work::{AnswerPersonStepRequest, OpenPersonStep};
 use orchestration_core::identifiers::{DeviceId, RunId};
 use orchestration_core::run::{Run, RunStep, StepStatus};
+use orchestration_core::run_lifecycle::{RunProblem, is_run_finished};
 use orchestration_core::run_routing::advance_after_step;
 use orchestration_core::step_outcomes::{list_step_choices, match_choice};
 use orchestration_core::workflow::Workflow;
@@ -77,6 +78,9 @@ fn list_open_steps(
     let mut open_steps = Vec::new();
     for record in state.runs.values() {
         let run = &record.run;
+        if is_run_finished(run.status) {
+            continue;
+        }
         let Some(task) = state.tasks.get(&run.task_id) else {
             continue;
         };
@@ -126,6 +130,9 @@ fn record_person_answer(
         .get(&record.run.task_id)
         .ok_or(ServerError::NotFound("the task"))?;
     require_task_access(state, caller_id, task)?;
+    if is_run_finished(record.run.status) {
+        return Err(RunProblem::RunAlreadyFinished.into());
+    }
     let workflow = find_run_workflow(state, record)
         .ok_or_else(|| ServerError::Conflict(NO_WORKFLOW.to_owned()))?;
     let step = record

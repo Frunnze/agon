@@ -8,6 +8,7 @@ use orchestration_security::identity::DeviceIdentity;
 use crate::error::ServerError;
 use crate::setup_code::SetupCode;
 use crate::stored_state::StoredState;
+use crate::stored_state_decoding::decode_stored_state;
 
 const STATE_FILE_NAME: &str = "state.json";
 const IDENTITY_FILE_NAME: &str = "server-identity.key";
@@ -33,7 +34,7 @@ impl StateStorage {
             return Ok(StoredState::default());
         }
         let state_bytes = fs::read(&state_path).map_err(storage_error)?;
-        serde_json::from_slice(&state_bytes).map_err(storage_error)
+        decode_stored_state(&state_bytes).map_err(storage_error)
     }
 
     pub fn save_state(&self, state: &StoredState) -> Result<(), ServerError> {

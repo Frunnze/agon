@@ -1,5 +1,6 @@
 use crate::identifiers::{ProjectId, WorkspaceId};
 use crate::library::Rule;
+use crate::rule_titles::validate_rule_title;
 use crate::scope_rules::applies_to;
 
 const RULES_HEADER: &str = "# Rules\n\n";
@@ -14,6 +15,7 @@ pub fn render_agents_markdown(
     let rule_sections: Vec<String> = rules
         .iter()
         .filter(|rule| rule.enabled)
+        .filter(|rule| validate_rule_title(&rule.title).is_ok())
         .filter(|rule| applies_to(&rule.scope, workspace_id, project_id))
         .map(render_rule)
         .collect();

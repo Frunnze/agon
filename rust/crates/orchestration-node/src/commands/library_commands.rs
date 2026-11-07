@@ -10,12 +10,12 @@ use orchestration_core::library::{
     Rule, Skill, SkillImprovement, SkillSource, SkillUsage,
 };
 use orchestration_core::naming::validate_name;
+use orchestration_core::rule_titles::validate_rule_title;
 use orchestration_core::scope::Scope;
 use orchestration_core::scope_rules::workspace_scope_includes;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use super::library_edits::require_rule_title;
 use crate::command_reply::encode_reply;
 use crate::content_sealing::{open_rule, open_skill, seal_rule, seal_skill};
 use crate::node::{DeviceSession, Node};
@@ -176,7 +176,7 @@ async fn create_rule(
     details: String,
     scope: Scope,
 ) -> Result<Rule, NodeError> {
-    require_rule_title(&title)?;
+    validate_rule_title(&title)?;
     let rule = Rule {
         id: RuleId(generate_uuid()),
         title,

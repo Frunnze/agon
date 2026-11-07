@@ -1,7 +1,7 @@
 use chrono::DateTime;
 use orchestration_core::device::RunnerLink;
 use orchestration_core::identifiers::{DeviceId, RunId, TaskId};
-use orchestration_core::run::{Run, RunStatus, RunStep};
+use orchestration_core::run::{Run, RunStep};
 use orchestration_core::run_lifecycle::derive_run_status;
 use uuid::Uuid;
 
@@ -35,11 +35,4 @@ pub fn run_with_steps(steps: Vec<RunStep>) -> Run {
         loop_rounds: Vec::new(),
         notes: Vec::new(),
     }
-}
-
-pub fn is_run_finished(status: RunStatus) -> bool {
-    matches!(
-        status,
-        RunStatus::Done | RunStatus::Failed | RunStatus::Cancelled
-    )
 }

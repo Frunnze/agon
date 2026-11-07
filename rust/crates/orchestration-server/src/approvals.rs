@@ -5,11 +5,12 @@ use chrono::{DateTime, Utc};
 use orchestration_api::updates::ChangeTopic;
 use orchestration_api::work::{CreateApprovalRequest, DecideApprovalRequest};
 use orchestration_core::approval::{
-    ApprovalDecision, ApprovalRequest, SignedDecision,
+    ApprovalAction, ApprovalDecision, ApprovalRequest, SignedDecision,
 };
 use orchestration_core::identifiers::{
     ApprovalId, DeviceId, RunId, generate_uuid,
 };
+use orchestration_core::run_lifecycle::{RunProblem, is_run_finished};
 use orchestration_security::decisions::verify_decision;
 use uuid::Uuid;
 
@@ -79,7 +80,10 @@ fn visible_approvals(
 ) -> Vec<ApprovalRequest> {
     let mut approvals: Vec<ApprovalRequest> = Vec::new();
     for approval in state.approvals.values() {
-        if caller.is_client() || approval.requested_by == caller.device_id {
+        let is_asked_by_caller = approval.requested_by == caller.device_id;
+        let is_open_to_person =
+            caller.is_client() && !asks_about_finished_run(state, approval);
+        if is_open_to_person || is_asked_by_caller {
             approvals.push(approval.clone());
         }
     }
@@ -127,6 +131,22 @@ pub fn open_approval(
     ))
 }
 
+fn asks_about_finished_run(
+    state: &StoredState,
+    approval: &ApprovalRequest,
+) -> bool {
+    let is_skill_proposal =
+        matches!(approval.action, ApprovalAction::ImproveSkill { .. });
+    if approval.decision.is_some() || is_skill_proposal {
+        return false;
+    }
+    let Some(run_id) = approval.run_id else {
+        return false;
+    };
+    let run_record = state.runs.get(&run_id);
+    run_record.is_some_and(|record| is_run_finished(record.run.status))
+}
+
 fn record_decision(
     state: &mut StoredState,
     approval_id: ApprovalId,
@@ -140,6 +160,13 @@ fn record_decision(
     }
     let decider_key = signing_key_of(state, decider_id)
         .ok_or(ServerError::Forbidden("the deciding device is not trusted"))?;
+    let stored_approval = state
+        .approvals
+        .get(&approval_id)
+        .ok_or(ServerError::NotFound("the approval"))?;
+    if asks_about_finished_run(state, stored_approval) {
+        return Err(RunProblem::RunAlreadyFinished.into());
+    }
     let approval = state
         .approvals
         .get_mut(&approval_id)

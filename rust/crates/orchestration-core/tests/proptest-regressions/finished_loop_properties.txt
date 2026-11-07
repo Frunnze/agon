@@ -1,0 +1,8 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 530f263db9437f7aa0a64ce5a0dfd946eca999b52b4cff8db2acb34ca30ba047 # shrinks to plan = LoopPlan { agent_count: 2, source: 1, target: 0, round_limit: 1 }, at = 1970-01-01T00:00:00Z
+cc 0d3177bebea8354b7ad8db2b7334185f8531feaafc81e52bb8ea6df1356b3476 # shrinks to plan = LoopPlan { agent_count: 2, source: 1, target: 0, round_limit: 1 }, stopped_status = Failed, at = 1970-01-01T00:00:00Z

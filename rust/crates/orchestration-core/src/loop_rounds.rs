@@ -2,6 +2,7 @@ use std::collections::BTreeSet;
 
 use crate::identifiers::WorkflowAgentId;
 use crate::run::{EarlierStepRound, LoopRounds, Run, RunStep, StepStatus};
+use crate::run_lifecycle::derive_run_status;
 use crate::workflow::{AgentConnection, Workflow};
 use crate::workflow_graph::forward_reachable_agents;
 
@@ -41,9 +42,14 @@ pub(crate) fn start_loop_round(
         steps.push(reset_for_round(step, &round_start));
     }
     let target_name = name_step_of(run, taken_loop.to);
+    let kept_rounds =
+        forget_nested_loop_rounds(run, workflow, taken_loop, &reset_agents);
+    let counted_rounds =
+        count_one_more_round(&kept_rounds, source_name, &target_name);
     Run {
+        status: derive_run_status(&steps),
         steps,
-        loop_rounds: count_one_more_round(run, source_name, &target_name),
+        loop_rounds: counted_rounds,
         ..run.clone()
     }
 }
@@ -108,10 +114,59 @@ fn reset_for_round(step: &RunStep, round_start: &RoundStart<'_>) -> RunStep {
     }
 }
 
-fn count_one_more_round(run: &Run, from: &str, to: &str) -> Vec<LoopRounds> {
+fn is_nested_loop(
+    workflow: &Workflow,
+    connection: &AgentConnection,
+    taken_loop: &AgentConnection,
+    reset_agents: &BTreeSet<WorkflowAgentId>,
+) -> bool {
+    if !connection.is_loop() || !reset_agents.contains(&connection.to) {
+        return false;
+    }
+    if connection.to != taken_loop.to {
+        return true;
+    }
+    let is_taken_loop = connection.from == taken_loop.from;
+    let reached_from_source =
+        forward_reachable_agents(workflow, connection.from);
+    let reaches_taken_source = reached_from_source.contains(&taken_loop.from);
+    !is_taken_loop && reaches_taken_source
+}
+
+fn forget_nested_loop_rounds(
+    run: &Run,
+    workflow: &Workflow,
+    taken_loop: &AgentConnection,
+    reset_agents: &BTreeSet<WorkflowAgentId>,
+) -> Vec<LoopRounds> {
+    let mut nested_loop_names = Vec::new();
+    for connection in &workflow.connections {
+        if is_nested_loop(workflow, connection, taken_loop, reset_agents) {
+            let from = name_step_of(run, connection.from);
+            let to = name_step_of(run, connection.to);
+            nested_loop_names.push((from, to));
+        }
+    }
+    let mut kept_rounds = Vec::new();
+    for rounds in &run.loop_rounds {
+        let is_nested = nested_loop_names
+            .iter()
+            .any(|(from, to)| rounds.from == *from && rounds.to == *to);
+        if !is_nested {
+            kept_rounds.push(rounds.clone());
+        }
+    }
+    kept_rounds
+}
+
+fn count_one_more_round(
+    earlier_rounds: &[LoopRounds],
+    from: &str,
+    to: &str,
+) -> Vec<LoopRounds> {
     let mut loop_rounds = Vec::new();
     let mut is_counted = false;
-    for rounds in &run.loop_rounds {
+    for rounds in earlier_rounds {
         let is_this_loop = rounds.from == from && rounds.to == to;
         if is_this_loop {
             loop_rounds.push(LoopRounds {

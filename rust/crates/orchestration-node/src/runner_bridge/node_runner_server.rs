@@ -9,7 +9,8 @@ use orchestration_api::work::{
 use orchestration_core::approval::ApprovalDecision;
 use orchestration_core::identifiers::{RunId, SkillId, WorkspaceId};
 use orchestration_core::peer_address::ENDPOINT_PUBLIC_KEY_LENGTH;
-use orchestration_core::run::{ChatAuthor, ChatMessage, RunStatus};
+use orchestration_core::run::{ChatAuthor, ChatMessage};
+use orchestration_core::run_lifecycle::is_run_stopped;
 use orchestration_runner::runner_server::{RunnerServer, ServerError};
 use orchestration_security::sealing::seal_text;
 use tokio::sync::broadcast;
@@ -176,13 +177,13 @@ impl NodeRunnerServer {
         Ok(user_messages)
     }
 
-    async fn read_cancellation(
+    async fn read_whether_stopped(
         &self,
         run_id: RunId,
     ) -> Result<bool, NodeError> {
         let session = self.node.open_session()?;
         let run = session.client().read_run(run_id).await?;
-        Ok(run.status == RunStatus::Cancelled)
+        Ok(is_run_stopped(run.status))
     }
 
     fn find_claimed_workspace(
@@ -254,11 +255,11 @@ impl RunnerServer for NodeRunnerServer {
             .map_err(ServerError::from)
     }
 
-    async fn is_run_cancelled(
+    async fn is_run_stopped(
         &self,
         run_id: RunId,
     ) -> Result<bool, ServerError> {
-        self.read_cancellation(run_id)
+        self.read_whether_stopped(run_id)
             .await
             .map_err(ServerError::from)
     }

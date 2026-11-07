@@ -1,0 +1,4 @@
+mod duplicate_pattern_properties;
+mod pattern_spelling_support;
+mod rule_title_properties;
+mod same_pattern_properties;

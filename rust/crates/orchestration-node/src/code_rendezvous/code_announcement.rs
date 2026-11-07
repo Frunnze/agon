@@ -14,29 +14,31 @@ pub(crate) async fn announce_code(
     node: &Node,
     code: &PairingCode,
     expires_at: DateTime<Utc>,
-) {
+) -> Option<String> {
     if !node.crosses_networks() {
-        return;
+        return None;
     }
     let published_codes = node.published_codes();
     match publish_announcement(node, code, expires_at).await {
         Ok(board) => {
             published_codes.record_published(code);
             schedule_expiry(published_codes, board, code.clone(), expires_at);
+            None
         }
-        Err(problem) => published_codes.record_problem(&problem),
+        Err(problem) => {
+            published_codes.record_problem(&problem);
+            Some(problem.to_string())
+        }
     }
 }
 
 pub(crate) async fn withdraw_announced_code(node: &Node, code: &PairingCode) {
+    let Ok(peer_side) = node.peer_side() else {
+        return;
+    };
     let published_codes = node.published_codes();
-    match node.peer_side() {
-        Ok(peer_side) => {
-            let board = &peer_side.record_board;
-            withdraw_when_published(&published_codes, board, code).await;
-        }
-        Err(problem) => published_codes.record_problem(&problem),
-    }
+    let board = &peer_side.record_board;
+    withdraw_when_published(&published_codes, board, code).await;
 }
 
 async fn publish_announcement(

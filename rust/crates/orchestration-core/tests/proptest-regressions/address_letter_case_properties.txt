@@ -1,0 +1,11 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc ba515356db0c6c894ce289ea59eb86d1e513696f49d3ba23fa66bc5f988215bf # shrinks to host = "a.aa", owner = "a", repository = "0", uppercase_choices = [true]
+cc e3ad91aeb50ab7326cbbfefefea426ae5ee671606232c2017364bbafd3100d93 # shrinks to scheme = "HTTPS", address = "a.aa/0/0"
+cc 6952c16536e1432fb1239a47e64366a14bd7c85e533d15e1c83c04f73e5e071b # shrinks to address = "a.aa/A/A", uppercase_choices = [true]
+cc 5d28d4a18dd823e41990f34f9c8d5de1c0f35ff59922b9956ff17ee70e35f360 # shrinks to scheme = "https", address = "0.aa/0/A", uppercase_choices = [true]
+cc 843eae1d2fbff9bd212252cca0a403e1ce022926aa161f46ec3452999a2afce9 # shrinks to host = "0.aa", owner = "A", repository = "0", first_choices = [false], second_choices = [false, false, true]

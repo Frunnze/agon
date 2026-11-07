@@ -28,6 +28,13 @@ pub(super) struct PairingRequestScreen {
 }
 
 #[derive(Debug, Serialize)]
+pub(super) struct StartedPairing {
+    #[serde(flatten)]
+    screen: PairingRequestScreen,
+    rendezvous_problem: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
 struct JoiningDeviceScreen {
     name: String,
     role: DeviceRole,
@@ -39,7 +46,7 @@ struct JoiningDeviceScreen {
 
 pub(super) async fn start_pairing(
     node: &Node,
-) -> Result<PairingRequestScreen, NodeError> {
+) -> Result<StartedPairing, NodeError> {
     let session = node.open_session()?;
     let client = session.client();
     let created = client.start_pairing_session().await?;
@@ -59,13 +66,18 @@ pub(super) async fn start_pairing(
     node.approver_pairings()
         .remember_nonce(&pairing_code, approver_nonce);
 
-    announce_code(node, &pairing_code, created.expires_at).await;
-    Ok(PairingRequestScreen {
+    let rendezvous_problem =
+        announce_code(node, &pairing_code, created.expires_at).await;
+    let screen = PairingRequestScreen {
         display_code: pairing_code.display(),
         code: canonical,
         started_at: created.started_at,
         expires_at: created.expires_at,
         joining: None,
+    };
+    Ok(StartedPairing {
+        screen,
+        rendezvous_problem,
     })
 }
 

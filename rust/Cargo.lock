@@ -2944,6 +2944,7 @@ dependencies = [
  "chrono",
  "orchestration-api",
  "orchestration-core",
+ "orchestration-hub",
  "orchestration-security",
  "proptest",
  "serde",

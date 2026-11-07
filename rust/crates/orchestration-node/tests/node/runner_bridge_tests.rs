@@ -182,12 +182,12 @@ fn user_messages_reach_the_runner_in_plaintext_without_agent_messages() {
 }
 
 #[test]
-fn a_cancelled_run_reads_as_cancelled() {
+fn test_read_whether_stopped_property_a_cancelled_run_reads_as_stopped() {
     let claimed = claim_or_panic();
     let run_id = claimed.assignment.run.id;
     let before = claimed
         .runtime
-        .block_on(claimed.runner.is_run_cancelled(run_id));
+        .block_on(claimed.runner.is_run_stopped(run_id));
 
     let cancelled = claimed.prepared.device.run(&json!({
         "command": "cancel_run",
@@ -195,7 +195,7 @@ fn a_cancelled_run_reads_as_cancelled() {
     }));
     let after = claimed
         .runtime
-        .block_on(claimed.runner.is_run_cancelled(run_id));
+        .block_on(claimed.runner.is_run_stopped(run_id));
 
     assert!(cancelled.is_ok(), "{cancelled:?}");
     assert_eq!(before, Ok(false));

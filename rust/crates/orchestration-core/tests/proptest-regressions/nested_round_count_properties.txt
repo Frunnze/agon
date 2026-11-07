@@ -1,0 +1,7 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 28b772922854b026af85b401d8cf358a9b41392f0f04ef6ef39b0f44c5e86fce # shrinks to (plan, counts) = (NestedPlan { agent_count: 4, inner: LoopSpan { source: 2, target: 1, round_limit: 2 }, outer: LoopSpan { source: 3, target: 0, round_limit: 1 } }, SeededCounts { inner: 1, outer: 0 })

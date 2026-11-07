@@ -3,6 +3,7 @@ use orchestration_core::naming::NameProblem;
 use orchestration_core::protected_files::ProtectedPatternProblem;
 use orchestration_core::repository_address::AddressProblem;
 use orchestration_core::repository_paths::RepositoryPathProblem;
+use orchestration_core::rule_titles::RuleTitleProblem;
 use orchestration_core::schedule_rules::ScheduleProblem;
 use orchestration_core::workflow_graph::WorkflowProblem;
 use orchestration_p2p::peer_error::PeerError;
@@ -32,6 +33,8 @@ pub enum NodeError {
     Schedule(#[from] ScheduleProblem),
     #[error(transparent)]
     RepositoryPath(#[from] RepositoryPathProblem),
+    #[error(transparent)]
+    RuleTitle(#[from] RuleTitleProblem),
     #[error(transparent)]
     LocalFolder(#[from] LocalFolderProblem),
     #[error("the folder {0} does not exist or this app cannot open it")]

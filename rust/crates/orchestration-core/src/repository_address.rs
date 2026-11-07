@@ -12,6 +12,7 @@ const GIT_SUFFIX: &str = ".git";
 const SECURE_SHELL_HOST_SEPARATOR: char = ':';
 const PATH_SEPARATOR: &str = "/";
 const HOST_LABEL_SEPARATOR: char = '.';
+const HOST_LABEL_HYPHEN: char = '-';
 const CANONICAL_PART_COUNT: usize = 3;
 const MINIMUM_HOST_LABELS: usize = 2;
 const RESERVED_PATH_PARTS: [&str; 2] = [".", ".."];
@@ -59,12 +60,14 @@ pub fn parse_repository_address(
     validate_host(parts[0])?;
     validate_path_part(parts[1])?;
     validate_path_part(parts[2])?;
-    Ok(parts.join(PATH_SEPARATOR))
+    let lowercase_host = parts[0].to_ascii_lowercase();
+    let canonical_parts = [lowercase_host.as_str(), parts[1], parts[2]];
+    Ok(canonical_parts.join(PATH_SEPARATOR))
 }
 
 fn remove_address_prefix(address: &str) -> Result<String, AddressProblem> {
     if let Some((scheme, rest)) = address.split_once(SCHEME_SEPARATOR) {
-        if scheme != SUPPORTED_SCHEME {
+        if !scheme.eq_ignore_ascii_case(SUPPORTED_SCHEME) {
             return Err(AddressProblem::UnsupportedScheme {
                 scheme: scheme.to_owned(),
             });
@@ -95,11 +98,15 @@ fn validate_host(host: &str) -> Result<(), AddressProblem> {
 }
 
 fn is_host_label(label: &str) -> bool {
-    !label.is_empty() && label.chars().all(is_host_character)
+    let has_edge_hyphen = label.starts_with(HOST_LABEL_HYPHEN)
+        || label.ends_with(HOST_LABEL_HYPHEN);
+    !label.is_empty()
+        && !has_edge_hyphen
+        && label.chars().all(is_host_character)
 }
 
 fn is_host_character(character: char) -> bool {
-    character.is_ascii_alphanumeric() || character == '-'
+    character.is_ascii_alphanumeric() || character == HOST_LABEL_HYPHEN
 }
 
 fn validate_path_part(part: &str) -> Result<(), AddressProblem> {

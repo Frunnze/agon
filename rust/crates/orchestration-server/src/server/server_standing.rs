@@ -17,6 +17,7 @@ use crate::server_group_changes::{
     admit_member, found_group, record_takeover,
 };
 use crate::stored_state::StoredState;
+use crate::stored_state_decoding::decode_stored_state;
 
 const POISONED_REPLICA_COPIES: &str = "the replica copy lock is poisoned";
 
@@ -143,7 +144,7 @@ impl Server {
 }
 
 fn parse_replica(replica_bytes: &[u8]) -> Result<StoredState, ServerError> {
-    serde_json::from_slice(replica_bytes).map_err(|problem| {
+    decode_stored_state(replica_bytes).map_err(|problem| {
         ServerError::Invalid(format!("the copy is unreadable: {problem}"))
     })
 }

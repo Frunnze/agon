@@ -1,0 +1,7 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 93ad3e87264e4a5c0db71341af8ae9c1cdab0075262830a7cce4095dc528324e # shrinks to situation = Situation { group: ServerGroup { term: None, members: [ServerMember { membership: ServerMembership { device_id: DeviceId("device-d"), server_id: DeviceId("d"), server_signing_public_key: [], endpoint_public_key: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], joined_at: 1970-01-01T00:00:00Z, signature: [] }, address: PeerAddress { endpoint_public_key: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], direct_addresses: [], relay_url: None } }], audit_signers: {} }, own_name: "a", standing: Backup, known_term: None, probes: [ProbeAnswer { server_id: DeviceId("a"), term: Some(ServerTerm { number: 0, server_id: DeviceId("b"), claimed_by: DeviceId("device-b"), signature: [] }), standing: Active }], silence: 0ns, takeover_after: 0ns }

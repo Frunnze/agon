@@ -1,6 +1,7 @@
 use crate::agent_kind_label::label_agent_kind;
 use crate::approval::ApprovalPolicy;
 use crate::device::RunnerTarget;
+use crate::naming::validate_name;
 use crate::scope::WorkspaceScope;
 use crate::workflow::{AgentConnection, StepKind, Workflow, WorkflowAgent};
 use crate::workflow_graph::{
@@ -133,7 +134,7 @@ fn describe_outcome(
 ) -> String {
     let target_name = find_agent_by_id(workflow, connection.to).map_or_else(
         || connection.to.0.to_string(),
-        |target| target.name.clone(),
+        |target| render_outcome_target(&target.name),
     );
     match connection.round_limit {
         None => format!("{condition} -> {target_name}"),
@@ -141,6 +142,13 @@ fn describe_outcome(
             "{condition} -> {target_name}, at most {round_limit} rounds"
         ),
     }
+}
+
+fn render_outcome_target(target_name: &str) -> String {
+    if validate_name(target_name).is_ok() {
+        return target_name.to_owned();
+    }
+    render_yaml_scalar(target_name)
 }
 
 fn render_runner_target(target: &RunnerTarget) -> String {

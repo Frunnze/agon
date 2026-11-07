@@ -190,6 +190,7 @@ proptest! {
             .iter()
             .filter(|rule| {
                 rule.enabled
+                    && !rule.title.trim().is_empty()
                     && applies_to(&rule.scope, workspace_id, project_id)
             })
             .count();

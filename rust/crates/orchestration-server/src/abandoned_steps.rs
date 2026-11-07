@@ -3,13 +3,15 @@ use orchestration_api::updates::ChangeTopic;
 use orchestration_core::device::RunnerTarget;
 use orchestration_core::identifiers::{DeviceId, RunId};
 use orchestration_core::run::RunStep;
-use orchestration_core::run_lifecycle::{derive_run_status, is_run_finished};
+use orchestration_core::run_lifecycle::{
+    derive_run_status, is_run_finished, is_step_finished,
+};
 
 use crate::change::Change;
 use crate::claims::target_for_step;
 use crate::error::ServerError;
 use crate::request_ledger::Presence;
-use crate::run_changes::{is_step_finished, requeue_step};
+use crate::run_changes::requeue_step;
 use crate::run_starts::{describe_run, find_run_workflow, sync_task_status};
 use crate::server::Server;
 use crate::stored_state::{RunRecord, StoredState};

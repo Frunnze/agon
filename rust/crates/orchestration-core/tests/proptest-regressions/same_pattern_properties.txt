@@ -1,0 +1,7 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc dbb8b57d6c36fe6b532877b70faf57c9703c78114f799434eb760ea8b7d73642 # shrinks to shape = PatternShape { place: UnderHome, segments: ["*."] }, first_spelling = Spelling { extra_slashes: [0, 0, 0, 0], has_dot_folder: [false, false, false, false], has_trailing_slash: false, is_uppercase: [false, false, false, false, false, false, false] }, second_spelling = Spelling { extra_slashes: [0, 0, 0, 0], has_dot_folder: [false, false, false, false], has_trailing_slash: false, is_uppercase: [false, false, false, false, false, false, false] }

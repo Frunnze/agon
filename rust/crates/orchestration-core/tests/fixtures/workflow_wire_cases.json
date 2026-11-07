@@ -1,0 +1,88 @@
+{
+  "agent_kinds": ["claude_code", "codex", "gemini_cli"],
+  "step_kinds": ["agent", "person"],
+  "signature_states": ["signed", "not_signed_yet", "changed_not_signed"],
+  "workflow": {
+    "id": "00000000-0000-0000-0000-000000000009",
+    "name": "release",
+    "availability": {
+      "kind": "only_workspaces",
+      "workspaces": ["00000000-0000-0000-0000-0000000000a1"]
+    },
+    "agents": [
+      {
+        "id": "00000000-0000-0000-0000-000000000001",
+        "name": "plan",
+        "step_kind": "agent",
+        "kind": "claude_code",
+        "task": "Write the plan.",
+        "runs_on": { "kind": "specific_runner", "device_id": "office-server" },
+        "skills": ["00000000-0000-0000-0000-000000000005"],
+        "uses_automatic_skills": true,
+        "approval_policy": "ask_before_risky_actions",
+        "position": { "horizontal": 0.0, "vertical": 0.0 }
+      },
+      {
+        "id": "00000000-0000-0000-0000-000000000002",
+        "name": "review",
+        "step_kind": "person",
+        "kind": null,
+        "task": "Is the plan good?",
+        "runs_on": { "kind": "any_free_runner" },
+        "skills": [],
+        "uses_automatic_skills": false,
+        "approval_policy": null,
+        "position": { "horizontal": 208.0, "vertical": 152.0 }
+      },
+      {
+        "id": "00000000-0000-0000-0000-000000000003",
+        "name": "ship",
+        "step_kind": "agent",
+        "kind": "gemini_cli",
+        "task": "Ship it.",
+        "runs_on": { "kind": "runner_with_labels", "labels": ["gpu", "mac"] },
+        "skills": [],
+        "uses_automatic_skills": false,
+        "approval_policy": "never_ask",
+        "position": { "horizontal": 0.5, "vertical": 304.0 }
+      },
+      {
+        "id": "00000000-0000-0000-0000-000000000004",
+        "name": "notes",
+        "step_kind": "agent",
+        "kind": "codex",
+        "task": "",
+        "runs_on": { "kind": "any_free_runner" },
+        "skills": [],
+        "uses_automatic_skills": true,
+        "approval_policy": null,
+        "position": { "horizontal": -1.5, "vertical": 304.0 }
+      }
+    ],
+    "connections": [
+      {
+        "from": "00000000-0000-0000-0000-000000000001",
+        "to": "00000000-0000-0000-0000-000000000002",
+        "condition": null,
+        "round_limit": null
+      },
+      {
+        "from": "00000000-0000-0000-0000-000000000002",
+        "to": "00000000-0000-0000-0000-000000000003",
+        "condition": "approved",
+        "round_limit": null
+      },
+      {
+        "from": "00000000-0000-0000-0000-000000000002",
+        "to": "00000000-0000-0000-0000-000000000001",
+        "condition": "changes",
+        "round_limit": 3
+      }
+    ],
+    "signature": {
+      "signed_by": "office-server",
+      "signature": [0, 7, 255],
+      "signed_document": "name: release\n"
+    }
+  }
+}

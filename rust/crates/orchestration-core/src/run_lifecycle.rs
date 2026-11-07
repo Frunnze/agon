@@ -104,7 +104,7 @@ pub fn apply_step_status(
         .collect();
     let run_status = derive_run_status(&changed_steps);
     let settled_steps = if run_status == RunStatus::Failed {
-        skip_waiting_steps(&changed_steps)
+        skip_unfinished_steps(&changed_steps, at)
     } else {
         changed_steps
     };
@@ -221,20 +221,24 @@ fn change_step_status(
     }
 }
 
-fn skip_waiting_steps(steps: &[RunStep]) -> Vec<RunStep> {
-    steps
-        .iter()
-        .map(|step| {
-            if step.status == StepStatus::Waiting {
-                RunStep {
-                    status: StepStatus::Skipped,
-                    ..step.clone()
-                }
-            } else {
-                step.clone()
-            }
-        })
-        .collect()
+#[must_use]
+pub fn skip_unfinished_steps(
+    steps: &[RunStep],
+    at: DateTime<Utc>,
+) -> Vec<RunStep> {
+    let mut settled_steps = Vec::new();
+    for step in steps {
+        if is_step_finished(step.status) {
+            settled_steps.push(step.clone());
+            continue;
+        }
+        settled_steps.push(RunStep {
+            status: StepStatus::Skipped,
+            finished_at: Some(at),
+            ..step.clone()
+        });
+    }
+    settled_steps
 }
 
 fn has_step_with_status(steps: &[RunStep], status: StepStatus) -> bool {
@@ -249,7 +253,13 @@ pub fn is_run_finished(status: RunStatus) -> bool {
     )
 }
 
-fn is_step_finished(status: StepStatus) -> bool {
+#[must_use]
+pub fn is_run_stopped(status: RunStatus) -> bool {
+    matches!(status, RunStatus::Failed | RunStatus::Cancelled)
+}
+
+#[must_use]
+pub fn is_step_finished(status: StepStatus) -> bool {
     matches!(
         status,
         StepStatus::Done | StepStatus::Failed | StepStatus::Skipped

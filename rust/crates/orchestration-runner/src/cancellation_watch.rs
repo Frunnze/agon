@@ -14,7 +14,7 @@ pub(crate) async fn wait_until_cancelled<S: RunnerServer>(
     let mut timer = steady_interval(check_interval);
     loop {
         timer.tick().await;
-        match server.is_run_cancelled(run_id).await {
+        match server.is_run_stopped(run_id).await {
             Ok(true) => return,
             Ok(false) => {}
             Err(problem) => log_cancellation_check_failure(run_id, &problem),

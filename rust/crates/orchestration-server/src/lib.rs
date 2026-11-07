@@ -54,6 +54,7 @@ mod skill_deletion;
 mod skill_improvements;
 mod skills;
 mod stored_state;
+mod stored_state_decoding;
 mod task_deletion;
 mod task_places;
 mod tasks;

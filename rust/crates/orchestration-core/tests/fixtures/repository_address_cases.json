@@ -1,0 +1,76 @@
+[
+  { "address": "github.com/acme/app", "canonical": "github.com/acme/app" },
+  { "address": "-github.com/acme/app", "canonical": null },
+  { "address": "github-.com/acme/app", "canonical": null },
+  { "address": "github.com-/acme/app", "canonical": null },
+  { "address": "github.-com/acme/app", "canonical": null },
+  { "address": "-.com/acme/app", "canonical": null },
+  { "address": "git@-github.com:acme/app", "canonical": null },
+  { "address": "https://github-.com/acme/app", "canonical": null },
+  {
+    "address": "my-host.example.com/acme/app",
+    "canonical": "my-host.example.com/acme/app"
+  },
+  {
+    "address": "xn--bcher-kva.example/acme/app",
+    "canonical": "xn--bcher-kva.example/acme/app"
+  },
+  { "address": "HTTPS://github.com/acme/app", "canonical": "github.com/acme/app" },
+  {
+    "address": "Https://github.com/acme/app.git",
+    "canonical": "github.com/acme/app"
+  },
+  {
+    "address": "hTTpS://GitHub.com/Acme/App",
+    "canonical": "github.com/Acme/App"
+  },
+  { "address": "HTTP://github.com/acme/app", "canonical": null },
+  { "address": "SSH://github.com/acme/app", "canonical": null },
+  { "address": "GitHub.com/Acme/App", "canonical": "github.com/Acme/App" },
+  { "address": "GITHUB.COM/acme/app", "canonical": "github.com/acme/app" },
+  {
+    "address": "git@GitHub.COM:Acme/App.git",
+    "canonical": "github.com/Acme/App"
+  },
+  {
+    "address": "https://GitLab.Example.ORG/Big-Co/Docs_Site/",
+    "canonical": "gitlab.example.org/Big-Co/Docs_Site"
+  },
+  { "address": "github.com/acme/app.git", "canonical": "github.com/acme/app" },
+  {
+    "address": "github.com/acme/app.git.git",
+    "canonical": "github.com/acme/app"
+  },
+  {
+    "address": "https://github.com/acme/app.git.git.git/",
+    "canonical": "github.com/acme/app"
+  },
+  {
+    "address": "git@github.com:acme/app.git.git",
+    "canonical": "github.com/acme/app"
+  },
+  { "address": "github.com/acme/app.git/", "canonical": "github.com/acme/app" },
+  { "address": "github.com/acme/.git", "canonical": null },
+  { "address": "github.com/acme/.git.git", "canonical": null },
+  { "address": "github.com/acme/app/.git", "canonical": null },
+  { "address": "github.com/acme/app.gi", "canonical": "github.com/acme/app.gi" },
+  { "address": "github.com/acme/app..git", "canonical": "github.com/acme/app." },
+  {
+    "address": "github.com/acme/app.git-tools",
+    "canonical": "github.com/acme/app.git-tools"
+  },
+  {
+    "address": "  https://github.com/acme/app/  ",
+    "canonical": "github.com/acme/app"
+  },
+  { "address": "", "canonical": null },
+  { "address": "   ", "canonical": null },
+  { "address": "ftp://github.com/acme/app", "canonical": null },
+  { "address": "https:/github.com/acme/app", "canonical": null },
+  { "address": "git@github.com/acme/app", "canonical": null },
+  { "address": "github.com/../app", "canonical": null },
+  { "address": "github.com/acme/app/extra", "canonical": null },
+  { "address": "github/acme/app", "canonical": null },
+  { "address": "gïthub.com/acme/app", "canonical": null },
+  { "address": "github.com/äcme/app", "canonical": null }
+]

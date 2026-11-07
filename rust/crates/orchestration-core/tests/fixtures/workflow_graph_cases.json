@@ -1,0 +1,385 @@
+[
+  {
+    "description": "a chain runs in connection order, not canvas order",
+    "agents": [
+      { "name": "build", "horizontal": 0.0, "vertical": 0.0 },
+      { "name": "plan", "horizontal": 0.0, "vertical": 100.0 },
+      { "name": "test", "horizontal": 0.0, "vertical": 200.0 }
+    ],
+    "connections": [
+      { "from": "plan", "to": "test", "condition": null, "round_limit": null },
+      { "from": "test", "to": "build", "condition": null, "round_limit": null }
+    ],
+    "order": ["plan", "test", "build"],
+    "is_valid": true,
+    "reached_from_first": ["build"]
+  },
+  {
+    "description": "unconnected steps go top to bottom, then left to right",
+    "agents": [
+      { "name": "a", "horizontal": 5.0, "vertical": 10.0 },
+      { "name": "b", "horizontal": 1.0, "vertical": 10.0 },
+      { "name": "c", "horizontal": 9.0, "vertical": 0.0 },
+      { "name": "d", "horizontal": 0.0, "vertical": 20.0 }
+    ],
+    "connections": [],
+    "order": ["c", "b", "a", "d"],
+    "is_valid": true,
+    "reached_from_first": ["a"]
+  },
+  {
+    "description": "steps on one spot follow their names",
+    "agents": [
+      { "name": "zeta", "horizontal": 3.0, "vertical": 3.0 },
+      { "name": "alpha", "horizontal": 3.0, "vertical": 3.0 },
+      { "name": "mid", "horizontal": 3.0, "vertical": 3.0 }
+    ],
+    "connections": [],
+    "order": ["alpha", "mid", "zeta"],
+    "is_valid": true,
+    "reached_from_first": ["zeta"]
+  },
+  {
+    "description": "negative coordinates and minus zero sort before zero",
+    "agents": [
+      { "name": "p", "horizontal": 0.0, "vertical": 0.0 },
+      { "name": "q", "horizontal": 0.0, "vertical": -0.0 },
+      { "name": "r", "horizontal": -5.5, "vertical": 0.0 },
+      { "name": "s", "horizontal": 0.0, "vertical": -2.5 }
+    ],
+    "connections": [],
+    "order": ["s", "q", "r", "p"],
+    "is_valid": true,
+    "reached_from_first": ["p"]
+  },
+  {
+    "description": "a diamond's last step waits for both inputs",
+    "agents": [
+      { "name": "start", "horizontal": 0.0, "vertical": 0.0 },
+      { "name": "end", "horizontal": 0.0, "vertical": 0.5 },
+      { "name": "left", "horizontal": 0.0, "vertical": 1.0 },
+      { "name": "right", "horizontal": 1.0, "vertical": 1.0 }
+    ],
+    "connections": [
+      { "from": "start", "to": "left", "condition": null, "round_limit": null },
+      { "from": "start", "to": "right", "condition": null, "round_limit": null },
+      { "from": "left", "to": "end", "condition": null, "round_limit": null },
+      { "from": "right", "to": "end", "condition": null, "round_limit": null }
+    ],
+    "order": ["start", "left", "right", "end"],
+    "is_valid": true,
+    "reached_from_first": ["end", "left", "right", "start"]
+  },
+  {
+    "description": "a fork's branches follow the canvas",
+    "agents": [
+      { "name": "review", "horizontal": 0.0, "vertical": 0.0 },
+      { "name": "ship", "horizontal": 9.0, "vertical": 1.0 },
+      { "name": "fix", "horizontal": 1.0, "vertical": 1.0 }
+    ],
+    "connections": [
+      {
+        "from": "review",
+        "to": "ship",
+        "condition": "approved",
+        "round_limit": null
+      },
+      { "from": "review", "to": "fix", "condition": "changes", "round_limit": null }
+    ],
+    "order": ["review", "fix", "ship"],
+    "is_valid": true,
+    "reached_from_first": ["fix", "review", "ship"]
+  },
+  {
+    "description": "a loop back to an earlier step is not an input",
+    "agents": [
+      { "name": "review", "horizontal": 0.0, "vertical": 0.0 },
+      { "name": "plan", "horizontal": 0.0, "vertical": 1.0 }
+    ],
+    "connections": [
+      { "from": "plan", "to": "review", "condition": null, "round_limit": null },
+      { "from": "review", "to": "plan", "condition": "changes", "round_limit": 3 }
+    ],
+    "order": ["plan", "review"],
+    "is_valid": true,
+    "reached_from_first": ["review"]
+  },
+  {
+    "description": "a loop that points forward is refused",
+    "agents": [
+      { "name": "a", "horizontal": 0.0, "vertical": 0.0 },
+      { "name": "b", "horizontal": 0.0, "vertical": 1.0 },
+      { "name": "c", "horizontal": 0.0, "vertical": 2.0 }
+    ],
+    "connections": [
+      { "from": "a", "to": "b", "condition": null, "round_limit": null },
+      { "from": "a", "to": "c", "condition": "again", "round_limit": 2 }
+    ],
+    "order": ["a", "b", "c"],
+    "is_valid": false,
+    "reached_from_first": ["a", "b"]
+  },
+  {
+    "description": "a plain back edge is a cycle and the order falls back",
+    "agents": [
+      { "name": "a", "horizontal": 0.0, "vertical": 0.0 },
+      { "name": "b", "horizontal": 0.0, "vertical": 1.0 }
+    ],
+    "connections": [
+      { "from": "a", "to": "b", "condition": null, "round_limit": null },
+      { "from": "b", "to": "a", "condition": null, "round_limit": null }
+    ],
+    "order": ["a", "b"],
+    "is_valid": false,
+    "reached_from_first": ["a", "b"]
+  },
+  {
+    "description": "an outcome on a back edge without rounds is still a cycle",
+    "agents": [
+      { "name": "a", "horizontal": 0.0, "vertical": 0.0 },
+      { "name": "b", "horizontal": 0.0, "vertical": 1.0 }
+    ],
+    "connections": [
+      { "from": "a", "to": "b", "condition": null, "round_limit": null },
+      { "from": "b", "to": "a", "condition": "back", "round_limit": null }
+    ],
+    "order": ["a", "b"],
+    "is_valid": false,
+    "reached_from_first": ["a", "b"]
+  },
+  {
+    "description": "steps clear of a cycle come before it",
+    "agents": [
+      { "name": "x", "horizontal": 0.0, "vertical": 9.0 },
+      { "name": "a", "horizontal": 0.0, "vertical": 1.0 },
+      { "name": "b", "horizontal": 0.0, "vertical": 2.0 },
+      { "name": "c", "horizontal": 0.0, "vertical": 3.0 }
+    ],
+    "connections": [
+      { "from": "a", "to": "b", "condition": null, "round_limit": null },
+      { "from": "b", "to": "a", "condition": null, "round_limit": null },
+      { "from": "b", "to": "c", "condition": null, "round_limit": null }
+    ],
+    "order": ["x", "a", "b", "c"],
+    "is_valid": false,
+    "reached_from_first": ["x"]
+  },
+  {
+    "description": "ten rounds are allowed",
+    "agents": [
+      { "name": "a", "horizontal": 0.0, "vertical": 0.0 },
+      { "name": "b", "horizontal": 0.0, "vertical": 1.0 }
+    ],
+    "connections": [
+      { "from": "a", "to": "b", "condition": null, "round_limit": null },
+      { "from": "b", "to": "a", "condition": "again", "round_limit": 10 }
+    ],
+    "order": ["a", "b"],
+    "is_valid": true,
+    "reached_from_first": ["a", "b"]
+  },
+  {
+    "description": "one round is allowed",
+    "agents": [
+      { "name": "a", "horizontal": 0.0, "vertical": 0.0 },
+      { "name": "b", "horizontal": 0.0, "vertical": 1.0 }
+    ],
+    "connections": [
+      { "from": "a", "to": "b", "condition": null, "round_limit": null },
+      { "from": "b", "to": "a", "condition": "again", "round_limit": 1 }
+    ],
+    "order": ["a", "b"],
+    "is_valid": true,
+    "reached_from_first": ["a", "b"]
+  },
+  {
+    "description": "zero rounds are refused",
+    "agents": [
+      { "name": "a", "horizontal": 0.0, "vertical": 0.0 },
+      { "name": "b", "horizontal": 0.0, "vertical": 1.0 }
+    ],
+    "connections": [
+      { "from": "a", "to": "b", "condition": null, "round_limit": null },
+      { "from": "b", "to": "a", "condition": "again", "round_limit": 0 }
+    ],
+    "order": ["a", "b"],
+    "is_valid": false,
+    "reached_from_first": ["a", "b"]
+  },
+  {
+    "description": "eleven rounds are refused",
+    "agents": [
+      { "name": "a", "horizontal": 0.0, "vertical": 0.0 },
+      { "name": "b", "horizontal": 0.0, "vertical": 1.0 }
+    ],
+    "connections": [
+      { "from": "a", "to": "b", "condition": null, "round_limit": null },
+      { "from": "b", "to": "a", "condition": "again", "round_limit": 11 }
+    ],
+    "order": ["a", "b"],
+    "is_valid": false,
+    "reached_from_first": ["a", "b"]
+  },
+  {
+    "description": "a loop needs an outcome",
+    "agents": [
+      { "name": "a", "horizontal": 0.0, "vertical": 0.0 },
+      { "name": "b", "horizontal": 0.0, "vertical": 1.0 }
+    ],
+    "connections": [
+      { "from": "a", "to": "b", "condition": null, "round_limit": null },
+      { "from": "b", "to": "a", "condition": null, "round_limit": 2 }
+    ],
+    "order": ["a", "b"],
+    "is_valid": false,
+    "reached_from_first": ["a", "b"]
+  },
+  {
+    "description": "an outcome with a capital letter is refused",
+    "agents": [
+      { "name": "a", "horizontal": 0.0, "vertical": 0.0 },
+      { "name": "b", "horizontal": 0.0, "vertical": 1.0 }
+    ],
+    "connections": [
+      { "from": "a", "to": "b", "condition": "Approved", "round_limit": null }
+    ],
+    "order": ["a", "b"],
+    "is_valid": false,
+    "reached_from_first": ["a", "b"]
+  },
+  {
+    "description": "an outcome with a space at the start is refused",
+    "agents": [
+      { "name": "a", "horizontal": 0.0, "vertical": 0.0 },
+      { "name": "b", "horizontal": 0.0, "vertical": 1.0 }
+    ],
+    "connections": [
+      { "from": "a", "to": "b", "condition": " approved", "round_limit": null }
+    ],
+    "order": ["a", "b"],
+    "is_valid": false,
+    "reached_from_first": ["a", "b"]
+  },
+  {
+    "description": "an outcome with a space at the end is refused",
+    "agents": [
+      { "name": "a", "horizontal": 0.0, "vertical": 0.0 },
+      { "name": "b", "horizontal": 0.0, "vertical": 1.0 }
+    ],
+    "connections": [
+      { "from": "a", "to": "b", "condition": "approved ", "round_limit": null }
+    ],
+    "order": ["a", "b"],
+    "is_valid": false,
+    "reached_from_first": ["a", "b"]
+  },
+  {
+    "description": "an empty outcome is refused",
+    "agents": [
+      { "name": "a", "horizontal": 0.0, "vertical": 0.0 },
+      { "name": "b", "horizontal": 0.0, "vertical": 1.0 }
+    ],
+    "connections": [
+      { "from": "a", "to": "b", "condition": "", "round_limit": null }
+    ],
+    "order": ["a", "b"],
+    "is_valid": false,
+    "reached_from_first": ["a", "b"]
+  },
+  {
+    "description": "an outcome with an accent or underscore is refused",
+    "agents": [
+      { "name": "a", "horizontal": 0.0, "vertical": 0.0 },
+      { "name": "b", "horizontal": 0.0, "vertical": 1.0 },
+      { "name": "c", "horizontal": 0.0, "vertical": 2.0 }
+    ],
+    "connections": [
+      { "from": "a", "to": "b", "condition": "café", "round_limit": null },
+      { "from": "a", "to": "c", "condition": "a_b", "round_limit": null }
+    ],
+    "order": ["a", "b", "c"],
+    "is_valid": false,
+    "reached_from_first": ["a", "b", "c"]
+  },
+  {
+    "description": "digits, dashes and inner double spaces are allowed",
+    "agents": [
+      { "name": "a", "horizontal": 0.0, "vertical": 0.0 },
+      { "name": "b", "horizontal": 0.0, "vertical": 1.0 },
+      { "name": "c", "horizontal": 0.0, "vertical": 2.0 }
+    ],
+    "connections": [
+      { "from": "a", "to": "b", "condition": "a-b 1", "round_limit": null },
+      { "from": "a", "to": "c", "condition": "two  spaces", "round_limit": null }
+    ],
+    "order": ["a", "b", "c"],
+    "is_valid": true,
+    "reached_from_first": ["a", "b", "c"]
+  },
+  {
+    "description": "an outcome of forty characters is allowed",
+    "agents": [
+      { "name": "a", "horizontal": 0.0, "vertical": 0.0 },
+      { "name": "b", "horizontal": 0.0, "vertical": 1.0 }
+    ],
+    "connections": [
+      {
+        "from": "a",
+        "to": "b",
+        "condition": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "round_limit": null
+      }
+    ],
+    "order": ["a", "b"],
+    "is_valid": true,
+    "reached_from_first": ["a", "b"]
+  },
+  {
+    "description": "an outcome of forty one characters is refused",
+    "agents": [
+      { "name": "a", "horizontal": 0.0, "vertical": 0.0 },
+      { "name": "b", "horizontal": 0.0, "vertical": 1.0 }
+    ],
+    "connections": [
+      {
+        "from": "a",
+        "to": "b",
+        "condition": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "round_limit": null
+      }
+    ],
+    "order": ["a", "b"],
+    "is_valid": false,
+    "reached_from_first": ["a", "b"]
+  },
+  {
+    "description": "one step cannot use an outcome twice",
+    "agents": [
+      { "name": "a", "horizontal": 0.0, "vertical": 0.0 },
+      { "name": "b", "horizontal": 0.0, "vertical": 1.0 },
+      { "name": "c", "horizontal": 1.0, "vertical": 1.0 }
+    ],
+    "connections": [
+      { "from": "a", "to": "b", "condition": "go", "round_limit": null },
+      { "from": "a", "to": "c", "condition": "go", "round_limit": null }
+    ],
+    "order": ["a", "b", "c"],
+    "is_valid": false,
+    "reached_from_first": ["a", "b", "c"]
+  },
+  {
+    "description": "two steps may use the same outcome name",
+    "agents": [
+      { "name": "a", "horizontal": 0.0, "vertical": 0.0 },
+      { "name": "b", "horizontal": 1.0, "vertical": 0.0 },
+      { "name": "c", "horizontal": 0.0, "vertical": 1.0 }
+    ],
+    "connections": [
+      { "from": "a", "to": "c", "condition": "go", "round_limit": null },
+      { "from": "b", "to": "c", "condition": "go", "round_limit": null }
+    ],
+    "order": ["a", "b", "c"],
+    "is_valid": true,
+    "reached_from_first": ["a", "c"]
+  }
+]

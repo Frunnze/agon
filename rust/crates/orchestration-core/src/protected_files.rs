@@ -1,13 +1,14 @@
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use crate::protected_paths::read_protected_pattern;
+use crate::protected_paths::{
+    PARENT_FOLDER_SEGMENT, is_same_protected_pattern, read_protected_pattern,
+};
 
 pub const MAXIMUM_PATTERN_LENGTH: usize = 200;
 pub const MAXIMUM_PATTERN_COUNT: usize = 200;
 pub const FORBIDDEN_PATTERN_CHARACTERS: [char; 5] =
     ['"', '\'', '\\', '(', ')'];
-const PARENT_FOLDER_SEGMENT: &str = "..";
 const PATTERN_SEPARATOR: char = '/';
 
 pub const DEFAULT_PROTECTED_PATTERNS: [&str; 50] = [
@@ -100,8 +101,14 @@ pub enum ProtectedPatternProblem {
     ParentFolder { pattern: String },
     #[error("the pattern {pattern:?} names no file or folder")]
     NamesNothing { pattern: String },
-    #[error("the pattern {pattern:?} is listed twice")]
-    Duplicate { pattern: String },
+    #[error(
+        "the pattern {pattern:?} is listed twice: it protects the same \
+         files as {earlier_pattern:?}"
+    )]
+    Duplicate {
+        pattern: String,
+        earlier_pattern: String,
+    },
     #[error(
         "the list can have at most {} patterns, this one has {count}",
         MAXIMUM_PATTERN_COUNT
@@ -120,9 +127,14 @@ pub fn validate_protected_files(
     for (position, pattern) in protected.patterns.iter().enumerate() {
         validate_protected_pattern(pattern)?;
         let earlier_patterns = &protected.patterns[..position];
-        if earlier_patterns.contains(pattern) {
-            let pattern = pattern.clone();
-            return Err(ProtectedPatternProblem::Duplicate { pattern });
+        let same_earlier_pattern = earlier_patterns
+            .iter()
+            .find(|earlier| is_same_protected_pattern(earlier, pattern));
+        if let Some(earlier_pattern) = same_earlier_pattern {
+            return Err(ProtectedPatternProblem::Duplicate {
+                pattern: pattern.clone(),
+                earlier_pattern: earlier_pattern.clone(),
+            });
         }
     }
     Ok(())

@@ -1,0 +1,9 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 821e29ba45587b4659b1f79e6f33e470a370df3d7594b1934d0f17e5f154ef44 # shrinks to titles = [""], details = ["", "", "", "", "", ""]
+cc 12b14f0852c370842a751c913c70aa816c1131054c4acdf7a0175e2787615b1c # shrinks to rules = [Rule { id: RuleId(00000000-0000-0000-0000-000000000000), title: "", details: "", scope: Scope { workspaces: AllWorkspaces, projects: AllProjects }, enabled: true, added_at: 1970-01-01T00:00:00Z }], workspace_id = WorkspaceId(00000000-0000-0000-0000-000000000000), project_id = ProjectId(00000000-0000-0000-0000-000000000000)
+cc 26a31d1f4eeaede33acdba9372c2f8093589ecc27e5bbc452052f3854f143365 # shrinks to rules = [Rule { id: RuleId(00000000-0000-0000-0000-000000000000), title: "", details: "", scope: Scope { workspaces: AllWorkspaces, projects: AllProjects }, enabled: true, added_at: 1970-01-01T00:00:00Z }], workspace_id = WorkspaceId(00000000-0000-0000-0000-000000000000), project_id = ProjectId(00000000-0000-0000-0000-000000000000)

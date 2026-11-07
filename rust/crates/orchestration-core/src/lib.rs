@@ -20,6 +20,7 @@ pub mod protected_paths;
 pub mod repository_address;
 pub mod repository_files;
 pub mod repository_paths;
+pub mod rule_titles;
 pub mod run;
 pub mod run_lifecycle;
 pub mod run_links;

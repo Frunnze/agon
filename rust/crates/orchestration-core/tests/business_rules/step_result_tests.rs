@@ -1,8 +1,8 @@
-use orchestration_core::run_lifecycle::RunProblem;
+use orchestration_core::run_lifecycle::{RunProblem, is_run_finished};
 use orchestration_core::step_results::record_step_result;
 use proptest::prelude::*;
 
-use crate::run_fixtures::{is_run_finished, run_with_steps};
+use crate::run_fixtures::run_with_steps;
 use crate::workflow_strategies::run_steps;
 
 proptest! {

@@ -1,6 +1,8 @@
 use chrono::{DateTime, Utc};
 use orchestration_core::run::{Run, RunStatus, RunStep, StepStatus};
-use orchestration_core::run_lifecycle::{derive_run_status, is_run_finished};
+use orchestration_core::run_lifecycle::{
+    derive_run_status, is_run_finished, skip_unfinished_steps,
+};
 
 use crate::error::ServerError;
 use crate::stored_state::RunRecord;
@@ -15,7 +17,7 @@ pub fn cancel_run_record(
         ));
     }
     let mut run = record.run.clone();
-    run.steps = run.steps.iter().map(skip_unfinished_step).collect();
+    run.steps = skip_unfinished_steps(&run.steps, now);
     run.status = RunStatus::Cancelled;
     run.finished_at = Some(now);
     Ok(RunRecord {
@@ -57,23 +59,6 @@ pub fn reopen_run(run: &Run, steps: Vec<RunStep>) -> Run {
         failure: None,
         finished_at: None,
         ..run.clone()
-    }
-}
-
-pub fn is_step_finished(status: StepStatus) -> bool {
-    matches!(
-        status,
-        StepStatus::Done | StepStatus::Failed | StepStatus::Skipped
-    )
-}
-
-fn skip_unfinished_step(step: &RunStep) -> RunStep {
-    if is_step_finished(step.status) {
-        return step.clone();
-    }
-    RunStep {
-        status: StepStatus::Skipped,
-        ..step.clone()
     }
 }
 

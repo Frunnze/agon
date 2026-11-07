@@ -5,7 +5,9 @@ use crate::loop_rounds::{
     count_rounds, find_taken_loop, name_step_of, start_loop_round,
 };
 use crate::run::{Run, RunNote, RunStatus, RunStep, StepStatus};
-use crate::run_lifecycle::{RunProblem, derive_run_status, is_run_finished};
+use crate::run_lifecycle::{
+    RunProblem, derive_run_status, is_run_finished, is_run_stopped,
+};
 use crate::step_outcomes::list_step_choices;
 use crate::workflow::{AgentConnection, StepKind, Workflow};
 use crate::workflow_graph::{find_agent_by_id, forward_connections};
@@ -80,6 +82,9 @@ pub fn advance_after_step(
     step_name: &str,
     at: DateTime<Utc>,
 ) -> Run {
+    if is_run_stopped(run.status) {
+        return run.clone();
+    }
     let taken_loop = run
         .steps
         .iter()

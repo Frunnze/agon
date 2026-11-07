@@ -224,7 +224,10 @@ proptest! {
 
         prop_assert_eq!(
             validate_protected_files(&protected),
-            Err(ProtectedPatternProblem::Duplicate { pattern })
+            Err(ProtectedPatternProblem::Duplicate {
+                pattern: pattern.clone(),
+                earlier_pattern: pattern,
+            })
         );
     }
 

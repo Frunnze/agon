@@ -46,7 +46,7 @@ pub trait RunnerServer: Send + Sync + 'static {
         run_id: RunId,
     ) -> impl Future<Output = Result<Vec<ChatMessage>, ServerError>> + Send;
 
-    fn is_run_cancelled(
+    fn is_run_stopped(
         &self,
         run_id: RunId,
     ) -> impl Future<Output = Result<bool, ServerError>> + Send;

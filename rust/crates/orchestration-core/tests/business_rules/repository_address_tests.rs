@@ -11,7 +11,7 @@ const MAXIMUM_GIT_SUFFIXES: usize = 4;
 
 fn host() -> impl Strategy<Value = String> {
     (
-        vec("[a-z0-9][a-z0-9-]{0,8}", 1..MAXIMUM_HOST_LABELS),
+        vec("[a-z0-9]([a-z0-9-]{0,7}[a-z0-9])?", 1..MAXIMUM_HOST_LABELS),
         "[a-z]{2,6}",
     )
         .prop_map(|(labels, top_level)| {

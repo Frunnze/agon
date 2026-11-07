@@ -248,7 +248,7 @@ impl RunnerServer for FakeServer {
         ready(Ok(self.show_user_messages(run_id)))
     }
 
-    fn is_run_cancelled(
+    fn is_run_stopped(
         &self,
         run_id: RunId,
     ) -> impl Future<Output = Result<bool, ServerError>> + Send {

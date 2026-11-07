@@ -5,6 +5,7 @@ use orchestration_api::catalog::{SaveRuleRequest, SetRuleEnabledRequest};
 use orchestration_api::updates::ChangeTopic;
 use orchestration_core::identifiers::RuleId;
 use orchestration_core::library::Rule;
+use orchestration_core::rule_titles::validate_rule_title;
 use uuid::Uuid;
 
 use crate::authentication::SignedRequest;
@@ -29,6 +30,7 @@ pub async fn save_rule(
 ) -> Result<Json<Rule>, ServerError> {
     request.caller.require_client()?;
     let save_request: SaveRuleRequest = parse_json_body(&request.body)?;
+    validate_rule_title(&save_request.rule.title)?;
     let rule = server.apply(&request.caller.device_id, |state, _now| {
         Ok(store_rule(state, &save_request.rule))
     })?;
@@ -56,6 +58,7 @@ pub async fn update_rule(
 ) -> Result<Json<Rule>, ServerError> {
     request.caller.require_client()?;
     let save_request: SaveRuleRequest = parse_json_body(&request.body)?;
+    validate_rule_title(&save_request.rule.title)?;
     let rule_id = RuleId(rule_uuid);
     let rule = server.apply(&request.caller.device_id, |state, _now| {
         replace_rule(state, rule_id, &save_request.rule)

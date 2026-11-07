@@ -1,19 +1,13 @@
 use orchestration_core::run::{Run, RunStatus, RunStep, StepStatus};
 use orchestration_core::run_lifecycle::{
-    RunProblem, apply_step_status, derive_run_status,
+    RunProblem, apply_step_status, derive_run_status, is_run_finished,
+    is_step_finished,
 };
 use proptest::prelude::*;
 
 use crate::entity_strategies::ordinary_timestamp;
-use crate::run_fixtures::{is_run_finished, run_with_steps};
+use crate::run_fixtures::run_with_steps;
 use crate::workflow_strategies::{run_steps, step_status};
-
-fn is_step_finished(status: StepStatus) -> bool {
-    matches!(
-        status,
-        StepStatus::Done | StepStatus::Failed | StepStatus::Skipped
-    )
-}
 
 fn has_status(steps: &[RunStep], status: StepStatus) -> bool {
     steps.iter().any(|step| step.status == status)
@@ -44,7 +38,7 @@ proptest! {
             );
             let has_failed = updated.status == RunStatus::Failed;
             for (before, after) in run.steps.iter().zip(&updated.steps) {
-                let was_waiting = before.status == StepStatus::Waiting;
+                let was_open = !is_step_finished(before.status);
                 if before.name == step_name {
                     prop_assert_eq!(after.status, status);
                     prop_assert_eq!(
@@ -54,8 +48,9 @@ proptest! {
                     if status == StepStatus::Running {
                         prop_assert!(after.started_at.is_some());
                     }
-                } else if has_failed && was_waiting {
+                } else if has_failed && was_open {
                     prop_assert_eq!(after.status, StepStatus::Skipped);
+                    prop_assert_eq!(after.finished_at, Some(at));
                 } else {
                     prop_assert_eq!(after, before);
                 }

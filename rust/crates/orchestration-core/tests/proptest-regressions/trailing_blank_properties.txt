@@ -1,0 +1,14 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc a5ce553136f33035d94515de18f9991f572dc90849cab899e70385a3788f5eb9 # shrinks to path = "/a", trailing = " \\"
+cc e97931736d1af2983c8aac671eead3f83c3c310ee975e127c9bde77a29b74de0 # shrinks to root = "/", trailing = " \\"
+cc b321253e028b7341429e386157912c1ee66cf9c1d822b7b7829d7cf59aa712a3 # shrinks to device = "0", root = "/", trailing = "\u{3000}/"
+cc 19a1e0d59c96f6abe7e5fe926bbed90f60eef8b3a4d7af543bb494a4d6ce4e53 # shrinks to device = "a", path = "/a", trailing = "\u{3000}/"
+cc 273d04a7e25bf30dd34c32a79779b0b3f4df1dcfa74a7f7b790e04d1e372f3fd # shrinks to device = "0", path = "/a", trailing = "\u{3000}/"
+cc bcadcd534fe38fabe648bf2e4b2b73582fa580606cb7d6994e9feff2caf4293e # shrinks to text = "/ /"
+cc de8461dae8102c0d1074ebcdaad50b39449e771d5ca7550b3d0613768592dd1e # shrinks to device = "0", folder_text = "/A\u{3000}\\"
+cc e438deee40e09782ec1a71953407e747d08732839e4f81a6768502d84f6f710d # shrinks to device = "0", folder_text = "/a\u{3000}/"

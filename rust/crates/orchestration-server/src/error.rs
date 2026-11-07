@@ -6,6 +6,7 @@ use orchestration_core::local_folders::LocalFolderProblem;
 use orchestration_core::naming::NameProblem;
 use orchestration_core::protected_files::ProtectedPatternProblem;
 use orchestration_core::repository_address::AddressProblem;
+use orchestration_core::rule_titles::RuleTitleProblem;
 use orchestration_core::run_lifecycle::RunProblem;
 use orchestration_core::schedule_rules::ScheduleProblem;
 use orchestration_core::workflow_graph::WorkflowProblem;
@@ -73,6 +74,12 @@ impl From<NameProblem> for ServerError {
 
 impl From<ProtectedPatternProblem> for ServerError {
     fn from(problem: ProtectedPatternProblem) -> Self {
+        Self::Invalid(problem.to_string())
+    }
+}
+
+impl From<RuleTitleProblem> for ServerError {
+    fn from(problem: RuleTitleProblem) -> Self {
         Self::Invalid(problem.to_string())
     }
 }

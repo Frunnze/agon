@@ -7,6 +7,7 @@ const ANY_CHARACTERS: char = '*';
 const ONE_CHARACTER: char = '?';
 const PATH_SEPARATOR: char = '/';
 const CURRENT_FOLDER_SEGMENT: &str = ".";
+pub(crate) const PARENT_FOLDER_SEGMENT: &str = "..";
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum PatternPlace {
@@ -41,13 +42,30 @@ pub fn read_protected_pattern(pattern: &str) -> ProtectedPattern {
 }
 
 #[must_use]
+pub(crate) fn is_same_protected_pattern(
+    first_pattern: &str,
+    second_pattern: &str,
+) -> bool {
+    let first = read_protected_pattern(first_pattern);
+    let second = read_protected_pattern(second_pattern);
+
+    let is_same_place = first.place == second.place;
+    let has_same_count = first.segments.len() == second.segments.len();
+    let mut name_pairs = first.segments.iter().zip(&second.segments);
+    let has_same_names = name_pairs.all(|(first_name, second_name)| {
+        first_name.eq_ignore_ascii_case(second_name)
+    });
+    is_same_place && has_same_count && has_same_names
+}
+
+#[must_use]
 pub fn is_protected_path(
     protected: &ProtectedFiles,
     path: &str,
     home: &str,
 ) -> bool {
-    let path_segments = split_path_segments(path);
-    let home_segments = split_path_segments(home);
+    let path_segments = resolve_path_segments(path);
+    let home_segments = resolve_path_segments(home);
     protected.patterns.iter().any(|pattern| {
         let read_pattern = read_protected_pattern(pattern);
         if read_pattern.segments.is_empty() {
@@ -90,6 +108,18 @@ fn split_path_segments(path: &str) -> Vec<String> {
         }
     }
     segments
+}
+
+fn resolve_path_segments(path: &str) -> Vec<String> {
+    let mut resolved_segments = Vec::new();
+    for segment in split_path_segments(path) {
+        if segment == PARENT_FOLDER_SEGMENT {
+            resolved_segments.pop();
+        } else {
+            resolved_segments.push(segment);
+        }
+    }
+    resolved_segments
 }
 
 fn strip_leading_segments<'path>(

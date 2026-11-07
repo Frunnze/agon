@@ -35,8 +35,8 @@ pub enum LocalFolderProblem {
     #[error("the local folders of a project must all be on one computer")]
     SeveralDevices,
     #[error(
-        "{0:?} cannot name a new folder: it is empty, . or .., or has a \
-         folder separator or a control character"
+        "{0:?} cannot name a new folder: it is empty, . or .., starts or \
+         ends with a space, or has a folder separator or a control character"
     )]
     UnsafeFolderName(String),
 }
@@ -62,7 +62,7 @@ pub fn normalize_folder_path(
         let relative_path = trimmed_path.to_owned();
         return Err(LocalFolderProblem::RelativePath(relative_path));
     };
-    let parts_text = below_root.trim_end_matches(FOLDER_SEPARATORS);
+    let parts_text = below_root.trim_end_matches(is_trailing_noise);
     let has_unsafe_part = parts_text
         .split(FOLDER_SEPARATORS)
         .any(|part| part.is_empty() || RESERVED_FOLDER_PARTS.contains(&part));
@@ -121,12 +121,12 @@ pub fn find_folder_device(
 }
 
 pub fn validate_new_folder_name(name: &str) -> Result<(), LocalFolderProblem> {
-    let is_blank = name.trim().is_empty();
+    let is_padded = name.trim() != name;
     let is_reserved = RESERVED_FOLDER_PARTS.contains(&name);
     let has_unsafe_character = name.chars().any(|character| {
         character.is_control() || FOLDER_SEPARATORS.contains(&character)
     });
-    if is_blank || is_reserved || has_unsafe_character {
+    if name.is_empty() || is_padded || is_reserved || has_unsafe_character {
         return Err(LocalFolderProblem::UnsafeFolderName(name.to_owned()));
     }
     Ok(())
@@ -143,6 +143,10 @@ fn validate_device_id(device_id: &DeviceId) -> Result<(), LocalFolderProblem> {
         return Err(LocalFolderProblem::InvalidDeviceId(device_text.clone()));
     }
     Ok(())
+}
+
+fn is_trailing_noise(character: char) -> bool {
+    character.is_whitespace() || FOLDER_SEPARATORS.contains(&character)
 }
 
 fn split_folder_root(path: &str) -> Option<(&str, &str)> {
