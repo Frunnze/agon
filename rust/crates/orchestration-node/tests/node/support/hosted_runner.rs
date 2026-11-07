@@ -3,6 +3,7 @@ use std::time::Duration;
 use serde_json::{Value, json};
 use tempfile::TempDir;
 
+use super::code_join_retries::join_until_a_server_accepts;
 use super::git_origin::{LOCAL_REPOSITORY_ADDRESS, create_local_origin};
 use super::hosting_steps::{HostingDevice, start_hosting_device_with_relay};
 use super::node_process::NodeProcess;
@@ -70,7 +71,7 @@ pub fn join_and_approve(
     if let Some(server_address) = server_address {
         join["server_address"] = json!(server_address);
     }
-    nodes.runner.run(&join)?;
+    join_until_a_server_accepts(|| nodes.runner.run(&join))?;
     let request = nodes.hosting.device.run(&json!({
         "command": "pairing_request",
         "code": session["code"],

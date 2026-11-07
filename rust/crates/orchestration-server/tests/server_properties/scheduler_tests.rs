@@ -3,12 +3,14 @@ use orchestration_api::work::TaskStart;
 use orchestration_core::device::RunnerTarget;
 use orchestration_core::identifiers::ProjectId;
 use orchestration_core::run::Run;
+use orchestration_core::run_lifecycle::is_run_finished;
 use orchestration_core::schedule_rules::next_run_after;
 use orchestration_core::task::{Schedule, TimeOfDay};
 use orchestration_server::{StoredState, find_due_jobs, start_due_jobs};
 use proptest::prelude::*;
 use uuid::Uuid;
 
+use crate::deletion_fixtures::cancel_run;
 use crate::fixtures::{
     create_account, create_project, one_agent_task, save_task,
 };
@@ -94,6 +96,11 @@ fn the_scheduler_starts_one_run_each_time_a_job_is_due() {
             let runs: Vec<Run> =
                 test.get(&account.owner, "/runs").await.json();
             run_counts.push(runs.len());
+            for run in &runs {
+                if !is_run_finished(run.status) {
+                    cancel_run(&test, &account, run).await;
+                }
+            }
         }
         run_counts
     });

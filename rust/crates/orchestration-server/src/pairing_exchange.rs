@@ -126,9 +126,7 @@ fn record_approver_nonce(
         ));
     }
     if join.approver_nonce.is_some() {
-        return Err(ServerError::Conflict(
-            "the trusted device already revealed its nonce".to_owned(),
-        ));
+        return Ok(Change::unchanged(()));
     }
     join.approver_nonce = Some(nonce);
     Ok(Change::saved_without_record(()))

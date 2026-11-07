@@ -9,6 +9,8 @@ use crate::app_server_hosting::{
     restart_recorded_app_server, stop_hosted_app_server,
 };
 use crate::command_reply::render_error_reply;
+#[cfg(feature = "runner")]
+use crate::command_reply::render_node_error_reply;
 use crate::commands::dispatch_command;
 use crate::node::Node;
 use crate::node_configuration::NodeConfiguration;
@@ -94,7 +96,7 @@ impl NodeRuntime {
             .runner_launcher
             .start_when_ready(&self.runtime, &self.node)
         {
-            return render_error_reply(&problem.to_string());
+            return render_node_error_reply(&problem);
         }
         reply
     }
@@ -126,7 +128,11 @@ fn restart_off_the_calling_thread(
     let restarting = runtime.spawn(async move {
         restart_recorded_app_server(&restarting_node).await
     });
-    runtime
+    let restarted = runtime
         .block_on(restarting)
-        .map_err(|problem| NodeError::Startup(problem.to_string()))?
+        .map_err(|problem| NodeError::Startup(problem.to_string()))?;
+    if let Err(problem) = restarted {
+        node.record_hosting_problem(&problem);
+    }
+    Ok(())
 }

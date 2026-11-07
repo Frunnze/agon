@@ -1,6 +1,6 @@
 use iroh::endpoint::{
     BindError, ClosedStream, ConnectError, ConnectingError, ConnectionError,
-    ReadExactError, StoppedError, WriteError,
+    InvalidSocketAddr, ReadExactError, StoppedError, WriteError,
 };
 use iroh::{KeyParsingError, RelayUrlParseError};
 use thiserror::Error;
@@ -19,6 +19,8 @@ pub enum PeerError {
     InvalidPublicKey(#[source] KeyParsingError),
     #[error("endpoint could not bind: {0}")]
     Bind(#[from] BindError),
+    #[error("endpoint bind address is not valid: {0}")]
+    InvalidBindAddress(#[from] InvalidSocketAddr),
     #[error("could not connect to the peer: {0}")]
     Connect(#[from] ConnectError),
     #[error("incoming connection failed: {0}")]

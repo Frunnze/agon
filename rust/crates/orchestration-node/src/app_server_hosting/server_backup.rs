@@ -1,3 +1,4 @@
+use std::net::TcpListener;
 use std::path::Path;
 use std::time::Duration;
 
@@ -5,6 +6,7 @@ use orchestration_api::server_group::JoinServerGroupRequest;
 use orchestration_core::device::DeviceRole;
 use orchestration_core::identifiers::DeviceId;
 use orchestration_core::server_group::{ServerMember, ServerStanding};
+use orchestration_p2p::service_endpoint::ServiceEndpoint;
 use orchestration_server::{REPLICA_WAIT, Server, StateStorage};
 
 use super::group_keeping::{describe_server_problem, sign_own_member};
@@ -54,11 +56,12 @@ pub(crate) async fn start_server_backup(node: &Node) -> Result<(), NodeError> {
         abandon_backup(node, &session).await;
         return Err(problem);
     }
-    let hosted =
-        HostedAppServer::start(listener, endpoint, &server_directory)?;
-    node.device_files().save_hosted_server(&record)?;
-    *node.lock_hosted_app_server() = Some(hosted);
-    keep_server_group(node)
+    let serving = serve_backup(node, listener, endpoint, &record);
+    if let Err(problem) = serving {
+        abandon_backup(node, &session).await;
+        return Err(problem);
+    }
+    Ok(())
 }
 
 pub(crate) async fn stop_server_backup(node: &Node) -> Result<(), NodeError> {
@@ -95,6 +98,20 @@ async fn join_and_copy(
         .ok_or(NodeError::NoServerCopy)?;
     Server::seed_replica(server_directory, &replica_bytes, leader_id)
         .map_err(|problem| describe_server_problem(&problem))
+}
+
+fn serve_backup(
+    node: &Node,
+    listener: TcpListener,
+    endpoint: ServiceEndpoint,
+    record: &HostedServerRecord,
+) -> Result<(), NodeError> {
+    let server_directory = node.device_files().hosted_server_directory();
+    let hosted =
+        HostedAppServer::start(listener, endpoint, &server_directory)?;
+    *node.lock_hosted_app_server() = Some(hosted);
+    node.device_files().save_hosted_server(record)?;
+    keep_server_group(node)
 }
 
 async fn abandon_backup(node: &Node, session: &DeviceSession) {

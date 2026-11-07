@@ -9,26 +9,20 @@ use orchestration_hub::interactive_terminal::{
     TerminalKeyboard, TerminalProcess, TerminalStopper,
     start_interactive_terminal,
 };
-use orchestration_hub::terminal_screen::{TerminalScreen, TerminalSize};
+use orchestration_hub::process_supervisor::ProcessExit;
 use serde::Serialize;
 use tokio::sync::mpsc::UnboundedReceiver;
-use zeroize::Zeroizing;
 
 use super::login_outcome::{LoginOutcome, decide_login_outcome};
-use super::long_lived_tokens::{
-    find_long_lived_token, hide_long_lived_tokens,
-};
+use super::login_progress::{LOGIN_TERMINAL_SIZE, LoginEnding, LoginProgress};
+use super::long_lived_tokens::hide_long_lived_tokens;
 use crate::agent_credentials::AgentCredentials;
 use crate::node_error::NodeError;
 
-const LOGIN_TERMINAL_SIZE: TerminalSize = TerminalSize {
-    columns: 512,
-    rows: 40,
-};
 const LOCAL_LOGIN_ARGUMENTS: &[&str] = &["auth", "login"];
 const CONTAINER_LOGIN_ARGUMENTS: &[&str] = &["setup-token"];
 const WORD_SEPARATOR: &str = " ";
-const LINE_SEPARATOR: &str = "\n";
+const STOPPED_PROBLEM: &str = "the login was stopped";
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "snake_case")]
@@ -45,20 +39,6 @@ pub struct AgentLoginView {
     pub lines: Vec<String>,
     pub state: LoginState,
     pub problem: Option<String>,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-enum LoginEnding {
-    Finished,
-    Failed(String),
-}
-
-#[derive(Debug)]
-struct LoginProgress {
-    screen: TerminalScreen,
-    seen_token: Option<Zeroizing<String>>,
-    has_exited: bool,
-    ending: Option<LoginEnding>,
 }
 
 #[derive(Debug)]
@@ -86,12 +66,7 @@ impl LoginSession {
             LOGIN_TERMINAL_SIZE,
         )
         .map_err(|problem| NodeError::LoginTerminal(problem.to_string()))?;
-        let progress = Arc::new(Mutex::new(LoginProgress {
-            screen: TerminalScreen::new(LOGIN_TERMINAL_SIZE),
-            seen_token: None,
-            has_exited: false,
-            ending: None,
-        }));
+        let progress = Arc::new(Mutex::new(LoginProgress::default()));
         let follower = LoginFollower {
             place,
             progress: Arc::clone(&progress),
@@ -143,9 +118,13 @@ impl LoginSession {
     }
 
     pub(crate) fn stop(&mut self) -> Result<(), NodeError> {
-        if lock_progress(&self.progress).has_exited {
+        let mut progress = lock_progress(&self.progress);
+        if progress.has_exited {
             return Ok(());
         }
+        progress.is_stop_requested = true;
+        drop(progress);
+
         let stopped = self.stopper.stop();
         let has_exited_meanwhile = lock_progress(&self.progress).has_exited;
         match stopped {
@@ -164,15 +143,18 @@ impl LoginFollower {
         mut process: TerminalProcess,
     ) {
         while let Some(text) = output.blocking_recv() {
-            self.take_output(&text);
+            lock_progress(&self.progress).take_output(&text);
         }
         let exit = process.wait_for_exit();
-        let seen_token = {
+        let (seen_token, is_stop_requested) = {
             let mut progress = lock_progress(&self.progress);
             progress.has_exited = true;
-            progress.seen_token.clone()
+            (progress.seen_token.clone(), progress.is_stop_requested)
         };
         let ending = match exit {
+            Ok(ProcessExit::KilledBySignal(_)) if is_stop_requested => {
+                LoginEnding::Failed(STOPPED_PROBLEM.to_owned())
+            }
             Ok(exit) => {
                 let token = seen_token.as_deref().map(String::as_str);
                 let outcome = decide_login_outcome(self.place, &exit, token);
@@ -181,15 +163,6 @@ impl LoginFollower {
             Err(problem) => LoginEnding::Failed(problem.to_string()),
         };
         lock_progress(&self.progress).ending = Some(ending);
-    }
-
-    fn take_output(&self, text: &str) {
-        let mut progress = lock_progress(&self.progress);
-        progress.screen.feed(text);
-        let shown_text = progress.screen.lines().join(LINE_SEPARATOR);
-        if let Some(token) = find_long_lived_token(&shown_text) {
-            progress.seen_token = Some(Zeroizing::new(token));
-        }
     }
 
     fn settle(&self, outcome: LoginOutcome) -> LoginEnding {

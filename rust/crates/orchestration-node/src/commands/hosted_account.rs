@@ -24,6 +24,9 @@ pub(super) async fn create_hosted_account(
     setup: HostedAccountSetup,
 ) -> Result<AccountSummary, NodeError> {
     ensure_new_account(node, &setup.device_name, &setup.workspace_name)?;
+    if setup.role == DeviceRole::Runner {
+        return Err(NodeError::HostingNeedsClient);
+    }
     let access = host_app_server(node).await?;
     let setup_code =
         access.setup_code.ok_or(NodeError::HostedServerHasAccount)?;

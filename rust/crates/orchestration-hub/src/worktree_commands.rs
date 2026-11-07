@@ -39,6 +39,15 @@ pub(crate) fn add_worktree_command(
     )
 }
 
+pub(crate) fn add_kept_branch_worktree_command(
+    cached_clone: &Path,
+    branch: &str,
+    worktree: &Path,
+) -> CommandSpecification {
+    let worktree = worktree.display().to_string();
+    git_command(Some(cached_clone), &["worktree", "add", &worktree, branch])
+}
+
 pub(crate) fn remove_worktree_command(
     cached_clone: &Path,
     worktree: &Path,

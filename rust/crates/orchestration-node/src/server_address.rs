@@ -25,7 +25,7 @@ impl ServerAddress {
         let refuse = || NodeError::InvalidServerAddress(text.to_owned());
         let parsed = Url::parse(text).map_err(|_| refuse())?;
         if WEB_SCHEMES.contains(&parsed.scheme()) {
-            let trimmed = text.trim_end_matches(ADDRESS_SEPARATOR);
+            let trimmed = parsed.as_str().trim_end_matches(ADDRESS_SEPARATOR);
             return Ok(Self::Web(trimmed.to_owned()));
         }
         if parsed.scheme() != PEER_SCHEME {

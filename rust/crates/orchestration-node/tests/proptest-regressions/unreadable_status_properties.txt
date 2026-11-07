@@ -1,0 +1,10 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc ebad46c9c97af97ef752a20f5ef209150ac840d5935db368805667cb9cbc7245 # shrinks to unreadable = ["{E$:{\"𘓘Ⱥg%\n$C{\u{d1a28}\u{4f944}Ñ:\u{3}"], readable = [(true, "\r\t\r{\"authMethod\":\"\",\"loggedIn\":true}")]
+cc 7a066e892864baf1904dfa1358a77b4531148cbd790502f2b460401c94b2a4d7 # shrinks to answers = ["{k`\u{74fe5}§."]
+cc 5991a33280e6ebb0082695d5c796af7dd47e409dc60c5a38771521e657a92407 # shrinks to api_key = None, answers = ["{\\OG\n"]
+cc 0a4e4a014b9503cbf3e710d38384fc7ff3042e0c797142a223efb57442d444e4 # shrinks to answers = ["[true]"]

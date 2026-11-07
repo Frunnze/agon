@@ -16,6 +16,11 @@ pub(super) fn log_web_serving_problem(problem: &io::Error) {
     eprintln!("the hosted app server stopped serving: {problem}");
 }
 
+#[must_use]
+pub fn describe_write_stopping_problem(problem: &ServerError) -> String {
+    format!("the stopped app server could not refuse writes: {problem}")
+}
+
 pub(super) fn log_write_stopping_problem(problem: &ServerError) {
-    eprintln!("the stopped app server could not refuse writes: {problem}");
+    eprintln!("{}", describe_write_stopping_problem(problem));
 }

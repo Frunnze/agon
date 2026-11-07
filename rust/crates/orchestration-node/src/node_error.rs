@@ -178,6 +178,8 @@ pub enum NodeError {
     HostedServerNotRemoved(String),
     #[error("only a client device can keep a backup of the app server")]
     BackupNeedsClient,
+    #[error("only a client device can host the app server")]
+    HostingNeedsClient,
     #[error("this device already keeps the app server")]
     AlreadyKeepingServer,
     #[error("the app server keeps no backups")]

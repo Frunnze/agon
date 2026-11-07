@@ -1,5 +1,6 @@
 mod agent_login_access;
 mod app_server_access;
+mod hosting_problem_access;
 
 use std::sync::{Arc, Mutex, MutexGuard, OnceLock, PoisonError, RwLock};
 #[cfg(feature = "app-server")]
@@ -69,6 +70,7 @@ pub struct Node {
     takeover_after: Duration,
     #[cfg(feature = "app-server")]
     hosted_app_server: Mutex<Option<HostedAppServer>>,
+    hosting_problem: Mutex<Option<String>>,
 }
 
 impl Node {
@@ -106,6 +108,7 @@ impl Node {
             ),
             #[cfg(feature = "app-server")]
             hosted_app_server: Mutex::new(None),
+            hosting_problem: Mutex::new(None),
         })
     }
 

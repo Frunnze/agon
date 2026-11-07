@@ -6,11 +6,13 @@ use orchestration_api::work::TaskStart;
 use orchestration_core::device::{DeviceRole, Runner, RunnerTarget};
 use orchestration_core::identifiers::{TaskId, WorkspaceId};
 use orchestration_core::run::Run;
+use orchestration_core::run_lifecycle::is_run_finished;
 use orchestration_core::workspace::Workspace;
 use proptest::collection::vec;
 use proptest::prelude::*;
 use uuid::Uuid;
 
+use crate::deletion_fixtures::cancel_run;
 use crate::fixtures::{
     Account, SEALED_KEY_BYTES, WORKSPACE_NAME, create_account, create_project,
     heartbeat_with, identity_from_seed, one_agent_task, pair_device,
@@ -40,11 +42,26 @@ async fn start_task_with_runs(
     extra_runs: usize,
 ) {
     for _extra_run in 0..extra_runs {
+        cancel_active_runs(test, account, task_id).await;
         test.clock.advance(RUN_START_SPACING);
         let response = test
             .post_empty(&account.owner, &task_runs_path(task_id))
             .await;
         assert_eq!(response.status, StatusCode::CREATED, "{response:?}");
+    }
+}
+
+async fn cancel_active_runs(
+    test: &TestServer,
+    account: &Account,
+    task_id: TaskId,
+) {
+    let response = test.get(&account.owner, &task_runs_path(task_id)).await;
+    let runs: Vec<Run> = response.json();
+    for run in &runs {
+        if !is_run_finished(run.status) {
+            cancel_run(test, account, run).await;
+        }
     }
 }
 

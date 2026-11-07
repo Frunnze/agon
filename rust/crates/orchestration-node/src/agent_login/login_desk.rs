@@ -36,8 +36,11 @@ impl AgentLoginDesk {
 
     pub(crate) fn type_keys(&self, keys: &str) -> Result<(), NodeError> {
         let mut session = self.lock_session();
-        let open_session = session.as_mut().ok_or(NodeError::NoAgentLogin)?;
-        open_session.type_keys(keys)
+        let running_session = session
+            .as_mut()
+            .filter(|open_session| !open_session.has_ended())
+            .ok_or(NodeError::NoAgentLogin)?;
+        running_session.type_keys(keys)
     }
 
     pub(crate) fn close(&self) -> Result<(), NodeError> {

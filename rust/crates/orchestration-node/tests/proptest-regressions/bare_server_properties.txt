@@ -1,0 +1,7 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 1359c57896d0826c880d0a8867ecce79d65e7cb58b40260e62c9b0eecf022bbe # shrinks to record = LiveRecord { server: Web("http://a"), now: 2023-11-14T22:13:20Z, expires_at: 2023-11-14T22:13:21Z, fields: ["expires=1700000001", "server=http://a"] }, server_text = ""

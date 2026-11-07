@@ -10,9 +10,12 @@ use orchestration_security::peer_addresses::generate_peer_secret;
 use tokio::sync::OnceCell;
 use tokio::time::timeout;
 
+use super::dialing_logging::log_local_search_problem;
+use crate::local_network::LocalNetworkSearch;
 use crate::node_error::NodeError;
 
 pub const PEER_CONNECT_LIMIT: Duration = Duration::from_secs(10);
+const MOVED_SERVER_SEARCH_LIMIT: Duration = Duration::from_secs(5);
 const LATE_CONNECTION: &str = "the app server did not accept in time";
 
 #[derive(Debug)]
@@ -48,6 +51,36 @@ impl PeerDialer {
         connected.map_err(|problem| {
             NodeError::ServerUnreachable(problem.to_string())
         })
+    }
+
+    pub(super) async fn find_moved_server(
+        &self,
+        known_server: &PeerAddress,
+    ) -> Option<PeerAddress> {
+        if self.relay != RelayChoice::Disabled {
+            return None;
+        }
+        let mut search = match LocalNetworkSearch::start() {
+            Ok(search) => search,
+            Err(problem) => {
+                log_local_search_problem(&problem);
+                return None;
+            }
+        };
+        let endpoint_public_key = known_server.endpoint_public_key;
+        let searching = search.find_peer_address(&endpoint_public_key);
+        let found = timeout(MOVED_SERVER_SEARCH_LIMIT, searching).await;
+        let Ok(Some(announced_server)) = found else {
+            return None;
+        };
+        let has_moved =
+            announced_server
+                .direct_addresses
+                .iter()
+                .any(|direct_address| {
+                    !known_server.direct_addresses.contains(direct_address)
+                });
+        has_moved.then_some(announced_server)
     }
 
     pub async fn close(&self) {

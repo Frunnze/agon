@@ -1,0 +1,8 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 228ac80469fa7a42502412c046727098261578af67ff390be37b6c9e1fd83baa # shrinks to server = Web("http://a"), (now, expires_at) = (2023-11-14T22:13:20Z, 2023-11-14T22:13:21Z), direct_addresses = [0.0.0.0:1]
+cc 1ec9fee2c409bb3484e0a1a249b862765bd538581463300c0eac7bef3c4e7fee # shrinks to fields = ["server="], now = 2023-11-14T22:13:20Z

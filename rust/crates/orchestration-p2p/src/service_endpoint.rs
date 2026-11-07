@@ -1,6 +1,6 @@
-use std::net::SocketAddr;
+use std::net::{Ipv4Addr, SocketAddr, SocketAddrV4};
 
-use iroh::endpoint::presets;
+use iroh::endpoint::{Builder, presets};
 use iroh::{Endpoint, SecretKey};
 
 use crate::peer_address::{
@@ -24,21 +24,25 @@ impl ServiceEndpoint {
         configuration: PeerConfiguration,
         accepted_protocols: Vec<Vec<u8>>,
     ) -> Result<Self, PeerError> {
-        let relay_mode = configuration.relay.to_relay_mode()?;
-        let secret_key = SecretKey::from_bytes(&configuration.secret_key);
-        let builder = match configuration.relay {
-            RelayChoice::Disabled => Endpoint::builder(presets::Minimal),
-            RelayChoice::Default | RelayChoice::Custom(_) => {
-                Endpoint::builder(presets::N0)
-            }
-        };
-        let endpoint = builder
-            .secret_key(secret_key)
-            .alpns(accepted_protocols)
-            .relay_mode(relay_mode)
-            .bind()
-            .await?;
+        let builder = prepare_builder(&configuration, accepted_protocols)?;
+        let endpoint = builder.bind().await?;
         Ok(Self { endpoint })
+    }
+
+    pub async fn bind_preferring_ipv4_port(
+        configuration: PeerConfiguration,
+        accepted_protocols: Vec<Vec<u8>>,
+        preferred_port: u16,
+    ) -> Result<Self, PeerError> {
+        let preferred_socket =
+            SocketAddrV4::new(Ipv4Addr::UNSPECIFIED, preferred_port);
+        let builder =
+            prepare_builder(&configuration, accepted_protocols.clone())?;
+        let builder_on_preferred_port = builder.bind_addr(preferred_socket)?;
+        if let Ok(endpoint) = builder_on_preferred_port.bind().await {
+            return Ok(Self { endpoint });
+        }
+        Self::bind(configuration, accepted_protocols).await
     }
 
     #[must_use]
@@ -82,4 +86,22 @@ impl ServiceEndpoint {
     pub async fn close(&self) {
         self.endpoint.close().await;
     }
+}
+
+fn prepare_builder(
+    configuration: &PeerConfiguration,
+    accepted_protocols: Vec<Vec<u8>>,
+) -> Result<Builder, PeerError> {
+    let relay_mode = configuration.relay.to_relay_mode()?;
+    let secret_key = SecretKey::from_bytes(&configuration.secret_key);
+    let builder = match configuration.relay {
+        RelayChoice::Disabled => Endpoint::builder(presets::Minimal),
+        RelayChoice::Default | RelayChoice::Custom(_) => {
+            Endpoint::builder(presets::N0)
+        }
+    };
+    Ok(builder
+        .secret_key(secret_key)
+        .alpns(accepted_protocols)
+        .relay_mode(relay_mode))
 }

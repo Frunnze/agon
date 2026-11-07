@@ -3,6 +3,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use orchestration_core::repository_files::{
     RepositoryEntry, RepositoryEntryKind,
 };
+use orchestration_core::repository_paths::normalize_file_path;
 use proptest::prelude::*;
 
 use crate::repository_copies::{
@@ -52,7 +53,11 @@ proptest! {
 
         let entries = list_main_folder(&copy.open_reader()?, "")?;
 
-        prop_assert_eq!(names_of(&entries), names);
+        let readable_names: BTreeSet<String> = names
+            .into_iter()
+            .filter(|name| normalize_file_path(name).as_ref() == Ok(name))
+            .collect();
+        prop_assert_eq!(names_of(&entries), readable_names);
         for entry in &entries {
             prop_assert_eq!(entry.kind, RepositoryEntryKind::File);
             prop_assert_eq!(entry.size, byte_count(content.as_bytes()));

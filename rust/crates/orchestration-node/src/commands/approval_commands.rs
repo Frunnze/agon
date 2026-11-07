@@ -26,7 +26,7 @@ pub(super) const APPROVAL_COMMAND_NAMES: [&str; 3] =
 #[derive(Debug, Deserialize)]
 #[serde(tag = "command", rename_all = "snake_case", deny_unknown_fields)]
 pub(super) enum ApprovalCommand {
-    ListApprovals,
+    ListApprovals {},
     CreateApproval {
         run_id: Option<RunId>,
         action: ApprovalAction,
@@ -58,7 +58,7 @@ pub(super) async fn handle_approval_command(
     let session = node.open_session()?;
     let client = session.client();
     match command {
-        ApprovalCommand::ListApprovals => {
+        ApprovalCommand::ListApprovals {} => {
             let approvals = client.list_approvals().await?;
             let mut workflow_names = BTreeMap::new();
             for listing in client.list_workflows().await? {

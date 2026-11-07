@@ -21,7 +21,7 @@ type RequestBody = Full<Bytes>;
 
 #[derive(Debug)]
 pub(super) struct PeerLinkRoute {
-    server: PeerAddress,
+    server: Mutex<PeerAddress>,
     dialer: Arc<PeerDialer>,
     connection: Mutex<Option<PeerConnection>>,
 }
@@ -29,13 +29,31 @@ pub(super) struct PeerLinkRoute {
 impl PeerLinkRoute {
     pub(super) fn new(server: PeerAddress, dialer: Arc<PeerDialer>) -> Self {
         Self {
-            server,
+            server: Mutex::new(server),
             dialer,
             connection: Mutex::new(None),
         }
     }
 
     pub(super) async fn deliver(
+        &self,
+        request: OutgoingRequest,
+    ) -> Result<ServerAnswer, NodeError> {
+        let answer = self.deliver_within_limit(request.clone()).await;
+        if !matches!(answer, Err(NodeError::ServerUnreachable(_))) {
+            return answer;
+        }
+        let known_server = self.server.lock().await.clone();
+        let Some(moved_server) =
+            self.dialer.find_moved_server(&known_server).await
+        else {
+            return answer;
+        };
+        *self.server.lock().await = moved_server;
+        self.deliver_within_limit(request).await
+    }
+
+    async fn deliver_within_limit(
         &self,
         request: OutgoingRequest,
     ) -> Result<ServerAnswer, NodeError> {
@@ -67,7 +85,8 @@ impl PeerLinkRoute {
         {
             return Ok(connection.clone());
         }
-        let connection = self.dialer.connect(&self.server).await?;
+        let server = self.server.lock().await.clone();
+        let connection = self.dialer.connect(&server).await?;
         *cached = Some(connection.clone());
         Ok(connection)
     }

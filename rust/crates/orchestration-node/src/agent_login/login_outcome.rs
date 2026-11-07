@@ -4,7 +4,6 @@ use orchestration_hub::process_supervisor::ProcessExit;
 use crate::agent_credentials::{AgentCredential, AgentCredentialKind};
 
 const NO_TOKEN_PROBLEM: &str = "Claude Code finished without a token";
-const STOPPED_PROBLEM: &str = "the login was stopped";
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum LoginOutcome {
@@ -43,6 +42,8 @@ fn describe_tokenless_exit(exit: &ProcessExit) -> String {
         ProcessExit::FailedWithCode(code) => {
             format!("Claude Code stopped with code {code}")
         }
-        ProcessExit::KilledBySignal(_) => STOPPED_PROBLEM.to_owned(),
+        ProcessExit::KilledBySignal(signal) => {
+            format!("Claude Code was ended by a signal: {signal}")
+        }
     }
 }

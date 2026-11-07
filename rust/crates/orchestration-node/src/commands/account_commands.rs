@@ -39,7 +39,7 @@ pub(super) const ACCOUNT_COMMAND_NAMES: [&str; 6] = [
 #[derive(Debug, Deserialize)]
 #[serde(tag = "command", rename_all = "snake_case", deny_unknown_fields)]
 pub(super) enum AccountCommand {
-    Status,
+    Status {},
     CreateAccount {
         server_address: String,
         setup_code: String,
@@ -52,11 +52,11 @@ pub(super) enum AccountCommand {
         device_name: String,
         role: DeviceRole,
     },
-    RetryServer,
+    RetryServer {},
     PollEvents {
         after: u64,
     },
-    ForgetThisDevice,
+    ForgetThisDevice {},
 }
 
 #[derive(Debug, Serialize)]
@@ -86,6 +86,7 @@ struct StatusView {
     server_address: Option<String>,
     server_reachable: bool,
     hosted_server_address: Option<String>,
+    hosting_problem: Option<String>,
     device_id: Option<DeviceId>,
     account: Option<AccountSummary>,
     pending_join: Option<PendingJoinView>,
@@ -101,7 +102,9 @@ pub(super) async fn handle_account_command(
     command: AccountCommand,
 ) -> Result<Value, NodeError> {
     match command {
-        AccountCommand::Status => encode_reply(&describe_status(node).await?),
+        AccountCommand::Status {} => {
+            encode_reply(&describe_status(node).await?)
+        }
         AccountCommand::CreateAccount {
             server_address,
             setup_code,
@@ -130,7 +133,9 @@ pub(super) async fn handle_account_command(
             };
             encode_reply(&create_hosted_account(node, setup).await?)
         }
-        AccountCommand::RetryServer => encode_reply(&check_server(node).await),
+        AccountCommand::RetryServer {} => {
+            encode_reply(&check_server(node).await)
+        }
         AccountCommand::PollEvents { after } => {
             let session = node.open_session()?;
             let events = session.client().poll_events(after).await?;
@@ -143,7 +148,7 @@ pub(super) async fn handle_account_command(
             }
             encode_reply(&events)
         }
-        AccountCommand::ForgetThisDevice => {
+        AccountCommand::ForgetThisDevice {} => {
             forget_this_device(node).await?;
             Ok(Value::Null)
         }
@@ -198,6 +203,7 @@ async fn describe_status(node: &Node) -> Result<StatusView, NodeError> {
         server_reachable: health.reachable,
         hosted_server_address: hosted_address
             .map(|address| address.to_string()),
+        hosting_problem: node.hosting_problem(),
         device_id: identity.map(|identity| identity.device_id()),
         account: account.as_ref().map(summarize_account),
         pending_join: node
@@ -256,5 +262,6 @@ pub(super) async fn create_account(
     let account = server.signed(&identity).create_account(&request).await?;
     node.device_files().save_account(&account)?;
     node.remember_app_server(&server)?;
+    node.device_files().remove_pending_join()?;
     Ok(summarize_account(&account))
 }

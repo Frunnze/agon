@@ -12,8 +12,8 @@ use crate::command_specification::CommandSpecification;
 use crate::safe_paths::is_plain_absolute_path;
 use crate::slugs::slugify;
 use crate::worktree_commands::{
-    add_worktree_command, clone_command, delete_branch_command, fetch_command,
-    remove_worktree_command,
+    add_kept_branch_worktree_command, add_worktree_command, clone_command,
+    delete_branch_command, fetch_command, remove_worktree_command,
 };
 
 const FALLBACK_TITLE_SLUG: &str = "task";
@@ -46,6 +46,7 @@ pub struct RepositoryWorktreePlan {
     pub clone_command: CommandSpecification,
     pub fetch_command: CommandSpecification,
     pub add_worktree_command: CommandSpecification,
+    pub add_kept_branch_worktree_command: CommandSpecification,
     pub remove_worktree_command: CommandSpecification,
     pub delete_branch_command: CommandSpecification,
 }
@@ -195,6 +196,11 @@ fn plan_repository(
             branch,
             &worktree,
             &repository.default_branch,
+        ),
+        add_kept_branch_worktree_command: add_kept_branch_worktree_command(
+            &cached_clone,
+            branch,
+            &worktree,
         ),
         remove_worktree_command: remove_worktree_command(
             &cached_clone,

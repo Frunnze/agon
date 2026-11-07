@@ -1,0 +1,8 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc c14c4ad41dfb09d43de63ae4009379b6d35321989b9acc37c69a89d7f0466977 # shrinks to peer_relay = Default
+cc 2932619a810e0715072f1f70bc8c22620c985718a9c303b0ccb2eb77d53f6d4d # shrinks to peer_relay = Default, is_newest_short_lived = true

@@ -2,6 +2,9 @@ use std::collections::BTreeSet;
 use std::net::SocketAddr;
 
 use mdns_sd::{Receiver, ResolvedService, ServiceDaemon, ServiceEvent};
+use orchestration_core::peer_address::{
+    ENDPOINT_PUBLIC_KEY_LENGTH, PeerAddress,
+};
 
 use super::{
     APP_SERVER_SERVICE_TYPE, SERVER_ADDRESS_PROPERTY,
@@ -42,6 +45,21 @@ impl LocalNetworkSearch {
             };
             if self.offered_addresses.insert(server_address.to_string()) {
                 return Some(server_address);
+            }
+        }
+        None
+    }
+
+    pub(crate) async fn find_peer_address(
+        &mut self,
+        endpoint_public_key: &[u8; ENDPOINT_PUBLIC_KEY_LENGTH],
+    ) -> Option<PeerAddress> {
+        while let Some(server_address) = self.next_server_address().await {
+            let ServerAddress::Peer(peer_address) = server_address else {
+                continue;
+            };
+            if peer_address.endpoint_public_key == *endpoint_public_key {
+                return Some(peer_address);
             }
         }
         None

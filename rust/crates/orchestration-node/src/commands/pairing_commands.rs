@@ -27,7 +27,7 @@ pub(super) const PAIRING_COMMAND_NAMES: [&str; 7] = [
 #[derive(Debug, Deserialize)]
 #[serde(tag = "command", rename_all = "snake_case", deny_unknown_fields)]
 pub(super) enum PairingCommand {
-    StartPairing,
+    StartPairing {},
     PairingRequest {
         code: String,
     },
@@ -47,7 +47,7 @@ pub(super) enum PairingCommand {
         device_name: String,
         role: DeviceRole,
     },
-    JoinStatus,
+    JoinStatus {},
 }
 
 pub(super) async fn handle_pairing_command(
@@ -55,7 +55,7 @@ pub(super) async fn handle_pairing_command(
     command: PairingCommand,
 ) -> Result<Value, NodeError> {
     match command {
-        PairingCommand::StartPairing => {
+        PairingCommand::StartPairing {} => {
             encode_reply(&start_pairing(node).await?)
         }
         PairingCommand::PairingRequest { code } => {
@@ -82,10 +82,11 @@ pub(super) async fn handle_pairing_command(
             let pairing_code = PairingCode::parse(&code)?;
             let session = node.open_session()?;
             let client = session.client();
-            client
+            let cancelled = client
                 .cancel_pairing(&String::from(pairing_code.clone()))
-                .await?;
+                .await;
             end_pairing_here(node, &pairing_code).await;
+            cancelled?;
             Ok(Value::Null)
         }
         PairingCommand::JoinWithCode {
@@ -102,7 +103,7 @@ pub(super) async fn handle_pairing_command(
             };
             encode_reply(&join_with_code(node, join).await?)
         }
-        PairingCommand::JoinStatus => {
+        PairingCommand::JoinStatus {} => {
             encode_reply(&read_join_status(node).await?)
         }
     }

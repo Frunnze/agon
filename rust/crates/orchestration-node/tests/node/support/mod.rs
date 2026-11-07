@@ -1,4 +1,5 @@
 pub mod address_strategies;
+pub mod code_join_retries;
 pub mod command_builders;
 pub mod command_strategies;
 pub mod draft_answer_samples;

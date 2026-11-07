@@ -15,12 +15,13 @@ proptest! {
     fn test_parse_property_a_rendered_address_parses_back_to_itself(
         address in server_address_strategy(),
     ) {
-        let rendered = address.to_string();
+        let canonical = ServerAddress::parse(&address.to_string())
+            .map_err(|error| TestCaseError::fail(error.to_string()))?;
 
-        let parsed = ServerAddress::parse(&rendered);
+        let parsed = ServerAddress::parse(&canonical.to_string());
 
         let parsed_text = parsed.map_err(|error| error.to_string());
-        prop_assert_eq!(parsed_text, Ok(address));
+        prop_assert_eq!(parsed_text, Ok(canonical));
     }
 
     #[test]

@@ -7,7 +7,6 @@ use tokio::time::timeout;
 use crate::agent_credentials::AgentCredentialKind;
 use crate::agent_login::{ClaudeLogin, read_claude_login};
 use crate::node::Node;
-use crate::node_error::NodeError;
 
 const STATUS_LIMIT: Duration = Duration::from_secs(20);
 
@@ -19,20 +18,15 @@ pub(super) struct AgentLoginStatusView {
 
 pub(super) async fn read_agent_login_status(
     node: &Node,
-) -> Result<AgentLoginStatusView, NodeError> {
+) -> AgentLoginStatusView {
     let asking = timeout(STATUS_LIMIT, spawn_blocking(read_claude_login));
-    let answer = asking.await.map_err(|_| {
-        NodeError::ClaudeStatusUnreadable(format!(
-            "no answer within {} seconds",
-            STATUS_LIMIT.as_secs()
-        ))
-    })?;
-    let claude_login = answer.map_err(|problem| {
-        NodeError::ClaudeStatusUnreadable(problem.to_string())
-    })??;
+    let claude_login = match asking.await {
+        Ok(Ok(Ok(claude_login))) => claude_login,
+        _ => ClaudeLogin::Unknown,
+    };
     let kept_credential = node.agent_credentials().current();
-    Ok(AgentLoginStatusView {
+    AgentLoginStatusView {
         claude_login,
         container_credential: kept_credential.map(|kept| kept.kind()),
-    })
+    }
 }

@@ -1,0 +1,158 @@
+{
+  "cases": [
+    {
+      "name": "indentation_deepens",
+      "previous": "steps:\n  - build\n",
+      "current": "steps:\n    - build\n",
+      "diff": [
+        {
+          "unchanged": "steps:"
+        },
+        {
+          "removed": "  - build"
+        },
+        {
+          "added": "    - build"
+        }
+      ]
+    },
+    {
+      "name": "tab_becomes_spaces",
+      "previous": "a\n\tb\nc\n",
+      "current": "a\n  b\nc\n",
+      "diff": [
+        {
+          "unchanged": "a"
+        },
+        {
+          "removed": "\tb"
+        },
+        {
+          "added": "  b"
+        },
+        {
+          "unchanged": "c"
+        }
+      ]
+    },
+    {
+      "name": "trailing_space_added",
+      "previous": "name: x\n",
+      "current": "name: x  \n",
+      "diff": [
+        {
+          "removed": "name: x"
+        },
+        {
+          "added": "name: x  "
+        }
+      ]
+    },
+    {
+      "name": "indented_lines_unchanged",
+      "previous": " a\n b\n",
+      "current": " a\n b\n",
+      "diff": [
+        {
+          "unchanged": " a"
+        },
+        {
+          "unchanged": " b"
+        }
+      ]
+    },
+    {
+      "name": "indented_line_added_to_empty",
+      "previous": "",
+      "current": "  x\n",
+      "diff": [
+        {
+          "added": "  x"
+        }
+      ]
+    },
+    {
+      "name": "indented_line_removed_to_empty",
+      "previous": "\t\ty\n",
+      "current": "",
+      "diff": [
+        {
+          "removed": "\t\ty"
+        }
+      ]
+    },
+    {
+      "name": "blank_and_space_only_lines_swap",
+      "previous": "a\n\n   \nb\n",
+      "current": "a\n   \n\nb\n",
+      "diff": [
+        {
+          "unchanged": "a"
+        },
+        {
+          "removed": ""
+        },
+        {
+          "unchanged": "   "
+        },
+        {
+          "added": ""
+        },
+        {
+          "unchanged": "b"
+        }
+      ]
+    },
+    {
+      "name": "unicode_space_changes",
+      "previous": "x\n\u3000y\n",
+      "current": "x\n\u00a0y\n",
+      "diff": [
+        {
+          "unchanged": "x"
+        },
+        {
+          "removed": "\u3000y"
+        },
+        {
+          "added": "\u00a0y"
+        }
+      ]
+    },
+    {
+      "name": "missing_final_line_break",
+      "previous": "a\n  b",
+      "current": "a\n  b\n",
+      "diff": [
+        {
+          "unchanged": "a"
+        },
+        {
+          "unchanged": "  b"
+        }
+      ]
+    },
+    {
+      "name": "nested_block_shifts_left",
+      "previous": "agents:\n  - name: build\n    model: x\n",
+      "current": "agents:\n- name: build\n  model: x\n",
+      "diff": [
+        {
+          "unchanged": "agents:"
+        },
+        {
+          "removed": "  - name: build"
+        },
+        {
+          "removed": "    model: x"
+        },
+        {
+          "added": "- name: build"
+        },
+        {
+          "added": "  model: x"
+        }
+      ]
+    }
+  ]
+}

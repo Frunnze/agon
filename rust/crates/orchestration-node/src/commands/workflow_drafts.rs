@@ -133,6 +133,8 @@ fn parse_drafted_workflow(
         signature: None,
         ..drafted
     };
+    validate_workflow(&unsigned)
+        .map_err(|problem| NodeError::DraftNotWorkflow(problem.to_string()))?;
     Ok(lay_out_workflow(&unsigned))
 }
 
@@ -154,7 +156,6 @@ async fn save_draft(
     };
 
     let opened = open_workflow(&session.keyring, &stored.workflow)?;
-    validate_workflow(drafted)?;
     let changed = keep_stored_step_ids(drafted, &opened);
     let opened_without_signature = Workflow {
         signature: None,

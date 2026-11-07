@@ -81,7 +81,7 @@ proptest! {
     }
 
     #[test]
-    fn test_withdraw_announced_code_property_unpublished_codes_change_nothing(
+    fn test_withdraw_announced_code_property_cancelling_clears_its_problem(
         peer_relay in peer_relay_choices(),
         actions in pairing_actions(),
     ) {
@@ -92,8 +92,22 @@ proptest! {
         let observations =
             observe_pairing_actions(&device, &actions).map_err(fail)?;
 
+        let mut is_code_showing = false;
         for observation in &observations {
-            if matches!(observation.action, PairingAction::CancelLatest) {
+            if observation.started_session.is_some() {
+                is_code_showing = true;
+            }
+            if !matches!(observation.action, PairingAction::CancelLatest) {
+                continue;
+            }
+            if is_code_showing {
+                prop_assert_eq!(
+                    &observation.status_problem_after,
+                    &Value::Null,
+                    "{:?}",
+                    observation
+                );
+            } else {
                 prop_assert_eq!(
                     &observation.status_problem_after,
                     &observation.status_problem_before,
@@ -101,6 +115,7 @@ proptest! {
                     observation
                 );
             }
+            is_code_showing = false;
         }
     }
 

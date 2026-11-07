@@ -202,7 +202,7 @@ impl DeviceFiles {
     }
 }
 
-fn read_json_file<Stored: DeserializeOwned>(
+pub(crate) fn read_json_file<Stored: DeserializeOwned>(
     path: &Path,
 ) -> Result<Option<Stored>, NodeError> {
     let stored_bytes = match fs::read(path) {
@@ -214,7 +214,7 @@ fn read_json_file<Stored: DeserializeOwned>(
     Ok(Some(stored_value))
 }
 
-fn write_json_file<Stored: Serialize>(
+pub(crate) fn write_json_file<Stored: Serialize>(
     path: &Path,
     stored_value: &Stored,
 ) -> Result<(), NodeError> {

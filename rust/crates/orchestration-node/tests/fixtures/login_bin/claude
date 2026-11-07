@@ -4,8 +4,18 @@ if [ -z "$AGENT_RECORDS" ]; then
   exit 5
 fi
 
+crash_when_asked() {
+  if [ -f "$AGENT_RECORDS/crash-signal" ]; then
+    kill -s "$(cat "$AGENT_RECORDS/crash-signal")" $$
+  fi
+}
+
 case "$1 $2" in
   "auth status")
+    if [ -f "$AGENT_RECORDS/status-answer" ]; then
+      cat "$AGENT_RECORDS/status-answer"
+      exit 0
+    fi
     if [ -f "$AGENT_RECORDS/logged-in" ]; then
       printf '{"loggedIn": true, "authMethod": "claude.ai"}\n'
       exit 0
@@ -17,6 +27,7 @@ case "$1 $2" in
     printf '\033[?25lOpening your browser to sign in...\n'
     printf 'Paste code here if prompted > '
     read -r code
+    crash_when_asked
     printf '%s\n' "$code" > "$AGENT_RECORDS/login-code"
     : > "$AGENT_RECORDS/logged-in"
     printf '\033[2K\033[1A\033[2K\033[GLogin successful.\033[?25h\n'
@@ -26,6 +37,7 @@ case "$1 $2" in
     printf '\033[?25l\033[1mOpening your browser to sign in...\033[0m\n'
     printf 'Paste code here if prompted > '
     read -r code
+    crash_when_asked
     printf '\033[2K\033[1A\033[2K\033[G'
     printf '\033[32m✓\033[0m Long-lived authentication token created.\n\n'
     printf 'Your OAuth token (valid for 1 year):\n\n'

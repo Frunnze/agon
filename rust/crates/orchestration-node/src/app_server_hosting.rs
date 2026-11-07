@@ -11,6 +11,7 @@ use std::io::ErrorKind;
 
 pub(crate) use group_keeping::keep_server_group;
 pub(crate) use hosted_app_server::HostedAppServer;
+pub use hosting_logging::describe_write_stopping_problem;
 pub(crate) use server_backup::{start_server_backup, stop_server_backup};
 
 use crate::device_files::HostedServerRecord;
@@ -66,16 +67,17 @@ pub(crate) async fn forget_hosted_app_server(
     node: &Node,
 ) -> Result<(), NodeError> {
     stop_hosted_app_server(node).await;
+    let record_path = node.device_files().hosted_server_record_path();
+    remove_file_if_present(&record_path)
+        .map_err(|problem| describe_not_removed(&problem))?;
+    node.forget_hosting_problem();
     let server_directory = node.device_files().hosted_server_directory();
     match fs::remove_dir_all(&server_directory) {
         Err(problem) if problem.kind() != ErrorKind::NotFound => {
-            return Err(describe_not_removed(&problem));
+            Err(describe_not_removed(&problem))
         }
-        _ => {}
+        _ => Ok(()),
     }
-    let record_path = node.device_files().hosted_server_record_path();
-    remove_file_if_present(&record_path)
-        .map_err(|problem| describe_not_removed(&problem))
 }
 
 async fn start_hosted_server(

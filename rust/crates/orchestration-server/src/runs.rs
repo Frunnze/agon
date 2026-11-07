@@ -16,8 +16,8 @@ use crate::extractors::{PathValue, parse_json_body};
 use crate::follow_ups::append_chat_message;
 use crate::run_changes::{cancel_run_record, retry_run_record};
 use crate::run_starts::{
-    describe_run, describe_run_detail, find_run_workflow, start_run,
-    sync_task_status,
+    describe_run, describe_run_detail, find_run_workflow,
+    refuse_second_active_run, start_run, sync_task_status,
 };
 use crate::server::SharedServer;
 use crate::stored_state::{RunRecord, StoredState};
@@ -195,6 +195,11 @@ fn retry_stored_run(
     now: DateTime<Utc>,
 ) -> Result<Change<Run>, ServerError> {
     let retried = retry_run_record(find_run(state, run_id)?)?;
+    let task = state
+        .tasks
+        .get(&retried.run.task_id)
+        .ok_or(ServerError::NotFound("the task"))?;
+    refuse_second_active_run(state, task)?;
     let settled_run = match find_run_workflow(state, &retried) {
         Some(workflow) => settle_waiting_steps(&retried.run, workflow, now),
         None => retried.run.clone(),

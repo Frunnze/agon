@@ -1,5 +1,8 @@
 use std::collections::BTreeSet;
 
+use chrono::DateTime;
+use orchestration_core::run_lifecycle::create_run;
+use orchestration_core::task::{Task, TaskDoer};
 use orchestration_core::workflow::{
     AgentConnection, CanvasPosition, StepKind, Workflow, WorkflowAgent,
 };
@@ -9,7 +12,9 @@ use orchestration_core::workflow_graph::{
 use proptest::prelude::*;
 use serde::Deserialize;
 
+use crate::entity_strategies::example_task;
 use crate::routing_fixtures::routing_agent;
+use crate::run_fixtures::{RUN_NUMBER, run_identifier, starter};
 use crate::workflow_strategies::{agent_identifier, workflow_from_parts};
 
 const UNKNOWN_NUMBER: u128 = 999;
@@ -40,6 +45,7 @@ struct SharedGraphCase {
     connections: Vec<SharedConnection>,
     order: Vec<String>,
     is_valid: bool,
+    run_steps: Option<Vec<String>>,
     reached_from_first: Vec<String>,
 }
 
@@ -116,6 +122,25 @@ fn list_reached_names(workflow: &Workflow) -> BTreeSet<String> {
     names
 }
 
+fn plan_run_step_names(workflow: &Workflow) -> Option<Vec<String>> {
+    let task = Task {
+        doer: TaskDoer::Workflow {
+            workflow_id: workflow.id,
+        },
+        ..example_task()
+    };
+    let run = create_run(
+        &task,
+        Some(workflow),
+        RUN_NUMBER,
+        run_identifier(),
+        starter(),
+        DateTime::UNIX_EPOCH,
+    )
+    .ok()?;
+    Some(run.steps.into_iter().map(|step| step.name).collect())
+}
+
 #[test]
 fn test_agents_in_order_property_agrees_with_the_shared_table()
 -> Result<(), serde_json::Error> {
@@ -157,6 +182,30 @@ fn test_forward_reachable_agents_property_agrees_with_the_shared_table()
     Ok(())
 }
 
+#[test]
+fn test_create_run_property_steps_agree_with_the_shared_table()
+-> Result<(), serde_json::Error> {
+    for case in read_shared_cases()? {
+        let workflow = build_case_workflow(&case, &stored_order(&case));
+
+        let run_steps = plan_run_step_names(&workflow);
+
+        assert_eq!(run_steps, case.run_steps, "{}", case.description);
+    }
+    Ok(())
+}
+
+#[test]
+fn test_create_run_property_shared_table_plans_valid_cases_in_order()
+-> Result<(), serde_json::Error> {
+    for case in read_shared_cases()? {
+        let expected_steps = case.is_valid.then(|| case.order.clone());
+
+        assert_eq!(case.run_steps, expected_steps, "{}", case.description);
+    }
+    Ok(())
+}
+
 proptest! {
     #[test]
     fn test_agents_in_order_property_shared_table_ignores_storage_order(
@@ -177,5 +226,6 @@ proptest! {
 
         prop_assert_eq!(names, case.order.clone());
         prop_assert_eq!(validate_workflow(&workflow).is_ok(), case.is_valid);
+        prop_assert_eq!(plan_run_step_names(&workflow), case.run_steps.clone());
     }
 }

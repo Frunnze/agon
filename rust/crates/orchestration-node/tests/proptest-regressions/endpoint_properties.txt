@@ -1,0 +1,7 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 4fe7cf5271d60d4fb9d273b6e30db0a4423a5439729a938bdffe907179af735e # shrinks to damaged_secret = [47, 108, 250, 152, 28, 66, 172, 140, 40, 211, 109, 62, 15, 149, 243, 209, 207, 72, 25, 70, 165, 115, 190, 124, 174, 94, 132, 64, 12, 165, 239, 100, 189, 91, 3, 73, 224, 0, 57, 164, 101, 202, 239, 229, 187, 241, 20, 116, 211, 52, 73, 242, 250, 17, 54, 228, 220, 38, 148, 84, 231, 54, 176, 68, 9, 91, 205, 26, 147, 162, 252, 42, 235, 141, 161, 225, 4, 111, 37, 204, 251, 220, 214, 208]

@@ -45,7 +45,7 @@ pub(super) enum RunCommand {
         run_id: RunId,
         text: String,
     },
-    ListPersonSteps,
+    ListPersonSteps {},
     AnswerPersonStep {
         run_id: RunId,
         step_name: String,
@@ -125,7 +125,7 @@ pub(super) async fn handle_run_command(
             client.send_chat_message(run_id, &request).await?;
             encode_reply(&message)
         }
-        RunCommand::ListPersonSteps => {
+        RunCommand::ListPersonSteps {} => {
             encode_reply(&list_open_person_steps(&session).await?)
         }
         RunCommand::AnswerPersonStep {

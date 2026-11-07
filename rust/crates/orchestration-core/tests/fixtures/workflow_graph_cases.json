@@ -12,6 +12,7 @@
     ],
     "order": ["plan", "test", "build"],
     "is_valid": true,
+    "run_steps": ["plan", "test", "build"],
     "reached_from_first": ["build"]
   },
   {
@@ -25,6 +26,7 @@
     "connections": [],
     "order": ["c", "b", "a", "d"],
     "is_valid": true,
+    "run_steps": ["c", "b", "a", "d"],
     "reached_from_first": ["a"]
   },
   {
@@ -37,6 +39,7 @@
     "connections": [],
     "order": ["alpha", "mid", "zeta"],
     "is_valid": true,
+    "run_steps": ["alpha", "mid", "zeta"],
     "reached_from_first": ["zeta"]
   },
   {
@@ -50,6 +53,7 @@
     "connections": [],
     "order": ["s", "q", "r", "p"],
     "is_valid": true,
+    "run_steps": ["s", "q", "r", "p"],
     "reached_from_first": ["p"]
   },
   {
@@ -68,6 +72,7 @@
     ],
     "order": ["start", "left", "right", "end"],
     "is_valid": true,
+    "run_steps": ["start", "left", "right", "end"],
     "reached_from_first": ["end", "left", "right", "start"]
   },
   {
@@ -88,6 +93,7 @@
     ],
     "order": ["review", "fix", "ship"],
     "is_valid": true,
+    "run_steps": ["review", "fix", "ship"],
     "reached_from_first": ["fix", "review", "ship"]
   },
   {
@@ -102,6 +108,7 @@
     ],
     "order": ["plan", "review"],
     "is_valid": true,
+    "run_steps": ["plan", "review"],
     "reached_from_first": ["review"]
   },
   {
@@ -117,6 +124,7 @@
     ],
     "order": ["a", "b", "c"],
     "is_valid": false,
+    "run_steps": null,
     "reached_from_first": ["a", "b"]
   },
   {
@@ -131,6 +139,7 @@
     ],
     "order": ["a", "b"],
     "is_valid": false,
+    "run_steps": null,
     "reached_from_first": ["a", "b"]
   },
   {
@@ -145,6 +154,7 @@
     ],
     "order": ["a", "b"],
     "is_valid": false,
+    "run_steps": null,
     "reached_from_first": ["a", "b"]
   },
   {
@@ -162,6 +172,7 @@
     ],
     "order": ["x", "a", "b", "c"],
     "is_valid": false,
+    "run_steps": null,
     "reached_from_first": ["x"]
   },
   {
@@ -176,6 +187,7 @@
     ],
     "order": ["a", "b"],
     "is_valid": true,
+    "run_steps": ["a", "b"],
     "reached_from_first": ["a", "b"]
   },
   {
@@ -190,6 +202,7 @@
     ],
     "order": ["a", "b"],
     "is_valid": true,
+    "run_steps": ["a", "b"],
     "reached_from_first": ["a", "b"]
   },
   {
@@ -204,6 +217,7 @@
     ],
     "order": ["a", "b"],
     "is_valid": false,
+    "run_steps": null,
     "reached_from_first": ["a", "b"]
   },
   {
@@ -218,6 +232,7 @@
     ],
     "order": ["a", "b"],
     "is_valid": false,
+    "run_steps": null,
     "reached_from_first": ["a", "b"]
   },
   {
@@ -232,6 +247,7 @@
     ],
     "order": ["a", "b"],
     "is_valid": false,
+    "run_steps": null,
     "reached_from_first": ["a", "b"]
   },
   {
@@ -245,6 +261,7 @@
     ],
     "order": ["a", "b"],
     "is_valid": false,
+    "run_steps": null,
     "reached_from_first": ["a", "b"]
   },
   {
@@ -258,6 +275,7 @@
     ],
     "order": ["a", "b"],
     "is_valid": false,
+    "run_steps": null,
     "reached_from_first": ["a", "b"]
   },
   {
@@ -271,6 +289,7 @@
     ],
     "order": ["a", "b"],
     "is_valid": false,
+    "run_steps": null,
     "reached_from_first": ["a", "b"]
   },
   {
@@ -284,6 +303,7 @@
     ],
     "order": ["a", "b"],
     "is_valid": false,
+    "run_steps": null,
     "reached_from_first": ["a", "b"]
   },
   {
@@ -299,6 +319,7 @@
     ],
     "order": ["a", "b", "c"],
     "is_valid": false,
+    "run_steps": null,
     "reached_from_first": ["a", "b", "c"]
   },
   {
@@ -314,6 +335,7 @@
     ],
     "order": ["a", "b", "c"],
     "is_valid": true,
+    "run_steps": ["a", "b", "c"],
     "reached_from_first": ["a", "b", "c"]
   },
   {
@@ -332,6 +354,7 @@
     ],
     "order": ["a", "b"],
     "is_valid": true,
+    "run_steps": ["a", "b"],
     "reached_from_first": ["a", "b"]
   },
   {
@@ -350,6 +373,7 @@
     ],
     "order": ["a", "b"],
     "is_valid": false,
+    "run_steps": null,
     "reached_from_first": ["a", "b"]
   },
   {
@@ -365,6 +389,7 @@
     ],
     "order": ["a", "b", "c"],
     "is_valid": false,
+    "run_steps": null,
     "reached_from_first": ["a", "b", "c"]
   },
   {
@@ -380,6 +405,7 @@
     ],
     "order": ["a", "b", "c"],
     "is_valid": true,
+    "run_steps": ["a", "b", "c"],
     "reached_from_first": ["a", "c"]
   },
   {
@@ -396,6 +422,7 @@
     ],
     "order": ["start", "build", "check"],
     "is_valid": false,
+    "run_steps": null,
     "reached_from_first": ["build", "check", "start"]
   },
   {
@@ -411,6 +438,7 @@
     ],
     "order": ["start", "build", "check"],
     "is_valid": true,
+    "run_steps": ["start", "build", "check"],
     "reached_from_first": ["build", "check", "start"]
   },
   {
@@ -426,6 +454,7 @@
     ],
     "order": ["start", "build", "check"],
     "is_valid": false,
+    "run_steps": null,
     "reached_from_first": ["build", "start"]
   },
   {
@@ -441,6 +470,7 @@
     ],
     "order": ["start", "build", "check"],
     "is_valid": false,
+    "run_steps": null,
     "reached_from_first": ["build", "start"]
   },
   {
@@ -457,6 +487,7 @@
     ],
     "order": ["start", "build", "check"],
     "is_valid": true,
+    "run_steps": ["start", "build", "check"],
     "reached_from_first": ["build", "check", "start"]
   },
   {
@@ -470,6 +501,7 @@
     ],
     "order": ["Plan", "test"],
     "is_valid": false,
+    "run_steps": null,
     "reached_from_first": ["Plan", "test"]
   },
   {
@@ -483,6 +515,7 @@
     ],
     "order": ["write code", "test"],
     "is_valid": false,
+    "run_steps": null,
     "reached_from_first": ["test", "write code"]
   },
   {
@@ -494,6 +527,7 @@
     "connections": [],
     "order": ["", "test"],
     "is_valid": false,
+    "run_steps": null,
     "reached_from_first": [""]
   },
   {
@@ -505,6 +539,7 @@
     "connections": [],
     "order": ["café", "test"],
     "is_valid": false,
+    "run_steps": null,
     "reached_from_first": ["café"]
   },
   {
@@ -515,6 +550,7 @@
     "connections": [],
     "order": ["run_tests"],
     "is_valid": false,
+    "run_steps": null,
     "reached_from_first": ["run_tests"]
   },
   {
@@ -525,6 +561,7 @@
     "connections": [],
     "order": ["aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"],
     "is_valid": false,
+    "run_steps": null,
     "reached_from_first": ["aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"]
   },
   {
@@ -535,6 +572,7 @@
     "connections": [],
     "order": ["aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"],
     "is_valid": true,
+    "run_steps": ["aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"],
     "reached_from_first": ["aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"]
   },
   {
@@ -550,6 +588,7 @@
     ],
     "order": ["3d-render", "step-2", "-"],
     "is_valid": true,
+    "run_steps": ["3d-render", "step-2", "-"],
     "reached_from_first": ["-", "3d-render", "step-2"]
   },
   {
@@ -558,6 +597,7 @@
     "connections": [],
     "order": [],
     "is_valid": false,
+    "run_steps": null,
     "reached_from_first": []
   },
   {
@@ -569,6 +609,7 @@
     "connections": [],
     "order": ["plan", "build"],
     "is_valid": false,
+    "run_steps": null,
     "reached_from_first": ["build", "plan"]
   },
   {
@@ -580,6 +621,7 @@
     "connections": [],
     "order": ["plan", "plan"],
     "is_valid": false,
+    "run_steps": null,
     "reached_from_first": ["plan"]
   },
   {
@@ -593,6 +635,7 @@
     ],
     "order": ["a", "b"],
     "is_valid": false,
+    "run_steps": null,
     "reached_from_first": ["a"]
   },
   {
@@ -606,6 +649,7 @@
     ],
     "order": ["a", "b"],
     "is_valid": false,
+    "run_steps": null,
     "reached_from_first": ["a"]
   },
   {
@@ -619,6 +663,7 @@
     ],
     "order": ["b", "a"],
     "is_valid": false,
+    "run_steps": null,
     "reached_from_first": ["a"]
   },
   {
@@ -633,6 +678,7 @@
     ],
     "order": ["a", "b"],
     "is_valid": false,
+    "run_steps": null,
     "reached_from_first": ["a", "b"]
   }
 ]

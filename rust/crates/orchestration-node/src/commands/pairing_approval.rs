@@ -63,8 +63,11 @@ pub(super) async fn start_pairing(
         ),
     };
     client.commit_pairing(&canonical, &commitment).await?;
-    node.approver_pairings()
-        .remember_nonce(&pairing_code, approver_nonce);
+    node.approver_pairings().remember_nonce(
+        &pairing_code,
+        approver_nonce,
+        created.expires_at,
+    );
 
     let rendezvous_problem =
         announce_code(node, &pairing_code, created.expires_at).await;

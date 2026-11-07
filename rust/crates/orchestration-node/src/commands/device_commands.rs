@@ -33,11 +33,11 @@ pub(super) const DEVICE_COMMAND_NAMES: [&str; 8] = [
 #[derive(Debug, Deserialize)]
 #[serde(tag = "command", rename_all = "snake_case", deny_unknown_fields)]
 pub(super) enum DeviceCommand {
-    ListDevices,
+    ListDevices {},
     RevokeDevice {
         device_id: DeviceId,
     },
-    ListWorkspaces,
+    ListWorkspaces {},
     CreateWorkspace {
         name: String,
     },
@@ -53,7 +53,7 @@ pub(super) enum DeviceCommand {
         workspace_id: WorkspaceId,
         device_id: DeviceId,
     },
-    ListAudit,
+    ListAudit {},
 }
 
 #[derive(Debug, Serialize)]
@@ -78,7 +78,7 @@ pub(super) async fn handle_device_command(
     let session = node.open_session()?;
     let client = session.client();
     match command {
-        DeviceCommand::ListDevices => {
+        DeviceCommand::ListDevices {} => {
             let devices = client.list_devices().await?;
             let workspaces = client.list_workspaces().await?;
             encode_reply(&build_device_views(&session, &devices, &workspaces))
@@ -91,7 +91,7 @@ pub(super) async fn handle_device_command(
             client.revoke_device(&device_id, &request).await?;
             Ok(Value::Null)
         }
-        DeviceCommand::ListWorkspaces => {
+        DeviceCommand::ListWorkspaces {} => {
             let workspaces = client.list_workspaces().await?;
             let projects = client.list_projects().await?;
             let devices = client.list_devices().await?;
@@ -141,7 +141,9 @@ pub(super) async fn handle_device_command(
                 .await?;
             Ok(Value::Null)
         }
-        DeviceCommand::ListAudit => encode_reply(&client.read_audit().await?),
+        DeviceCommand::ListAudit {} => {
+            encode_reply(&client.read_audit().await?)
+        }
     }
 }
 

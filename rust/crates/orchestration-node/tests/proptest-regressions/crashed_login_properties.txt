@@ -1,0 +1,7 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 27988b7f2f941ee3a676410f43dcaf066356a0fc718e5a8f6b16686ab9dbd279 # shrinks to place = "container", signal = "KILL", code = "QB_bB-89-3_6U-H0_2"

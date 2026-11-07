@@ -2,11 +2,15 @@ use std::io::ErrorKind;
 use std::process::{Command, Stdio};
 
 use orchestration_hub::agent_command::CLAUDE_PROGRAM;
-use serde::{Deserialize, Serialize};
+use serde::Serialize;
+use serde_json::{Map, Value};
 
 use crate::node_error::NodeError;
 
 const STATUS_ARGUMENTS: [&str; 3] = ["auth", "status", "--json"];
+const LOGGED_IN_FIELD: &str = "loggedIn";
+const MISSING_LOGGED_IN_PROBLEM: &str =
+    "the answer has no true or false loggedIn field";
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "snake_case")]
@@ -14,12 +18,7 @@ pub enum ClaudeLogin {
     LoggedIn,
     NotLoggedIn,
     NotInstalled,
-}
-
-#[derive(Deserialize)]
-struct StatusAnswer {
-    #[serde(rename = "loggedIn")]
-    logged_in: bool,
+    Unknown,
 }
 
 pub fn read_claude_login() -> Result<ClaudeLogin, NodeError> {
@@ -42,11 +41,18 @@ pub fn read_claude_login() -> Result<ClaudeLogin, NodeError> {
 }
 
 pub fn interpret_login_answer(answer: &str) -> Result<ClaudeLogin, NodeError> {
-    let parsed: StatusAnswer =
-        serde_json::from_str(answer.trim()).map_err(|problem| {
+    let fields: Map<String, Value> = serde_json::from_str(answer.trim())
+        .map_err(|problem| {
             NodeError::ClaudeStatusUnreadable(problem.to_string())
         })?;
-    if parsed.logged_in {
+    let is_logged_in = fields
+        .get(LOGGED_IN_FIELD)
+        .and_then(Value::as_bool)
+        .ok_or_else(|| {
+            let problem = MISSING_LOGGED_IN_PROBLEM.to_owned();
+            NodeError::ClaudeStatusUnreadable(problem)
+        })?;
+    if is_logged_in {
         return Ok(ClaudeLogin::LoggedIn);
     }
     Ok(ClaudeLogin::NotLoggedIn)

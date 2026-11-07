@@ -1,0 +1,7 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 354bc24e60b94d9363fd658f31efe1dcfabcf7307994a122cacc60c5ec37d17a # shrinks to name = "forget_this_device", field = "_", field_value = Null

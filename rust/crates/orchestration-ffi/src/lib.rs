@@ -5,7 +5,7 @@ use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::sync::{Arc, PoisonError, RwLock};
 
 use orchestration_node::command_reply::{
-    render_error_reply, render_success_reply,
+    render_error_reply, render_node_error_reply, render_success_reply,
 };
 use orchestration_node::node_configuration::NodeConfiguration;
 use orchestration_node::node_runtime::NodeRuntime;
@@ -77,7 +77,7 @@ fn start_node(configuration_json: &str) -> String {
     let configuration = match NodeConfiguration::from_json(configuration_json)
     {
         Ok(configuration) => configuration,
-        Err(error) => return render_error_reply(&error.to_string()),
+        Err(error) => return render_node_error_reply(&error),
     };
 
     let mut shared_runtime =
@@ -87,7 +87,7 @@ fn start_node(configuration_json: &str) -> String {
 
     let runtime = match NodeRuntime::start_configured(&configuration) {
         Ok(runtime) => runtime,
-        Err(error) => return render_error_reply(&error.to_string()),
+        Err(error) => return render_node_error_reply(&error),
     };
     *shared_runtime = Some(Arc::new(runtime));
     render_success_reply(&Value::Null)

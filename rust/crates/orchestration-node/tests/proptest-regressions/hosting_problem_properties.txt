@@ -1,0 +1,9 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc b53b275836fadd1b00bdc86428d683f06acbd73e3d2142bfd583c3b50f285171 # shrinks to status_reads = 1
+cc dd29836284276159982735594d5e00136bb53e1316bb76544f0f7768334b023d # shrinks to damaged_bytes = [88, 225, 138, 184, 209, 168, 239, 191, 189, 240, 144, 186, 152, 38, 58, 240, 145, 177, 187]
+cc 3d58a3d113f2f925913c31dd2d0c8335b5c6292acf173536f65e6cfd5d70bb24 # shrinks to failure = DamagedRecord([112, 196, 12, 173, 213, 82, 171, 95, 114, 255, 63, 14, 123, 32, 122, 90, 26, 22, 208, 88, 38, 125, 210, 90, 73, 18, 25, 21, 117, 53, 2, 58, 191, 27, 134, 77, 208, 191, 61, 207, 156, 167, 246, 183, 211])

@@ -1,6 +1,7 @@
 mod account_routes;
 mod catalog_routes;
 mod deletion_routes;
+mod dialing_logging;
 mod group_routes;
 mod outgoing_request;
 mod peer_dialer;

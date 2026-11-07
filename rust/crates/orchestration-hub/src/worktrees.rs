@@ -9,6 +9,9 @@ use crate::cached_clones::record_clone_address;
 use crate::clone_locks::{CloneLocks, hold_lock};
 use crate::command_specification::CommandSpecification;
 use crate::workspace_mounts::{GIT_DIRECTORY_NAME, WorkspaceMounts};
+use crate::worktree_commands::{
+    list_task_branches_command, prune_worktrees_command,
+};
 use crate::worktree_plan::{RepositoryWorktreePlan, WorktreePlan};
 
 const ARGUMENT_SEPARATOR: &str = " ";
@@ -74,7 +77,11 @@ pub fn create_worktrees(
     let mut worktrees = Vec::new();
     let mut git_directories = Vec::new();
     for repository in &plan.repositories {
-        let origin = prepare_repository_worktree(repository, clone_locks)?;
+        let origin = prepare_repository_worktree(
+            repository,
+            &plan.branch,
+            clone_locks,
+        )?;
         worktrees.push(PreparedWorktree {
             path: repository.worktree.clone(),
             origin,
@@ -128,6 +135,7 @@ pub fn delete_task_branches(
 
 fn prepare_repository_worktree(
     repository: &RepositoryWorktreePlan,
+    branch: &str,
     clone_locks: &CloneLocks,
 ) -> Result<WorktreeOrigin, WorktreeError> {
     let clone_lock = clone_locks.lock_for(&repository.cached_clone);
@@ -148,8 +156,24 @@ fn prepare_repository_worktree(
         let path = repository.cached_clone.clone();
         return Err(WorktreeError::ChangeFolder { path, source });
     }
-    run_git(&repository.add_worktree_command)?;
+    add_task_worktree(repository, branch)?;
     Ok(WorktreeOrigin::Created)
+}
+
+fn add_task_worktree(
+    repository: &RepositoryWorktreePlan,
+    branch: &str,
+) -> Result<(), WorktreeError> {
+    let cached_clone = &repository.cached_clone;
+    run_git(&prune_worktrees_command(cached_clone))?;
+
+    let task_branches =
+        read_git_output(&list_task_branches_command(cached_clone))?;
+    let is_branch_kept = task_branches.lines().any(|listed| listed == branch);
+    if is_branch_kept {
+        return run_git(&repository.add_kept_branch_worktree_command);
+    }
+    run_git(&repository.add_worktree_command)
 }
 
 fn ensure_not_blocked(folder: &Path) -> Result<(), WorktreeError> {

@@ -25,13 +25,13 @@ pub(super) const AGENT_LOGIN_COMMAND_NAMES: [&str; 7] = [
 #[serde(tag = "command", rename_all = "snake_case", deny_unknown_fields)]
 #[cfg_attr(not(feature = "runner"), allow(dead_code))]
 pub(super) enum AgentLoginCommand {
-    AgentLoginStatus,
+    AgentLoginStatus {},
     StartAgentLogin { place: AgentPlace },
-    ReadAgentLogin,
+    ReadAgentLogin {},
     TypeAgentLogin { keys: String },
-    StopAgentLogin,
+    StopAgentLogin {},
     SaveAgentApiKey { api_key: String },
-    ForgetAgentCredential,
+    ForgetAgentCredential {},
 }
 
 #[cfg(feature = "runner")]
@@ -44,19 +44,19 @@ pub(super) async fn handle_agent_login_command(
     }
     let desk = node.agent_login_desk();
     match command {
-        AgentLoginCommand::AgentLoginStatus => {
-            encode_reply(&read_agent_login_status(node).await?)
+        AgentLoginCommand::AgentLoginStatus {} => {
+            encode_reply(&read_agent_login_status(node).await)
         }
         AgentLoginCommand::StartAgentLogin { place } => {
             desk.open(place, node.shared_agent_credentials())?;
             Ok(Value::Null)
         }
-        AgentLoginCommand::ReadAgentLogin => encode_reply(&desk.read()),
+        AgentLoginCommand::ReadAgentLogin {} => encode_reply(&desk.read()),
         AgentLoginCommand::TypeAgentLogin { keys } => {
             desk.type_keys(&keys)?;
             Ok(Value::Null)
         }
-        AgentLoginCommand::StopAgentLogin => {
+        AgentLoginCommand::StopAgentLogin {} => {
             desk.close()?;
             Ok(Value::Null)
         }
@@ -66,7 +66,7 @@ pub(super) async fn handle_agent_login_command(
             node.agent_credentials().keep(credential)?;
             Ok(Value::Null)
         }
-        AgentLoginCommand::ForgetAgentCredential => {
+        AgentLoginCommand::ForgetAgentCredential {} => {
             node.agent_credentials().forget()?;
             Ok(Value::Null)
         }

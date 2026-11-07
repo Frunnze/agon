@@ -53,10 +53,11 @@ proptest! {
 
         let names: Vec<&str> =
             entries.iter().map(|entry| entry.name.as_str()).collect();
-        prop_assert_eq!(names, vec![name.as_str()]);
         if name.chars().any(char::is_control) {
+            prop_assert!(names.is_empty(), "{:?}", names);
             prop_assert!(matches!(read, Err(RepositoryReadError::Path(_))));
         } else {
+            prop_assert_eq!(names, vec![name.as_str()]);
             let file = read.map_err(to_case_error)?;
             prop_assert_eq!(file.preview, text_preview(&content));
         }

@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 use chrono::{DateTime, Utc};
 use orchestration_core::identifiers::{
@@ -14,6 +14,8 @@ use orchestration_core::workspace::Project;
 use crate::error::ServerError;
 use crate::stored_state::{RunRecord, StoredState};
 use crate::task_places::find_task_project;
+use crate::tasks::describe_task_kind;
+use crate::work_removal::has_unfinished_run;
 use crate::workflows::signed_workflow;
 
 const FIRST_RUN_NUMBER: u32 = 1;
@@ -30,6 +32,7 @@ pub fn start_run(
         .tasks
         .get(&task_id)
         .ok_or(ServerError::NotFound("the task"))?;
+    refuse_second_active_run(state, task)?;
     let workflow = match &task.doer {
         TaskDoer::OneAgent { .. } => None,
         TaskDoer::Workflow { workflow_id } => {
@@ -59,6 +62,20 @@ pub fn start_run(
     state.runs.insert(run.id, record);
     sync_task_status(state, task_id, run.status);
     Ok(run)
+}
+
+pub fn refuse_second_active_run(
+    state: &StoredState,
+    task: &Task,
+) -> Result<(), ServerError> {
+    let task_ids = BTreeSet::from([task.id]);
+    if has_unfinished_run(state, &task_ids) {
+        let kind = describe_task_kind(task);
+        return Err(ServerError::Conflict(format!(
+            "the {kind} is already running"
+        )));
+    }
+    Ok(())
 }
 
 pub fn sync_task_status(

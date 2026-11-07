@@ -1,0 +1,12 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc a7f5c311572c20da064ecb34426c30ccc6d33f6a85586bea2db47b029257b77f # shrinks to unreadable_folder = [245], inside_text = "a"
+cc 7c460fbdc5bfb91ee55523f5d2ee129e79181589382abdc9e81e948c6701c952 # shrinks to unreadable = {[245]}
+cc 860ae3a75a7d1e94185de01b8252711f947073a0e7a259687bab269a871953ad # shrinks to twins = {[116, 119, 105, 110, 128], [116, 119, 105, 110, 129]}
+cc b39697e1a7e0a0907dd0cfff6d80365bf90ff061eb00553db8a5314e8dadddcb # shrinks to readable = {}, unreadable = {[245]}
+cc 32ad5ae015cd92ddde9fbed0ea137b11a464e725b4bc8da4c8386a629a3d4a2d # shrinks to readable = {}, unreadable = {[245]}
+cc f3f92aaecc74811edff25f027a541f958b461c9e6ff0fd065099fdb176e96c7e # shrinks to readable = {}, inner_readable = {}, unreadable = {[245]}, unreadable_folder = [245, 107, 114, 46]

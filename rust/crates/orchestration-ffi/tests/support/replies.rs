@@ -31,5 +31,7 @@ pub fn is_defined_reply(reply: &Value) -> bool {
     };
     let has_success = fields.contains_key("ok");
     let has_error = fields.get("error").is_some_and(Value::is_string);
-    fields.len() == 1 && (has_success || has_error)
+    let has_kind = fields.get("error_kind").is_some_and(Value::is_string);
+    let kind_field_count = usize::from(has_error && has_kind);
+    fields.len() == 1 + kind_field_count && (has_success || has_error)
 }

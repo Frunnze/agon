@@ -34,3 +34,6 @@ pub mod server_client;
 pub mod server_group_check;
 pub mod server_order;
 pub mod views;
+
+#[cfg(feature = "app-server")]
+pub use app_server_hosting::describe_write_stopping_problem;

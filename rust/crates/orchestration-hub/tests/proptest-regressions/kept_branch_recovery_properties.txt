@@ -1,0 +1,11 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 7aaaeb918cfab5fe38fe098d9555ad6add18d6f06a90cd7ec331bcebc595aefd # shrinks to title = "", lifetime = PerTask, repository_count = 2, deleted_index = 0
+cc 5f94544d718e05a8fef5ec281c23df3dae6429373723c0f651f221c323b68ff5 # shrinks to title = " oEYYz A0j 5a4VBJKkdD5L2KVYoF7Gxd6I2u QxJ hvtEj0v8Xj8fpD29 uy 4 z 6 ", lifetime = PerJobRun { run_number: 2218336706 }, lost_task_folders = [true]
+cc 8ec80c60a95c096b5b4f9b0a712a97741add95b8888e8a9fbd076e77c5aaffce # shrinks to title = "", lifetime = PerJobRun { run_number: 2025979 }, note = "k"
+cc ec43deafd798207c7910d2ccff9eff59003e39b3132999f0c05e4892500f498c # shrinks to title = "", lifetime = PerJobRun { run_number: 974138 }, note = "vuncebzujox"
+cc f06f4f59634d1550d2ade2e0e607223b16d0dc87b216f8e213997d09e3dc43fe # shrinks to title = "UB3x F5UW NcX g  lG2Rr7 jiX6eqXhsYO6np6RYS 1 9k cNxsb  qA6 r t o1Mpxn U 8EMh4MD196 H  50", lifetime = PerJobRun { run_number: 2338517543 }, repository_count = 1, notes = ["kib", "jeroreu", "frgn"]

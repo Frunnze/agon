@@ -1,5 +1,6 @@
 use serde_json::json;
 
+use crate::support::code_join_retries::join_until_a_server_accepts;
 use crate::support::hosting_steps::{
     HostingDevice, NO_SERVER_ACCEPTED_CODE, read_hosted_address,
     read_server_identity, read_status, start_hosting_device,
@@ -35,7 +36,8 @@ fn test_join_with_code_property_the_code_alone_finds_the_hosted_server() {
         panic!("the session shows a code");
     };
 
-    let joined = join_on_local_network(&joining, &code);
+    let joined =
+        join_until_a_server_accepts(|| join_on_local_network(&joining, &code));
     let approved = approve_into_first_workspace(
         &hosting.device,
         &session,

@@ -38,7 +38,7 @@ const BRANCH_LISTING: [&str; 6] = [
 const TREE_LISTING: [&str; 3] = ["ls-tree", "--long", "-z"];
 const BLOB_READING: [&str; 2] = ["cat-file", "blob"];
 const TREE_PATH_SEPARATOR: char = ':';
-const RECORD_SEPARATOR: char = '\0';
+const RECORD_SEPARATOR: u8 = b'\0';
 const LINE_SEPARATOR: u8 = b'\n';
 const ARGUMENT_SEPARATOR: &str = " ";
 
@@ -158,13 +158,8 @@ impl RepositoryReader {
     fn list_references(&self) -> Result<Vec<String>, RepositoryReadError> {
         let listing = self.run_git_with(&BRANCH_LISTING)?;
         let mut references = Vec::new();
-        for line in listing.split(|byte| *byte == LINE_SEPARATOR) {
-            let Ok(reference) = std::str::from_utf8(line) else {
-                continue;
-            };
-            if !reference.is_empty() {
-                references.push(reference.to_owned());
-            }
+        for reference in split_readable_texts(&listing, LINE_SEPARATOR) {
+            references.push(reference.to_owned());
         }
         Ok(references)
     }
@@ -206,14 +201,13 @@ impl RepositoryReader {
             Err(problem) => return Err(problem),
         };
         let listing_arguments = arguments.join(ARGUMENT_SEPARATOR);
-        let text = String::from_utf8_lossy(&listing);
         let mut records = Vec::new();
-        for line in text.split(RECORD_SEPARATOR) {
-            if line.is_empty() {
+        for line in split_readable_texts(&listing, RECORD_SEPARATOR) {
+            let Some(record) = parse_tree_record(line, &listing_arguments)?
+            else {
                 continue;
-            }
-            if let Some(record) = parse_tree_record(line, &listing_arguments)?
-            {
+            };
+            if is_addressable_name(&record.entry.name) {
                 records.push(record);
             }
         }
@@ -257,4 +251,21 @@ fn name_branch(reference: &str) -> Option<&str> {
         return (name != REMOTE_HEAD).then_some(name);
     }
     reference.strip_prefix(LOCAL_BRANCHES)
+}
+
+fn split_readable_texts(listing: &[u8], separator: u8) -> Vec<&str> {
+    let mut texts = Vec::new();
+    for piece in listing.split(|byte| *byte == separator) {
+        let Ok(text) = std::str::from_utf8(piece) else {
+            continue;
+        };
+        if !text.is_empty() {
+            texts.push(text);
+        }
+    }
+    texts
+}
+
+fn is_addressable_name(name: &str) -> bool {
+    normalize_file_path(name).as_deref() == Ok(name)
 }

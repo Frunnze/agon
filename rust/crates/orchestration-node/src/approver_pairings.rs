@@ -1,12 +1,14 @@
 use std::collections::BTreeMap;
 use std::sync::{Mutex, MutexGuard, PoisonError};
 
+use chrono::{DateTime, Utc};
 use orchestration_security::pairing::{PairingCode, PairingTranscript};
 
 #[derive(Debug)]
 struct ApproverPairing {
     approver_nonce: Vec<u8>,
     transcript: Option<PairingTranscript>,
+    expires_at: DateTime<Utc>,
 }
 
 #[derive(Debug, Default)]
@@ -19,13 +21,17 @@ impl ApproverPairings {
         &self,
         code: &PairingCode,
         approver_nonce: Vec<u8>,
+        expires_at: DateTime<Utc>,
     ) {
         let pairing = ApproverPairing {
             approver_nonce,
             transcript: None,
+            expires_at,
         };
-        self.lock_pairings()
-            .insert(String::from(code.clone()), pairing);
+        let now = Utc::now();
+        let mut pairings = self.lock_pairings();
+        pairings.retain(|_, kept| kept.expires_at > now);
+        pairings.insert(String::from(code.clone()), pairing);
     }
 
     pub(crate) fn find_approver_nonce(

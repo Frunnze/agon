@@ -14,8 +14,8 @@ pub(super) const SERVER_BACKUP_COMMAND_NAMES: [&str; 2] =
 #[derive(Debug, Deserialize)]
 #[serde(tag = "command", rename_all = "snake_case", deny_unknown_fields)]
 pub(super) enum ServerBackupCommand {
-    StartServerBackup,
-    StopServerBackup,
+    StartServerBackup {},
+    StopServerBackup {},
 }
 
 pub(super) async fn handle_server_backup_command(
@@ -23,10 +23,10 @@ pub(super) async fn handle_server_backup_command(
     command: ServerBackupCommand,
 ) -> Result<Value, NodeError> {
     match command {
-        ServerBackupCommand::StartServerBackup => {
+        ServerBackupCommand::StartServerBackup {} => {
             start_backup_here(node).await?;
         }
-        ServerBackupCommand::StopServerBackup => {
+        ServerBackupCommand::StopServerBackup {} => {
             stop_backup_here(node).await?;
         }
     }

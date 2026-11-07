@@ -1,0 +1,7 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 47ffd90d23c3b4a3a63be1f4a5f994cb49ced3dcb6e94d2b439ddc4165eb68e1 # shrinks to address = Web("http://a:80")

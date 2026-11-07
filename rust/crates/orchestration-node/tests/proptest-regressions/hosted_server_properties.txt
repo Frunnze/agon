@@ -1,0 +1,7 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc b767f7ecab2ae67b72e8eb2fc2f7f515e9691ddbd5c7fd124daeb040e503b4cf # shrinks to unreadable_state = [35, 26, 142, 142, 66, 225, 31, 170, 78, 225, 182, 175, 137, 14, 138, 77, 163, 249, 224, 172, 97, 50, 76, 137, 203, 81, 172, 140, 53, 137, 39, 19, 14, 63, 213, 1, 248, 201, 207, 31, 237, 167, 84, 177, 144, 7, 179, 61, 180]
