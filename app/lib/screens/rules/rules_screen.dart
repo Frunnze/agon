@@ -13,6 +13,7 @@ import 'package:agent_orchestration/icons/app_icon_kind.dart';
 import 'package:agent_orchestration/presentation/scope_catalog.dart';
 import 'package:agent_orchestration/presentation/scope_text.dart';
 import 'package:agent_orchestration/screens/rules.dart';
+import 'package:agent_orchestration/screens/shared/action_refusal.dart';
 import 'package:agent_orchestration/screens/shared/scope_catalog_lookup.dart';
 import 'package:agent_orchestration/shell/app_navigation.dart';
 import 'package:agent_orchestration/shell/app_route.dart';
@@ -28,6 +29,8 @@ import 'package:agent_orchestration/widgets/lists/responsive_list.dart';
 import 'package:agent_orchestration/widgets/mixed_text.dart';
 import 'package:agent_orchestration/widgets/page_header.dart';
 import 'package:agent_orchestration/widgets/split_layout.dart';
+
+typedef RuleSwitch = Future<Rule> Function(RuleId ruleId);
 
 class RulesScreen extends StatelessWidget {
   const RulesScreen({
@@ -83,7 +86,7 @@ class RulesScreen extends StatelessWidget {
     );
     final Widget ruleList = ResponsiveList.plain(
       rows: <ListRowData>[
-        for (final Rule rule in rules) _buildRow(rule, catalog),
+        for (final Rule rule in rules) _buildRow(context, rule, catalog),
       ],
     );
 
@@ -123,7 +126,11 @@ class RulesScreen extends StatelessWidget {
     );
   }
 
-  ListRowData _buildRow(Rule rule, ScopeCatalog catalog) {
+  ListRowData _buildRow(
+    BuildContext context,
+    Rule rule,
+    ScopeCatalog catalog,
+  ) {
     return ListRowData(
       key: ValueKey<RuleId>(rule.id),
       main: Column(
@@ -139,17 +146,27 @@ class RulesScreen extends StatelessWidget {
       end: SwitchToggle(
         semanticLabel: 'Use "${rule.title}"',
         value: rule.enabled,
-        onChanged: (bool isEnabled) => unawaited(_switchRule(rule, isEnabled)),
+        onChanged: (bool isEnabled) =>
+            unawaited(_switchRule(context, rule: rule, isEnabled: isEnabled)),
       ),
       onTap: () => navigation.openRoute(RuleDetailRoute(rule.id)),
     );
   }
 
-  Future<void> _switchRule(Rule rule, bool isEnabled) async {
-    if (isEnabled) {
-      await ruleRepository.turnRuleOn(rule.id);
-    } else {
-      await ruleRepository.turnRuleOff(rule.id);
-    }
+  Future<void> _switchRule(
+    BuildContext context, {
+    required Rule rule,
+    required bool isEnabled,
+  }) {
+    final RuleSwitch switchRule = isEnabled
+        ? ruleRepository.turnRuleOn
+        : ruleRepository.turnRuleOff;
+
+    return runShowingRefusal(
+      context: context,
+      title: rule.title,
+      actionLabel: changeSettingLabel,
+      action: () => switchRule(rule.id),
+    );
   }
 }

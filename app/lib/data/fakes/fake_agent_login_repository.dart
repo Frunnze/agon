@@ -61,7 +61,7 @@ final class FakeAgentLoginRepository extends ChangeNotifier
   @override
   Future<void> typeIntoTerminal(String keys) async {
     final LoginTerminal? terminal = _terminal;
-    if (terminal == null) {
+    if (terminal == null || terminal.state != LoginTerminalState.running) {
       throw StateError(_noLoginProblem);
     }
 

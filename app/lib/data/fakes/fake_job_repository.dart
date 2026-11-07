@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import 'package:agent_orchestration/data/clock.dart';
 import 'package:agent_orchestration/data/fakes.dart';
+import 'package:agent_orchestration/data/fakes/fake_task_lookups.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/task.dart';
 import 'package:agent_orchestration/data/repository/job_repository.dart';
@@ -34,7 +35,8 @@ final class FakeJobRepository implements JobRepository {
   @override
   List<Task> listJobs() {
     return List<Task>.unmodifiable(<Task>[
-      for (final Task task in _taskRepository.listTasksAndJobs())
+      for (final Task task
+          in _taskRepository.listTasksAndJobsInCurrentWorkspace())
         if (task.schedule != null) task,
     ]);
   }
@@ -51,6 +53,7 @@ final class FakeJobRepository implements JobRepository {
 
   @override
   Future<Task> createJob(JobDraft draft) async {
+    _taskRepository.refuseDraftOutsideCurrentWorkspace(draft.task);
     final Task job = Task.fromDraft(
       id: _claimUnusedJobId(),
       draft: draft.task,
@@ -65,7 +68,11 @@ final class FakeJobRepository implements JobRepository {
 
   @override
   Future<Task> updateJob(TaskId jobId, JobDraft draft) async {
-    final Task existing = _taskRepository.findTask(jobId);
+    _taskRepository.refuseDraftOutsideCurrentWorkspace(draft.task);
+    final Task existing = findTaskIn(
+      _taskRepository.listTasksAndJobs(),
+      jobId,
+    );
     final Task updated = Task.fromDraft(
       id: existing.id,
       draft: draft.task,

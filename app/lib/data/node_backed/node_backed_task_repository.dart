@@ -7,7 +7,6 @@ import 'package:agent_orchestration/bridge/codecs/run_progress_values.dart'
     as node;
 import 'package:agent_orchestration/bridge/codecs/run_values.dart' as node;
 import 'package:agent_orchestration/bridge/codecs/task_values.dart' as node;
-import 'package:agent_orchestration/bridge/codecs/task_views.dart' as node;
 import 'package:agent_orchestration/bridge/commands/deletion_commands.dart'
     as node;
 import 'package:agent_orchestration/bridge/commands/run_commands.dart' as node;
@@ -20,6 +19,8 @@ import 'package:agent_orchestration/data/models/run.dart';
 import 'package:agent_orchestration/data/models/task.dart';
 import 'package:agent_orchestration/data/node_backed.dart';
 import 'package:agent_orchestration/data/node_backed/mapping.dart';
+import 'package:agent_orchestration/data/node_backed/run_read_sequence.dart';
+import 'package:agent_orchestration/data/node_backed/task_node_reads.dart';
 import 'package:agent_orchestration/data/repository/job_repository.dart';
 import 'package:agent_orchestration/data/repository/record_not_found.dart';
 import 'package:agent_orchestration/data/repository/task_repository.dart';
@@ -54,6 +55,7 @@ final class NodeBackedTaskRepository extends ChangeNotifier
   final Clock _clock;
   late final NodeRunWatches _liveWatches;
   final FetchSequence _taskFetches = FetchSequence();
+  final RunReadSequence _runReads = RunReadSequence();
   List<Task> _tasks = const <Task>[];
   Map<RunId, Run> _runs = const <RunId, Run>{};
 
@@ -96,22 +98,26 @@ final class NodeBackedTaskRepository extends ChangeNotifier
   @override
   Future<void> load() async {
     final int fetch = _taskFetches.startFetch();
-    final List<Task> tasks = await _fetchTasks();
-    final List<List<Run>> runsOfEachTask = await Future.wait(
-      <Future<List<Run>>>[for (final Task task in tasks) _fetchRuns(task.id)],
+    final int runRead = _runReads.startRead();
+    final List<Task> tasks = await fetchCurrentWorkspaceTasks(
+      channel: _channel,
+      workspaceRepository: _workspaceRepository,
     );
+    final List<Future<List<Run>>> runFetches = <Future<List<Run>>>[
+      for (final Task task in tasks)
+        fetchTaskRuns(channel: _channel, taskId: task.id),
+    ];
+    final List<List<Run>> runsOfEachTask = await Future.wait(runFetches);
 
-    final Map<RunId, Run> runs = <RunId, Run>{..._runs};
     for (final List<Run> taskRuns in runsOfEachTask) {
       for (final Run run in taskRuns) {
-        runs[run.id] = run;
+        _storeRunIfNewest(run, runRead);
       }
     }
 
     if (_taskFetches.acceptIfNewest(fetch)) {
       _tasks = tasks;
     }
-    _runs = Map<RunId, Run>.unmodifiable(runs);
     notifyListeners();
   }
 
@@ -159,13 +165,14 @@ final class NodeBackedTaskRepository extends ChangeNotifier
 
   @override
   Future<Run> startTask(TaskId taskId) async {
+    final int runRead = _runReads.startRead();
     final node.Run started = await executeNodeCommand(
       _channel,
       node.StartTaskCommand(taskId: taskId),
     );
     final Run run = mapRunFromNode(started);
 
-    _storeRun(run);
+    _storeRunIfNewest(run, runRead);
     await _reloadTasks();
     return run;
   }
@@ -185,20 +192,23 @@ final class NodeBackedTaskRepository extends ChangeNotifier
   @override
   Future<void> deleteTask(TaskId taskId) async {
     await executeNodeCommand(_channel, node.DeleteTaskCommand(taskId: taskId));
+
+    _forgetRunsOfTask(taskId);
+    notifyListeners();
     await _reloadTasks();
   }
 
   @override
   Future<Run> refreshRun(RunId runId) async {
+    final int runRead = _runReads.startRead();
     final node.RunView view = await executeNodeCommand(
       _channel,
       node.ShowRunCommand(runId: runId),
     );
-    final Run run = mapRunViewFromNode(view);
 
-    _storeRun(run);
+    _storeRunIfNewest(mapRunViewFromNode(view), runRead);
     notifyListeners();
-    return run;
+    return findRun(runId);
   }
 
   @override
@@ -240,7 +250,10 @@ final class NodeBackedTaskRepository extends ChangeNotifier
 
   Future<void> _reloadTasks() async {
     final int fetch = _taskFetches.startFetch();
-    final List<Task> tasks = await _fetchTasks();
+    final List<Task> tasks = await fetchCurrentWorkspaceTasks(
+      channel: _channel,
+      workspaceRepository: _workspaceRepository,
+    );
     if (!_taskFetches.acceptIfNewest(fetch)) {
       return;
     }
@@ -249,34 +262,21 @@ final class NodeBackedTaskRepository extends ChangeNotifier
     notifyListeners();
   }
 
-  Future<List<Task>> _fetchTasks() async {
-    final WorkspaceId? workspaceId = findCurrentWorkspaceId(
-      _workspaceRepository,
-    );
-    if (workspaceId == null) {
-      return const <Task>[];
-    }
-
-    final node.TasksView view = await executeNodeCommand(
-      _channel,
-      node.ListTasksCommand(workspaceId: workspaceId),
-    );
-    final List<Task> tasks = <Task>[
-      for (final node.TaskView taskView in view.tasks)
-        mapTaskFromNode(taskView.task),
-    ];
-    return List<Task>.unmodifiable(tasks);
-  }
-
-  Future<List<Run>> _fetchRuns(TaskId taskId) async {
-    final List<node.Run> runs = await executeNodeCommand(
-      _channel,
-      node.ListRunsCommand(taskId: taskId),
-    );
-    return <Run>[for (final node.Run run in runs) mapRunFromNode(run)];
-  }
-
   void _storeRun(Run run) {
     _runs = Map<RunId, Run>.unmodifiable(<RunId, Run>{..._runs, run.id: run});
+  }
+
+  void _storeRunIfNewest(Run run, int read) {
+    if (_runReads.acceptIfNewest(run, read)) {
+      _storeRun(run);
+    }
+  }
+
+  void _forgetRunsOfTask(TaskId taskId) {
+    _runReads.recordTaskRemoval(taskId);
+    _runs = Map<RunId, Run>.unmodifiable(<RunId, Run>{
+      for (final Run run in _runs.values)
+        if (run.taskId != taskId) run.id: run,
+    });
   }
 }

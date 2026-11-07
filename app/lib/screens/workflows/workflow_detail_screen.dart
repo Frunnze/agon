@@ -16,6 +16,7 @@ import 'package:agent_orchestration/data/repository/workspace_repository.dart';
 import 'package:agent_orchestration/data/rules/workflow_graph.dart';
 import 'package:agent_orchestration/icons/app_icon_kind.dart';
 import 'package:agent_orchestration/presentation/device_names.dart';
+import 'package:agent_orchestration/screens/shared/action_refusal.dart';
 import 'package:agent_orchestration/screens/shared/deletion_prompts.dart';
 import 'package:agent_orchestration/screens/shared/deletion_review.dart';
 import 'package:agent_orchestration/screens/shared/muted_note.dart';
@@ -130,7 +131,7 @@ class WorkflowDetailScreen extends StatelessWidget {
               label: startNowLabel,
               icon: AppIconKind.play,
               onPressed: canStartNow
-                  ? () => unawaited(_startNow(workflow))
+                  ? () => unawaited(_startNow(context, workflow))
                   : null,
             ),
           ],
@@ -165,6 +166,7 @@ class WorkflowDetailScreen extends StatelessWidget {
     return reviewDeletion(
       context: context,
       prompt: describeWorkflowDeletion(workflow),
+      navigation: navigation,
       leavePage: () => navigation.returnTo(_workflowsRoute),
       deleteRecord: () => workflowRepository.deleteWorkflow(workflow.id),
     );
@@ -183,7 +185,7 @@ class WorkflowDetailScreen extends StatelessWidget {
     );
   }
 
-  Future<void> _startNow(Workflow workflow) async {
+  Future<void> _startNow(BuildContext context, Workflow workflow) async {
     final WorkspaceId workspaceId = workspaceRepository.currentWorkspace().id;
     final List<Project> projects = projectRepository.listProjects(workspaceId);
     if (projects.isEmpty) {
@@ -191,11 +193,20 @@ class WorkflowDetailScreen extends StatelessWidget {
       return;
     }
 
-    final RunId runId = await startWorkflowNow(
+    final Future<RunId> startedRun = startWorkflowNow(
       taskRepository: taskRepository,
       workflow: workflow,
       projectId: projects.first.id,
     );
-    navigation.openRoute(TaskRunRoute(runId));
+    final ActionOutcome outcome = await runShowingRefusal(
+      context: context,
+      title: workflow.name,
+      actionLabel: startNowLabel,
+      action: () => startedRun,
+    );
+
+    if (outcome == ActionOutcome.done) {
+      navigation.openRoute(TaskRunRoute(await startedRun));
+    }
   }
 }

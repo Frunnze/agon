@@ -5,8 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:agent_orchestration/data/models/library.dart';
 import 'package:agent_orchestration/data/rules/unicode_white_space.dart';
 import 'package:agent_orchestration/presentation/scope_catalog.dart';
+import 'package:agent_orchestration/screens/shared/action_refusal.dart';
 import 'package:agent_orchestration/screens/shared/scope_fields.dart';
 import 'package:agent_orchestration/screens/shared/scope_selection.dart';
+import 'package:agent_orchestration/screens/task_form/submit_refusal.dart';
 import 'package:agent_orchestration/theme/field_padding.dart';
 import 'package:agent_orchestration/widgets/forms/form_action.dart';
 import 'package:agent_orchestration/widgets/forms/form_field_block.dart';
@@ -44,6 +46,7 @@ class _RuleFormState extends State<RuleForm> {
     widget.initialRule.scope,
   );
   String? _titleProblem;
+  SubmitRefusal? _refusal;
   bool _isSubmitting = false;
 
   @override
@@ -99,6 +102,7 @@ class _RuleFormState extends State<RuleForm> {
           selection: _scope,
           onChanged: _changeScope,
         ),
+        ?_buildRefusalBanner(),
         FormActionButtons<RuleDraft>(
           actions: widget.actions,
           isSubmitting: _isSubmitting,
@@ -119,19 +123,36 @@ class _RuleFormState extends State<RuleForm> {
     _reportRule();
   }
 
+  SubmitRefusalBanner? _buildRefusalBanner() {
+    final SubmitRefusal? refusal = _refusal;
+    if (refusal == null) {
+      return null;
+    }
+    return SubmitRefusalBanner(refusal: refusal);
+  }
+
   Future<void> _submit(SubmitFormAction<RuleDraft> action) async {
     final RuleDraft rule = _readRule();
     final String? titleProblem = rule.title.isEmpty
         ? _emptyTitleProblem
         : null;
-    setState(() => _titleProblem = titleProblem);
+    setState(() {
+      _titleProblem = titleProblem;
+      _refusal = null;
+    });
     if (titleProblem != null) {
       return;
     }
 
     setState(() => _isSubmitting = true);
     try {
-      await action.onSubmitted(rule);
+      final SubmitRefusal? refusal = await catchRefusal(
+        actionLabel: action.label,
+        action: () => action.onSubmitted(rule),
+      );
+      if (mounted) {
+        setState(() => _refusal = refusal);
+      }
     } finally {
       if (mounted) {
         setState(() => _isSubmitting = false);

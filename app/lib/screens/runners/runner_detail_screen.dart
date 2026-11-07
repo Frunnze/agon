@@ -20,6 +20,7 @@ import 'package:agent_orchestration/presentation/host_text.dart';
 import 'package:agent_orchestration/presentation/runner_text.dart';
 import 'package:agent_orchestration/presentation/time_phrases.dart';
 import 'package:agent_orchestration/screens/runners.dart';
+import 'package:agent_orchestration/screens/shared/action_refusal.dart';
 import 'package:agent_orchestration/screens/shared/runner_link_route.dart';
 import 'package:agent_orchestration/shell/app_navigation.dart';
 import 'package:agent_orchestration/shell/app_route.dart';
@@ -35,6 +36,9 @@ import 'package:agent_orchestration/widgets/page_header.dart';
 import 'package:agent_orchestration/widgets/page_section.dart';
 import 'package:agent_orchestration/widgets/split_layout.dart';
 import 'package:agent_orchestration/widgets/status_label.dart';
+
+const String _pauseLabel = 'Pause new runs';
+const String _resumeLabel = 'Resume new runs';
 
 class RunnerDetailScreen extends StatelessWidget {
   const RunnerDetailScreen({
@@ -104,7 +108,7 @@ class RunnerDetailScreen extends StatelessWidget {
               ),
             ),
           ],
-          actions: <Widget>[_buildPauseButton(runner)],
+          actions: <Widget>[_buildPauseButton(context, runner, device.name)],
         ),
         if (!isThisDevice)
           buildRunnerLinkRoute(
@@ -125,7 +129,8 @@ class RunnerDetailScreen extends StatelessWidget {
         if (thisDeviceOffers != null)
           AgentOffersSection(
             offers: thisDeviceOffers,
-            onChanged: _chooseAgentOffers,
+            onChanged: (List<AgentPlace> offers) =>
+                unawaited(_chooseAgentOffers(context, offers)),
           ),
         if (thisDeviceOffers != null)
           for (final PlaceOffer offer in thisDeviceOffers)
@@ -138,22 +143,52 @@ class RunnerDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildPauseButton(Runner runner) {
+  Widget _buildPauseButton(
+    BuildContext context,
+    Runner runner,
+    String deviceName,
+  ) {
     if (runner.acceptingNewRuns) {
       return AppButton.secondary(
-        label: 'Pause new runs',
-        onPressed: () => unawaited(runnerRepository.pauseRunner(deviceId)),
+        label: _pauseLabel,
+        onPressed: () => unawaited(_pauseNewRuns(context, deviceName)),
       );
     }
     return AppButton.secondary(
-      label: 'Resume new runs',
+      label: _resumeLabel,
       icon: AppIconKind.play,
-      onPressed: () => unawaited(runnerRepository.resumeRunner(deviceId)),
+      onPressed: () => unawaited(_resumeNewRuns(context, deviceName)),
     );
   }
 
-  void _chooseAgentOffers(List<AgentPlace> offers) {
-    unawaited(runnerRepository.chooseAgentOffers(offers));
+  Future<void> _pauseNewRuns(BuildContext context, String deviceName) {
+    return runShowingRefusal(
+      context: context,
+      title: deviceName,
+      actionLabel: _pauseLabel,
+      action: () => runnerRepository.pauseRunner(deviceId),
+    );
+  }
+
+  Future<void> _resumeNewRuns(BuildContext context, String deviceName) {
+    return runShowingRefusal(
+      context: context,
+      title: deviceName,
+      actionLabel: _resumeLabel,
+      action: () => runnerRepository.resumeRunner(deviceId),
+    );
+  }
+
+  Future<void> _chooseAgentOffers(
+    BuildContext context,
+    List<AgentPlace> offers,
+  ) {
+    return runShowingRefusal(
+      context: context,
+      title: agentOffersTitle,
+      actionLabel: changeSettingLabel,
+      action: () => runnerRepository.chooseAgentOffers(offers),
+    );
   }
 
   Widget _buildFacts(Runner runner, Device device) {

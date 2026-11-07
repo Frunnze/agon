@@ -22,6 +22,7 @@ import 'package:agent_orchestration/data/models/approval.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/workspace.dart';
 import 'package:agent_orchestration/data/node_backed.dart';
+import 'package:agent_orchestration/data/node_backed/identifier_order.dart';
 import 'package:agent_orchestration/data/node_backed/mapping.dart';
 import 'package:agent_orchestration/data/repository/record_not_found.dart';
 import 'package:agent_orchestration/data/repository/workspace_repository.dart';
@@ -68,6 +69,9 @@ final class NodeBackedWorkspaceRepository extends ChangeNotifier
     final WorkspaceId? rememberedWorkspaceId = await _choiceStore
         .readChosenWorkspaceId();
     if (!_fetches.acceptIfNewest(fetch)) {
+      if (_fetches.isLatestFetch(fetch)) {
+        await load();
+      }
       return;
     }
 
@@ -177,14 +181,15 @@ final class NodeBackedWorkspaceRepository extends ChangeNotifier
   Future<Workspace> _storeWorkspaceFromNode(
     NodeCommand<node.Workspace> command,
   ) async {
+    final int change = _fetches.startLocalChange();
     final node.Workspace stored = await executeNodeCommand(_channel, command);
     final Workspace workspace = mapWorkspaceFromNode(stored);
 
-    _fetches.recordLocalChange();
-    _workspaces = replaceOrAppendRecord(
+    _fetches.finishLocalChange(change, reloadWhenOvertaken: load);
+    _workspaces = placeInIdentifierOrder(
       _workspaces,
-      matches: (Workspace candidate) => candidate.id == workspace.id,
       record: workspace,
+      identify: (Workspace listed) => listed.id.value,
     );
     notifyListeners();
     return workspace;
@@ -193,16 +198,21 @@ final class NodeBackedWorkspaceRepository extends ChangeNotifier
   @override
   Future<void> deleteWorkspace(WorkspaceId workspaceId) async {
     final bool isCurrent = currentWorkspace().id == workspaceId;
+    final int change = _fetches.startLocalChange();
     await executeNodeCommand(
       _channel,
       node.DeleteWorkspaceCommand(workspaceId: workspaceId),
     );
 
-    _fetches.recordLocalChange();
+    _fetches.finishLocalChange(change, reloadWhenOvertaken: load);
     _workspaces = removeRecord(
       _workspaces,
       matches: (Workspace workspace) => workspace.id == workspaceId,
     );
+    if (_workspaces.isEmpty) {
+      await load();
+      return;
+    }
     if (isCurrent) {
       await switchWorkspace(_workspaces.first.id);
       return;
@@ -222,12 +232,14 @@ final class NodeBackedWorkspaceRepository extends ChangeNotifier
   @override
   Future<AppServerStatus> retryAppServer() async {
     final AppServerStatus previous = findAppServerStatus();
+    final int change = _fetches.startLocalChange();
     final node.ServerHealthView health = await executeNodeCommand(
       _channel,
       const node.RetryServerCommand(),
     );
     final AppServerStatus next = applyServerHealthFromNode(previous, health);
 
+    _fetches.finishLocalChange(change, reloadWhenOvertaken: load);
     _appServerStatus = next;
     notifyListeners();
     return next;
@@ -255,13 +267,14 @@ final class NodeBackedWorkspaceRepository extends ChangeNotifier
   Future<AppServerGroup> _changeServerBackup(
     NodeCommand<node.AppServersView> command,
   ) async {
+    final int change = _fetches.startLocalChange();
     final node.AppServersView view = await executeNodeCommand(
       _channel,
       command,
     );
     final AppServerGroup group = mapAppServerGroupFromNode(view);
 
-    _fetches.recordLocalChange();
+    _fetches.finishLocalChange(change, reloadWhenOvertaken: load);
     _appServerGroup = group;
     notifyListeners();
     return group;

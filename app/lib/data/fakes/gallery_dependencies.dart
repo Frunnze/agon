@@ -31,7 +31,10 @@ import 'package:agent_orchestration/scanning/camera_qr_code_scanner.dart';
 const int _featurePipelineIndex = 2;
 const Duration _galleryDraftStepDelay = Duration(milliseconds: 700);
 
-FakeWorkflowRepository _buildWorkflowRepository(Clock clock) {
+FakeWorkflowRepository _buildWorkflowRepository({
+  required Clock clock,
+  required FakeWorkspaceRepository workspaceRepository,
+}) {
   return FakeWorkflowRepository(
     workflows: galleryWorkflows,
     changes: galleryWorkflowChanges,
@@ -40,6 +43,7 @@ FakeWorkflowRepository _buildWorkflowRepository(Clock clock) {
     draftTemplate: galleryWorkflows[_featurePipelineIndex],
     drafterDeviceId: GalleryDeviceIds.officeServer,
     draftStepDelay: _galleryDraftStepDelay,
+    workspaceRepository: workspaceRepository,
   );
 }
 
@@ -70,8 +74,11 @@ AppDependencies buildGalleryDependencies() {
   final FakeApprovalRepository approvalRepository = _buildApprovalRepository(
     clock,
   );
+  final FakeWorkspaceRepository workspaceRepository =
+      _buildWorkspaceRepository(clock);
   final FakeWorkflowRepository workflowRepository = _buildWorkflowRepository(
-    clock,
+    clock: clock,
+    workspaceRepository: workspaceRepository,
   );
 
   final FakeDeviceRepository deviceRepository = FakeDeviceRepository(
@@ -88,14 +95,12 @@ AppDependencies buildGalleryDependencies() {
     currentDeviceId: GalleryDeviceIds.airLaptop,
     workflowRepository: workflowRepository,
   );
+  taskRepository.linkApprovals(approvalRepository);
   final FakeJobRepository jobRepository = FakeJobRepository(
     taskRepository: taskRepository,
     clock: clock,
   );
-  final FakeTaskWork taskWork = FakeTaskWork(
-    taskRepository: taskRepository,
-    jobRepository: jobRepository,
-  );
+  final FakeTaskWork taskWork = FakeTaskWork(taskRepository: taskRepository);
   workflowRepository.linkWork(
     taskWork: taskWork,
     approvalRepository: approvalRepository,
@@ -105,16 +110,25 @@ AppDependencies buildGalleryDependencies() {
     projects: galleryProjects,
     taskWork: taskWork,
   );
-  final FakeWorkspaceRepository workspaceRepository =
-      _buildWorkspaceRepository(clock);
+  projectRepository.linkDevices(deviceRepository);
+  taskRepository.linkPlaces((
+    workspaceRepository: workspaceRepository,
+    projectRepository: projectRepository,
+  ));
   final FakeSkillRepository skillRepository = FakeSkillRepository(
     skills: gallerySkills,
     clock: clock,
+    workspaceRepository: workspaceRepository,
   );
+  skillRepository.linkTasks(taskRepository);
   final FakeRuleRepository ruleRepository = FakeRuleRepository(
     rules: galleryRules,
     clock: clock,
     workspaceRepository: workspaceRepository,
+  );
+  projectRepository.linkLibrary(
+    skillRepository: skillRepository,
+    ruleRepository: ruleRepository,
   );
   workspaceRepository.linkContents(
     FakeWorkspaceContents(
@@ -123,6 +137,7 @@ AppDependencies buildGalleryDependencies() {
       skillRepository: skillRepository,
       ruleRepository: ruleRepository,
       workflowRepository: workflowRepository,
+      deviceRepository: deviceRepository,
     ),
   );
 

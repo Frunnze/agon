@@ -2,12 +2,14 @@ import 'package:flutter/foundation.dart';
 
 import 'package:agent_orchestration/data/clock.dart';
 import 'package:agent_orchestration/data/fakes.dart';
+import 'package:agent_orchestration/data/fakes/current_workspace_records.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/library.dart';
 import 'package:agent_orchestration/data/models/scope.dart';
 import 'package:agent_orchestration/data/models/skill_change.dart';
 import 'package:agent_orchestration/data/repository/record_not_found.dart';
 import 'package:agent_orchestration/data/repository/skill_repository.dart';
+import 'package:agent_orchestration/data/repository/workspace_repository.dart';
 import 'package:agent_orchestration/data/rules/scope_cleanup.dart';
 import 'package:agent_orchestration/data/rules/skill_names.dart';
 import 'package:agent_orchestration/data/rules/skill_undo.dart';
@@ -18,21 +20,39 @@ const int _keptSkillChanges = 20;
 
 final class FakeSkillRepository extends ChangeNotifier
     implements SkillRepository {
-  FakeSkillRepository({required List<Skill> skills, required Clock clock})
-    : _skills = List<Skill>.unmodifiable(skills),
-      _clock = clock;
+  FakeSkillRepository({
+    required List<Skill> skills,
+    required Clock clock,
+    required WorkspaceRepository workspaceRepository,
+  }) : _skills = List<Skill>.unmodifiable(skills),
+       _clock = clock,
+       _workspaceRepository = workspaceRepository {
+    _workspaceRepository.addListener(notifyListeners);
+  }
 
   final Clock _clock;
+  final WorkspaceRepository _workspaceRepository;
   List<Skill> _skills;
   int _createdSkillCount = 0;
+  FakeTaskRepository? _taskRepository;
+
+  void linkTasks(FakeTaskRepository taskRepository) {
+    _taskRepository = taskRepository;
+  }
 
   @override
-  List<Skill> listSkills() => _skills;
+  List<Skill> listSkills() {
+    return listRecordsInCurrentWorkspace(
+      records: _skills,
+      workspaceRepository: _workspaceRepository,
+      readWorkspaceScope: _readWorkspaceScope,
+    );
+  }
 
   @override
   Skill findSkill(SkillId skillId) {
     return findRecord(
-      _skills,
+      listSkills(),
       matches: (Skill skill) => skill.id == skillId,
       kind: _skillKind,
       identifier: skillId.value,
@@ -42,7 +62,7 @@ final class FakeSkillRepository extends ChangeNotifier
   @override
   Future<Skill> createSkill(SkillDraft draft) async {
     requireValidSkillName(draft.name);
-    requireFreeSkillName(name: draft.name, otherSkills: _skills);
+    requireFreeSkillName(name: draft.name, otherSkills: listSkills());
 
     final Skill skill = Skill(
       id: _nextFreeSkillId(),
@@ -66,7 +86,7 @@ final class FakeSkillRepository extends ChangeNotifier
     requireValidSkillName(draft.name);
     final Skill original = findSkill(skillId);
     final List<Skill> otherSkills = removeRecord(
-      _skills,
+      listSkills(),
       matches: (Skill skill) => skill.id == skillId,
     );
     requireFreeSkillName(name: draft.name, otherSkills: otherSkills);
@@ -102,11 +122,7 @@ final class FakeSkillRepository extends ChangeNotifier
   Future<void> deleteSkill(SkillId skillId) async {
     findSkill(skillId);
 
-    _skills = removeRecord(
-      _skills,
-      matches: (Skill skill) => skill.id == skillId,
-    );
-    notifyListeners();
+    _removeSkills(<SkillId>{skillId});
   }
 
   @override
@@ -136,19 +152,38 @@ final class FakeSkillRepository extends ChangeNotifier
     required WorkspaceId deletedWorkspaceId,
     required Set<WorkspaceId> remainingWorkspaceIds,
   }) {
-    final List<Skill> keptSkills = <Skill>[];
-    for (final Skill skill in _skills) {
-      final Scope scope = forgetWorkspaceInScope(
-        skill.scope,
-        deletedWorkspaceId,
-      );
-      if (!isSeenInNoWorkspace(scope.workspaces, remainingWorkspaceIds)) {
-        keptSkills.add(_withScope(skill, scope));
-      }
-    }
+    final List<Skill> rescopedSkills = <Skill>[
+      for (final Skill skill in _skills)
+        _withScope(
+          skill,
+          forgetWorkspaceInScope(skill.scope, deletedWorkspaceId),
+        ),
+    ];
+    final Set<SkillId> unseenSkillIds = <SkillId>{
+      for (final Skill skill in rescopedSkills)
+        if (isSeenInNoWorkspace(skill.scope.workspaces, remainingWorkspaceIds))
+          skill.id,
+    };
 
-    _skills = List<Skill>.unmodifiable(keptSkills);
+    _skills = List<Skill>.unmodifiable(rescopedSkills);
+    _removeSkills(unseenSkillIds);
+  }
+
+  void forgetProjects(Set<ProjectId> deletedProjectIds) {
+    _skills = List<Skill>.unmodifiable(<Skill>[
+      for (final Skill skill in _skills)
+        _withScope(
+          skill,
+          forgetProjectsInScope(skill.scope, deletedProjectIds),
+        ),
+    ]);
     notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _workspaceRepository.removeListener(notifyListeners);
+    super.dispose();
   }
 
   SkillId _nextFreeSkillId() {
@@ -162,6 +197,15 @@ final class FakeSkillRepository extends ChangeNotifier
         return candidate;
       }
     }
+  }
+
+  void _removeSkills(Set<SkillId> removedSkillIds) {
+    _skills = removeRecord(
+      _skills,
+      matches: (Skill skill) => removedSkillIds.contains(skill.id),
+    );
+    _taskRepository?.forgetSkills(removedSkillIds);
+    notifyListeners();
   }
 
   Skill _replaceSkill(Skill replacement) {
@@ -182,6 +226,8 @@ List<SkillChange> _keepLatestChanges(List<SkillChange> history) {
   }
   return history.sublist(excess);
 }
+
+WorkspaceScope _readWorkspaceScope(Skill skill) => skill.scope.workspaces;
 
 Skill _withScope(Skill skill, Scope scope) {
   return Skill(

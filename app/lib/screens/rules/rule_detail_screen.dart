@@ -111,6 +111,7 @@ class RuleDetailScreen extends StatelessWidget {
     return reviewDeletion(
       context: context,
       prompt: describeRuleDeletion(rule),
+      navigation: navigation,
       leavePage: () => navigation.returnTo(_rulesRoute),
       deleteRecord: () => ruleRepository.deleteRule(rule.id),
     );

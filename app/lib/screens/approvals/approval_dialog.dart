@@ -28,6 +28,16 @@ String describePushDestination(String repositoryAddress) {
   return _hostLabels[host] ?? host;
 }
 
+const String approveDecisionLabel = 'Approve';
+const String denyDecisionLabel = 'Deny';
+
+String describeDecisionLabel(ApprovalDecision decision) {
+  return switch (decision) {
+    ApprovalDecision.approved => approveDecisionLabel,
+    ApprovalDecision.denied => denyDecisionLabel,
+  };
+}
+
 class ApprovalDialog extends StatelessWidget {
   const ApprovalDialog({
     required this.request,
@@ -167,11 +177,11 @@ class ApprovalDialog extends StatelessWidget {
 
     return <Widget>[
       AppButton.secondary(
-        label: 'Deny',
+        label: denyDecisionLabel,
         onPressed: () => navigator.pop(ApprovalDecision.denied),
       ),
       AppButton.primary(
-        label: 'Approve',
+        label: approveDecisionLabel,
         onPressed: () => navigator.pop(ApprovalDecision.approved),
       ),
     ];

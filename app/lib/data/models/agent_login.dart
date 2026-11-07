@@ -1,6 +1,6 @@
 import 'package:agent_orchestration/data/models/runner.dart';
 
-enum ClaudeLogin { loggedIn, notLoggedIn, notInstalled }
+enum ClaudeLogin { loggedIn, notLoggedIn, notInstalled, unknown }
 
 enum AgentCredentialKind { longLivedToken, apiKey }
 

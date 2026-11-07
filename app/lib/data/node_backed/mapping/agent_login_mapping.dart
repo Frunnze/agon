@@ -28,6 +28,7 @@ ClaudeLogin _mapClaudeLogin(node.ClaudeLogin login) {
     node.ClaudeLogin.loggedIn => ClaudeLogin.loggedIn,
     node.ClaudeLogin.notLoggedIn => ClaudeLogin.notLoggedIn,
     node.ClaudeLogin.notInstalled => ClaudeLogin.notInstalled,
+    node.ClaudeLogin.unknown => ClaudeLogin.unknown,
   };
 }
 

@@ -2,8 +2,11 @@ import 'package:flutter/foundation.dart';
 
 import 'package:agent_orchestration/data/fakes.dart';
 import 'package:agent_orchestration/data/fakes/fake_task_work.dart';
+import 'package:agent_orchestration/data/fakes/workspace_membership.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/project.dart';
+import 'package:agent_orchestration/data/repository/app_server_refusal.dart';
+import 'package:agent_orchestration/data/repository/device_repository.dart';
 import 'package:agent_orchestration/data/repository/project_repository.dart';
 import 'package:agent_orchestration/data/repository/record_not_found.dart';
 import 'package:agent_orchestration/data/rules/local_folder_address.dart';
@@ -13,6 +16,9 @@ import 'package:agent_orchestration/data/rules/unicode_white_space.dart';
 
 const String _projectKind = 'project';
 const String _createdProjectPrefix = 'created-project-';
+const int _notFoundStatus = 404;
+const int _conflictStatus = 409;
+const String _missingRepositoryReason = 'the repository was not found';
 
 String _identifyProject(Project project) => project.id.value;
 
@@ -84,6 +90,21 @@ final class FakeProjectRepository extends ChangeNotifier
   final FakeTaskWork _taskWork;
   List<Project> _projects;
   int _createdProjectCount = 0;
+  FakeSkillRepository? _skillRepository;
+  FakeRuleRepository? _ruleRepository;
+  DeviceRepository? _deviceRepository;
+
+  void linkDevices(DeviceRepository deviceRepository) {
+    _deviceRepository = deviceRepository;
+  }
+
+  void linkLibrary({
+    required FakeSkillRepository skillRepository,
+    required FakeRuleRepository ruleRepository,
+  }) {
+    _skillRepository = skillRepository;
+    _ruleRepository = ruleRepository;
+  }
 
   @override
   List<Project> listProjects(WorkspaceId workspaceId) {
@@ -137,7 +158,10 @@ final class FakeProjectRepository extends ChangeNotifier
       (Repository existing) => existing.address == checked.address,
     );
     if (isAlreadyAdded) {
-      throw StateError('${checked.address} is already in ${project.name}');
+      throw AppServerRefusal(
+        status: _conflictStatus,
+        reason: 'the project already has ${checked.address}',
+      );
     }
 
     return _storeProject(
@@ -155,7 +179,10 @@ final class FakeProjectRepository extends ChangeNotifier
         )
         .toList();
     if (remaining.length == project.repositories.length) {
-      throw RecordNotFound(kind: 'repository', identifier: address);
+      throw AppServerRefusal(
+        status: _notFoundStatus,
+        reason: _missingRepositoryReason,
+      );
     }
 
     return _storeProject(project.withRepositories(remaining));
@@ -164,6 +191,10 @@ final class FakeProjectRepository extends ChangeNotifier
   @override
   Future<void> deleteProject(ProjectId projectId) async {
     final Project project = findProject(projectId);
+    final DeviceRepository? deviceRepository = _deviceRepository;
+    if (deviceRepository != null) {
+      refuseDeviceOutsideWorkspace(deviceRepository, project.workspaceId);
+    }
     final Set<ProjectId> projectIds = <ProjectId>{projectId};
     if (_taskWork.hasActiveRunInProjects(projectIds)) {
       throw StateError(
@@ -176,6 +207,8 @@ final class FakeProjectRepository extends ChangeNotifier
       _projects,
       matches: (Project stored) => stored.id == projectId,
     );
+    _skillRepository?.forgetProjects(projectIds);
+    _ruleRepository?.forgetProjects(projectIds);
     notifyListeners();
   }
 

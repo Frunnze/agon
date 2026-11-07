@@ -4,7 +4,8 @@ import 'package:agent_orchestration/bridge/node/runner_settings.dart';
 enum ClaudeLogin implements WireNamed {
   loggedIn('logged_in'),
   notLoggedIn('not_logged_in'),
-  notInstalled('not_installed');
+  notInstalled('not_installed'),
+  unknown('unknown');
 
   const ClaudeLogin(this.wireName);
 

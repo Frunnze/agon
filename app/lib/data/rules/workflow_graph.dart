@@ -37,7 +37,12 @@ int _compareCanvasOrder(WorkflowAgent first, WorkflowAgent second) {
   if (horizontalOrder != 0) {
     return horizontalOrder;
   }
-  return first.name.compareTo(second.name);
+
+  final int nameOrder = first.name.compareTo(second.name);
+  if (nameOrder != 0) {
+    return nameOrder;
+  }
+  return first.id.value.compareTo(second.id.value);
 }
 
 bool _isReady(

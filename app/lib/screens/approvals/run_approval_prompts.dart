@@ -86,6 +86,10 @@ class _RunApprovalPromptsState extends State<RunApprovalPrompts> {
 
     _isReviewing = true;
     _reviewedApprovalIds.add(request.id);
+    final BuildContext rootContext = Navigator.of(
+      context,
+      rootNavigator: true,
+    ).context;
     final ApprovalReview review = ApprovalReview(
       approvalRepository: widget.approvalRepository,
       workflowRepository: widget.workflowRepository,
@@ -102,10 +106,14 @@ class _RunApprovalPromptsState extends State<RunApprovalPrompts> {
       ),
     );
     _isReviewing = false;
-    if (decision == null) {
+    if (decision == null || !rootContext.mounted) {
       return;
     }
 
-    await widget.approvalRepository.decideApproval(request.id, decision);
+    await review.decide(
+      rootContext: rootContext,
+      request: request,
+      decision: decision,
+    );
   }
 }

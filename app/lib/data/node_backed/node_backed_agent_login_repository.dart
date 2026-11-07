@@ -8,6 +8,7 @@ import 'package:agent_orchestration/bridge/node/node_command_channel.dart';
 import 'package:agent_orchestration/data/models/agent_login.dart';
 import 'package:agent_orchestration/data/models/runner.dart';
 import 'package:agent_orchestration/data/node_backed/background_node_work.dart';
+import 'package:agent_orchestration/data/node_backed/fetch_sequence.dart';
 import 'package:agent_orchestration/data/node_backed/mapping.dart';
 import 'package:agent_orchestration/data/node_backed/node_command_execution.dart';
 import 'package:agent_orchestration/data/repository/agent_login_repository.dart';
@@ -22,6 +23,8 @@ final class NodeBackedAgentLoginRepository extends ChangeNotifier
 
   final NodeCommandChannel _channel;
   final Duration _pollInterval;
+  final FetchSequence _statusChecks = FetchSequence();
+  final FetchSequence _terminalReads = FetchSequence();
   AgentLoginStatus? _status;
   LoginTerminal? _terminal;
   int _openedTerminals = 0;
@@ -34,10 +37,15 @@ final class NodeBackedAgentLoginRepository extends ChangeNotifier
 
   @override
   Future<void> checkStatus() async {
+    final int check = _statusChecks.startFetch();
     final node.AgentLoginStatusView view = await executeNodeCommand(
       _channel,
       const node.AgentLoginStatusCommand(),
     );
+    if (!_statusChecks.acceptIfNewest(check)) {
+      return;
+    }
+
     _status = mapAgentLoginStatusFromNode(view);
     notifyListeners();
   }
@@ -111,11 +119,15 @@ final class NodeBackedAgentLoginRepository extends ChangeNotifier
 
   Future<void> _readTerminal() async {
     final int readTerminal = _openedTerminals;
+    final int read = _terminalReads.startFetch();
     final node.AgentLoginView? view = await executeNodeCommand(
       _channel,
       const node.ReadAgentLoginCommand(),
     );
     if (readTerminal != _openedTerminals) {
+      return;
+    }
+    if (!_terminalReads.acceptIfNewest(read)) {
       return;
     }
 

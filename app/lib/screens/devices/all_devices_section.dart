@@ -17,6 +17,7 @@ import 'package:agent_orchestration/presentation/device_text.dart';
 import 'package:agent_orchestration/presentation/scope_catalog.dart';
 import 'package:agent_orchestration/screens/devices/revoke_device_dialog.dart';
 import 'package:agent_orchestration/screens/devices/workspace_devices_section.dart';
+import 'package:agent_orchestration/screens/shared/action_refusal.dart';
 import 'package:agent_orchestration/screens/shared/muted_note.dart';
 import 'package:agent_orchestration/shell/app_navigation.dart';
 import 'package:agent_orchestration/shell/app_route.dart';
@@ -39,6 +40,9 @@ const List<String> _columnLabels = <String>[
   'Status',
   '',
 ];
+
+const String _pairDeviceLabel = 'Pair a device';
+const String _revokeLabel = 'Revoke';
 
 class AllDevicesSection extends StatelessWidget {
   const AllDevicesSection({
@@ -70,9 +74,9 @@ class AllDevicesSection extends StatelessWidget {
       title: allDevicesTitle,
       actions: <Widget>[
         AppButton.primary(
-          label: 'Pair a device',
+          label: _pairDeviceLabel,
           icon: AppIconKind.plus,
-          onPressed: () => unawaited(_pairDevice()),
+          onPressed: () => unawaited(_pairDevice(context)),
         ),
       ],
       children: <Widget>[
@@ -89,11 +93,23 @@ class AllDevicesSection extends StatelessWidget {
     );
   }
 
-  Future<void> _pairDevice() async {
+  Future<void> _pairDevice(BuildContext context) async {
+    final ActionOutcome outcome = await runShowingRefusal(
+      context: context,
+      title: allDevicesTitle,
+      actionLabel: _pairDeviceLabel,
+      action: _showPairingCode,
+    );
+
+    if (outcome == ActionOutcome.done) {
+      navigation.openRoute(const PairingCodeRoute());
+    }
+  }
+
+  Future<void> _showPairingCode() async {
     if (pairingRepository.findActiveSession() == null) {
       await pairingRepository.startPairing();
     }
-    navigation.openRoute(const PairingCodeRoute());
   }
 
   ListRowData _buildRow(
@@ -145,7 +161,7 @@ class AllDevicesSection extends StatelessWidget {
       end: device.id == thisDeviceId
           ? null
           : AppButton.secondary(
-              label: 'Revoke',
+              label: _revokeLabel,
               onPressed: () =>
                   unawaited(_reviewRevoke(context, device, workspaceNames)),
             ),
@@ -172,6 +188,10 @@ class AllDevicesSection extends StatelessWidget {
     Device device,
     String workspaceNames,
   ) async {
+    final BuildContext rootContext = Navigator.of(
+      context,
+      rootNavigator: true,
+    ).context;
     final RevokeChoice? choice = await showAppDialog<RevokeChoice>(
       context: context,
       builder: (BuildContext _) => RevokeDeviceDialog(
@@ -184,10 +204,15 @@ class AllDevicesSection extends StatelessWidget {
         ),
       ),
     );
-    if (choice != RevokeChoice.revoke) {
+    if (choice != RevokeChoice.revoke || !rootContext.mounted) {
       return;
     }
 
-    await deviceRepository.revokeDevice(device.id);
+    await runShowingRefusal(
+      context: rootContext,
+      title: device.name,
+      actionLabel: _revokeLabel,
+      action: () => deviceRepository.revokeDevice(device.id),
+    );
   }
 }

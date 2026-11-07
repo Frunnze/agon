@@ -134,6 +134,7 @@ class _WorkspaceSettingsScreenState extends State<WorkspaceSettingsScreen> {
             doomed: workspace,
             next: nextWorkspace,
           ),
+          navigation: widget.navigation,
           leavePage: () => widget.navigation.openSection(_projectsRoute),
           deleteRecord: () =>
               widget.workspaceRepository.deleteWorkspace(workspace.id),

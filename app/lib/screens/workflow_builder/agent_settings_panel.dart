@@ -20,6 +20,7 @@ import 'package:agent_orchestration/widgets/forms/select_field.dart';
 import 'package:agent_orchestration/widgets/forms/tag_input_field.dart';
 import 'package:agent_orchestration/widgets/gaps.dart';
 
+const String fillInWithAgentLabel = 'Fill in with agent';
 const int _taskMinimumLines = 4;
 const int _taskMaximumLines = 8;
 
@@ -81,7 +82,7 @@ class _AgentSettingsPanelState extends State<AgentSettingsPanel> {
           Align(
             alignment: Alignment.centerLeft,
             child: AppButton.secondary(
-              label: 'Fill in with agent',
+              label: fillInWithAgentLabel,
               icon: AppIconKind.draft,
               onPressed: fillIn,
             ),

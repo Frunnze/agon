@@ -62,7 +62,12 @@ final class FakePairingRepository extends ChangeNotifier
   }
 
   @override
-  PairingRequest? findPendingRequest() => _request;
+  PairingRequest? findPendingRequest() {
+    if (findActiveSession() == null) {
+      return null;
+    }
+    return _request;
+  }
 
   @override
   Future<Device> approvePairing(List<WorkspaceId> workspaces) async {
@@ -171,12 +176,14 @@ final class FakePairingRepository extends ChangeNotifier
   }
 
   PairingRequest _requirePendingRequest() {
-    final PairingRequest? request = _request;
-    if (request == null) {
-      throw StateError('No device is waiting to be paired');
-    }
-    if (findActiveSession() == null) {
+    final bool hasExpiredCode = _session != null && findActiveSession() == null;
+    if (hasExpiredCode) {
       throw StateError(noShowingPairingCode);
+    }
+
+    final PairingRequest? request = findPendingRequest();
+    if (request == null) {
+      throw StateError(noDeviceWaitingToPair);
     }
     return request;
   }

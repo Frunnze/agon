@@ -11,6 +11,7 @@ import 'package:agent_orchestration/data/rules/workflow_edits.dart';
 import 'package:agent_orchestration/data/rules/workflow_graph.dart';
 import 'package:agent_orchestration/icons/app_icon_kind.dart';
 import 'package:agent_orchestration/presentation/device_names.dart';
+import 'package:agent_orchestration/screens/shared/action_refusal.dart';
 import 'package:agent_orchestration/screens/workflow_builder.dart';
 import 'package:agent_orchestration/screens/workflows.dart';
 import 'package:agent_orchestration/shell/app_navigation.dart';
@@ -129,7 +130,13 @@ class _WorkflowBuilderScreenState extends State<WorkflowBuilderScreen> {
             workspaces: widget.workspaceRepository.listWorkspaces(),
           ),
           onBack: () => widget.navigation.returnTo(_workflowsRoute),
-          onCancel: _cancel,
+          onCancel: () => cancelBuilding(
+            context: context,
+            workflowRepository: widget.workflowRepository,
+            openedVersion: _openedVersion,
+            openedChange: _openedChange,
+            navigation: widget.navigation,
+          ),
           onSigned: _signAndSave,
         ),
         BuilderToolbar(
@@ -155,7 +162,8 @@ class _WorkflowBuilderScreenState extends State<WorkflowBuilderScreen> {
           onConnectionSelected: (AgentConnection connection) =>
               _select(SelectedConnection(connection)),
           onSelectionCleared: () => _select(null),
-          onAgentMoved: _editor.moveAgent,
+          onAgentMoved: (WorkflowAgentId agentId, CanvasPosition position) =>
+              _saveEdit(() => _editor.moveAgent(agentId, position)),
           onAgentsConnected: _connectAgents,
         ),
         panel: _buildPanel(context, workflow, deviceNames),
@@ -185,12 +193,20 @@ class _WorkflowBuilderScreenState extends State<WorkflowBuilderScreen> {
         deviceNames: deviceNames,
       ),
       actions: BuilderPanelActions(
-        onAgentChanged: _editor.changeAgent,
-        onFillInRequested: (WorkflowAgentId agentId) => widget
-            .workflowRepository
-            .fillAgentSettings(widget.workflowId, agentId),
+        onAgentChanged: (WorkflowAgent agent) =>
+            _saveEdit(() => _editor.changeAgent(agent)),
+        onFillInRequested: (WorkflowAgentId agentId) => runShowingRefusal(
+          context: context,
+          title: workflow.name,
+          actionLabel: fillInWithAgentLabel,
+          action: () => widget.workflowRepository.fillAgentSettings(
+            widget.workflowId,
+            agentId,
+          ),
+        ),
         onAgentRemoved: _removeAgent,
-        onConnectionChanged: _editor.changeConnection,
+        onConnectionChanged: (AgentConnection connection) =>
+            _saveEdit(() => _editor.changeConnection(connection)),
         onConnectionRemoved: _removeConnection,
         onLoopAdded: _addLoop,
         onDone: () => _select(null),
@@ -218,7 +234,7 @@ class _WorkflowBuilderScreenState extends State<WorkflowBuilderScreen> {
       _selection = SelectedStep(blank.id);
       _notice = null;
     });
-    await _editor.addStep(blank);
+    await _saveEdit(() => _editor.addStep(blank));
   }
 
   Future<void> _connectAgents(AgentConnection connection) async {
@@ -236,32 +252,32 @@ class _WorkflowBuilderScreenState extends State<WorkflowBuilderScreen> {
       }
     });
     if (problem == null && !isLoop) {
-      await _editor.connect(connection);
+      await _saveEdit(() => _editor.connect(connection));
     }
   }
 
   Future<void> _addLoop(AgentConnection loop) async {
     _select(SelectedConnection(loop));
-    await _editor.connect(loop);
+    await _saveEdit(() => _editor.connect(loop));
   }
 
   Future<void> _removeConnection(AgentConnection connection) async {
     _select(null);
-    await _editor.removeConnection(connection);
+    await _saveEdit(() => _editor.removeConnection(connection));
   }
 
   Future<void> _removeAgent(WorkflowAgentId agentId) async {
     _select(null);
-    await _editor.removeAgent(agentId);
+    await _saveEdit(() => _editor.removeAgent(agentId));
   }
 
-  Future<void> _cancel() async {
-    await restoreOpenedWorkflow(
-      workflowRepository: widget.workflowRepository,
-      openedVersion: _openedVersion,
-      openedChange: _openedChange,
+  Future<void> _saveEdit(PersonAction edit) {
+    return runShowingRefusal(
+      context: context,
+      title: _readWorkflow().name,
+      actionLabel: changeSettingLabel,
+      action: edit,
     );
-    widget.navigation.closeRoute();
   }
 
   Future<void> _signAndSave() async {
@@ -272,7 +288,11 @@ class _WorkflowBuilderScreenState extends State<WorkflowBuilderScreen> {
       return;
     }
 
-    await widget.workflowRepository.signWorkflow(workflow.id);
-    widget.navigation.openSection(_workflowsRoute);
+    await signBuiltWorkflow(
+      context: context,
+      workflowRepository: widget.workflowRepository,
+      workflow: workflow,
+      navigation: widget.navigation,
+    );
   }
 }

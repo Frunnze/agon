@@ -5,12 +5,21 @@ import 'package:agent_orchestration/data/fakes/control_characters.dart';
 import 'package:agent_orchestration/data/models/device.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/project.dart';
+import 'package:agent_orchestration/data/repository/app_server_refusal.dart';
 import 'package:agent_orchestration/data/repository/device_repository.dart';
 import 'package:agent_orchestration/data/repository/record_not_found.dart';
 import 'package:agent_orchestration/data/rules/local_folder_address.dart';
 
 const String _deviceKind = 'device';
-const String _workspaceMemberKind = 'workspace member';
+const int _forbiddenStatus = 403;
+const int _notFoundStatus = 404;
+const int _conflictStatus = 409;
+const String _selfRevokeReason = 'a device cannot revoke itself';
+const String _alreadyRevokedReason = 'the device is already revoked';
+const String _revokedJoinReason = 'the device is revoked';
+const String _alreadyMemberReason = 'the device is already in the workspace';
+const String _notMemberReason = 'the workspace member was not found';
+const String _missingKeyProblem = 'this device holds no key for workspace';
 const String _unixRoot = '/';
 const String _folderSeparator = '/';
 const String _currentFolder = '.';
@@ -118,12 +127,18 @@ final class FakeDeviceRepository extends ChangeNotifier
   @override
   Future<Device> revokeDevice(DeviceId deviceId) async {
     if (deviceId == _currentDeviceId) {
-      throw StateError('This device cannot revoke itself');
+      throw AppServerRefusal(
+        status: _forbiddenStatus,
+        reason: _selfRevokeReason,
+      );
     }
 
     final Device device = findDevice(deviceId);
     if (device.revoked) {
-      throw StateError('Device ${device.name} is already revoked');
+      throw AppServerRefusal(
+        status: _conflictStatus,
+        reason: _alreadyRevokedReason,
+      );
     }
 
     return _storeDevice(device.asRevoked());
@@ -135,11 +150,20 @@ final class FakeDeviceRepository extends ChangeNotifier
     WorkspaceId workspaceId,
   ) async {
     final Device device = findDevice(deviceId);
+    if (!currentDevice().workspaces.contains(workspaceId)) {
+      throw StateError('$_missingKeyProblem ${workspaceId.value}');
+    }
     if (device.revoked) {
-      throw StateError('Device ${device.name} is revoked');
+      throw AppServerRefusal(
+        status: _conflictStatus,
+        reason: _revokedJoinReason,
+      );
     }
     if (device.workspaces.contains(workspaceId)) {
-      throw StateError('Device ${device.name} is already in the workspace');
+      throw AppServerRefusal(
+        status: _conflictStatus,
+        reason: _alreadyMemberReason,
+      );
     }
 
     return _storeDevice(
@@ -154,9 +178,9 @@ final class FakeDeviceRepository extends ChangeNotifier
   ) async {
     final Device device = findDevice(deviceId);
     if (!device.workspaces.contains(workspaceId)) {
-      throw RecordNotFound(
-        kind: _workspaceMemberKind,
-        identifier: deviceId.value,
+      throw AppServerRefusal(
+        status: _notFoundStatus,
+        reason: _notMemberReason,
       );
     }
     final List<WorkspaceId> remaining = device.workspaces
@@ -164,6 +188,28 @@ final class FakeDeviceRepository extends ChangeNotifier
         .toList();
 
     return _storeDevice(device.withWorkspaces(remaining));
+  }
+
+  void grantWorkspaceToCurrentDevice(WorkspaceId workspaceId) {
+    final Device current = currentDevice();
+    if (current.workspaces.contains(workspaceId)) {
+      return;
+    }
+
+    _storeDevice(
+      current.withWorkspaces(<WorkspaceId>[
+        ...current.workspaces,
+        workspaceId,
+      ]),
+    );
+  }
+
+  void withdrawWorkspace(WorkspaceId deletedWorkspaceId) {
+    _devices = List<Device>.unmodifiable(<Device>[
+      for (final Device device in _devices)
+        _withoutWorkspace(device, deletedWorkspaceId),
+    ]);
+    notifyListeners();
   }
 
   Device _storeDevice(Device device) {
@@ -175,6 +221,16 @@ final class FakeDeviceRepository extends ChangeNotifier
     notifyListeners();
     return device;
   }
+}
+
+Device _withoutWorkspace(Device device, WorkspaceId workspaceId) {
+  if (!device.workspaces.contains(workspaceId)) {
+    return device;
+  }
+  return device.withWorkspaces(<WorkspaceId>[
+    for (final WorkspaceId joined in device.workspaces)
+      if (joined != workspaceId) joined,
+  ]);
 }
 
 String _normalizeFolderPath(String path) {

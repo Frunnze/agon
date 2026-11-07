@@ -5,6 +5,7 @@ import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/pairing.dart';
 
 const String noShowingPairingCode = 'No pairing code is showing';
+const String noDeviceWaitingToPair = 'No device is waiting to be paired';
 
 abstract interface class PairingRepository implements Listenable {
   PairingSession? findActiveSession();

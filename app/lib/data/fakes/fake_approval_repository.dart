@@ -84,6 +84,15 @@ final class FakeApprovalRepository extends ChangeNotifier
     return decided;
   }
 
+  void forgetRunApprovals(Set<RunId> removedRunIds) {
+    _approvals = removeRecord(
+      _approvals,
+      matches: (ApprovalRequest request) =>
+          removedRunIds.contains(request.runId),
+    );
+    notifyListeners();
+  }
+
   void forgetSigningRequests(WorkflowId workflowId) {
     _approvals = removeRecord(
       _approvals,

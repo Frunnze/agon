@@ -9,7 +9,6 @@ import 'package:agent_orchestration/data/repository/record_not_found.dart';
 import 'package:agent_orchestration/data/repository/task_repository.dart';
 import 'package:agent_orchestration/data/rules/person_answers.dart';
 import 'package:agent_orchestration/data/rules/run_lifecycle.dart';
-import 'package:agent_orchestration/data/rules/unicode_white_space.dart';
 
 const String _openStepKind = 'open person step';
 
@@ -43,9 +42,7 @@ final class FakePersonStepRepository extends ChangeNotifier
     required String stepName,
     required String answer,
   }) async {
-    if (trimUnicodeWhiteSpace(answer).isEmpty) {
-      throw ArgumentError.value(answer, 'answer', 'Write an answer first');
-    }
+    refuseBlankAnswer(answer);
     final OpenPersonStep openStep = findRecord(
       listOpenPersonSteps(),
       matches: (OpenPersonStep candidate) =>

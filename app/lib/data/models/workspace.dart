@@ -39,6 +39,6 @@ final class AppServerStatus {
 
   final String address;
   final AppServerState state;
-  final DateTime lastConnectedAt;
+  final DateTime? lastConnectedAt;
   final Duration retryInterval;
 }

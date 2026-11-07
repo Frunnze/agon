@@ -4,6 +4,7 @@ import 'package:agent_orchestration/presentation/count_text.dart';
 import 'package:agent_orchestration/presentation/time_phrases.dart';
 
 const String _serverDownLead = 'Runners on this network still work.';
+const String _neverConnectedText = 'Not connected yet';
 
 enum RunnerReach { reachable, offline, needsServer }
 
@@ -25,8 +26,9 @@ int countFreeSlots(List<Runner> runners) {
   int freeSlots = 0;
 
   for (final Runner runner in runners) {
-    if (runner.online && runner.acceptingNewRuns) {
-      freeSlots += runner.slotsTotal - runner.slotsBusy;
+    final int unusedSlots = runner.slotsTotal - runner.slotsBusy;
+    if (runner.online && runner.acceptingNewRuns && unusedSlots > 0) {
+      freeSlots += unusedSlots;
     }
   }
 
@@ -112,9 +114,18 @@ String describeServerDownNotice(List<String> waitingRunnerNames) {
   return '$_serverDownLead Runs for $names wait until the server is back.';
 }
 
+String _describeLastConnection(DateTime? lastConnectedAt) {
+  if (lastConnectedAt == null) {
+    return _neverConnectedText;
+  }
+  return 'Last connected ${formatClockTime(lastConnectedAt)}';
+}
+
 String describeServerRetry(AppServerStatus status) {
-  final String lastConnected = formatClockTime(status.lastConnectedAt);
+  final String lastConnection = _describeLastConnection(
+    status.lastConnectedAt,
+  );
   final int retrySeconds = status.retryInterval.inSeconds;
 
-  return 'Last connected $lastConnected · trying every $retrySeconds seconds';
+  return '$lastConnection · trying every $retrySeconds seconds';
 }

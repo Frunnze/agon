@@ -6,6 +6,7 @@ import 'package:agent_orchestration/data/models/workflow.dart';
 import 'package:agent_orchestration/data/rules/agent_kind_label.dart';
 import 'package:agent_orchestration/data/rules/run_step_progress.dart';
 import 'package:agent_orchestration/data/rules/task_branch.dart';
+import 'package:agent_orchestration/data/rules/workflow_graph.dart';
 
 const String _baseBranch = 'main';
 
@@ -61,7 +62,7 @@ List<RunStep> _planSteps(Task task, Workflow? workflow) {
   }
 
   return <RunStep>[
-    for (final WorkflowAgent agent in workflow.agents)
+    for (final WorkflowAgent agent in orderAgents(workflow))
       _planWaitingStep(
         name: agent.name,
         agentId: agent.id,

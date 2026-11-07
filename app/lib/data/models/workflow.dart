@@ -187,7 +187,7 @@ final class WorkflowSignature {
   final DeviceId signedBy;
   final List<int> signature;
   final String signedDocument;
-  final DateTime signedAt;
+  final DateTime? signedAt;
 }
 
 enum SignatureState { signed, notSignedYet, changedNotSigned }
@@ -272,8 +272,8 @@ final class WorkflowChange {
   }) : differences = List<WorkflowDifference>.unmodifiable(differences);
 
   final WorkflowId workflowId;
-  final DeviceId changedBy;
-  final DateTime changedAt;
+  final DeviceId? changedBy;
+  final DateTime? changedAt;
   final String summary;
   final List<WorkflowDifference> differences;
   final String signedDocument;

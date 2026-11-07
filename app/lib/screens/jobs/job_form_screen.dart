@@ -81,6 +81,7 @@ class JobFormScreen extends StatelessWidget {
     return reviewDeletion(
       context: context,
       prompt: describeJobDeletion(job),
+      navigation: navigation,
       leavePage: () =>
           navigation.returnTo(const SectionRoute(AppSection.jobs)),
       deleteRecord: () => jobRepository.deleteJob(job.id),

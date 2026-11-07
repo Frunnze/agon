@@ -12,11 +12,13 @@ import 'package:agent_orchestration/bridge/commands/workflow_commands.dart'
     as node;
 import 'package:agent_orchestration/bridge/node/node_command_channel.dart';
 import 'package:agent_orchestration/data/fakes.dart';
+import 'package:agent_orchestration/data/fakes/fake_workflow_checks.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/workflow.dart';
 import 'package:agent_orchestration/data/models/workflow_draft.dart';
 import 'package:agent_orchestration/data/node_backed.dart';
 import 'package:agent_orchestration/data/node_backed/mapping.dart';
+import 'package:agent_orchestration/data/node_backed/workspace_listing.dart';
 import 'package:agent_orchestration/data/repository/record_not_found.dart';
 import 'package:agent_orchestration/data/repository/workflow_repository.dart';
 import 'package:agent_orchestration/data/repository/workspace_repository.dart';
@@ -54,6 +56,9 @@ final class NodeBackedWorkflowRepository extends ChangeNotifier
     final int fetch = _fetches.startFetch();
     final List<node.WorkflowView> views = await _loadViews();
     if (!_fetches.acceptIfNewest(fetch)) {
+      if (_fetches.isLatestFetch(fetch)) {
+        await load();
+      }
       return;
     }
 
@@ -89,17 +94,13 @@ final class NodeBackedWorkflowRepository extends ChangeNotifier
 
   @override
   WorkflowChange? findPendingChange(WorkflowId workflowId) {
-    for (final WorkflowChange change in _changes) {
-      if (change.workflowId == workflowId) {
-        return change;
-      }
-    }
-    return null;
+    return findChangeOf(_changes, workflowId);
   }
 
   @override
   Future<Workflow> createWorkflow(Workflow unsavedWorkflow) async {
     final node.Workflow planned = mapWorkflowToNode(unsavedWorkflow);
+    final int localChange = _fetches.startLocalChange();
     final node.WorkflowView created = await executeNodeCommand(
       _channel,
       node.CreateWorkflowCommand(
@@ -110,12 +111,13 @@ final class NodeBackedWorkflowRepository extends ChangeNotifier
         connections: planned.connections,
       ),
     );
-    return _storeView(created);
+    return _storeView(created, localChange);
   }
 
   @override
   Future<Workflow> saveWorkflow(Workflow workflow) async {
     findWorkflow(workflow.id);
+    final int localChange = _fetches.startLocalChange();
     final node.WorkflowView saved = await executeNodeCommand(
       _channel,
       node.SaveWorkflowCommand(
@@ -123,17 +125,18 @@ final class NodeBackedWorkflowRepository extends ChangeNotifier
         workflow: mapWorkflowToNode(workflow),
       ),
     );
-    return _storeView(saved);
+    return _storeView(saved, localChange);
   }
 
   @override
   Future<Workflow> signWorkflow(WorkflowId workflowId) async {
     findWorkflow(workflowId);
+    final int localChange = _fetches.startLocalChange();
     final node.WorkflowView signed = await executeNodeCommand(
       _channel,
       node.SignWorkflowCommand(workflowId: workflowId),
     );
-    return _storeView(signed);
+    return _storeView(signed, localChange);
   }
 
   @override
@@ -145,24 +148,30 @@ final class NodeBackedWorkflowRepository extends ChangeNotifier
       );
     }
 
+    final int localChange = _fetches.startLocalChange();
     final node.WorkflowView kept = await executeNodeCommand(
       _channel,
       node.DiscardWorkflowChangeCommand(workflowId: workflowId),
     );
-    return _storeView(kept);
+    return _storeView(kept, localChange);
   }
 
   @override
   Future<void> deleteWorkflow(WorkflowId workflowId) async {
+    final int localChange = _fetches.startLocalChange();
     await executeNodeCommand(
       _channel,
       node.DeleteWorkflowCommand(workflowId: workflowId),
     );
 
-    _fetches.recordLocalChange();
+    _fetches.finishLocalChange(localChange, reloadWhenOvertaken: load);
     _workflows = removeRecord(
       _workflows,
       matches: (Workflow workflow) => workflow.id == workflowId,
+    );
+    _changes = removeRecord(
+      _changes,
+      matches: (WorkflowChange change) => change.workflowId == workflowId,
     );
     notifyListeners();
   }
@@ -182,10 +191,11 @@ final class NodeBackedWorkflowRepository extends ChangeNotifier
       workspaceId: _workspaceRepository.currentWorkspace().id,
       description: description,
     );
+    final int localChange = _fetches.startLocalChange();
     yield* _drafting.streamDraftProgress(
       draft: draft,
       command: command,
-      storeDrafted: _storeView,
+      storeDrafted: (node.WorkflowView view) => _storeView(view, localChange),
     );
   }
 
@@ -207,6 +217,7 @@ final class NodeBackedWorkflowRepository extends ChangeNotifier
     findWorkflow(workflowId);
 
     final WorkspaceId workspaceId = _workspaceRepository.currentWorkspace().id;
+    final int localChange = _fetches.startLocalChange();
     final node.WorkflowView changed = await _drafting.redraftWorkflow(
       workspaceId: workspaceId,
       command: node.ChangeWorkflowCommand(
@@ -216,7 +227,7 @@ final class NodeBackedWorkflowRepository extends ChangeNotifier
         agent: mapAgentKindToNode(agent),
       ),
     );
-    return _storeView(changed);
+    return _storeView(changed, localChange);
   }
 
   @override
@@ -227,6 +238,7 @@ final class NodeBackedWorkflowRepository extends ChangeNotifier
     findWorkflow(workflowId).findAgent(agentId);
 
     final WorkspaceId workspaceId = _workspaceRepository.currentWorkspace().id;
+    final int localChange = _fetches.startLocalChange();
     final node.WorkflowView filled = await _drafting.redraftWorkflow(
       workspaceId: workspaceId,
       command: node.FillAgentSettingsCommand(
@@ -235,7 +247,7 @@ final class NodeBackedWorkflowRepository extends ChangeNotifier
         agentId: agentId,
       ),
     );
-    return _storeView(filled);
+    return _storeView(filled, localChange);
   }
 
   @override
@@ -261,20 +273,25 @@ final class NodeBackedWorkflowRepository extends ChangeNotifier
     );
   }
 
-  Workflow _storeView(node.WorkflowView view) {
+  Workflow _storeView(node.WorkflowView view, int localChange) {
     final Workflow workflow = mapWorkflowFromNode(view);
     final WorkflowChange? change = mapPendingChangeFromNode(view);
 
-    _fetches.recordLocalChange();
-    _workflows = replaceOrAppendRecord(
+    _fetches.finishLocalChange(localChange, reloadWhenOvertaken: load);
+    _workflows = placeInWorkspaceListing(
       _workflows,
-      matches: (Workflow candidate) => candidate.id == workflow.id,
       record: workflow,
+      recordWorkspaces: workflow.availability,
+      listedWorkspaceId: _workspaceRepository.currentWorkspace().id,
+      identify: (Workflow listed) => listed.id.value,
+    );
+    final bool isListed = _workflows.any(
+      (Workflow listed) => listed.id == workflow.id,
     );
     _changes = List<WorkflowChange>.unmodifiable(<WorkflowChange>[
       for (final WorkflowChange existing in _changes)
         if (existing.workflowId != workflow.id) existing,
-      ?change,
+      if (isListed) ?change,
     ]);
     notifyListeners();
     return workflow;

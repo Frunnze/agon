@@ -19,9 +19,9 @@ AppServerStatus? mapAppServerStatusFromNode(
     return null;
   }
 
-  final DateTime lastConnectedAt = status.serverReachable
+  final DateTime? lastConnectedAt = status.serverReachable
       ? observedAt
-      : previous?.lastConnectedAt ?? observedAt;
+      : previous?.lastConnectedAt;
   return AppServerStatus(
     address: address,
     state: _describeReachability(status.serverReachable),
@@ -34,7 +34,7 @@ AppServerStatus applyServerHealthFromNode(
   AppServerStatus previous,
   node.ServerHealthView health,
 ) {
-  final DateTime lastConnectedAt = health.reachable
+  final DateTime? lastConnectedAt = health.reachable
       ? health.checkedAt
       : previous.lastConnectedAt;
   return AppServerStatus(

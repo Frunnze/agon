@@ -10,6 +10,7 @@ import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/library.dart';
 import 'package:agent_orchestration/data/node_backed.dart';
 import 'package:agent_orchestration/data/node_backed/mapping.dart';
+import 'package:agent_orchestration/data/node_backed/workspace_listing.dart';
 import 'package:agent_orchestration/data/repository/record_not_found.dart';
 import 'package:agent_orchestration/data/repository/rule_repository.dart';
 import 'package:agent_orchestration/data/repository/workspace_repository.dart';
@@ -41,6 +42,9 @@ final class NodeBackedRuleRepository extends ChangeNotifier
     final int fetch = _fetches.startFetch();
     final List<Rule> rules = await _loadRules();
     if (!_fetches.acceptIfNewest(fetch)) {
+      if (_fetches.isLatestFetch(fetch)) {
+        await load();
+      }
       return;
     }
 
@@ -72,6 +76,7 @@ final class NodeBackedRuleRepository extends ChangeNotifier
   Future<Rule> createRule(RuleDraft draft) async {
     requireRuleTitle(draft.title);
 
+    final int change = _fetches.startLocalChange();
     final node.Rule created = await executeNodeCommand(
       _channel,
       node.CreateRuleCommand(
@@ -81,13 +86,14 @@ final class NodeBackedRuleRepository extends ChangeNotifier
         scope: mapScopeToNode(draft.scope),
       ),
     );
-    return _storeRule(mapRuleFromNode(created));
+    return _storeRule(mapRuleFromNode(created), change);
   }
 
   @override
   Future<Rule> updateRule(RuleId ruleId, RuleDraft draft) async {
     requireRuleTitle(draft.title);
 
+    final int change = _fetches.startLocalChange();
     final node.Rule updated = await executeNodeCommand(
       _channel,
       node.UpdateRuleCommand(
@@ -98,34 +104,37 @@ final class NodeBackedRuleRepository extends ChangeNotifier
         scope: mapScopeToNode(draft.scope),
       ),
     );
-    return _storeRule(mapRuleFromNode(updated));
+    return _storeRule(mapRuleFromNode(updated), change);
   }
 
   @override
   Future<Rule> turnRuleOn(RuleId ruleId) async {
     final Rule rule = findRule(ruleId);
+    final int change = _fetches.startLocalChange();
     await executeNodeCommand(
       _channel,
       node.SetRuleEnabledCommand(ruleId: ruleId, enabled: true),
     );
-    return _storeRule(rule.asEnabled());
+    return _storeRule(rule.asEnabled(), change);
   }
 
   @override
   Future<Rule> turnRuleOff(RuleId ruleId) async {
     final Rule rule = findRule(ruleId);
+    final int change = _fetches.startLocalChange();
     await executeNodeCommand(
       _channel,
       node.SetRuleEnabledCommand(ruleId: ruleId, enabled: false),
     );
-    return _storeRule(rule.asDisabled());
+    return _storeRule(rule.asDisabled(), change);
   }
 
   @override
   Future<void> deleteRule(RuleId ruleId) async {
+    final int change = _fetches.startLocalChange();
     await executeNodeCommand(_channel, node.DeleteRuleCommand(ruleId: ruleId));
 
-    _fetches.recordLocalChange();
+    _fetches.finishLocalChange(change, reloadWhenOvertaken: load);
     _rules = removeRecord(_rules, matches: (Rule rule) => rule.id == ruleId);
     notifyListeners();
   }
@@ -140,12 +149,14 @@ final class NodeBackedRuleRepository extends ChangeNotifier
     startBackgroundNodeWork(load);
   }
 
-  Rule _storeRule(Rule rule) {
-    _fetches.recordLocalChange();
-    _rules = replaceOrAppendRecord(
+  Rule _storeRule(Rule rule, int change) {
+    _fetches.finishLocalChange(change, reloadWhenOvertaken: load);
+    _rules = placeInWorkspaceListing(
       _rules,
-      matches: (Rule candidate) => candidate.id == rule.id,
       record: rule,
+      recordWorkspaces: rule.scope.workspaces,
+      listedWorkspaceId: _workspaceRepository.currentWorkspace().id,
+      identify: (Rule listed) => listed.id.value,
     );
     notifyListeners();
     return rule;

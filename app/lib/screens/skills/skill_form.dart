@@ -4,9 +4,11 @@ import 'package:flutter/material.dart';
 
 import 'package:agent_orchestration/data/models/library.dart';
 import 'package:agent_orchestration/presentation/scope_catalog.dart';
+import 'package:agent_orchestration/screens/shared/action_refusal.dart';
 import 'package:agent_orchestration/screens/shared/scope_fields.dart';
 import 'package:agent_orchestration/screens/shared/scope_selection.dart';
 import 'package:agent_orchestration/screens/skills/skill_name_problem.dart';
+import 'package:agent_orchestration/screens/task_form/submit_refusal.dart';
 import 'package:agent_orchestration/theme/app_typography.dart';
 import 'package:agent_orchestration/theme/field_padding.dart';
 import 'package:agent_orchestration/widgets/forms/choice_list_field.dart';
@@ -89,6 +91,7 @@ class _SkillFormState extends State<SkillForm> {
   String? _nameProblem;
   String? _summaryProblem;
   String? _instructionsProblem;
+  SubmitRefusal? _refusal;
   bool _isSubmitting = false;
 
   @override
@@ -181,6 +184,7 @@ class _SkillFormState extends State<SkillForm> {
             ),
           ],
         ),
+        ?_buildRefusalBanner(),
         FormActionButtons<SkillDraft>(
           actions: widget.actions,
           isSubmitting: _isSubmitting,
@@ -221,6 +225,14 @@ class _SkillFormState extends State<SkillForm> {
     _reportSkill();
   }
 
+  SubmitRefusalBanner? _buildRefusalBanner() {
+    final SubmitRefusal? refusal = _refusal;
+    if (refusal == null) {
+      return null;
+    }
+    return SubmitRefusalBanner(refusal: refusal);
+  }
+
   Future<void> _submit(SubmitFormAction<SkillDraft> action) async {
     final SkillDraft skill = _readSkill();
     final String? nameProblem = describeSkillNameProblem(
@@ -239,6 +251,7 @@ class _SkillFormState extends State<SkillForm> {
       _nameProblem = nameProblem;
       _summaryProblem = summaryProblem;
       _instructionsProblem = instructionsProblem;
+      _refusal = null;
     });
 
     final bool hasProblem =
@@ -251,7 +264,13 @@ class _SkillFormState extends State<SkillForm> {
 
     setState(() => _isSubmitting = true);
     try {
-      await action.onSubmitted(skill);
+      final SubmitRefusal? refusal = await catchRefusal(
+        actionLabel: action.label,
+        action: () => action.onSubmitted(skill),
+      );
+      if (mounted) {
+        setState(() => _refusal = refusal);
+      }
     } finally {
       if (mounted) {
         setState(() => _isSubmitting = false);

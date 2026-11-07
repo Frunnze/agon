@@ -6,6 +6,7 @@ import 'package:agent_orchestration/data/models/approval.dart';
 import 'package:agent_orchestration/data/models/workspace.dart';
 import 'package:agent_orchestration/data/repository/workspace_repository.dart';
 import 'package:agent_orchestration/presentation/approval_policy_text.dart';
+import 'package:agent_orchestration/screens/shared/action_refusal.dart';
 import 'package:agent_orchestration/screens/shared/approval_policy_field.dart';
 import 'package:agent_orchestration/screens/shared/muted_note.dart';
 import 'package:agent_orchestration/widgets/forms/choice_list_field.dart';
@@ -29,17 +30,29 @@ class WorkspaceApprovalPolicySection extends StatelessWidget {
         ChoiceListField<ApprovalPolicy>(
           options: buildApprovalPolicyChoices(),
           selected: workspace.approvalPolicy,
-          onChanged: (ApprovalPolicy policy) =>
-              _changeApprovalPolicy(workspace, policy),
+          onChanged: (ApprovalPolicy policy) => unawaited(
+            _changeApprovalPolicy(
+              context,
+              workspace: workspace,
+              policy: policy,
+            ),
+          ),
         ),
         const MutedNote(workspaceApprovalPolicyNote),
       ],
     );
   }
 
-  void _changeApprovalPolicy(Workspace workspace, ApprovalPolicy policy) {
-    unawaited(
-      workspaceRepository.changeApprovalPolicy(
+  Future<void> _changeApprovalPolicy(
+    BuildContext context, {
+    required Workspace workspace,
+    required ApprovalPolicy policy,
+  }) {
+    return runShowingRefusal(
+      context: context,
+      title: approvalPolicyLabel,
+      actionLabel: changeSettingLabel,
+      action: () => workspaceRepository.changeApprovalPolicy(
         workspaceId: workspace.id,
         approvalPolicy: policy,
       ),

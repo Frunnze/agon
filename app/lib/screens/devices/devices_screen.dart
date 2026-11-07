@@ -78,7 +78,7 @@ class _DevicesScreenState extends State<DevicesScreen> {
             if (runnerSummary != null) TextSegment(runnerSummary),
           ],
         ),
-        ...runnerNotices.buildNotices(),
+        ...runnerNotices.buildNotices(context),
         WorkspaceDevicesSection(
           workspaceRepository: widget.workspaceRepository,
           deviceRepository: widget.deviceRepository,

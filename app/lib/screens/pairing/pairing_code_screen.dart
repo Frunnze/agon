@@ -10,6 +10,7 @@ import 'package:agent_orchestration/data/rules/setup_input_rules.dart';
 import 'package:agent_orchestration/icons/app_icon_kind.dart';
 import 'package:agent_orchestration/presentation/device_text.dart';
 import 'package:agent_orchestration/screens/pairing.dart';
+import 'package:agent_orchestration/screens/shared/action_refusal.dart';
 import 'package:agent_orchestration/shell/app_navigation.dart';
 import 'package:agent_orchestration/shell/app_route.dart';
 import 'package:agent_orchestration/theme/app_colors.dart';
@@ -25,6 +26,10 @@ import 'package:agent_orchestration/widgets/page_header.dart';
 import 'package:agent_orchestration/widgets/page_section.dart';
 import 'package:agent_orchestration/widgets/split_layout.dart';
 import 'package:agent_orchestration/widgets/status_label.dart';
+
+const String _pageTitle = 'Pair a device';
+const String _cancelLabel = 'Cancel';
+const String _showNewCodeLabel = 'Show a new code';
 
 const List<String> _newDeviceSteps = <String>[
   'Open the app and choose how the device will be used.',
@@ -65,7 +70,7 @@ class PairingCodeScreen extends StatelessWidget {
     return AppPage(
       children: <Widget>[
         PageHeader(
-          title: 'Pair a device',
+          title: _pageTitle,
           backLink: BackLink(
             label: 'Devices',
             onPressed: navigation.closeRoute,
@@ -77,8 +82,8 @@ class PairingCodeScreen extends StatelessWidget {
           ],
           actions: <Widget>[
             AppButton.secondary(
-              label: 'Cancel',
-              onPressed: () => unawaited(_cancelPairing()),
+              label: _cancelLabel,
+              onPressed: () => unawaited(_cancelPairing(context)),
             ),
           ],
         ),
@@ -98,11 +103,23 @@ class PairingCodeScreen extends StatelessWidget {
     );
   }
 
-  Future<void> _cancelPairing() async {
+  Future<void> _cancelPairing(BuildContext context) async {
+    final ActionOutcome outcome = await runShowingRefusal(
+      context: context,
+      title: _pageTitle,
+      actionLabel: _cancelLabel,
+      action: _cancelShownCode,
+    );
+
+    if (outcome == ActionOutcome.done) {
+      navigation.closeRoute();
+    }
+  }
+
+  Future<void> _cancelShownCode() async {
     if (pairingRepository.findActiveSession() != null) {
       await pairingRepository.cancelPairing();
     }
-    navigation.closeRoute();
   }
 
   Widget _buildCodeCard(BuildContext context) {
@@ -114,8 +131,8 @@ class PairingCodeScreen extends StatelessWidget {
         ? <Widget>[
             const Text('This code expired.'),
             AppButton.primary(
-              label: 'Show a new code',
-              onPressed: () => unawaited(pairingRepository.startPairing()),
+              label: _showNewCodeLabel,
+              onPressed: () => unawaited(_showNewCode(context)),
             ),
           ]
         : <Widget>[
@@ -163,6 +180,15 @@ class PairingCodeScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppRadii.panel),
       ),
       child: Column(children: spaceVertically(cardContent, AppSpacing.space3)),
+    );
+  }
+
+  Future<void> _showNewCode(BuildContext context) {
+    return runShowingRefusal(
+      context: context,
+      title: _pageTitle,
+      actionLabel: _showNewCodeLabel,
+      action: pairingRepository.startPairing,
     );
   }
 

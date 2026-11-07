@@ -55,6 +55,18 @@ final class AppNavigation extends ChangeNotifier {
     notifyListeners();
   }
 
+  void restoreRoutes(List<AppRoute> routes) {
+    if (routes.isEmpty) {
+      throw StateError('A window always shows a page');
+    }
+    for (final AppRoute route in routes) {
+      _requireOpenable(route);
+    }
+
+    _routes = List<AppRoute>.unmodifiable(routes);
+    notifyListeners();
+  }
+
   void closeSavedForm() {
     _routes = List<AppRoute>.unmodifiable(_listRoutesBelowSavedForm());
     notifyListeners();

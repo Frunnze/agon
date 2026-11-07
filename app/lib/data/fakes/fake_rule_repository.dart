@@ -2,22 +2,23 @@ import 'package:flutter/foundation.dart';
 
 import 'package:agent_orchestration/data/clock.dart';
 import 'package:agent_orchestration/data/fakes.dart';
+import 'package:agent_orchestration/data/fakes/current_workspace_records.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/library.dart';
 import 'package:agent_orchestration/data/models/scope.dart';
-import 'package:agent_orchestration/data/node_backed/current_workspace_lookup.dart';
 import 'package:agent_orchestration/data/repository/record_not_found.dart';
 import 'package:agent_orchestration/data/repository/rule_repository.dart';
 import 'package:agent_orchestration/data/repository/workspace_repository.dart';
 import 'package:agent_orchestration/data/rules/rule_titles.dart';
 import 'package:agent_orchestration/data/rules/scope_cleanup.dart';
-import 'package:agent_orchestration/data/rules/scope_rules.dart';
 import 'package:agent_orchestration/data/rules/unicode_white_space.dart';
 
 const String _ruleKind = 'rule';
 const String _createdRulePrefix = 'created-rule-';
 
 String _identifyRule(Rule rule) => rule.id.value;
+
+WorkspaceScope _readWorkspaceScope(Rule rule) => rule.scope.workspaces;
 
 final class FakeRuleRepository extends ChangeNotifier
     implements RuleRepository {
@@ -43,20 +44,11 @@ final class FakeRuleRepository extends ChangeNotifier
 
   @override
   List<Rule> listRules() {
-    final WorkspaceId? workspaceId = findCurrentWorkspaceId(
-      _workspaceRepository,
+    return listRecordsInCurrentWorkspace(
+      records: _rules,
+      workspaceRepository: _workspaceRepository,
+      readWorkspaceScope: _readWorkspaceScope,
     );
-    if (workspaceId == null) {
-      return const <Rule>[];
-    }
-
-    final List<Rule> usableRules = <Rule>[];
-    for (final Rule rule in _rules) {
-      if (includesWorkspace(rule.scope.workspaces, workspaceId)) {
-        usableRules.add(rule);
-      }
-    }
-    return List<Rule>.unmodifiable(usableRules);
   }
 
   @override
@@ -138,6 +130,14 @@ final class FakeRuleRepository extends ChangeNotifier
     }
 
     _rules = List<Rule>.unmodifiable(keptRules);
+    notifyListeners();
+  }
+
+  void forgetProjects(Set<ProjectId> deletedProjectIds) {
+    _rules = List<Rule>.unmodifiable(<Rule>[
+      for (final Rule rule in _rules)
+        _withScope(rule, forgetProjectsInScope(rule.scope, deletedProjectIds)),
+    ]);
     notifyListeners();
   }
 

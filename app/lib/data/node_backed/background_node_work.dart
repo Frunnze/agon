@@ -6,10 +6,10 @@ import 'package:agent_orchestration/data/repository/record_not_found.dart';
 typedef BackgroundNodeWork = Future<void> Function();
 
 void startBackgroundNodeWork(BackgroundNodeWork work) {
-  unawaited(_runLoggingNodeFailures(work));
+  unawaited(runLoggingNodeFailures(work));
 }
 
-Future<void> _runLoggingNodeFailures(BackgroundNodeWork work) async {
+Future<void> runLoggingNodeFailures(BackgroundNodeWork work) async {
   try {
     await work();
   } on Object catch (problem, stackTrace) {

@@ -34,6 +34,7 @@ final class NodeBackedDeviceRepository extends ChangeNotifier
     : _channel = channel;
 
   final NodeCommandChannel _channel;
+  final FetchSequence _fetches = FetchSequence();
   List<Device> _devices = const <Device>[];
   DeviceId? _thisDeviceId;
   String? _peerAddressProblem;
@@ -96,6 +97,7 @@ final class NodeBackedDeviceRepository extends ChangeNotifier
 
   @override
   Future<void> load() async {
+    final int fetch = _fetches.startFetch();
     final List<node.DeviceView> views = await executeNodeCommand(
       _channel,
       const node.ListDevicesCommand(),
@@ -114,6 +116,10 @@ final class NodeBackedDeviceRepository extends ChangeNotifier
       _channel,
       const node.StatusCommand(),
     );
+    if (!_fetches.acceptIfNewest(fetch)) {
+      return;
+    }
+
     _devices = List<Device>.unmodifiable(devices);
     _thisDeviceId = thisDeviceId;
     _peerAddressProblem = status.peer?.problem;

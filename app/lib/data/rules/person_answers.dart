@@ -3,6 +3,13 @@ import 'package:agent_orchestration/data/rules/unicode_white_space.dart';
 const List<String> _approvalWords = <String>['approve', 'approved'];
 const String _unmatchedAnswerStart = 'the answer names none of the choices: ';
 const String _choiceSeparator = ', ';
+const String _blankAnswerProblem = 'Write an answer first';
+
+void refuseBlankAnswer(String answer) {
+  if (trimUnicodeWhiteSpace(answer).isEmpty) {
+    throw ArgumentError.value(answer, 'answer', _blankAnswerProblem);
+  }
+}
 
 String? matchChoice(String answer, List<String> choices) {
   final String trimmedAnswer = trimUnicodeWhiteSpace(answer);

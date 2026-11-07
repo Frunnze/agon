@@ -14,6 +14,7 @@ import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/project.dart';
 import 'package:agent_orchestration/data/models/workspace.dart';
 import 'package:agent_orchestration/data/node_backed.dart';
+import 'package:agent_orchestration/data/node_backed/identifier_order.dart';
 import 'package:agent_orchestration/data/node_backed/mapping.dart';
 import 'package:agent_orchestration/data/repository/project_repository.dart';
 import 'package:agent_orchestration/data/repository/record_not_found.dart';
@@ -49,6 +50,9 @@ final class NodeBackedProjectRepository extends ChangeNotifier
       projects.addAll(await _loadWorkspaceProjects(workspace.id));
     }
     if (!_fetches.acceptIfNewest(fetch)) {
+      if (_fetches.isLatestFetch(fetch)) {
+        await load();
+      }
       return;
     }
 
@@ -88,6 +92,7 @@ final class NodeBackedProjectRepository extends ChangeNotifier
       throw ArgumentError.value(draft.name, 'name', nameProblem);
     }
 
+    final int change = _fetches.startLocalChange();
     final node.Project created = await executeNodeCommand(
       _channel,
       node.CreateProjectCommand(
@@ -102,12 +107,20 @@ final class NodeBackedProjectRepository extends ChangeNotifier
     );
     final Project project = mapProjectFromNode(created);
 
-    _fetches.recordLocalChange();
-    _projects = replaceOrAppendRecord(
+    _fetches.finishLocalChange(change, reloadWhenOvertaken: load);
+    final List<Project> otherWorkspaceProjects = removeRecord(
       _projects,
-      matches: (Project candidate) => candidate.id == project.id,
-      record: project,
+      matches: (Project listed) => listed.workspaceId == project.workspaceId,
     );
+    final List<Project> workspaceProjects = placeInIdentifierOrder(
+      listProjects(project.workspaceId),
+      record: project,
+      identify: (Project listed) => listed.id.value,
+    );
+    _projects = List<Project>.unmodifiable(<Project>[
+      ...otherWorkspaceProjects,
+      ...workspaceProjects,
+    ]);
     notifyListeners();
     return project;
   }
@@ -125,6 +138,7 @@ final class NodeBackedProjectRepository extends ChangeNotifier
       throw StateError('${repository.address} is already in ${project.name}');
     }
 
+    final int change = _fetches.startLocalChange();
     final node.Repository added = await executeNodeCommand(
       _channel,
       node.CreateRepositoryCommand(
@@ -137,7 +151,7 @@ final class NodeBackedProjectRepository extends ChangeNotifier
       mapRepositoryFromNode(added),
     ]);
 
-    _fetches.recordLocalChange();
+    _fetches.finishLocalChange(change, reloadWhenOvertaken: load);
     _projects = replaceRecord(
       _projects,
       matches: (Project candidate) => candidate.id == projectId,
@@ -150,6 +164,7 @@ final class NodeBackedProjectRepository extends ChangeNotifier
   @override
   Future<Project> removeRepository(ProjectId projectId, String address) async {
     final Project project = findProject(projectId);
+    final int change = _fetches.startLocalChange();
     final List<node.Repository> remaining = await executeNodeCommand(
       _channel,
       node.RemoveRepositoryCommand(projectId: projectId, address: address),
@@ -159,7 +174,7 @@ final class NodeBackedProjectRepository extends ChangeNotifier
         mapRepositoryFromNode(repository),
     ]);
 
-    _fetches.recordLocalChange();
+    _fetches.finishLocalChange(change, reloadWhenOvertaken: load);
     _projects = replaceRecord(
       _projects,
       matches: (Project candidate) => candidate.id == projectId,
@@ -171,12 +186,13 @@ final class NodeBackedProjectRepository extends ChangeNotifier
 
   @override
   Future<void> deleteProject(ProjectId projectId) async {
+    final int change = _fetches.startLocalChange();
     await executeNodeCommand(
       _channel,
       node.DeleteProjectCommand(projectId: projectId),
     );
 
-    _fetches.recordLocalChange();
+    _fetches.finishLocalChange(change, reloadWhenOvertaken: load);
     _projects = removeRecord(
       _projects,
       matches: (Project project) => project.id == projectId,

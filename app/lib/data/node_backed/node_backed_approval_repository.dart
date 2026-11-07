@@ -20,6 +20,7 @@ final class NodeBackedApprovalRepository extends ChangeNotifier
     : _channel = channel;
 
   final NodeCommandChannel _channel;
+  final FetchSequence _fetches = FetchSequence();
   List<ApprovalRequest> _approvals = const <ApprovalRequest>[];
 
   @override
@@ -46,10 +47,15 @@ final class NodeBackedApprovalRepository extends ChangeNotifier
 
   @override
   Future<void> load() async {
+    final int fetch = _fetches.startFetch();
     final node.ApprovalsView view = await executeNodeCommand(
       _channel,
       const node.ListApprovalsCommand(),
     );
+    if (!_fetches.acceptIfNewest(fetch)) {
+      return;
+    }
+
     final List<ApprovalRequest> approvals = <ApprovalRequest>[
       for (final node.ApprovalView approvalView in view.approvals)
         mapApprovalViewFromNode(approvalView),

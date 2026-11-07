@@ -12,9 +12,12 @@ import 'package:agent_orchestration/presentation/device_names.dart';
 import 'package:agent_orchestration/presentation/doer_text.dart';
 import 'package:agent_orchestration/screens/chat/chat_page_layout.dart';
 import 'package:agent_orchestration/screens/chat/chat_run_context.dart';
+import 'package:agent_orchestration/screens/shared/action_refusal.dart';
 import 'package:agent_orchestration/screens/shared/live_run_watch.dart';
 import 'package:agent_orchestration/shell/app_navigation.dart';
 import 'package:agent_orchestration/shell/app_route.dart';
+
+const String _sendLabel = 'Send';
 
 class ChatScreen extends StatelessWidget {
   const ChatScreen({
@@ -78,7 +81,8 @@ class ChatScreen extends StatelessWidget {
       runner: runnerId == null ? null : runnerRepository.findRunner(runnerId),
       thisDevice: deviceRepository.currentDevice(),
       onBack: _returnToRun,
-      onSend: _sendMessage,
+      onSend: (String text) =>
+          _sendMessage(context, title: runContext.agentTitle, text: text),
     );
   }
 
@@ -86,7 +90,16 @@ class ChatScreen extends StatelessWidget {
     navigation.returnTo(TaskRunRoute(runId));
   }
 
-  Future<void> _sendMessage(String text) async {
-    await chatRepository.sendMessage(runId, text);
+  Future<void> _sendMessage(
+    BuildContext context, {
+    required String title,
+    required String text,
+  }) {
+    return runShowingRefusal(
+      context: context,
+      title: title,
+      actionLabel: _sendLabel,
+      action: () => chatRepository.sendMessage(runId, text),
+    );
   }
 }

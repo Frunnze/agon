@@ -7,7 +7,7 @@ import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/runner.dart';
 import 'package:agent_orchestration/data/models/task.dart';
 import 'package:agent_orchestration/presentation/approval_policy_text.dart';
-import 'package:agent_orchestration/presentation/problem_text.dart';
+import 'package:agent_orchestration/screens/shared/action_refusal.dart';
 import 'package:agent_orchestration/screens/shared/approval_policy_field.dart';
 import 'package:agent_orchestration/screens/task_form/agent_place_field.dart';
 import 'package:agent_orchestration/screens/task_form/folder_runner_notice.dart';
@@ -249,19 +249,12 @@ class _TaskFormState extends State<TaskForm> {
 
     setState(() => _isSubmitting = true);
     try {
-      await action.onSubmitted(values);
-    } on Object catch (problem) {
-      final String? explanation = describeProblemForPeople(problem);
-      if (explanation == null) {
-        rethrow;
-      }
+      final SubmitRefusal? refusal = await catchRefusal(
+        actionLabel: action.label,
+        action: () => action.onSubmitted(values),
+      );
       if (mounted) {
-        setState(
-          () => _refusal = SubmitRefusal(
-            actionLabel: action.label,
-            explanation: explanation,
-          ),
-        );
+        setState(() => _refusal = refusal);
       }
     } finally {
       if (mounted) {

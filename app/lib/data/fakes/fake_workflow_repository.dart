@@ -2,23 +2,25 @@ import 'package:flutter/foundation.dart';
 
 import 'package:agent_orchestration/data/clock.dart';
 import 'package:agent_orchestration/data/fakes.dart';
+import 'package:agent_orchestration/data/fakes/current_workspace_records.dart';
 import 'package:agent_orchestration/data/fakes/fake_task_work.dart';
 import 'package:agent_orchestration/data/fakes/fake_workflow_checks.dart';
 import 'package:agent_orchestration/data/fakes/fake_workflow_drafting.dart';
 import 'package:agent_orchestration/data/fakes/workflow_signed_content.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
+import 'package:agent_orchestration/data/models/scope.dart';
 import 'package:agent_orchestration/data/models/workflow.dart';
 import 'package:agent_orchestration/data/models/workflow_draft.dart';
-import 'package:agent_orchestration/data/repository/record_not_found.dart';
 import 'package:agent_orchestration/data/repository/workflow_repository.dart';
+import 'package:agent_orchestration/data/repository/workspace_repository.dart';
 import 'package:agent_orchestration/data/rules/scope_cleanup.dart';
 import 'package:agent_orchestration/data/rules/workflow_edits.dart';
 import 'package:agent_orchestration/data/rules/workflow_problems.dart';
 
-const String _workflowKind = 'workflow';
-const String _workflowChangeKind = 'workflow change';
 const String _createdWorkflowPrefix = 'created-workflow-';
 const String _noSignedVersionProblem = 'the workflow has no signed version';
+
+WorkspaceScope _readAvailability(Workflow workflow) => workflow.availability;
 
 final class FakeWorkflowRepository extends ChangeNotifier
     implements WorkflowRepository {
@@ -30,6 +32,7 @@ final class FakeWorkflowRepository extends ChangeNotifier
     required Workflow draftTemplate,
     required DeviceId drafterDeviceId,
     required Duration draftStepDelay,
+    required WorkspaceRepository workspaceRepository,
   }) : _workflows = List<Workflow>.unmodifiable(workflows),
        _changes = List<WorkflowChange>.unmodifiable(changes),
        _clock = clock,
@@ -39,22 +42,16 @@ final class FakeWorkflowRepository extends ChangeNotifier
          template: draftTemplate,
          drafterDeviceId: drafterDeviceId,
          stepDelay: draftStepDelay,
-       ) {
-    refuseDuplicateIdentifiers(
-      workflows,
-      identify: identifyWorkflow,
-      kind: _workflowKind,
-    );
-    refuseDuplicateIdentifiers(
-      changes,
-      identify: identifyChangedWorkflow,
-      kind: _workflowChangeKind,
-    );
+       ),
+       _workspaceRepository = workspaceRepository {
+    refuseDuplicateWorkflowRecords(workflows: workflows, changes: changes);
+    _workspaceRepository.addListener(notifyListeners);
   }
 
   final Clock _clock;
   final DeviceId _currentDeviceId;
   final FakeWorkflowDrafting _drafting;
+  final WorkspaceRepository _workspaceRepository;
   final Map<WorkflowId, Workflow> _signedVersions;
   int _createdWorkflowCount = 0;
   List<Workflow> _workflows;
@@ -71,26 +68,34 @@ final class FakeWorkflowRepository extends ChangeNotifier
   }
 
   @override
-  List<Workflow> listWorkflows() => _workflows;
-
-  @override
-  Workflow findWorkflow(WorkflowId workflowId) {
-    return findRecord(
-      _workflows,
-      matches: (Workflow workflow) => workflow.id == workflowId,
-      kind: _workflowKind,
-      identifier: workflowId.value,
+  List<Workflow> listWorkflows() {
+    return listRecordsInCurrentWorkspace(
+      records: _workflows,
+      workspaceRepository: _workspaceRepository,
+      readWorkspaceScope: _readAvailability,
     );
   }
 
   @override
+  Workflow findWorkflow(WorkflowId workflowId) {
+    return findWorkflowIn(listWorkflows(), workflowId);
+  }
+
+  Workflow findWorkflowInAnyWorkspace(WorkflowId workflowId) {
+    return findWorkflowIn(_workflows, workflowId);
+  }
+
+  @override
   WorkflowChange? findPendingChange(WorkflowId workflowId) {
-    for (final WorkflowChange change in _changes) {
-      if (change.workflowId == workflowId) {
-        return change;
-      }
-    }
-    return null;
+    return findChangeOfListed(
+      changes: _changes,
+      listedWorkflows: listWorkflows(),
+      workflowId: workflowId,
+    );
+  }
+
+  WorkflowChange? findPendingChangeInAnyWorkspace(WorkflowId workflowId) {
+    return findChangeOf(_changes, workflowId);
   }
 
   @override
@@ -140,12 +145,7 @@ final class FakeWorkflowRepository extends ChangeNotifier
 
   @override
   Future<Workflow> discardChange(WorkflowId workflowId) async {
-    if (findPendingChange(workflowId) == null) {
-      throw RecordNotFound(
-        kind: _workflowChangeKind,
-        identifier: workflowId.value,
-      );
-    }
+    refuseMissingChange(findPendingChange(workflowId), workflowId);
     final Workflow? signedVersion = _signedVersions[workflowId];
     if (signedVersion == null) {
       throw StateError(_noSignedVersionProblem);
@@ -159,7 +159,7 @@ final class FakeWorkflowRepository extends ChangeNotifier
 
   @override
   Future<void> deleteWorkflow(WorkflowId workflowId) async {
-    final Workflow workflow = findWorkflow(workflowId);
+    final Workflow workflow = findWorkflowInAnyWorkspace(workflowId);
     if (_isInUse(workflowId)) {
       throw StateError(
         'workflow ${workflow.name} is still used by a task or job',
@@ -204,10 +204,7 @@ final class FakeWorkflowRepository extends ChangeNotifier
     String request,
     AgentKind agent,
   ) async {
-    final String trimmedRequest = request.trim();
-    if (trimmedRequest.isEmpty) {
-      throw ArgumentError.value(request, 'request', 'Say what to change');
-    }
+    final String trimmedRequest = requireChangeRequest(request);
 
     final Workflow changed = appendRequestedAgent(
       findWorkflow(workflowId),
@@ -227,6 +224,12 @@ final class FakeWorkflowRepository extends ChangeNotifier
       workflow.name,
     );
     return _storeEdit(replaceAgent(workflow, filled));
+  }
+
+  @override
+  void dispose() {
+    _workspaceRepository.removeListener(notifyListeners);
+    super.dispose();
   }
 
   Workflow _storeEdit(Workflow edited) {
@@ -251,17 +254,13 @@ final class FakeWorkflowRepository extends ChangeNotifier
     do {
       _createdWorkflowCount += 1;
       candidate = WorkflowId('$_createdWorkflowPrefix$_createdWorkflowCount');
-    } while (_isListed(candidate));
+    } while (_workflows.any((Workflow listed) => listed.id == candidate));
     return candidate;
   }
 
   void _listDraftedWorkflow(Workflow drafted) {
     _workflows = appendRecord(_workflows, drafted);
     notifyListeners();
-  }
-
-  bool _isListed(WorkflowId workflowId) {
-    return _workflows.any((Workflow workflow) => workflow.id == workflowId);
   }
 
   void _storeWorkflow(Workflow workflow) {

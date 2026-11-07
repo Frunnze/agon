@@ -1,7 +1,4 @@
-import 'package:agent_orchestration/bridge/codecs/workflow_values.dart'
-    as node;
 import 'package:agent_orchestration/bridge/codecs/workflow_views.dart' as node;
-import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/workflow.dart';
 import 'package:agent_orchestration/data/node_backed/mapping.dart';
 
@@ -12,17 +9,16 @@ List<WorkflowDifference> listDocumentDifferences(List<node.DiffLine> lines) {
   final List<WorkflowDifference> differences = <WorkflowDifference>[];
 
   for (final node.DiffLine line in lines) {
-    final String text = line.text.trim();
     switch (line.change) {
       case node.DiffLineChange.unchanged:
         continue;
       case node.DiffLineChange.added:
         differences.add(
-          WorkflowDifference(subject: _addedSubject, change: text),
+          WorkflowDifference(subject: _addedSubject, change: line.text),
         );
       case node.DiffLineChange.removed:
         differences.add(
-          WorkflowDifference(subject: _removedSubject, change: text),
+          WorkflowDifference(subject: _removedSubject, change: line.text),
         );
     }
   }
@@ -45,25 +41,15 @@ String summarizeDocumentChanges(List<node.DiffLine> lines) {
 }
 
 WorkflowChange? mapPendingChangeFromNode(node.WorkflowView view) {
-  final node.WorkflowSignature? signature = view.workflow.signature;
-  final bool isChanged =
-      view.signatureState == node.SignatureState.changedNotSigned;
-  if (!isChanged || signature == null) {
+  checkSignatureMatchesState(view);
+  if (view.signatureState != node.SignatureState.changedNotSigned) {
     return null;
   }
 
-  final DateTime? changedAt = view.changedAt;
-  final DeviceId? changedBy = view.changedBy;
-  if (changedAt == null || changedBy == null) {
-    throw FormatException(
-      'the node sent changed workflow ${view.workflow.id} without who '
-      'changed it and when',
-    );
-  }
   return WorkflowChange(
     workflowId: view.workflow.id,
-    changedBy: changedBy,
-    changedAt: changedAt,
+    changedBy: view.changedBy,
+    changedAt: view.changedAt,
     summary: summarizeDocumentChanges(view.changes),
     differences: listDocumentDifferences(view.changes),
     signedDocument: readSignedDocument(view),

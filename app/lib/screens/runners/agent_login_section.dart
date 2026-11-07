@@ -9,6 +9,7 @@ import 'package:agent_orchestration/icons/app_icon_kind.dart';
 import 'package:agent_orchestration/presentation/agent_login_text.dart';
 import 'package:agent_orchestration/screens/runners/api_key_form.dart';
 import 'package:agent_orchestration/screens/runners/login_terminal_panel.dart';
+import 'package:agent_orchestration/screens/shared/action_refusal.dart';
 import 'package:agent_orchestration/theme/app_spacing.dart';
 import 'package:agent_orchestration/theme/app_typography.dart';
 import 'package:agent_orchestration/widgets/app_button.dart';
@@ -92,35 +93,42 @@ class _AgentLoginSectionState extends State<AgentLoginSection> {
         if (terminal != null)
           LoginTerminalPanel(
             terminal: terminal,
-            onType: widget.repository.typeIntoTerminal,
-            onClose: () => unawaited(widget.repository.closeTerminal()),
+            onType: (String keys) => _typeIntoTerminal(context, keys),
+            onClose: () => unawaited(_closeTerminal(context)),
           )
         else if (_isAskingForApiKey)
-          ApiKeyForm(onSave: _saveApiKey, onCancel: _closeApiKeyForm)
+          ApiKeyForm(
+            onSave: (String apiKey) => _saveApiKey(context, apiKey),
+            onCancel: _closeApiKeyForm,
+          )
         else if (actions.isNotEmpty)
           Wrap(
             spacing: AppSpacing.space2,
             runSpacing: AppSpacing.space2,
             children: <Widget>[
               for (final AgentLoginAction action in actions)
-                _buildActionButton(action),
+                _buildActionButton(context, action),
             ],
           ),
       ],
     );
   }
 
-  Widget _buildActionButton(AgentLoginAction action) {
+  Widget _buildActionButton(BuildContext context, AgentLoginAction action) {
     final String label = describeAgentLoginAction(action);
     return switch (action) {
       AgentLoginAction.logIn => AppButton.primary(
         label: label,
-        onPressed: () => _openTerminal(AgentPlace.localProcess),
+        onPressed: () => unawaited(
+          _openTerminal(context, label: label, place: AgentPlace.localProcess),
+        ),
       ),
       AgentLoginAction.connect => AppButton.primary(
         label: label,
         icon: AppIconKind.terminal,
-        onPressed: () => _openTerminal(AgentPlace.container),
+        onPressed: () => unawaited(
+          _openTerminal(context, label: label, place: AgentPlace.container),
+        ),
       ),
       AgentLoginAction.useApiKey => AppButton.secondary(
         label: label,
@@ -128,13 +136,58 @@ class _AgentLoginSectionState extends State<AgentLoginSection> {
       ),
       AgentLoginAction.disconnect => AppButton.secondary(
         label: label,
-        onPressed: () => unawaited(widget.repository.forgetCredential()),
+        onPressed: () => unawaited(_forgetCredential(context, label)),
       ),
     };
   }
 
-  void _openTerminal(AgentPlace place) {
-    unawaited(widget.repository.openTerminal(place));
+  Future<ActionOutcome> _runLoginAction(
+    BuildContext context, {
+    required String actionLabel,
+    required PersonAction action,
+  }) {
+    return runShowingRefusal(
+      context: context,
+      title: describeAgentLoginTitle(widget.place),
+      actionLabel: actionLabel,
+      action: action,
+    );
+  }
+
+  Future<void> _openTerminal(
+    BuildContext context, {
+    required String label,
+    required AgentPlace place,
+  }) {
+    return _runLoginAction(
+      context,
+      actionLabel: label,
+      action: () => widget.repository.openTerminal(place),
+    );
+  }
+
+  Future<void> _forgetCredential(BuildContext context, String label) {
+    return _runLoginAction(
+      context,
+      actionLabel: label,
+      action: widget.repository.forgetCredential,
+    );
+  }
+
+  Future<void> _typeIntoTerminal(BuildContext context, String keys) {
+    return _runLoginAction(
+      context,
+      actionLabel: sendLabel,
+      action: () => widget.repository.typeIntoTerminal(keys),
+    );
+  }
+
+  Future<void> _closeTerminal(BuildContext context) {
+    return _runLoginAction(
+      context,
+      actionLabel: closeLabel,
+      action: widget.repository.closeTerminal,
+    );
   }
 
   void _openApiKeyForm() {
@@ -145,9 +198,13 @@ class _AgentLoginSectionState extends State<AgentLoginSection> {
     setState(() => _isAskingForApiKey = false);
   }
 
-  Future<void> _saveApiKey(String apiKey) async {
-    await widget.repository.saveApiKey(apiKey);
-    if (mounted) {
+  Future<void> _saveApiKey(BuildContext context, String apiKey) async {
+    final ActionOutcome outcome = await _runLoginAction(
+      context,
+      actionLabel: saveKeyLabel,
+      action: () => widget.repository.saveApiKey(apiKey),
+    );
+    if (outcome == ActionOutcome.done && mounted) {
       _closeApiKeyForm();
     }
   }

@@ -38,3 +38,20 @@ bool isSeenInNoWorkspace(
       return !workspaces.workspaces.any(knownWorkspaceIds.contains);
   }
 }
+
+Scope forgetProjectsInScope(Scope scope, Set<ProjectId> projectIds) {
+  final ProjectScope projects = scope.projects;
+  switch (projects) {
+    case AllProjects():
+      return scope;
+    case OnlyProjects():
+      final List<ProjectId> keptProjects = <ProjectId>[
+        for (final ProjectId projectId in projects.projects)
+          if (!projectIds.contains(projectId)) projectId,
+      ];
+      return Scope(
+        workspaces: scope.workspaces,
+        projects: OnlyProjects(keptProjects),
+      );
+  }
+}

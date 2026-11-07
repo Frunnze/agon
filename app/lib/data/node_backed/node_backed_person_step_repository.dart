@@ -11,6 +11,7 @@ import 'package:agent_orchestration/data/models/person_step.dart';
 import 'package:agent_orchestration/data/node_backed/mapping.dart';
 import 'package:agent_orchestration/data/node_backed.dart';
 import 'package:agent_orchestration/data/repository/person_step_repository.dart';
+import 'package:agent_orchestration/data/rules/person_answers.dart';
 
 final class NodeBackedPersonStepRepository extends ChangeNotifier
     implements PersonStepRepository, NodeSynchronized {
@@ -18,6 +19,7 @@ final class NodeBackedPersonStepRepository extends ChangeNotifier
     : _channel = channel;
 
   final NodeCommandChannel _channel;
+  final FetchSequence _fetches = FetchSequence();
   List<OpenPersonStep> _openSteps = const <OpenPersonStep>[];
 
   @override
@@ -25,10 +27,14 @@ final class NodeBackedPersonStepRepository extends ChangeNotifier
 
   @override
   Future<void> load() async {
+    final int fetch = _fetches.startFetch();
     final List<node.OpenPersonStep> openSteps = await executeNodeCommand(
       _channel,
       const node.ListPersonStepsCommand(),
     );
+    if (!_fetches.acceptIfNewest(fetch)) {
+      return;
+    }
 
     _openSteps = List<OpenPersonStep>.unmodifiable(<OpenPersonStep>[
       for (final node.OpenPersonStep openStep in openSteps)
@@ -54,6 +60,7 @@ final class NodeBackedPersonStepRepository extends ChangeNotifier
     required String stepName,
     required String answer,
   }) async {
+    refuseBlankAnswer(answer);
     await executeNodeCommand(
       _channel,
       node.AnswerPersonStepCommand(

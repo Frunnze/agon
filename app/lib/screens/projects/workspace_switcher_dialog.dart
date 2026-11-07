@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import 'package:agent_orchestration/data/models/workspace.dart';
@@ -8,6 +10,7 @@ import 'package:agent_orchestration/data/repository/workspace_repository.dart';
 import 'package:agent_orchestration/data/rules/naming.dart';
 import 'package:agent_orchestration/icons/app_icon_kind.dart';
 import 'package:agent_orchestration/screens/projects.dart';
+import 'package:agent_orchestration/screens/shared/action_refusal.dart';
 import 'package:agent_orchestration/shell/app_navigation.dart';
 import 'package:agent_orchestration/shell/app_route.dart';
 import 'package:agent_orchestration/shell/app_section.dart';
@@ -21,6 +24,8 @@ import 'package:agent_orchestration/widgets/mixed_text.dart';
 import 'package:agent_orchestration/widgets/status_label.dart';
 
 const SectionRoute _projectsRoute = SectionRoute(AppSection.projects);
+const String _openWorkspaceLabel = 'Open';
+const String _createWorkspaceLabel = 'Create workspace';
 
 class WorkspaceSwitcherDialog extends StatefulWidget {
   const WorkspaceSwitcherDialog({
@@ -85,7 +90,7 @@ class _WorkspaceSwitcherDialogState extends State<WorkspaceSwitcherDialog> {
           ),
         ),
         AppButton.secondary(
-          label: 'Create workspace',
+          label: _createWorkspaceLabel,
           icon: AppIconKind.plus,
           onPressed: () => setState(() => _isCreating = true),
         ),
@@ -116,9 +121,9 @@ class _WorkspaceSwitcherDialogState extends State<WorkspaceSwitcherDialog> {
           onPressed: () => setState(() => _isCreating = false),
         ),
         AppButton.primary(
-          label: 'Create workspace',
+          label: _createWorkspaceLabel,
           icon: AppIconKind.plus,
-          onPressed: _createWorkspace,
+          onPressed: () => unawaited(_createWorkspace()),
         ),
       ],
     );
@@ -150,7 +155,7 @@ class _WorkspaceSwitcherDialogState extends State<WorkspaceSwitcherDialog> {
             )
           : const RowAction(label: 'Open'),
       emphasis: isCurrent ? RowEmphasis.current : RowEmphasis.normal,
-      onTap: isCurrent ? _close : () => _openWorkspace(workspace),
+      onTap: isCurrent ? _close : () => unawaited(_openWorkspace(workspace)),
     );
   }
 
@@ -159,8 +164,16 @@ class _WorkspaceSwitcherDialogState extends State<WorkspaceSwitcherDialog> {
   }
 
   Future<void> _openWorkspace(Workspace workspace) async {
-    await widget.workspaceRepository.switchWorkspace(workspace.id);
-    widget.navigation.openSection(_projectsRoute);
+    final ActionOutcome outcome = await runShowingRefusal(
+      context: context,
+      title: workspace.name,
+      actionLabel: _openWorkspaceLabel,
+      action: () => widget.workspaceRepository.switchWorkspace(workspace.id),
+    );
+
+    if (outcome == ActionOutcome.done) {
+      widget.navigation.openSection(_projectsRoute);
+    }
   }
 
   Future<void> _createWorkspace() async {
@@ -171,10 +184,22 @@ class _WorkspaceSwitcherDialogState extends State<WorkspaceSwitcherDialog> {
       return;
     }
 
+    final ActionOutcome outcome = await runShowingRefusal(
+      context: context,
+      title: _createWorkspaceLabel,
+      actionLabel: _createWorkspaceLabel,
+      action: () => _createThenSwitch(name),
+    );
+
+    if (outcome == ActionOutcome.done) {
+      widget.navigation.openSection(_projectsRoute);
+    }
+  }
+
+  Future<void> _createThenSwitch(String name) async {
     final Workspace created = await widget.workspaceRepository.createWorkspace(
       name: name,
     );
     await widget.workspaceRepository.switchWorkspace(created.id);
-    widget.navigation.openSection(_projectsRoute);
   }
 }

@@ -168,6 +168,7 @@ class ProjectScreen extends StatelessWidget {
     return reviewDeletion(
       context: context,
       prompt: describeProjectDeletion(project),
+      navigation: navigation,
       leavePage: () => navigation.returnTo(_projectsRoute),
       deleteRecord: () => projectRepository.deleteProject(project.id),
     );

@@ -12,6 +12,7 @@ import 'package:agent_orchestration/presentation/identifier_text.dart';
 import 'package:agent_orchestration/presentation/problem_text.dart';
 import 'package:agent_orchestration/screens/projects.dart';
 import 'package:agent_orchestration/screens/projects/folder_choice.dart';
+import 'package:agent_orchestration/screens/shared/action_refusal.dart';
 import 'package:agent_orchestration/widgets/app_button.dart';
 import 'package:agent_orchestration/widgets/app_dialog.dart';
 import 'package:agent_orchestration/widgets/fact_list.dart';
@@ -22,6 +23,7 @@ import 'package:agent_orchestration/widgets/mixed_text.dart';
 const String _computerAddressHint =
     'Paste a GitHub address or choose a folder on this computer.';
 const String _phoneAddressHint = 'Paste a GitHub address.';
+const String _removeRepositoryLabel = 'Remove repo';
 
 Future<void> showAddRepositoryDialog({
   required BuildContext context,
@@ -81,20 +83,39 @@ Future<void> showRemoveRepositoryDialog({
           onPressed: () => Navigator.of(dialogContext).pop(),
         ),
         AppButton.danger(
-          label: 'Remove repo',
-          onPressed: () async {
-            await projectRepository.removeRepository(
-              project.id,
-              repository.address,
-            );
-            if (dialogContext.mounted) {
-              Navigator.of(dialogContext).pop();
-            }
-          },
+          label: _removeRepositoryLabel,
+          onPressed: () => unawaited(
+            _removeRepository(
+              dialogContext,
+              project: project,
+              repository: repository,
+              projectRepository: projectRepository,
+            ),
+          ),
         ),
       ],
     ),
   );
+}
+
+Future<void> _removeRepository(
+  BuildContext dialogContext, {
+  required Project project,
+  required Repository repository,
+  required ProjectRepository projectRepository,
+}) async {
+  final NavigatorState dialogNavigator = Navigator.of(dialogContext);
+  final ActionOutcome outcome = await runShowingRefusal(
+    context: dialogContext,
+    title: describeRepositoryPath(repository.address),
+    actionLabel: _removeRepositoryLabel,
+    action: () =>
+        projectRepository.removeRepository(project.id, repository.address),
+  );
+
+  if (outcome == ActionOutcome.done && dialogNavigator.mounted) {
+    dialogNavigator.pop();
+  }
 }
 
 class AddRepositoryDialog extends StatefulWidget {

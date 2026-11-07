@@ -94,6 +94,7 @@ final class FakeWorkspaceRepository extends ChangeNotifier
     );
 
     _workspaces = appendRecord(_workspaces, workspace);
+    _contents?.grantCreatedWorkspace(workspace.id);
     notifyListeners();
     return workspace;
   }
@@ -161,6 +162,7 @@ final class FakeWorkspaceRepository extends ChangeNotifier
   @override
   Future<void> deleteWorkspace(WorkspaceId workspaceId) async {
     final Workspace deleted = _findWorkspace(workspaceId);
+    _contents?.refuseOutsiderDevice(deleted.id);
     if (_workspaces.length == 1) {
       throw StateError(_lastWorkspaceProblem);
     }

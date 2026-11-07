@@ -4,6 +4,9 @@ import 'package:agent_orchestration/widgets/app_button.dart';
 import 'package:agent_orchestration/widgets/compact_page_header.dart';
 import 'package:agent_orchestration/widgets/page_header.dart';
 
+const String cancelBuildingLabel = 'Cancel';
+const String signAndSaveLabel = 'Sign and save';
+
 class BuilderHeader extends StatelessWidget {
   const BuilderHeader({
     required this.title,
@@ -27,8 +30,8 @@ class BuilderHeader extends StatelessWidget {
       summary: summary,
       backLink: BackLink(label: 'Workflows', onPressed: onBack),
       actions: <Widget>[
-        AppButton.secondary(label: 'Cancel', onPressed: onCancel),
-        AppButton.primary(label: 'Sign and save', onPressed: onSigned),
+        AppButton.secondary(label: cancelBuildingLabel, onPressed: onCancel),
+        AppButton.primary(label: signAndSaveLabel, onPressed: onSigned),
       ],
     );
   }

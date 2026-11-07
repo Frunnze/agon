@@ -79,7 +79,12 @@ final class NodeBackedPairingRepository extends ChangeNotifier
   }
 
   @override
-  PairingRequest? findPendingRequest() => _request;
+  PairingRequest? findPendingRequest() {
+    if (findActiveSession() == null) {
+      return null;
+    }
+    return _request;
+  }
 
   @override
   Future<Device> approvePairing(List<WorkspaceId> workspaces) async {
@@ -98,7 +103,7 @@ final class NodeBackedPairingRepository extends ChangeNotifier
     );
     final Device device = findJoinedDevice(devices, pending.joining);
 
-    _closeSession();
+    _closeSessionOfCode(pending.code);
     notifyListeners();
     return device;
   }
@@ -111,7 +116,7 @@ final class NodeBackedPairingRepository extends ChangeNotifier
       node.RejectPairingCommand(code: pending.code),
     );
 
-    _closeSession();
+    _closeSessionOfCode(pending.code);
     notifyListeners();
   }
 
@@ -124,7 +129,7 @@ final class NodeBackedPairingRepository extends ChangeNotifier
 
     await executeNodeCommand(_channel, node.CancelPairingCommand(code: code));
 
-    _closeSession();
+    _closeSessionOfCode(code);
     notifyListeners();
   }
 
@@ -142,6 +147,10 @@ final class NodeBackedPairingRepository extends ChangeNotifier
     if (problem != null) {
       throw FormatException(problem, code);
     }
+    final String? nameProblem = describeNameProblem(deviceName);
+    if (nameProblem != null) {
+      throw ArgumentError(nameProblem);
+    }
 
     final node.PendingJoin pending = await executeNodeCommand(
       _channel,
@@ -154,7 +163,13 @@ final class NodeBackedPairingRepository extends ChangeNotifier
     );
 
     try {
-      return await _waitForJoinAnswer(pending);
+      return await waitForJoinAnswer(
+        channel: _channel,
+        pending: pending,
+        pollInterval: _pollInterval,
+        runnerLabels: _runnerLabels,
+        showWaitingJoin: _showWaitingJoin,
+      );
     } finally {
       _waitingJoin = null;
       notifyListeners();
@@ -240,39 +255,16 @@ final class NodeBackedPairingRepository extends ChangeNotifier
 
   _PendingJoin _requirePendingJoin() {
     final String? code = _sessionCode;
+    final bool hasExpiredCode = code != null && findActiveSession() == null;
+    if (hasExpiredCode) {
+      throw StateError(noShowingPairingCode);
+    }
+
     final node.JoiningDevice? joining = _joining;
     if (code == null || joining == null) {
-      throw StateError('No device is waiting to be paired');
+      throw StateError(noDeviceWaitingToPair);
     }
     return (code: code, joining: joining);
-  }
-
-  Future<PairingOutcome> _waitForJoinAnswer(node.PendingJoin pending) async {
-    while (true) {
-      await Future<void>.delayed(_pollInterval);
-      final node.JoinStatusView status = await executeNodeCommand(
-        _channel,
-        const node.JoinStatusCommand(),
-      );
-      switch (status) {
-        case node.JoinWaiting():
-          _showWaitingJoin(mapWaitingJoinFromNode(pending, status));
-          continue;
-        case node.JoinApproved(:final node.AccountSummary account):
-          return mapPairingOutcomeFromNode(
-            account,
-            runnerLabels: _runnerLabels,
-            approverName: await findApproverName(
-              channel: _channel,
-              account: account,
-            ),
-          );
-        case node.JoinRejected():
-          throw StateError('The other device rejected this pairing');
-        case node.JoinExpired():
-          throw StateError('The pairing code expired before it was approved');
-      }
-    }
   }
 
   void _showWaitingJoin(WaitingJoin? waitingJoin) {
@@ -281,6 +273,12 @@ final class NodeBackedPairingRepository extends ChangeNotifier
     }
     _waitingJoin = waitingJoin;
     notifyListeners();
+  }
+
+  void _closeSessionOfCode(String code) {
+    if (_isCurrentCode(code)) {
+      _closeSession();
+    }
   }
 
   void _closeSession() {

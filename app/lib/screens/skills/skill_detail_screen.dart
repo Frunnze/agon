@@ -16,6 +16,7 @@ import 'package:agent_orchestration/icons/app_icon_kind.dart';
 import 'package:agent_orchestration/presentation/scope_catalog.dart';
 import 'package:agent_orchestration/presentation/scope_text.dart';
 import 'package:agent_orchestration/presentation/skill_text.dart';
+import 'package:agent_orchestration/screens/shared/action_refusal.dart';
 import 'package:agent_orchestration/screens/shared/deletion_prompts.dart';
 import 'package:agent_orchestration/screens/shared/deletion_review.dart';
 import 'package:agent_orchestration/screens/shared/scope_catalog_lookup.dart';
@@ -159,12 +160,20 @@ class SkillDetailScreen extends StatelessWidget {
             taskRepository: taskRepository,
             workflows: workflows,
             now: clock.now(),
-            onUndo: () =>
-                unawaited(skillRepository.undoLatestAgentChange(skill.id)),
+            onUndo: () => unawaited(_undoLatestAgentChange(context, skill)),
           ),
           end: const SizedBox.shrink(),
         ),
       ],
+    );
+  }
+
+  Future<void> _undoLatestAgentChange(BuildContext context, Skill skill) {
+    return runShowingRefusal(
+      context: context,
+      title: skill.name,
+      actionLabel: undoAgentChangeLabel,
+      action: () => skillRepository.undoLatestAgentChange(skill.id),
     );
   }
 
@@ -176,6 +185,7 @@ class SkillDetailScreen extends StatelessWidget {
     return reviewDeletion(
       context: context,
       prompt: describeSkillDeletion(skill: skill, users: users),
+      navigation: navigation,
       leavePage: () => navigation.returnTo(_skillsRoute),
       deleteRecord: () => skillRepository.deleteSkill(skill.id),
     );

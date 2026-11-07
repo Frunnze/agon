@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/widgets.dart';
 
 import 'package:agent_orchestration/data/clock.dart';
@@ -7,6 +9,7 @@ import 'package:agent_orchestration/data/repository/device_repository.dart';
 import 'package:agent_orchestration/data/repository/workflow_repository.dart';
 import 'package:agent_orchestration/icons/app_icon_kind.dart';
 import 'package:agent_orchestration/presentation/device_names.dart';
+import 'package:agent_orchestration/screens/shared/action_refusal.dart';
 import 'package:agent_orchestration/screens/shared/muted_note.dart';
 import 'package:agent_orchestration/screens/workflows.dart';
 import 'package:agent_orchestration/shell/app_navigation.dart';
@@ -23,6 +26,12 @@ import 'package:agent_orchestration/widgets/page_section.dart';
 import 'package:agent_orchestration/widgets/split_layout.dart';
 
 const SectionRoute _workflowsRoute = SectionRoute(AppSection.workflows);
+const String _discardChangeLabel = 'Discard change';
+const String _signChangeLabel = 'Sign change';
+
+typedef WorkflowChangeSettlement = Future<Workflow> Function(
+  WorkflowId workflowId,
+);
 
 class WorkflowChangeScreen extends StatelessWidget {
   const WorkflowChangeScreen({
@@ -83,10 +92,27 @@ class WorkflowChangeScreen extends StatelessWidget {
           backLink: backLink,
           actions: <Widget>[
             AppButton.secondary(
-              label: 'Discard change',
-              onPressed: _discardChange,
+              label: _discardChangeLabel,
+              onPressed: () => unawaited(
+                _settleChange(
+                  context,
+                  title: workflow.name,
+                  actionLabel: _discardChangeLabel,
+                  settle: workflowRepository.discardChange,
+                ),
+              ),
             ),
-            AppButton.primary(label: 'Sign change', onPressed: _signChange),
+            AppButton.primary(
+              label: _signChangeLabel,
+              onPressed: () => unawaited(
+                _settleChange(
+                  context,
+                  title: workflow.name,
+                  actionLabel: _signChangeLabel,
+                  settle: workflowRepository.signWorkflow,
+                ),
+              ),
+            ),
           ],
         ),
         NoticeBanner(
@@ -131,13 +157,21 @@ class WorkflowChangeScreen extends StatelessWidget {
     );
   }
 
-  Future<void> _discardChange() async {
-    await workflowRepository.discardChange(workflowId);
-    navigation.returnTo(_workflowsRoute);
-  }
+  Future<void> _settleChange(
+    BuildContext context, {
+    required String title,
+    required String actionLabel,
+    required WorkflowChangeSettlement settle,
+  }) async {
+    final ActionOutcome outcome = await runShowingRefusal(
+      context: context,
+      title: title,
+      actionLabel: actionLabel,
+      action: () => settle(workflowId),
+    );
 
-  Future<void> _signChange() async {
-    await workflowRepository.signWorkflow(workflowId);
-    navigation.returnTo(_workflowsRoute);
+    if (outcome == ActionOutcome.done) {
+      navigation.returnTo(_workflowsRoute);
+    }
   }
 }

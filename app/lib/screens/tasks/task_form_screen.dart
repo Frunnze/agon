@@ -91,6 +91,7 @@ class TaskFormScreen extends StatelessWidget {
     return reviewDeletion(
       context: context,
       prompt: describeTaskDeletion(task),
+      navigation: navigation,
       leavePage: () =>
           navigation.returnTo(const SectionRoute(AppSection.tasks)),
       deleteRecord: () => taskRepository.deleteTask(task.id),

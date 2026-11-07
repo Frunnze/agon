@@ -21,23 +21,30 @@ String readSignedDocument(node.WorkflowView view) {
   return signedDocument.toString();
 }
 
+void checkSignatureMatchesState(node.WorkflowView view) {
+  final bool hasSignature = view.workflow.signature != null;
+  final bool isInSignedState =
+      view.signatureState != node.SignatureState.notSignedYet;
+  if (hasSignature != isInSignedState) {
+    throw FormatException(
+      'the node sent workflow ${view.workflow.id} in state '
+      '${view.signatureState.wireName} with a signature: $hasSignature',
+    );
+  }
+}
+
 WorkflowSignature? _mapSignatureFromNode(node.WorkflowView view) {
+  checkSignatureMatchesState(view);
   final node.WorkflowSignature? signature = view.workflow.signature;
   if (signature == null) {
     return null;
   }
 
-  final DateTime? signedAt = view.signedAt;
-  if (signedAt == null) {
-    throw FormatException(
-      'the node sent signed workflow ${view.workflow.id} without signed_at',
-    );
-  }
   return WorkflowSignature(
     signedBy: signature.signedBy,
     signature: signature.signature,
     signedDocument: readSignedDocument(view),
-    signedAt: signedAt,
+    signedAt: view.signedAt,
   );
 }
 

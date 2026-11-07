@@ -12,6 +12,7 @@ import 'package:agent_orchestration/data/repository/workspace_repository.dart';
 import 'package:agent_orchestration/presentation/device_text.dart';
 import 'package:agent_orchestration/presentation/scope_catalog.dart';
 import 'package:agent_orchestration/screens/pairing.dart';
+import 'package:agent_orchestration/screens/shared/action_refusal.dart';
 import 'package:agent_orchestration/screens/shared/runner_link_route.dart';
 import 'package:agent_orchestration/shell/app_navigation.dart';
 import 'package:agent_orchestration/shell/app_route.dart';
@@ -27,6 +28,9 @@ import 'package:agent_orchestration/widgets/forms/tag_input_field.dart';
 import 'package:agent_orchestration/widgets/mixed_text.dart';
 import 'package:agent_orchestration/widgets/page_header.dart';
 import 'package:agent_orchestration/widgets/page_section.dart';
+
+const String _approveLabel = 'Approve';
+const String _rejectLabel = 'Reject';
 
 class PairingApprovalScreen extends StatefulWidget {
   const PairingApprovalScreen({
@@ -76,10 +80,12 @@ class _PairingApprovalScreenState extends State<PairingApprovalScreen> {
       );
     }
 
+    final String pageTitle = 'Approve ${request.deviceName}?';
+
     return AppPage(
       children: <Widget>[
         PageHeader(
-          title: 'Approve ${request.deviceName}?',
+          title: pageTitle,
           backLink: backLink,
           summary: <TextSegment>[
             TextSegment(
@@ -117,12 +123,16 @@ class _PairingApprovalScreenState extends State<PairingApprovalScreen> {
               runSpacing: AppSpacing.space2,
               children: <Widget>[
                 AppButton.secondary(
-                  label: 'Reject',
-                  onPressed: _isDeciding ? null : () => unawaited(_reject()),
+                  label: _rejectLabel,
+                  onPressed: _isDeciding
+                      ? null
+                      : () => unawaited(_reject(pageTitle)),
                 ),
                 AppButton.primary(
-                  label: 'Approve',
-                  onPressed: _isDeciding ? null : () => unawaited(_approve()),
+                  label: _approveLabel,
+                  onPressed: _isDeciding
+                      ? null
+                      : () => unawaited(_approve(pageTitle)),
                 ),
               ],
             ),
@@ -216,28 +226,44 @@ class _PairingApprovalScreenState extends State<PairingApprovalScreen> {
     widget.navigation.openSection(const SectionRoute(AppSection.devices));
   }
 
-  Future<void> _reject() async {
-    setState(() => _isDeciding = true);
-    try {
-      await widget.pairingRepository.rejectPairing();
-      _returnToDevices();
-    } finally {
-      _stopDeciding();
-    }
+  Future<void> _reject(String pageTitle) {
+    return _decide(
+      pageTitle: pageTitle,
+      actionLabel: _rejectLabel,
+      decision: widget.pairingRepository.rejectPairing,
+    );
   }
 
-  Future<void> _approve() async {
+  Future<void> _approve(String pageTitle) async {
     if (_workspaceIds.isEmpty) {
       setState(() => _showsProblems = true);
       return;
     }
 
+    final List<WorkspaceId> chosenWorkspaceIds = _workspaceIds;
+    await _decide(
+      pageTitle: pageTitle,
+      actionLabel: _approveLabel,
+      decision: () =>
+          widget.pairingRepository.approvePairing(chosenWorkspaceIds),
+    );
+  }
+
+  Future<void> _decide({
+    required String pageTitle,
+    required String actionLabel,
+    required PersonAction decision,
+  }) async {
     setState(() => _isDeciding = true);
-    try {
-      await widget.pairingRepository.approvePairing(_workspaceIds);
+    final ActionOutcome outcome = await runShowingRefusal(
+      context: context,
+      title: pageTitle,
+      actionLabel: actionLabel,
+      action: decision,
+    ).whenComplete(_stopDeciding);
+
+    if (outcome == ActionOutcome.done) {
       _returnToDevices();
-    } finally {
-      _stopDeciding();
     }
   }
 

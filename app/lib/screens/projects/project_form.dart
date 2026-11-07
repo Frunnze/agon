@@ -14,7 +14,9 @@ import 'package:agent_orchestration/presentation/device_names.dart';
 import 'package:agent_orchestration/screens/projects.dart';
 import 'package:agent_orchestration/screens/projects/new_project_repos_field.dart';
 import 'package:agent_orchestration/screens/projects/project_repositories_editor.dart';
+import 'package:agent_orchestration/screens/shared/action_refusal.dart';
 import 'package:agent_orchestration/screens/shared/approval_policy_field.dart';
+import 'package:agent_orchestration/screens/task_form/submit_refusal.dart';
 import 'package:agent_orchestration/theme/app_typography.dart';
 import 'package:agent_orchestration/widgets/forms/choice_list_field.dart';
 import 'package:agent_orchestration/widgets/forms/form_action.dart';
@@ -55,6 +57,7 @@ class _ProjectFormState extends State<ProjectForm> {
   late ApprovalPolicy? _approvalPolicy = widget.initialProject.approvalPolicy;
   String? _filledName;
   String? _nameProblem;
+  SubmitRefusal? _refusal;
   bool _isSubmitting = false;
 
   @override
@@ -133,6 +136,7 @@ class _ProjectFormState extends State<ProjectForm> {
           onChanged: (ApprovalPolicy? approvalPolicy) =>
               setState(() => _approvalPolicy = approvalPolicy),
         ),
+        ?_buildRefusalBanner(),
         FormActionButtons<DraftedProject>(
           actions: widget.actions,
           isSubmitting: _isSubmitting,
@@ -190,6 +194,24 @@ class _ProjectFormState extends State<ProjectForm> {
     _repositoriesEditor.planNewFolder(parent);
   }
 
+  SubmitRefusalBanner? _buildRefusalBanner() {
+    final SubmitRefusal? refusal = _refusal;
+    if (refusal == null) {
+      return null;
+    }
+    return SubmitRefusalBanner(refusal: refusal);
+  }
+
+  Future<void> _submitProject(SubmitFormAction<DraftedProject> action) async {
+    final SubmitRefusal? refusal = await catchRefusal(
+      actionLabel: action.label,
+      action: () => action.onSubmitted(_readProject()),
+    );
+    if (mounted) {
+      setState(() => _refusal = refusal);
+    }
+  }
+
   Future<void> _submit(SubmitFormAction<DraftedProject> action) async {
     final String name = _nameController.text.trim();
     final String? nameProblem = describeNameProblem(name);
@@ -198,7 +220,10 @@ class _ProjectFormState extends State<ProjectForm> {
         _repositoriesEditor.hasNoRepository && !canNameFirstRepository
         ? _noRepositoryProblem
         : null;
-    setState(() => _nameProblem = nameProblem);
+    setState(() {
+      _nameProblem = nameProblem;
+      _refusal = null;
+    });
     _repositoriesEditor.showAddressProblem(repositoryProblem);
     if (nameProblem != null || repositoryProblem != null) {
       return;
@@ -211,7 +236,7 @@ class _ProjectFormState extends State<ProjectForm> {
         name,
       );
       if (isNewFolderReady) {
-        await action.onSubmitted(_readProject());
+        await _submitProject(action);
       }
     } finally {
       if (mounted) {

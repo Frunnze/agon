@@ -146,9 +146,12 @@ String describeSignedSummary({
   }
 
   final String signer = deviceNames.nameOf(signature.signedBy);
-  final String since = lowercaseFirstLetter(
-    describeTimeSince(signature.signedAt, now),
-  );
+  final DateTime? signedAt = signature.signedAt;
+  if (signedAt == null) {
+    return 'In $availability · signed on $signer';
+  }
+
+  final String since = lowercaseFirstLetter(describeTimeSince(signedAt, now));
   return 'In $availability · signed on $signer $since';
 }
 
@@ -248,12 +251,18 @@ String describeChangeSummary({
   required DeviceNames deviceNames,
   required DateTime now,
 }) {
-  final String since = lowercaseFirstLetter(
-    describeTimeSince(change.changedAt, now),
-  );
-  final String device = deviceNames.nameOf(change.changedBy);
+  final List<String> parts = <String>['Changed'];
 
-  return 'Changed $since on $device';
+  final DateTime? changedAt = change.changedAt;
+  if (changedAt != null) {
+    parts.add(lowercaseFirstLetter(describeTimeSince(changedAt, now)));
+  }
+
+  final DeviceId? changedBy = change.changedBy;
+  if (changedBy != null) {
+    parts.add('on ${deviceNames.nameOf(changedBy)}');
+  }
+  return parts.join(' ');
 }
 
 String describeKeptVersion(WorkflowSignature? signature, DateTime now) {
@@ -261,8 +270,11 @@ String describeKeptVersion(WorkflowSignature? signature, DateTime now) {
     return 'Until then, runners cannot run it.';
   }
 
-  final String since = lowercaseFirstLetter(
-    describeTimeSince(signature.signedAt, now),
-  );
+  final DateTime? signedAt = signature.signedAt;
+  if (signedAt == null) {
+    return 'Until then, runners keep using the signed version.';
+  }
+
+  final String since = lowercaseFirstLetter(describeTimeSince(signedAt, now));
   return 'Until then, runners keep using the version signed $since.';
 }

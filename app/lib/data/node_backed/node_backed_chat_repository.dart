@@ -58,7 +58,7 @@ final class NodeBackedChatRepository implements ChatRepository {
         text: trimmedText,
       ),
     );
-    await _runSource.refreshRun(runId);
+    await runLoggingNodeFailures(() => _runSource.refreshRun(runId));
     return mapChatMessageFromNode(sent);
   }
 }

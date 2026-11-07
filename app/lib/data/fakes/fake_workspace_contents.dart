@@ -1,5 +1,6 @@
 import 'package:agent_orchestration/data/fakes.dart';
 import 'package:agent_orchestration/data/fakes/fake_task_work.dart';
+import 'package:agent_orchestration/data/fakes/workspace_membership.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/project.dart';
 import 'package:agent_orchestration/data/models/workspace.dart';
@@ -11,17 +12,28 @@ final class FakeWorkspaceContents {
     required FakeSkillRepository skillRepository,
     required FakeRuleRepository ruleRepository,
     required FakeWorkflowRepository workflowRepository,
+    required FakeDeviceRepository deviceRepository,
   }) : _projectRepository = projectRepository,
        _taskWork = taskWork,
        _skillRepository = skillRepository,
        _ruleRepository = ruleRepository,
-       _workflowRepository = workflowRepository;
+       _workflowRepository = workflowRepository,
+       _deviceRepository = deviceRepository;
 
   final FakeProjectRepository _projectRepository;
   final FakeTaskWork _taskWork;
   final FakeSkillRepository _skillRepository;
   final FakeRuleRepository _ruleRepository;
   final FakeWorkflowRepository _workflowRepository;
+  final FakeDeviceRepository _deviceRepository;
+
+  void grantCreatedWorkspace(WorkspaceId createdWorkspaceId) {
+    _deviceRepository.grantWorkspaceToCurrentDevice(createdWorkspaceId);
+  }
+
+  void refuseOutsiderDevice(WorkspaceId workspaceId) {
+    refuseDeviceOutsideWorkspace(_deviceRepository, workspaceId);
+  }
 
   void refuseRunningWork(Workspace workspace) {
     final Set<ProjectId> projectIds = _listProjectIds(workspace.id);
@@ -48,6 +60,7 @@ final class FakeWorkspaceContents {
       deletedWorkspaceId: deletedWorkspaceId,
       remainingWorkspaceIds: remainingWorkspaceIds,
     );
+    _deviceRepository.withdrawWorkspace(deletedWorkspaceId);
     _workflowRepository.forgetUnseenWorkflows(remainingWorkspaceIds);
   }
 

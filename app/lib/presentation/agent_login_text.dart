@@ -4,6 +4,7 @@ import 'package:agent_orchestration/data/models/runner.dart';
 const String loggedInText = 'Logged in';
 const String notLoggedInText = 'Not logged in';
 const String notInstalledText = 'Not installed';
+const String unknownLoginText = 'Unknown';
 const String connectedText = 'Connected';
 const String connectedWithApiKeyText = 'Connected with an API key';
 const String notConnectedText = 'Not connected';
@@ -127,6 +128,13 @@ AgentLoginDescription _describeLocalLogin(ClaudeLogin login) {
       detail:
           'Install Claude Code on this computer, then open this page '
           'again.',
+      isReady: false,
+    ),
+    ClaudeLogin.unknown => const AgentLoginDescription(
+      statusText: unknownLoginText,
+      detail:
+          "Claude Code didn't say whether it is logged in. Open this page "
+          'again to check.',
       isReady: false,
     ),
   };

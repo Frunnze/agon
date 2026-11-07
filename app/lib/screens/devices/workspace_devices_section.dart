@@ -18,6 +18,7 @@ import 'package:agent_orchestration/presentation/device_text.dart';
 import 'package:agent_orchestration/presentation/runner_text.dart';
 import 'package:agent_orchestration/screens/devices/add_workspace_device_dialog.dart';
 import 'package:agent_orchestration/screens/runners.dart';
+import 'package:agent_orchestration/screens/shared/action_refusal.dart';
 import 'package:agent_orchestration/shell/app_navigation.dart';
 import 'package:agent_orchestration/shell/app_route.dart';
 import 'package:agent_orchestration/theme/app_typography.dart';
@@ -63,6 +64,9 @@ Runner? findDeviceRunner({
   return null;
 }
 
+const String _addDeviceLabel = 'Add a device';
+const String _removeDeviceLabel = 'Remove';
+
 class WorkspaceDevicesSection extends StatelessWidget {
   const WorkspaceDevicesSection({
     required this.workspaceRepository,
@@ -93,7 +97,7 @@ class WorkspaceDevicesSection extends StatelessWidget {
       title: 'In ${workspace.name}',
       actions: <Widget>[
         AppButton.secondary(
-          label: 'Add a device',
+          label: _addDeviceLabel,
           icon: AppIconKind.plus,
           onPressed: () => unawaited(_addDevice(context, workspace)),
         ),
@@ -104,7 +108,7 @@ class WorkspaceDevicesSection extends StatelessWidget {
           columns: buildColumnsWithAction(_memberColumnLabels),
           rows: <ListRowData>[
             for (final Device device in members)
-              _buildMemberRow(device, workspace.id),
+              _buildMemberRow(context, device, workspace.id),
           ],
         ),
       ],
@@ -136,7 +140,11 @@ class WorkspaceDevicesSection extends StatelessWidget {
     return DefaultTextStyle.merge(style: AppTextStyles.bodyMuted, child: note);
   }
 
-  ListRowData _buildMemberRow(Device device, WorkspaceId workspaceId) {
+  ListRowData _buildMemberRow(
+    BuildContext context,
+    Device device,
+    WorkspaceId workspaceId,
+  ) {
     final DeviceId thisDeviceId = deviceRepository.currentDevice().id;
     final AppServerMember? serverMember = findAppServerMember(
       group: workspaceRepository.findAppServerGroup(),
@@ -169,11 +177,12 @@ class WorkspaceDevicesSection extends StatelessWidget {
       end: device.id == thisDeviceId
           ? null
           : AppButton.secondary(
-              label: 'Remove',
+              label: _removeDeviceLabel,
               onPressed: () => unawaited(
-                deviceRepository.removeDeviceFromWorkspace(
-                  device.id,
-                  workspaceId,
+                _removeDevice(
+                  context,
+                  device: device,
+                  workspaceId: workspaceId,
                 ),
               ),
             ),
@@ -221,7 +230,25 @@ class WorkspaceDevicesSection extends StatelessWidget {
     }
   }
 
+  Future<void> _removeDevice(
+    BuildContext context, {
+    required Device device,
+    required WorkspaceId workspaceId,
+  }) {
+    return runShowingRefusal(
+      context: context,
+      title: device.name,
+      actionLabel: _removeDeviceLabel,
+      action: () =>
+          deviceRepository.removeDeviceFromWorkspace(device.id, workspaceId),
+    );
+  }
+
   Future<void> _addDevice(BuildContext context, Workspace workspace) async {
+    final BuildContext rootContext = Navigator.of(
+      context,
+      rootNavigator: true,
+    ).context;
     final List<Device> outsiders = <Device>[
       for (final Device device in deviceRepository.listDevices())
         if (!device.revoked && !device.workspaces.contains(workspace.id))
@@ -233,11 +260,16 @@ class WorkspaceDevicesSection extends StatelessWidget {
       workspaceName: workspace.name,
       candidates: outsiders,
     );
-    if (chosenDeviceId != null) {
-      await deviceRepository.addDeviceToWorkspace(
-        chosenDeviceId,
-        workspace.id,
-      );
+    if (chosenDeviceId == null || !rootContext.mounted) {
+      return;
     }
+
+    await runShowingRefusal(
+      context: rootContext,
+      title: _addDeviceLabel,
+      actionLabel: _addDeviceLabel,
+      action: () =>
+          deviceRepository.addDeviceToWorkspace(chosenDeviceId, workspace.id),
+    );
   }
 }

@@ -2,12 +2,15 @@ import 'package:flutter/widgets.dart';
 
 import 'package:agent_orchestration/data/clock.dart';
 import 'package:agent_orchestration/data/models/approval.dart';
+import 'package:agent_orchestration/data/models/workflow.dart';
 import 'package:agent_orchestration/data/repository/approval_repository.dart';
 import 'package:agent_orchestration/data/repository/device_repository.dart';
 import 'package:agent_orchestration/data/repository/workflow_repository.dart';
 import 'package:agent_orchestration/presentation/device_names.dart';
 import 'package:agent_orchestration/presentation/time_phrases.dart';
 import 'package:agent_orchestration/screens/approvals/approval_dialog.dart';
+import 'package:agent_orchestration/screens/approvals/approval_text.dart';
+import 'package:agent_orchestration/screens/shared/action_refusal.dart';
 import 'package:agent_orchestration/widgets/app_dialog.dart';
 
 final class ApprovalReview {
@@ -28,16 +31,39 @@ final class ApprovalReview {
     required ApprovalRequest request,
     required String? runLabel,
   }) async {
+    final BuildContext rootContext = Navigator.of(
+      context,
+      rootNavigator: true,
+    ).context;
     final ApprovalDecision? decision = await askForDecision(
       context: context,
       request: request,
       runLabel: runLabel,
     );
-    if (decision == null) {
+    if (decision == null || !rootContext.mounted) {
       return;
     }
 
-    await approvalRepository.decideApproval(request.id, decision);
+    await decide(
+      rootContext: rootContext,
+      request: request,
+      decision: decision,
+    );
+  }
+
+  Future<void> decide({
+    required BuildContext rootContext,
+    required ApprovalRequest request,
+    required ApprovalDecision decision,
+  }) {
+    final List<Workflow> workflows = workflowRepository.listWorkflows();
+
+    return runShowingRefusal(
+      context: rootContext,
+      title: describeApprovalTitle(request.action, workflows),
+      actionLabel: describeDecisionLabel(decision),
+      action: () => approvalRepository.decideApproval(request.id, decision),
+    );
   }
 
   Future<ApprovalDecision?> askForDecision({

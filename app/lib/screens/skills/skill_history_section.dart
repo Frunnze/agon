@@ -15,6 +15,8 @@ import 'package:agent_orchestration/widgets/lists/responsive_list.dart';
 import 'package:agent_orchestration/widgets/mixed_text.dart';
 import 'package:agent_orchestration/widgets/page_section.dart';
 
+const String undoAgentChangeLabel = 'Undo';
+
 class SkillHistorySection extends StatelessWidget {
   const SkillHistorySection({
     required this.history,
@@ -48,7 +50,10 @@ class SkillHistorySection extends StatelessWidget {
                 _buildRow(
                   change: change,
                   end: identical(change, undoableChange)
-                      ? AppButton.secondary(label: 'Undo', onPressed: onUndo)
+                      ? AppButton.secondary(
+                          label: undoAgentChangeLabel,
+                          onPressed: onUndo,
+                        )
                       : null,
                 ),
             ],

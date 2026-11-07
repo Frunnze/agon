@@ -10,6 +10,7 @@ import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/library.dart';
 import 'package:agent_orchestration/data/node_backed.dart';
 import 'package:agent_orchestration/data/node_backed/mapping.dart';
+import 'package:agent_orchestration/data/node_backed/workspace_listing.dart';
 import 'package:agent_orchestration/data/repository/record_not_found.dart';
 import 'package:agent_orchestration/data/repository/skill_repository.dart';
 import 'package:agent_orchestration/data/repository/workspace_repository.dart';
@@ -40,6 +41,9 @@ final class NodeBackedSkillRepository extends ChangeNotifier
     final int fetch = _fetches.startFetch();
     final List<Skill> skills = await _loadSkills();
     if (!_fetches.acceptIfNewest(fetch)) {
+      if (_fetches.isLatestFetch(fetch)) {
+        await load();
+      }
       return;
     }
 
@@ -72,6 +76,7 @@ final class NodeBackedSkillRepository extends ChangeNotifier
     requireValidSkillName(draft.name);
     requireFreeSkillName(name: draft.name, otherSkills: _skills);
 
+    final int change = _fetches.startLocalChange();
     final node.Skill created = await executeNodeCommand(
       _channel,
       node.CreateSkillCommand(
@@ -84,7 +89,7 @@ final class NodeBackedSkillRepository extends ChangeNotifier
         improvement: mapSkillImprovementToNode(draft.improvement),
       ),
     );
-    return _storeSkill(mapSkillFromNode(created));
+    return _storeSkill(mapSkillFromNode(created), change);
   }
 
   @override
@@ -96,6 +101,7 @@ final class NodeBackedSkillRepository extends ChangeNotifier
     );
     requireFreeSkillName(name: draft.name, otherSkills: otherSkills);
 
+    final int change = _fetches.startLocalChange();
     final node.Skill updated = await executeNodeCommand(
       _channel,
       node.UpdateSkillCommand(
@@ -109,26 +115,28 @@ final class NodeBackedSkillRepository extends ChangeNotifier
         improvement: mapSkillImprovementToNode(draft.improvement),
       ),
     );
-    return _storeSkill(mapSkillFromNode(updated));
+    return _storeSkill(mapSkillFromNode(updated), change);
   }
 
   @override
   Future<Skill> undoLatestAgentChange(SkillId skillId) async {
+    final int change = _fetches.startLocalChange();
     final node.Skill restored = await executeNodeCommand(
       _channel,
       node.UndoSkillChangeCommand(skillId: skillId),
     );
-    return _storeSkill(mapSkillFromNode(restored));
+    return _storeSkill(mapSkillFromNode(restored), change);
   }
 
   @override
   Future<void> deleteSkill(SkillId skillId) async {
+    final int change = _fetches.startLocalChange();
     await executeNodeCommand(
       _channel,
       node.DeleteSkillCommand(skillId: skillId),
     );
 
-    _fetches.recordLocalChange();
+    _fetches.finishLocalChange(change, reloadWhenOvertaken: load);
     _skills = removeRecord(
       _skills,
       matches: (Skill skill) => skill.id == skillId,
@@ -146,12 +154,14 @@ final class NodeBackedSkillRepository extends ChangeNotifier
     startBackgroundNodeWork(load);
   }
 
-  Skill _storeSkill(Skill skill) {
-    _fetches.recordLocalChange();
-    _skills = replaceOrAppendRecord(
+  Skill _storeSkill(Skill skill, int change) {
+    _fetches.finishLocalChange(change, reloadWhenOvertaken: load);
+    _skills = placeInWorkspaceListing(
       _skills,
-      matches: (Skill candidate) => candidate.id == skill.id,
       record: skill,
+      recordWorkspaces: skill.scope.workspaces,
+      listedWorkspaceId: _workspaceRepository.currentWorkspace().id,
+      identify: (Skill listed) => listed.id.value,
     );
     notifyListeners();
     return skill;
