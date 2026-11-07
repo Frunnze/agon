@@ -28,7 +28,7 @@ Task randomTask(Random random) {
 
 Run createRandomRun(Random random) {
   final Task task = randomTask(random);
-  final Workflow? workflow = random.nextBool()
+  final Workflow? workflow = task.doer is WorkflowDoer
       ? pickOne(random, galleryWorkflows)
       : null;
 
@@ -119,13 +119,7 @@ void main() {
       final Run failed = random.nextBool()
           ? galleryFailedRun
           : buildCancelledRun(createRandomRun(random), galleryNow);
-      final Run retried = buildRetriedRun(
-        run: failed,
-        runId: const RunId('retried'),
-        number: failed.number + 1,
-        startedBy: GalleryDeviceIds.airLaptop,
-        at: galleryNow,
-      );
+      final Run retried = buildRetriedRun(failed, galleryNow);
 
       expect(retried.worktreeBranch, failed.worktreeBranch);
       expect(retried.status, RunStatus.running);
@@ -134,16 +128,7 @@ void main() {
           expect(retried.steps[index].status, StepStatus.done);
         }
       }
-      expect(
-        () => buildRetriedRun(
-          run: retried,
-          runId: const RunId('again'),
-          number: 1,
-          startedBy: GalleryDeviceIds.airLaptop,
-          at: galleryNow,
-        ),
-        throwsStateError,
-      );
+      expect(() => buildRetriedRun(retried, galleryNow), throwsStateError);
     }
   });
 }

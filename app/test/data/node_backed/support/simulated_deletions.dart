@@ -1,4 +1,5 @@
 import 'simulated_node_replies.dart';
+import 'simulated_scopes.dart';
 import 'simulated_work_node.dart';
 
 const Set<String> _unfinishedRunStatuses = <String>{
@@ -53,10 +54,14 @@ final class SimulatedCatalogDeletions {
   SimulatedCatalogDeletions({
     required this.workspaces,
     required this.projects,
+    required this.skills,
+    required this.rules,
   });
 
   final List<Map<String, Object?>> workspaces;
   final List<Map<String, Object?>> projects;
+  final List<Map<String, Object?>> skills;
+  final List<Map<String, Object?>> rules;
 
   Object? deleteProject(SimulatedCommand command) {
     final Map<String, Object?> project = findSimulatedRecord(
@@ -83,6 +88,17 @@ final class SimulatedCatalogDeletions {
       (Map<String, Object?> project) =>
           project['workspace_id'] == workspace['id'],
     );
+    final Set<Object?> remainingWorkspaceIds = <Object?>{
+      for (final Map<String, Object?> remaining in workspaces) remaining['id'],
+    };
+    for (final List<Map<String, Object?>> library
+        in <List<Map<String, Object?>>>[skills, rules]) {
+      forgetSimulatedWorkspace(
+        library,
+        deletedWorkspaceId: workspace['id'],
+        remainingWorkspaceIds: remainingWorkspaceIds,
+      );
+    }
     return null;
   }
 }

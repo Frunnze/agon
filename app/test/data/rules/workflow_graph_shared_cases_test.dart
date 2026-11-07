@@ -8,8 +8,8 @@ import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/runner.dart';
 import 'package:agent_orchestration/data/models/scope.dart';
 import 'package:agent_orchestration/data/models/workflow.dart';
-import 'package:agent_orchestration/data/rules/connection_rules.dart';
 import 'package:agent_orchestration/data/rules/workflow_graph.dart';
+import 'package:agent_orchestration/data/rules/workflow_problems.dart';
 
 import '../../support/random_inputs.dart';
 
@@ -19,6 +19,8 @@ const String _sharedCasesPath =
 const String _caseWorkflowId = 'shared-case-workflow';
 const String _caseWorkflowName = 'shared-case';
 const String _agentIdPrefix = 'shared-agent-';
+const int _unknownAgentNumber = 999;
+const WorkflowAgentId _firstAgentId = WorkflowAgentId('${_agentIdPrefix}0');
 
 class _SharedGraphCase {
   const _SharedGraphCase({
@@ -56,18 +58,20 @@ List<String> _readNames(Object? entry) {
   ];
 }
 
-WorkflowAgentId _identifyAgent(List<String> names, String name) {
-  final int position = names.indexOf(name);
-  if (position < 0) {
-    throw FormatException('a shared graph case names no agent $name');
+WorkflowAgentId _identifyAgent(List<WorkflowAgent> agents, String name) {
+  for (final WorkflowAgent agent in agents) {
+    if (agent.name == name) {
+      return agent.id;
+    }
   }
-  return WorkflowAgentId('$_agentIdPrefix$position');
+  return const WorkflowAgentId('$_agentIdPrefix$_unknownAgentNumber');
 }
 
 WorkflowAgent _readAgent(Object? entry, int position) {
   final Map<String, Object?> fields = _readObject(entry);
+  final int idNumber = fields['id_number'] as int? ?? position;
   return WorkflowAgent(
-    id: WorkflowAgentId('$_agentIdPrefix$position'),
+    id: WorkflowAgentId('$_agentIdPrefix$idNumber'),
     name: fields['name']! as String,
     stepKind: StepKind.agent,
     kind: null,
@@ -83,11 +87,11 @@ WorkflowAgent _readAgent(Object? entry, int position) {
   );
 }
 
-AgentConnection _readConnection(Object? entry, List<String> names) {
+AgentConnection _readConnection(Object? entry, List<WorkflowAgent> agents) {
   final Map<String, Object?> fields = _readObject(entry);
   return AgentConnection(
-    from: _identifyAgent(names, fields['from']! as String),
-    to: _identifyAgent(names, fields['to']! as String),
+    from: _identifyAgent(agents, fields['from']! as String),
+    to: _identifyAgent(agents, fields['to']! as String),
     condition: fields['condition'] as String?,
     roundLimit: fields['round_limit'] as int?,
   );
@@ -100,12 +104,9 @@ _SharedGraphCase _readSharedCase(Object? entry) {
     for (int position = 0; position < agentEntries.length; position += 1)
       _readAgent(agentEntries[position], position),
   ];
-  final List<String> names = <String>[
-    for (final WorkflowAgent agent in agents) agent.name,
-  ];
   final List<AgentConnection> connections = <AgentConnection>[
     for (final Object? connection in _readList(fields['connections']))
-      _readConnection(connection, names),
+      _readConnection(connection, agents),
   ];
   return _SharedGraphCase(
     description: fields['description']! as String,
@@ -138,10 +139,10 @@ List<String> _listOrderedNames(Workflow workflow) {
 }
 
 Set<String> _listReachedNames(Workflow workflow) {
-  final WorkflowAgent first = workflow.agents.first;
   return <String>{
     for (final WorkflowAgent agent in workflow.agents)
-      if (reachesForward(workflow, from: first.id, to: agent.id)) agent.name,
+      if (reachesForward(workflow, from: _firstAgentId, to: agent.id))
+        agent.name,
   };
 }
 
@@ -156,9 +157,9 @@ void main() {
     }
   });
 
-  test('test_describe_connections_problem_property_agrees_with_table', () {
+  test('test_describe_workflow_problem_property_agrees_with_the_table', () {
     for (final _SharedGraphCase sharedCase in sharedCases) {
-      final String? problem = describeConnectionsProblem(sharedCase.workflow);
+      final String? problem = describeWorkflowProblem(sharedCase.workflow);
 
       expect(
         problem == null,
@@ -196,7 +197,7 @@ void main() {
       );
 
       final List<String> names = _listOrderedNames(reordered);
-      final String? problem = describeConnectionsProblem(reordered);
+      final String? problem = describeWorkflowProblem(reordered);
 
       expect(names, sharedCase.order, reason: sharedCase.description);
       expect(problem == null, sharedCase.isValid);

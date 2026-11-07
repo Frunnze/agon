@@ -8,6 +8,18 @@ const String openLoginProblem = 'a Claude Code login is already open';
 const String loginPrompt = 'Paste code here if prompted >';
 const String _containerPlace = 'container';
 const String _runningState = 'running';
+const String _blankKeyProblem =
+    'the Claude Code token or API key cannot be empty';
+const String _brokenKeyProblem =
+    'the token or API key cannot have spaces or line breaks';
+final RegExp _surroundingWhitespace = RegExp(
+  r'^\p{White_Space}+|\p{White_Space}+$',
+  unicode: true,
+);
+final RegExp _breakingCharacters = RegExp(
+  r'[\p{White_Space}\p{Cc}]',
+  unicode: true,
+);
 
 final class SimulatedAgentLoginNode {
   String claudeLogin = 'not_logged_in';
@@ -29,7 +41,7 @@ final class SimulatedAgentLoginNode {
       'read_agent_login' => encodeSuccessReply(login),
       'type_agent_login' => _typeKeys(decodeText(command['keys'])),
       'stop_agent_login' => _stopLogin(),
-      'save_agent_api_key' => _keepCredential('api_key'),
+      'save_agent_api_key' => _saveApiKey(decodeText(command['api_key'])),
       'forget_agent_credential' => _keepCredential(null),
       _ => encodeErrorReply('unknown command: $name'),
     };
@@ -37,8 +49,8 @@ final class SimulatedAgentLoginNode {
 
   void finishLogin({required String? problem}) {
     final JsonObject? running = login;
-    if (running == null) {
-      throw StateError('no login is open');
+    if (running == null || running['state'] != _runningState) {
+      throw StateError('no login is running');
     }
     final bool isConnected = problem == null;
     login = <String, Object?>{
@@ -83,6 +95,17 @@ final class SimulatedAgentLoginNode {
   String _stopLogin() {
     login = null;
     return encodeSuccessReply(null);
+  }
+
+  String _saveApiKey(String apiKey) {
+    final String trimmed = apiKey.replaceAll(_surroundingWhitespace, '');
+    if (trimmed.isEmpty) {
+      return encodeErrorReply(_blankKeyProblem);
+    }
+    if (_breakingCharacters.hasMatch(trimmed)) {
+      return encodeErrorReply(_brokenKeyProblem);
+    }
+    return _keepCredential('api_key');
   }
 
   String _keepCredential(String? credential) {

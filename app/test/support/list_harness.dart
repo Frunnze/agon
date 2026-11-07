@@ -2,7 +2,6 @@ import 'dart:math';
 
 import 'package:agent_orchestration/data/app_dependencies.dart';
 import 'package:agent_orchestration/data/fakes.dart';
-import 'package:agent_orchestration/data/gallery/gallery_audit.dart';
 import 'package:agent_orchestration/data/gallery/gallery_chat.dart';
 import 'package:agent_orchestration/data/gallery/gallery_identifiers.dart';
 import 'package:agent_orchestration/data/gallery/gallery_runs.dart';
@@ -20,6 +19,7 @@ import 'package:agent_orchestration/data/models/task.dart';
 import 'package:agent_orchestration/data/models/workflow.dart';
 
 import 'app_harness.dart';
+import 'fake_task_work_links.dart';
 
 List<Listed> pickRandomRecords<Listed>(Random random, List<Listed> records) {
   final List<Listed> picked = <Listed>[];
@@ -85,14 +85,20 @@ AppDependencies buildDependenciesWithRules(List<Rule> rules) {
 
   return replaceRepositories(
     base,
-    ruleRepository: FakeRuleRepository(rules: rules, clock: base.clock),
+    ruleRepository: FakeRuleRepository(
+      rules: rules,
+      clock: base.clock,
+      workspaceRepository: base.workspaceRepository,
+    ),
   );
 }
 
 AppDependencies buildDependenciesWithProjects(List<Project> projects) {
+  final AppDependencies base = buildGalleryDependencies();
+
   return replaceRepositories(
-    buildGalleryDependencies(),
-    projectRepository: FakeProjectRepository(projects: projects),
+    base,
+    projectRepository: buildProjectRepositoryOver(base, projects),
   );
 }
 
@@ -143,13 +149,7 @@ AppDependencies buildDependenciesWithRunners(List<Runner> runners) {
 AppDependencies buildDependenciesWithAuditEntries(List<AuditEntry> entries) {
   return replaceRepositories(
     buildGalleryDependencies(),
-    auditRepository: FakeAuditRepository(
-      entries: entries,
-      summary: ChainSummary(
-        entryCount: entries.length,
-        headHash: galleryAuditEntries.first.hash,
-      ),
-    ),
+    auditRepository: FakeAuditRepository(entries: entries),
   );
 }
 

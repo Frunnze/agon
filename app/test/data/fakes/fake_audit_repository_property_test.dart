@@ -14,7 +14,6 @@ import 'support/refusals.dart';
 const String _typePrefix = 'test_fake_audit_repository';
 const int _largestChainLength = 7;
 const int _largestFirstIndex = 2000;
-const int _largestEntryCount = 5000;
 
 enum _Tampering { changeHash, changePreviousHash, renumber, swap, duplicate }
 
@@ -134,18 +133,8 @@ int? _findNewestBrokenIndex(List<AuditEntry> newestFirst) {
   return null;
 }
 
-ChainSummary _randomSummary(Random random) {
-  return ChainSummary(
-    entryCount: random.nextInt(_largestEntryCount),
-    headHash: randomText(random),
-  );
-}
-
 FakeAuditRepository _buildRepository(Random random, List<AuditEntry> entries) {
-  return FakeAuditRepository(
-    entries: entries,
-    summary: _randomSummary(random),
-  );
+  return FakeAuditRepository(entries: entries);
 }
 
 List<AuditEntry> _readEntries(FakeAuditRepository repository) {
@@ -174,7 +163,10 @@ void main() {
       final FakeAuditRepository repository = _buildRepository(random, chain);
       final List<AuditEntry> before = repository.listEntries();
 
-      await isRefused(repository.verifyChain, isRefusal: refusesWithStateError);
+      await isRefused(
+        repository.verifyChain,
+        isRefusal: refusesWithStateError,
+      );
 
       expect(identical(repository.listEntries(), before), isTrue);
       expect(repository.listEntries(), orderedEquals(chain));
@@ -200,22 +192,25 @@ void main() {
     }
   });
 
-  test('${_typePrefix}_verify_chain_property_intact_chain_gives_the_'
+  test('${_typePrefix}_verify_chain_property_intact_chain_gives_its_own_'
       'summary', () async {
     final Random random = seededRandom(63906);
 
     for (int i = 0; i < propertyIterations; i += 1) {
-      final ChainSummary summary = _randomSummary(random);
+      final List<AuditEntry> chain = _randomLinkedChain(random);
       final FakeAuditRepository repository = FakeAuditRepository(
-        entries: _randomLinkedChain(random),
-        summary: summary,
+        entries: chain,
       );
       final NotificationCounter notifications = NotificationCounter();
       repository.addListener(notifications.record);
 
       final ChainSummary verified = await repository.verifyChain();
 
-      expect(identical(verified, summary), isTrue);
+      final int expectedCount = chain.isEmpty ? 0 : chain.first.index + 1;
+      expect(verified.entryCount, expectedCount);
+      if (chain.isNotEmpty) {
+        expect(verified.headHash, chain.first.hash);
+      }
       expect(notifications.count, 0);
     }
   });

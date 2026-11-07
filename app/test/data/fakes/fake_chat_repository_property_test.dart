@@ -6,7 +6,7 @@ import 'package:agent_orchestration/data/clock.dart';
 import 'package:agent_orchestration/data/fakes.dart';
 import 'package:agent_orchestration/data/models/conversation.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
-import 'package:agent_orchestration/data/models/runner.dart';
+import 'package:agent_orchestration/data/repository/record_not_found.dart';
 
 import '../../support/random_inputs.dart';
 import 'support/chat_inputs.dart';
@@ -26,6 +26,7 @@ void main() {
 
       final FakeChatRepository repository = FakeChatRepository(
         conversations: seeded,
+        taskRepository: buildChatTaskRepository(random),
         clock: FixedClock(randomUtcMoment(random)),
       );
 
@@ -45,8 +46,10 @@ void main() {
     for (int i = 0; i < propertyIterations; i += 1) {
       final List<Conversation> seeded = randomConversations(random);
       final List<Conversation> atConstruction = List<Conversation>.of(seeded);
+      final FakeTaskRepository runs = buildChatTaskRepository(random);
       final FakeChatRepository repository = FakeChatRepository(
         conversations: seeded,
+        taskRepository: runs,
         clock: FixedClock(randomUtcMoment(random)),
       );
 
@@ -62,27 +65,29 @@ void main() {
         );
         expect(identical(found, conversation), isTrue);
       }
-      expect(repository.findConversation(_unseededRunId).messages, isEmpty);
+      expect(
+        repository.findConversation(_unseededRunId).messages,
+        orderedEquals(runs.findRun(_unseededRunId).chat),
+      );
     }
   });
 
-  test('${_typePrefix}_constructor_property_other_runs_start_empty', () {
+  test('${_typePrefix}_constructor_property_unknown_runs_are_not_'
+      'found', () {
     final Random random = seededRandom(64003);
 
     for (int i = 0; i < propertyIterations; i += 1) {
       final FakeChatRepository repository = FakeChatRepository(
         conversations: randomConversations(random),
+        taskRepository: buildChatTaskRepository(random),
         clock: FixedClock(randomUtcMoment(random)),
       );
-      final RunId runId = RunId('$otherChatRunPrefix${randomText(random)}');
+      final RunId runId = randomMissingChatRunId(random);
 
-      final Conversation conversation = repository.findConversation(runId);
-
-      expect(conversation.runId, runId);
-      expect(conversation.messages, isEmpty);
-      expect(conversation.link, RunnerLink.direct);
-      expect(conversation.linkLostAt, isNull);
-      expect(conversation.agentActivity, AgentActivity.idle);
+      expect(
+        () => repository.findConversation(runId),
+        throwsA(isA<RecordNotFound>()),
+      );
     }
   });
 
@@ -94,6 +99,7 @@ void main() {
       final List<Conversation> seeded = randomConversations(random);
       final FakeChatRepository repository = FakeChatRepository(
         conversations: seeded,
+        taskRepository: buildChatTaskRepository(random),
         clock: FixedClock(randomUtcMoment(random)),
       );
       final NotificationCounter notifications = NotificationCounter();
@@ -116,6 +122,7 @@ void main() {
       final List<Conversation> seeded = randomConversations(random);
       final FakeChatRepository repository = FakeChatRepository(
         conversations: seeded,
+        taskRepository: buildChatTaskRepository(random),
         clock: FixedClock(randomUtcMoment(random)),
       );
       final RunId runId = pickChatRunId(random, seeded);

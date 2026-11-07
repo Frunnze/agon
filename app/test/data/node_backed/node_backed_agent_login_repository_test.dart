@@ -7,6 +7,7 @@ import 'package:agent_orchestration/data/models/runner.dart';
 import 'package:agent_orchestration/data/node_backed.dart';
 
 import '../../support/random_inputs.dart';
+import '../fakes/support/agent_login_inputs.dart';
 import 'support/node_backed_harness.dart';
 import 'support/simulated_agent_login_node.dart';
 
@@ -161,7 +162,7 @@ void main() {
     final Random random = seededRandom(9306);
     for (int i = 0; i < propertyIterations; i += 1) {
       final _Fixture fixture = _buildFixture();
-      final String apiKey = 'sk-ant-${randomText(random)}';
+      final String apiKey = randomValidApiKey(random);
 
       await fixture.repository.saveApiKey(apiKey);
 

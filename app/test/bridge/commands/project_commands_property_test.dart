@@ -121,13 +121,13 @@ ModelledCommand _buildCreateProject(Random random) {
       workspaceId,
       projectName,
       approvalPolicy,
-      ...repositories,
+      repositories,
     ],
     keptFields: <Object?>[
       command.workspaceId,
       command.projectName,
       command.approvalPolicy,
-      ...command.repositories,
+      command.repositories,
     ],
     expectedArguments: <String, Object?>{
       'workspace_id': workspaceId.value,

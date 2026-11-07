@@ -14,6 +14,7 @@ import 'package:agent_orchestration/screens/projects/folder_choice.dart';
 import 'package:agent_orchestration/shell/app_route.dart';
 
 import '../../support/app_harness.dart';
+import '../../support/fake_task_work_links.dart';
 import '../../support/fixed_folder_picker.dart';
 import '../../support/form_finders.dart';
 import '../../support/random_inputs.dart';
@@ -29,9 +30,13 @@ Future<AppDependencies> _pumpNewProject(
   WidgetTester tester, {
   required String? chosenPath,
 }) async {
+  final AppDependencies galleryBase = buildGalleryDependencies();
   final AppDependencies dependencies = replaceRepositories(
-    buildGalleryDependencies(),
-    projectRepository: FakeProjectRepository(projects: const <Project>[]),
+    galleryBase,
+    projectRepository: buildProjectRepositoryOver(
+      galleryBase,
+      const <Project>[],
+    ),
     folderPicker: FixedFolderPicker(chosenPath),
   );
   await tester.pumpWidget(const SizedBox.shrink());

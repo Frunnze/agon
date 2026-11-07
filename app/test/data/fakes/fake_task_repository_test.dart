@@ -15,6 +15,13 @@ import 'package:agent_orchestration/data/rules/run_lifecycle.dart';
 import '../../support/random_inputs.dart';
 import '../../support/sample_records.dart';
 import '../../support/task_repositories.dart';
+import '../../support/workflow_repositories.dart';
+import 'support/startable_drafts.dart';
+import 'support/task_inputs.dart';
+
+TaskDraft _randomStartableDraft(Random random) {
+  return randomStartableTaskDraft(random, buildGalleryWorkflowRepository());
+}
 
 Future<void> applyRandomTaskOperation(
   FakeTaskRepository repository,
@@ -30,10 +37,10 @@ Future<void> applyRandomTaskOperation(
     case 1:
       await repository.updateTask(task.id, randomTaskDraft(random));
     case 2:
-      if (runs.isEmpty || !isRunActive(runs.first)) {
-        await repository.startTask(task.id);
-      } else {
+      if (runs.isNotEmpty && isRunActive(runs.first)) {
         await repository.cancelRun(runs.first.id);
+      } else if (canStartDoer(buildGalleryWorkflowRepository(), task.doer)) {
+        await repository.startTask(task.id);
       }
     default:
       if (runs.isNotEmpty && !isRunActive(runs.first)) {
@@ -175,7 +182,9 @@ void main() {
 
     for (int i = 0; i < propertyIterations ~/ 4; i += 1) {
       final FakeTaskRepository repository = buildGalleryTaskRepository();
-      final Task task = await repository.createTask(randomTaskDraft(random));
+      final Task task = await repository.createTask(
+        _randomStartableDraft(random),
+      );
       final Run run = await repository.startTask(task.id);
 
       expect(run.status, RunStatus.running);
@@ -195,7 +204,9 @@ void main() {
 
     for (int i = 0; i < propertyIterations ~/ 4; i += 1) {
       final FakeTaskRepository repository = buildGalleryTaskRepository();
-      final Task task = await repository.createTask(randomTaskDraft(random));
+      final Task task = await repository.createTask(
+        _randomStartableDraft(random),
+      );
       final Run started = await repository.startTask(task.id);
       final Run cancelled = await repository.cancelRun(started.id);
 
@@ -226,7 +237,8 @@ void main() {
       expect(retried.worktreeBranch, galleryFailedRun.worktreeBranch);
       expect(retried.steps.first.status, StepStatus.done);
       expect(retried.steps[1].status, StepStatus.running);
-      expect(retried.number, 43);
+      expect(retried.id, galleryFailedRun.id);
+      expect(retried.number, galleryFailedRun.number);
       for (int i = 0; i < propertyIterations ~/ 4; i += 1) {
         final Run anyRun = pickOne(random, galleryRuns);
         if (anyRun.status != RunStatus.failed) {

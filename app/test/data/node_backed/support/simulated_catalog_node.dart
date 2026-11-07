@@ -3,7 +3,9 @@ import 'package:agent_orchestration/bridge/node/node_command_channel.dart';
 import 'simulated_deletions.dart';
 import 'simulated_library_edits.dart';
 import 'simulated_node_replies.dart';
+import 'simulated_project_edits.dart';
 import 'simulated_protected_files.dart';
+import 'simulated_scopes.dart';
 import 'simulated_server_group.dart';
 
 const String simulatedServerAddress = 'http://127.0.0.1:7070';
@@ -28,6 +30,12 @@ final class SimulatedCatalogNode {
   late final SimulatedCatalogDeletions _deletions = SimulatedCatalogDeletions(
     workspaces: workspaces,
     projects: projects,
+    skills: skills,
+    rules: rules,
+  );
+  late final SimulatedProjectEdits _projectEdits = SimulatedProjectEdits(
+    projects: projects,
+    nextIdentifier: nextIdentifier,
   );
   late final SimulatedLibraryEdits _libraryEdits = SimulatedLibraryEdits(
     skills: skills,
@@ -45,9 +53,9 @@ final class SimulatedCatalogNode {
         'create_workspace': _createWorkspace,
         'change_workspace_approval_policy': _changeApprovalPolicy,
         'list_projects': _listProjects,
-        'create_project': _createProject,
-        'create_repository': _createRepository,
-        'remove_repository': _removeRepository,
+        'create_project': _projectEdits.createProject,
+        'create_repository': _projectEdits.createRepository,
+        'remove_repository': _projectEdits.removeRepository,
         'delete_project': _deletions.deleteProject,
         'delete_workspace': _deletions.deleteWorkspace,
         'list_skills': _listForWorkspace(skills),
@@ -55,7 +63,7 @@ final class SimulatedCatalogNode {
         'update_skill': _libraryEdits.updateSkill,
         'delete_skill': _libraryEdits.deleteSkill,
         'undo_skill_change': _libraryEdits.undoSkillChange,
-        'list_rules': _listForWorkspace(rules),
+        'list_rules': _listUsableRules,
         'create_rule': _createRule,
         'update_rule': _libraryEdits.updateRule,
         'delete_rule': _libraryEdits.deleteRule,
@@ -196,54 +204,19 @@ final class SimulatedCatalogNode {
     ];
   }
 
-  Object? _createProject(SimulatedCommand command) {
-    final Map<String, Object?> project = <String, Object?>{
-      'id': nextIdentifier('project'),
-      'workspace_id': command['workspace_id'],
-      'name': command['name'],
-      'repositories': <Object?>[...command['repositories'] as List<Object?>],
-      'approval_policy': command['approval_policy'],
-    };
-    projects.add(project);
-    return project;
-  }
-
-  Object? _createRepository(SimulatedCommand command) {
-    final Map<String, Object?> project = findSimulatedRecord(
-      projects,
-      kind: 'project',
-      identifier: command['project_id'],
-    );
-    final Object? repository = command['repository'];
-    project['repositories'] = <Object?>[
-      ...project['repositories'] as List<Object?>,
-      repository,
-    ];
-    return repository;
-  }
-
-  Object? _removeRepository(SimulatedCommand command) {
-    final Map<String, Object?> project = findSimulatedRecord(
-      projects,
-      kind: 'project',
-      identifier: command['project_id'],
-    );
-    final List<Object?> remaining = <Object?>[
-      for (final Object? repository
-          in project['repositories'] as List<Object?>)
-        if ((repository! as Map<String, Object?>)['address'] !=
-            command['address'])
-          repository,
-    ];
-    project['repositories'] = remaining;
-    return remaining;
-  }
-
   SimulatedHandler _listForWorkspace(List<Map<String, Object?>> records) {
     return (SimulatedCommand command) => <Object?>[
       for (final Map<String, Object?> record in records)
         if (record['workspace'] == command['workspace_id'])
           _withoutWorkspace(record),
+    ];
+  }
+
+  Object? _listUsableRules(SimulatedCommand command) {
+    return <Object?>[
+      for (final Map<String, Object?> rule in rules)
+        if (isSimulatedScopeInWorkspace(rule, command['workspace_id']))
+          _withoutWorkspace(rule),
     ];
   }
 

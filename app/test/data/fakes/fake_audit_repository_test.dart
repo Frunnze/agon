@@ -12,7 +12,6 @@ void main() {
   test('test_list_entries_property_newest_first', () {
     final FakeAuditRepository repository = FakeAuditRepository(
       entries: galleryAuditEntries,
-      summary: const ChainSummary(entryCount: 1284, headHash: 'head'),
     );
     final List<AuditEntry> entries = repository.listEntries();
 
@@ -42,7 +41,6 @@ void main() {
       }
       final FakeAuditRepository repository = FakeAuditRepository(
         entries: entries,
-        summary: const ChainSummary(entryCount: 1284, headHash: 'head'),
       );
 
       if (breaksChain) {
@@ -51,7 +49,10 @@ void main() {
           throwsA(isA<StateError>()),
         );
       } else {
-        expect((await repository.verifyChain()).entryCount, 1284);
+        expect(
+          (await repository.verifyChain()).entryCount,
+          galleryAuditEntryCount,
+        );
       }
     }
   });

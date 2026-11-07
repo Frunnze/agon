@@ -37,7 +37,7 @@ void main() {
 
       for (int i = 0; i < propertyIterations; i += 1) {
         final FakeAgentLoginRepository repository = FakeAgentLoginRepository(
-          status: randomAgentLoginStatus(random),
+          status: randomKnownAgentLoginStatus(random),
         );
         AgentCredentialKind? expected = repository
             .findStatus()

@@ -58,6 +58,7 @@ AppDependencies _buildDependencies({
       clock: FixedClock(galleryNow.add(elapsed)),
       deviceRepository: base.deviceRepository as FakeDeviceRepository,
       joinOutcome: galleryPairingOutcome,
+      startedPairingRendezvousProblem: null,
     ),
   );
 }

@@ -13,6 +13,7 @@ import 'package:agent_orchestration/data/models/project.dart';
 import 'package:agent_orchestration/data/models/workspace.dart';
 import 'package:agent_orchestration/data/repository/record_not_found.dart';
 
+import '../../support/fake_task_work_links.dart';
 import '../../support/random_inputs.dart';
 import '../../support/sample_records.dart';
 
@@ -79,6 +80,7 @@ void main() {
     final Random random = seededRandom(9803);
     final FakeProjectRepository repository = FakeProjectRepository(
       projects: galleryProjects,
+      taskWork: buildEmptyTaskWork(),
     );
 
     for (int i = 0; i < propertyIterations; i += 1) {

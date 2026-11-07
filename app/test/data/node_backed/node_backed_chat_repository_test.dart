@@ -12,6 +12,7 @@ import 'package:agent_orchestration/data/node_backed/mapping.dart';
 import 'package:agent_orchestration/data/node_backed.dart';
 import 'package:agent_orchestration/data/repository/record_not_found.dart';
 import 'package:agent_orchestration/data/repository/workspace_repository.dart';
+import 'package:agent_orchestration/data/rules/run_conversation.dart';
 
 import '../../bridge/support/random_run_json.dart';
 import '../../support/random_inputs.dart';
@@ -31,6 +32,7 @@ _Fixture _buildFixture() {
   final SimulatedWorkNode simulated = SimulatedWorkNode(thisDeviceId: 'me');
   final WorkspaceRepository workspaces = buildSingleWorkspaceRepository();
   final NodeBackedTaskRepository tasks = NodeBackedTaskRepository(
+    clock: const SystemClock(),
     channel: buildSimulatedChannel(simulated.answer),
     workspaceRepository: workspaces,
     livePollInterval: Duration.zero,

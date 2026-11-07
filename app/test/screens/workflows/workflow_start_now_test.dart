@@ -8,23 +8,27 @@ import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/project.dart';
 import 'package:agent_orchestration/data/models/task.dart';
 import 'package:agent_orchestration/data/models/workflow.dart';
+import 'package:agent_orchestration/data/repository/workflow_repository.dart';
 import 'package:agent_orchestration/screens/workflows/workflow_quick_start.dart';
 import 'package:agent_orchestration/shell/app_navigation.dart';
 import 'package:agent_orchestration/shell/app_route.dart';
 import 'package:agent_orchestration/widgets/app_button.dart';
 
 import '../../support/app_harness.dart';
+import '../../support/fake_task_work_links.dart';
 import '../../support/random_inputs.dart';
 
-List<Workflow> _listSignedWorkflows(AppDependencies dependencies) {
-  final List<Workflow> signed = <Workflow>[];
-  for (final Workflow workflow
-      in dependencies.workflowRepository.listWorkflows()) {
-    if (workflow.signature != null) {
-      signed.add(workflow);
+List<Workflow> _listStartableWorkflows(AppDependencies dependencies) {
+  final WorkflowRepository workflows = dependencies.workflowRepository;
+  final List<Workflow> startable = <Workflow>[];
+  for (final Workflow workflow in workflows.listWorkflows()) {
+    final bool hasUnsignedChange =
+        workflows.findPendingChange(workflow.id) != null;
+    if (workflow.signature != null && !hasUnsignedChange) {
+      startable.add(workflow);
     }
   }
-  return signed;
+  return startable;
 }
 
 List<Workflow> _listUnsignedWorkflows(AppDependencies dependencies) {
@@ -66,7 +70,7 @@ void main() {
       final AppDependencies dependencies = buildGalleryDependencies();
       final Workflow workflow = pickOne(
         random,
-        _listSignedWorkflows(dependencies),
+        _listStartableWorkflows(dependencies),
       );
       final int taskCountBefore = dependencies.taskRepository
           .listTasks()
@@ -120,13 +124,17 @@ void main() {
     final Random random = seededRandom(7703);
 
     for (int i = 0; i < widgetPropertyIterations; i += 1) {
+      final AppDependencies galleryBase = buildGalleryDependencies();
       final AppDependencies dependencies = replaceRepositories(
-        buildGalleryDependencies(),
-        projectRepository: FakeProjectRepository(projects: const <Project>[]),
+        galleryBase,
+        projectRepository: buildProjectRepositoryOver(
+          galleryBase,
+          const <Project>[],
+        ),
       );
       final Workflow workflow = pickOne(
         random,
-        _listSignedWorkflows(dependencies),
+        _listStartableWorkflows(dependencies),
       );
       final int taskCountBefore = dependencies.taskRepository
           .listTasks()

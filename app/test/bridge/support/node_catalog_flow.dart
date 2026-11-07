@@ -154,7 +154,7 @@ Future<void> _expectWorkListed(
   expect(tasks.tasks.single.projectName, 'website');
   expect(tasks.summary.toDo, 1);
   expect(jobs.single.task.id, job.id);
-  expect(jobs.single.scheduleDescription, 'Every day at 02:00');
+  expect(jobs.single.scheduleDescription, 'Every night at 02:00');
 }
 
 TaskArguments _buildTaskArguments(

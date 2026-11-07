@@ -32,6 +32,7 @@ final class PairingFixture {
       clock: FixedClock(galleryNow.add(elapsed)),
       deviceRepository: deviceRepository,
       joinOutcome: galleryPairingOutcome,
+      startedPairingRendezvousProblem: null,
     );
   }
 

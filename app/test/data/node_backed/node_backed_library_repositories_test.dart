@@ -14,6 +14,7 @@ import 'package:agent_orchestration/data/repository/record_not_found.dart';
 import '../../support/memory_workspace_choice_store.dart';
 import '../../support/random_inputs.dart';
 import 'support/simulated_catalog_node.dart';
+import 'support/simulated_scopes.dart';
 
 typedef _OpenedLibrary = ({
   NodeBackedWorkspaceRepository workspaces,
@@ -161,7 +162,11 @@ void main() {
     for (final String name in <String>['home', 'office', 'lab']) {
       final String workspaceId = simulated.addWorkspace(name)['id'] as String;
       simulated.addSkill(workspaceId: workspaceId, name: '$name-skill');
-      simulated.addRule(workspaceId: workspaceId, title: '$name rule');
+      final Map<String, Object?> rule = simulated.addRule(
+        workspaceId: workspaceId,
+        title: '$name rule',
+      );
+      rule['scope'] = buildSimulatedScopeOnlyIn(workspaceId);
     }
     final _OpenedLibrary opened = await _openLibrary(simulated);
 

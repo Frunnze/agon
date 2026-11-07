@@ -170,10 +170,7 @@ void main() {
     );
     final AppDependencies dependencies = replaceRepositories(
       buildGalleryDependencies(),
-      auditRepository: FakeAuditRepository(
-        entries: entries,
-        summary: const ChainSummary(entryCount: 1284, headHash: 'head'),
-      ),
+      auditRepository: FakeAuditRepository(entries: entries),
     );
     await pumpApp(
       tester,

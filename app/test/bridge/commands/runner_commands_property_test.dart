@@ -117,8 +117,8 @@ ModelledCommand _buildChooseAgentOffers(Random random) {
   );
   return (
     command: command,
-    givenFields: <Object?>[...offers],
-    keptFields: <Object?>[...command.offers],
+    givenFields: <Object?>[offers],
+    keptFields: <Object?>[command.offers],
     expectedArguments: <String, Object?>{'offers': offerNames},
   );
 }

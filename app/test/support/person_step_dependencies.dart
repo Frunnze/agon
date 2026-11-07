@@ -99,17 +99,20 @@ AppDependencies buildDependenciesWithQuestion({required List<RunNote> notes}) {
       if (run.id != GalleryRunIds.release42) run,
   ];
 
+  final FakeTaskRepository taskRepository = FakeTaskRepository(
+    tasks: <Task>[...galleryTasks, ...galleryJobs],
+    runs: runs,
+    clock: base.clock,
+    currentDeviceId: GalleryDeviceIds.airLaptop,
+    workflowRepository: base.workflowRepository,
+  );
+
   return replaceRepositories(
     base,
-    taskRepository: FakeTaskRepository(
-      tasks: <Task>[...galleryTasks, ...galleryJobs],
-      runs: runs,
-      clock: base.clock,
-      currentDeviceId: GalleryDeviceIds.airLaptop,
-      workflowRepository: base.workflowRepository,
-    ),
+    taskRepository: taskRepository,
     personStepRepository: FakePersonStepRepository(
       openSteps: <OpenPersonStep>[galleryOpenQuestion],
+      taskRepository: taskRepository,
     ),
   );
 }

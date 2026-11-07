@@ -34,6 +34,7 @@ AppDependencies buildDependenciesWithPairing({
       clock: FixedClock(galleryNow),
       deviceRepository: base.deviceRepository as FakeDeviceRepository,
       joinOutcome: galleryPairingOutcome,
+      startedPairingRendezvousProblem: null,
     ),
   );
 }

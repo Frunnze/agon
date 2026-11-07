@@ -20,6 +20,7 @@ const Duration _waitStep = Duration(milliseconds: 1);
 const Duration _waitLimit = Duration(seconds: 5);
 const int _sequenceIterations = 40;
 const int _longestSequence = 8;
+const int _longestTypedLineCount = 3;
 const Map<ClaudeLogin, String> _nodeClaudeLogins = <ClaudeLogin, String>{
   ClaudeLogin.loggedIn: 'logged_in',
   ClaudeLogin.notLoggedIn: 'not_logged_in',
@@ -60,6 +61,15 @@ Future<_Pair> _buildPair(Random random) async {
   );
 }
 
+String _randomTypedKeys(Random random) {
+  final StringBuffer keys = StringBuffer();
+  final int lineCount = 1 + random.nextInt(_longestTypedLineCount);
+  for (int line = 0; line < lineCount; line += 1) {
+    keys.write('${randomText(random)}$enterKey');
+  }
+  return keys.toString();
+}
+
 Future<void> _runOnBoth(
   _Pair pair,
   Future<void> Function(AgentLoginRepository repository) step,
@@ -91,7 +101,7 @@ Future<void> _runSharedStep(Random random, _Pair pair) async {
         (AgentLoginRepository repository) => repository.openTerminal(place),
       );
     case _SharedStep.type:
-      final String keys = '${randomText(random)}$enterKey';
+      final String keys = _randomTypedKeys(random);
       await _runOnBoth(
         pair,
         (AgentLoginRepository repository) => repository.typeIntoTerminal(keys),
@@ -124,7 +134,12 @@ List<String> _expectedFakeLines(_Pair pair) {
   final List<String> lines = <String>[loginPrompt];
   final List<String> typedKeys = pair.node.typedKeys;
   for (int i = pair.typedKeysAtOpen; i < typedKeys.length; i += 1) {
-    lines.add(typedKeys[i].replaceAll(enterKey, ''));
+    final String keys = typedKeys[i];
+    final List<String> typedLines = keys.split(enterKey);
+    if (keys.endsWith(enterKey)) {
+      typedLines.removeLast();
+    }
+    lines.addAll(typedLines);
   }
   return lines;
 }

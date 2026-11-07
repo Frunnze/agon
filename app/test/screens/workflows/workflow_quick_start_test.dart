@@ -23,7 +23,13 @@ const List<ProjectId> _projectIds = <ProjectId>[
 
 Workflow _pickWorkflow(Random random) {
   final FakeWorkflowRepository repository = buildGalleryWorkflowRepository();
-  return pickOne(random, repository.listWorkflows());
+  final List<Workflow> startable = <Workflow>[
+    for (final Workflow workflow in repository.listWorkflows())
+      if (workflow.signature != null &&
+          repository.findPendingChange(workflow.id) == null)
+        workflow,
+  ];
+  return pickOne(random, startable);
 }
 
 Workflow _renameWorkflow(Workflow workflow, String name) {

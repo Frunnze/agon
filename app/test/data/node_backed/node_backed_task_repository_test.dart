@@ -49,6 +49,7 @@ _Fixture _buildFixture() {
     clock: const SystemClock(),
   );
   final NodeBackedTaskRepository repository = NodeBackedTaskRepository(
+    clock: const SystemClock(),
     channel: buildSimulatedChannel(simulated.answer),
     workspaceRepository: buildSingleWorkspaceRepository(),
     livePollInterval: Duration.zero,

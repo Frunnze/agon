@@ -31,6 +31,7 @@ _Fixture _buildFixture(Random random) {
   );
   final Map<String, Object?> thisDevice = randomDeviceJson(random);
   thisDevice['id'] = _thisDeviceId;
+  thisDevice['revoked'] = false;
   simulated.devices[_thisDeviceId] = thisDevice;
   final NodeBackedDeviceRepository repository = NodeBackedDeviceRepository(
     channel: buildSimulatedChannel(simulated.answer),
@@ -55,24 +56,57 @@ void _expectMirrorsNode(_Fixture fixture) {
   expect(fixture.repository.currentDevice().id.value, _thisDeviceId);
 }
 
+Matcher _expectedRevokeOutcome(Device device) {
+  final bool isThisDevice = device.id.value == _thisDeviceId;
+  if (isThisDevice || device.revoked) {
+    return throwsStateError;
+  }
+  return completes;
+}
+
+Matcher _expectedJoinOutcome(Device device, WorkspaceId workspaceId) {
+  final bool isMember = device.workspaces.contains(workspaceId);
+  if (device.revoked || isMember) {
+    return throwsStateError;
+  }
+  return completes;
+}
+
+Matcher _expectedLeaveOutcome(Device device, WorkspaceId workspaceId) {
+  if (device.workspaces.contains(workspaceId)) {
+    return completes;
+  }
+  return throwsA(isA<RecordNotFound>());
+}
+
+WorkspaceId _pickWorkspace(Random random, Device device) {
+  if (device.workspaces.isEmpty || random.nextBool()) {
+    return WorkspaceId(randomUuidText(random));
+  }
+  return pickOne(random, device.workspaces);
+}
+
 Future<void> _takeStep(Random random, _Fixture fixture) async {
   final NodeBackedDeviceRepository repository = fixture.repository;
   final Device device = pickOne(random, repository.listDevices());
-  final WorkspaceId workspaceId = WorkspaceId(randomUuidText(random));
+  final WorkspaceId workspaceId = _pickWorkspace(random, device);
 
   switch (pickOne(random, _DeviceStep.values)) {
     case _DeviceStep.revoke:
-      await repository.revokeDevice(device.id);
+      await expectLater(
+        repository.revokeDevice(device.id),
+        _expectedRevokeOutcome(device),
+      );
     case _DeviceStep.addWorkspace:
-      await repository.addDeviceToWorkspace(device.id, workspaceId);
+      await expectLater(
+        repository.addDeviceToWorkspace(device.id, workspaceId),
+        _expectedJoinOutcome(device, workspaceId),
+      );
     case _DeviceStep.removeWorkspace:
-      final List<WorkspaceId> joined = device.workspaces;
-      if (joined.isNotEmpty) {
-        await repository.removeDeviceFromWorkspace(
-          device.id,
-          pickOne(random, joined),
-        );
-      }
+      await expectLater(
+        repository.removeDeviceFromWorkspace(device.id, workspaceId),
+        _expectedLeaveOutcome(device, workspaceId),
+      );
     case _DeviceStep.pairedElsewhere:
       fixture.node.addDeviceFromElsewhere(random);
       await repository.applyChange(
@@ -122,10 +156,28 @@ void main() {
     for (int i = 0; i < _sequenceIterations; i += 1) {
       final String deviceId = fixture.node.addDeviceFromElsewhere(random);
       await fixture.repository.load();
-      final Device revoked = await fixture.repository.revokeDevice(
-        DeviceId(deviceId),
+      final bool wasRevoked = fixture.repository
+          .findDevice(DeviceId(deviceId))
+          .revoked;
+      if (wasRevoked) {
+        await expectLater(
+          fixture.repository.revokeDevice(DeviceId(deviceId)),
+          throwsStateError,
+        );
+      } else {
+        final Device revoked = await fixture.repository.revokeDevice(
+          DeviceId(deviceId),
+        );
+        expect(revoked.revoked, isTrue);
+      }
+      expect(
+        fixture.repository.findDevice(DeviceId(deviceId)).revoked,
+        isTrue,
       );
-      expect(revoked.revoked, isTrue);
+      await expectLater(
+        fixture.repository.revokeDevice(const DeviceId(_thisDeviceId)),
+        throwsStateError,
+      );
     }
   });
 

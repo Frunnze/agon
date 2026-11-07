@@ -12,6 +12,7 @@ import 'package:agent_orchestration/data/rules/local_folder_address.dart';
 import 'package:agent_orchestration/shell/app_route.dart';
 
 import '../../support/app_harness.dart';
+import '../../support/fake_task_work_links.dart';
 import '../../support/fixed_folder_picker.dart';
 import '../../support/form_finders.dart';
 import '../../support/random_inputs.dart';
@@ -36,9 +37,13 @@ typedef _NewProjectPage = ({
 
 Future<_NewProjectPage> _pumpNewProject(WidgetTester tester) async {
   final FixedFolderPicker picker = FixedFolderPicker(null);
+  final AppDependencies galleryBase = buildGalleryDependencies();
   final AppDependencies dependencies = replaceRepositories(
-    buildGalleryDependencies(),
-    projectRepository: FakeProjectRepository(projects: const <Project>[]),
+    galleryBase,
+    projectRepository: buildProjectRepositoryOver(
+      galleryBase,
+      const <Project>[],
+    ),
     folderPicker: picker,
   );
   await tester.pumpWidget(const SizedBox.shrink());

@@ -9,6 +9,7 @@ import 'package:agent_orchestration/data/rules/person_answers.dart';
 
 import '../../support/random_branching_workflows.dart';
 import '../../support/random_inputs.dart';
+import 'support/person_step_runs.dart';
 
 OpenPersonStep _randomOpenStep(Random random, int index) {
   final List<String> choices = List<String>.of(sampleOutcomes)
@@ -37,6 +38,7 @@ void main() {
         ];
         final FakePersonStepRepository repository = FakePersonStepRepository(
           openSteps: openSteps,
+          taskRepository: buildRunsAskingSteps(random, openSteps),
         );
         final OpenPersonStep asked = pickOne(random, openSteps);
         final String answer = random.nextBool() && asked.choices.isNotEmpty

@@ -12,6 +12,7 @@ const DeviceId approvalTestDevice = DeviceId('this-device');
 const String _identifierPrefix = 'approval-';
 const int _largestApprovalCount = 6;
 const int _longestSequence = 8;
+const int _listedIdentifierSpan = 1 << 32;
 
 typedef CountedApprovals = ({
   FakeApprovalRepository repository,
@@ -51,7 +52,11 @@ ApprovalRequest randomPendingApproval(Random random) {
 }
 
 ApprovalRequest randomListedApproval(Random random) {
-  return randomApprovalWithId(random, randomText(random));
+  final int distinctPart = random.nextInt(_listedIdentifierSpan);
+  return randomApprovalWithId(
+    random,
+    '$_identifierPrefix$distinctPart-${randomText(random)}',
+  );
 }
 
 List<ApprovalRequest> randomApprovals(Random random) {

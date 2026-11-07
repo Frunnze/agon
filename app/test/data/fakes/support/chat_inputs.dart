@@ -2,15 +2,26 @@ import 'dart:math';
 
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:agent_orchestration/bridge/codecs/run_values.dart' as node;
+import 'package:agent_orchestration/data/clock.dart';
+import 'package:agent_orchestration/data/fakes.dart';
+import 'package:agent_orchestration/data/gallery/gallery_identifiers.dart';
+import 'package:agent_orchestration/data/gallery/gallery_moments.dart';
 import 'package:agent_orchestration/data/models/conversation.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/run.dart';
 import 'package:agent_orchestration/data/models/runner.dart';
+import 'package:agent_orchestration/data/models/task.dart';
+import 'package:agent_orchestration/data/node_backed/mapping.dart';
 
+import '../../../bridge/support/random_run_json.dart';
 import '../../../support/random_inputs.dart';
+import '../../../support/workflow_repositories.dart';
 
 const String seededChatRunPrefix = 'seeded-run-';
 const String otherChatRunPrefix = 'other-run-';
+const String missingChatRunPrefix = 'missing-run-';
+const int otherChatRunCount = 3;
 const int _largestConversationCount = 5;
 const int _largestMessageCount = 4;
 const List<String> blankChatTexts = <String>[
@@ -62,9 +73,37 @@ List<Conversation> randomConversations(Random random) {
 
 RunId pickChatRunId(Random random, List<Conversation> seeded) {
   if (seeded.isEmpty || random.nextInt(3) == 0) {
-    return RunId('$otherChatRunPrefix${random.nextInt(3)}');
+    return RunId('$otherChatRunPrefix${random.nextInt(otherChatRunCount)}');
   }
   return pickOne(random, seeded).runId;
+}
+
+RunId randomMissingChatRunId(Random random) {
+  return RunId('$missingChatRunPrefix${randomText(random)}');
+}
+
+Run randomRunWithId(Random random, RunId runId) {
+  final Map<String, Object?> runJson = randomRunJson(random);
+  runJson['id'] = runId.value;
+  return mapRunFromNode(node.Run.fromJson(runJson));
+}
+
+FakeTaskRepository buildTaskRepositoryWithRuns(List<Run> runs) {
+  return FakeTaskRepository(
+    tasks: const <Task>[],
+    runs: runs,
+    clock: FixedClock(galleryNow),
+    currentDeviceId: GalleryDeviceIds.airLaptop,
+    workflowRepository: buildGalleryWorkflowRepository(),
+  );
+}
+
+FakeTaskRepository buildChatTaskRepository(Random random) {
+  final List<Run> runs = <Run>[];
+  for (int i = 0; i < otherChatRunCount; i += 1) {
+    runs.add(randomRunWithId(random, RunId('$otherChatRunPrefix$i')));
+  }
+  return buildTaskRepositoryWithRuns(runs);
 }
 
 String randomChatMessageText(Random random) {

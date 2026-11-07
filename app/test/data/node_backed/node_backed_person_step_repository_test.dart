@@ -7,6 +7,8 @@ import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/person_step.dart';
 import 'package:agent_orchestration/data/node_backed.dart';
 import 'package:agent_orchestration/data/repository/record_not_found.dart';
+import 'package:agent_orchestration/data/rules/person_answers.dart';
+import 'package:agent_orchestration/data/rules/unicode_white_space.dart';
 
 import '../../support/random_inputs.dart';
 import 'support/node_backed_harness.dart';
@@ -29,6 +31,28 @@ void _expectMirrorsNode(
   );
 }
 
+List<String> _listMatchingChoices(OpenPersonStep openStep) {
+  final List<String> matching = <String>[];
+  for (final String choice in openStep.choices) {
+    final bool isBlank = trimUnicodeWhiteSpace(choice).isEmpty;
+    if (!isBlank && matchChoice(choice, openStep.choices) == choice) {
+      matching.add(choice);
+    }
+  }
+  return matching;
+}
+
+List<OpenPersonStep> _listAnswerable(List<OpenPersonStep> listed) {
+  final List<OpenPersonStep> answerable = <OpenPersonStep>[];
+  for (final OpenPersonStep openStep in listed) {
+    final bool hasChoice = _listMatchingChoices(openStep).isNotEmpty;
+    if (openStep.choices.isEmpty || hasChoice) {
+      answerable.add(openStep);
+    }
+  }
+  return answerable;
+}
+
 void main() {
   test(
     'test_answer_person_step_property_open_steps_mirror_the_node',
@@ -44,13 +68,18 @@ void main() {
         await repository.load();
 
         for (int step = 0; step < _stepsPerSequence; step += 1) {
-          final List<OpenPersonStep> listed = repository.listOpenPersonSteps();
-          if (listed.isNotEmpty && random.nextBool()) {
-            final OpenPersonStep answered = pickOne(random, listed);
+          final List<OpenPersonStep> answerable = _listAnswerable(
+            repository.listOpenPersonSteps(),
+          );
+          if (answerable.isNotEmpty && random.nextBool()) {
+            final OpenPersonStep answered = pickOne(random, answerable);
+            final String answer = answered.choices.isEmpty
+                ? 'approved'
+                : pickOne(random, _listMatchingChoices(answered));
             await repository.answerPersonStep(
               runId: answered.runId,
               stepName: answered.stepName,
-              answer: 'approved',
+              answer: answer,
             );
           } else {
             simulated.askFromElsewhere(random);

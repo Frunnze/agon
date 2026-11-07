@@ -11,7 +11,9 @@ import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/project.dart';
 import 'package:agent_orchestration/data/models/workspace.dart';
 import 'package:agent_orchestration/data/repository/record_not_found.dart';
+import 'package:agent_orchestration/data/rules/naming.dart';
 
+import '../../support/fake_task_work_links.dart';
 import '../../support/random_inputs.dart';
 
 FakeWorkspaceRepository buildGalleryWorkspaceRepository() {
@@ -43,6 +45,7 @@ void main() {
     final Random random = seededRandom(501);
     final FakeProjectRepository repository = FakeProjectRepository(
       projects: galleryProjects,
+      taskWork: buildEmptyTaskWork(),
     );
 
     for (int i = 0; i < propertyIterations; i += 1) {
@@ -61,6 +64,7 @@ void main() {
     final Random random = seededRandom(502);
     final FakeProjectRepository repository = FakeProjectRepository(
       projects: galleryProjects,
+      taskWork: buildEmptyTaskWork(),
     );
 
     for (int i = 0; i < propertyIterations; i += 1) {
@@ -77,6 +81,7 @@ void main() {
     final Random random = seededRandom(503);
     final FakeProjectRepository repository = FakeProjectRepository(
       projects: galleryProjects,
+      taskWork: buildEmptyTaskWork(),
     );
 
     for (int i = 0; i < propertyIterations; i += 1) {
@@ -88,7 +93,7 @@ void main() {
         approvalPolicy: null,
       );
 
-      if (name.trim().isEmpty) {
+      if (describeNameProblem(name.trim()) != null) {
         await expectLater(
           repository.createProject(draft),
           throwsA(isA<ArgumentError>()),
@@ -104,6 +109,7 @@ void main() {
     final Random random = seededRandom(504);
     final FakeProjectRepository repository = FakeProjectRepository(
       projects: galleryProjects,
+      taskWork: buildEmptyTaskWork(),
     );
 
     for (int i = 0; i < propertyIterations; i += 1) {
@@ -135,6 +141,7 @@ void main() {
     for (int i = 0; i < propertyIterations; i += 1) {
       final FakeProjectRepository repository = FakeProjectRepository(
         projects: galleryProjects,
+        taskWork: buildEmptyTaskWork(),
       );
       final Project project = pickOne(random, galleryProjects);
       final Repository removed = pickOne(random, project.repositories);
@@ -159,12 +166,17 @@ void main() {
 
     for (int i = 0; i < propertyIterations; i += 1) {
       final String name = randomWordPhrase(random);
-      if (name.trim().isNotEmpty) {
+      if (describeNameProblem(name.trim()) == null) {
         final Workspace created = await repository.createWorkspace(name: name);
         expectedCount += 1;
         expect(
           created.appServerAddress,
           repository.findAppServerStatus().address,
+        );
+      } else {
+        await expectLater(
+          repository.createWorkspace(name: name),
+          throwsArgumentError,
         );
       }
       expect(repository.listWorkspaces().length, expectedCount);

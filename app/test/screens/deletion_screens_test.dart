@@ -5,8 +5,11 @@ import 'package:agent_orchestration/data/app_dependencies.dart';
 import 'package:agent_orchestration/data/fakes.dart';
 import 'package:agent_orchestration/data/gallery/gallery_identifiers.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
+import 'package:agent_orchestration/data/models/run.dart';
+import 'package:agent_orchestration/data/models/task.dart';
 import 'package:agent_orchestration/data/models/workflow.dart';
 import 'package:agent_orchestration/data/repository/record_not_found.dart';
+import 'package:agent_orchestration/data/rules/run_lifecycle.dart';
 import 'package:agent_orchestration/shell/app_navigation.dart';
 import 'package:agent_orchestration/shell/app_route.dart';
 import 'package:agent_orchestration/shell/app_section.dart';
@@ -37,12 +40,28 @@ List<WorkflowId> _listWorkflowIds(AppDependencies dependencies) {
   ];
 }
 
+Future<AppDependencies> _buildIdleGallery() async {
+  final AppDependencies dependencies = buildGalleryDependencies();
+  final List<Task> work = <Task>[
+    ...dependencies.taskRepository.listTasks(),
+    ...dependencies.jobRepository.listJobs(),
+  ];
+  for (final Task task in work) {
+    for (final Run run in dependencies.taskRepository.listRuns(task.id)) {
+      if (isRunActive(run)) {
+        await dependencies.taskRepository.cancelRun(run.id);
+      }
+    }
+  }
+  return dependencies;
+}
+
 void main() {
   for (final Size size in _layoutSizes) {
     testWidgets('Delete project asks, leaves and deletes at ${size.width}', (
       WidgetTester tester,
     ) async {
-      final AppDependencies dependencies = buildGalleryDependencies();
+      final AppDependencies dependencies = await _buildIdleGallery();
       final AppNavigation navigation = await pumpApp(
         tester,
         size: size,
@@ -117,7 +136,7 @@ void main() {
     testWidgets('Delete workspace switches to another at ${size.width}', (
       WidgetTester tester,
     ) async {
-      final AppDependencies dependencies = buildGalleryDependencies();
+      final AppDependencies dependencies = await _buildIdleGallery();
       final AppNavigation navigation = await pumpApp(
         tester,
         size: size,

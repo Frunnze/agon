@@ -25,6 +25,7 @@ void main() {
       final List<Conversation> seeded = randomConversations(random);
       final FakeChatRepository repository = FakeChatRepository(
         conversations: seeded,
+        taskRepository: buildChatTaskRepository(random),
         clock: FixedClock(randomUtcMoment(random)),
       );
       final Map<RunId, Conversation> startedWith = <RunId, Conversation>{};
@@ -73,6 +74,7 @@ void main() {
       final DateTime moment = randomUtcMoment(random);
       final FakeChatRepository repository = FakeChatRepository(
         conversations: seeded,
+        taskRepository: buildChatTaskRepository(random),
         clock: FixedClock(moment),
       );
       final NotificationCounter notifications = NotificationCounter();
@@ -104,6 +106,7 @@ void main() {
       final List<Conversation> seeded = randomConversations(random);
       final FakeChatRepository repository = FakeChatRepository(
         conversations: seeded,
+        taskRepository: buildChatTaskRepository(random),
         clock: FixedClock(randomUtcMoment(random)),
       );
       final NotificationCounter notifications = NotificationCounter();

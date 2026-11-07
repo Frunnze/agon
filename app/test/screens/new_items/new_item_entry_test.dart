@@ -16,6 +16,7 @@ import 'package:agent_orchestration/shell/app_route.dart';
 import 'package:agent_orchestration/shell/app_section.dart';
 
 import '../../support/app_harness.dart';
+import '../../support/fake_task_work_links.dart';
 import '../../support/form_finders.dart';
 import '../../support/random_inputs.dart';
 import '../../support/scripted_item_draft_repository.dart';
@@ -29,9 +30,13 @@ const String _createProjectLabel = 'Create project';
 const String _projectNameLabel = 'Name';
 
 AppDependencies _buildDependenciesWithoutProjects() {
+  final AppDependencies galleryBase = buildDependenciesWithoutTasks();
   return replaceRepositories(
-    buildDependenciesWithoutTasks(),
-    projectRepository: FakeProjectRepository(projects: const <Project>[]),
+    galleryBase,
+    projectRepository: buildProjectRepositoryOver(
+      galleryBase,
+      const <Project>[],
+    ),
   );
 }
 

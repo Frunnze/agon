@@ -70,6 +70,7 @@ void main() {
             choiceStore: MemoryWorkspaceChoiceStore(chosenWorkspaceId: null),
           );
       final NodeBackedTaskRepository tasks = NodeBackedTaskRepository(
+        clock: const SystemClock(),
         channel: channel,
         workspaceRepository: workspaces,
         livePollInterval: _retryDelay,

@@ -12,6 +12,19 @@ const String _workspacesField = 'workspaces';
 const String _acceptingField = 'accepting_new_runs';
 const String _localPlace = 'local_process';
 const String simulatedNotARunnerMessage = 'this device cannot run tasks';
+const String _revokedField = 'revoked';
+const String _selfRevokeRefusal =
+    'the app server answered 403: a device cannot revoke itself';
+const String _alreadyRevokedRefusal =
+    'the app server answered 409: the device is already revoked';
+const String _revokedJoinRefusal =
+    'the app server answered 409: the device is revoked';
+const String _alreadyMemberRefusal =
+    'the app server answered 409: the device is already in the workspace';
+const String _notMemberRefusal =
+    'the app server answered 404: the workspace member was not found';
+const String _genesisHash =
+    '0000000000000000000000000000000000000000000000000000000000000000';
 
 final class SimulatedDeviceNode {
   SimulatedDeviceNode({required this.thisDeviceId});
@@ -85,32 +98,52 @@ final class SimulatedDeviceNode {
 
   String _changeDevice(
     WireRecord command,
-    void Function(WireRecord device, WireRecord command) change,
+    String Function(WireRecord device, WireRecord command) change,
   ) {
     final WireRecord? device = devices[command['device_id']];
     if (device == null) {
       return encodeErrorReply('device ${command['device_id']} was not found');
     }
-    change(device, command);
+    return change(device, command);
+  }
+
+  String _revoke(WireRecord device, WireRecord command) {
+    if (device['id'] == thisDeviceId) {
+      return encodeErrorReply(_selfRevokeRefusal);
+    }
+    if (device[_revokedField] == true) {
+      return encodeErrorReply(_alreadyRevokedRefusal);
+    }
+
+    device[_revokedField] = true;
     return encodeSuccessReply(null);
   }
 
-  void _revoke(WireRecord device, WireRecord command) {
-    device['revoked'] = true;
+  String _addWorkspace(WireRecord device, WireRecord command) {
+    final List<Object?> workspaces =
+        device[_workspacesField]! as List<Object?>;
+    if (device[_revokedField] == true) {
+      return encodeErrorReply(_revokedJoinRefusal);
+    }
+    if (workspaces.contains(command['workspace_id'])) {
+      return encodeErrorReply(_alreadyMemberRefusal);
+    }
+
+    workspaces.add(command['workspace_id']);
+    return encodeSuccessReply(null);
   }
 
-  void _addWorkspace(WireRecord device, WireRecord command) {
+  String _removeWorkspace(WireRecord device, WireRecord command) {
     final List<Object?> workspaces =
         device[_workspacesField]! as List<Object?>;
     if (!workspaces.contains(command['workspace_id'])) {
-      workspaces.add(command['workspace_id']);
+      return encodeErrorReply(_notMemberRefusal);
     }
-  }
 
-  void _removeWorkspace(WireRecord device, WireRecord command) {
-    final List<Object?> workspaces =
-        device[_workspacesField]! as List<Object?>;
-    workspaces.remove(command['workspace_id']);
+    workspaces.removeWhere(
+      (Object? joined) => joined == command['workspace_id'],
+    );
+    return encodeSuccessReply(null);
   }
 
   WireRecord _listRunners() {
@@ -179,7 +212,7 @@ final class SimulatedDeviceNode {
 
   WireRecord _listAudit() {
     final String headHash = auditChain.isEmpty
-        ? ''
+        ? _genesisHash
         : auditChain.last['hash']! as String;
     return <String, Object?>{
       'entries': auditChain,

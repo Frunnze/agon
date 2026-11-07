@@ -22,6 +22,7 @@ import 'package:agent_orchestration/data/models/item_draft.dart';
 import 'package:agent_orchestration/shell/app_route.dart';
 
 import '../support/app_harness.dart';
+import '../support/fake_task_work_links.dart';
 import '../support/random_inputs.dart';
 import '../support/sample_folder_paths.dart';
 import '../support/workflow_repositories.dart';
@@ -107,14 +108,13 @@ void main() {
       final DeviceId deviceId = random.nextBool()
           ? GalleryDeviceIds.airLaptop
           : GalleryDeviceIds.macStudio;
+      final AppDependencies galleryBase = buildGalleryDependencies();
       final AppDependencies dependencies = replaceRepositories(
-        buildGalleryDependencies(),
-        projectRepository: FakeProjectRepository(
-          projects: <Project>[
-            _folderProject(deviceId: deviceId, name: name),
-            ...galleryProjects,
-          ],
-        ),
+        galleryBase,
+        projectRepository: buildProjectRepositoryOver(galleryBase, <Project>[
+          _folderProject(deviceId: deviceId, name: name),
+          ...galleryProjects,
+        ]),
       );
       await pumpApp(
         tester,

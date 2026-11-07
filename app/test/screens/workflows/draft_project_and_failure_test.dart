@@ -13,6 +13,7 @@ import 'package:agent_orchestration/shell/app_route.dart';
 import 'package:agent_orchestration/shell/app_section.dart';
 
 import '../../support/app_harness.dart';
+import '../../support/fake_task_work_links.dart';
 import '../../support/form_finders.dart';
 import '../../support/random_inputs.dart';
 
@@ -43,9 +44,13 @@ void main() {
   ) async {
     final Random random = seededRandom(10041);
     for (int i = 0; i < widgetPropertyIterations; i += 1) {
+      final AppDependencies galleryBase = buildGalleryDependencies();
       final AppDependencies dependencies = replaceRepositories(
-        buildGalleryDependencies(),
-        projectRepository: FakeProjectRepository(projects: const <Project>[]),
+        galleryBase,
+        projectRepository: buildProjectRepositoryOver(
+          galleryBase,
+          const <Project>[],
+        ),
       );
       final AppNavigation navigation = await _openNewWorkflow(
         tester,

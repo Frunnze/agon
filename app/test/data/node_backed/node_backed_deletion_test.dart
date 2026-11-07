@@ -46,6 +46,7 @@ _WorkFixture _openWork() {
     clock: const SystemClock(),
   );
   final NodeBackedTaskRepository tasks = NodeBackedTaskRepository(
+    clock: const SystemClock(),
     channel: channel,
     workspaceRepository: buildSingleWorkspaceRepository(),
     livePollInterval: Duration.zero,

@@ -12,6 +12,7 @@ import 'package:agent_orchestration/data/models/workspace.dart';
 import 'package:agent_orchestration/data/repository/record_not_found.dart';
 
 import '../../support/random_inputs.dart';
+import '../rules/support/protected_pattern_inputs.dart';
 
 const int _largestPatternCount = 6;
 
@@ -30,7 +31,7 @@ List<String> _randomPatterns(Random random) {
   final int patternCount = random.nextInt(_largestPatternCount);
   return <String>[
     for (int i = 0; i < patternCount; i += 1)
-      'pattern-$i-${randomText(random)}',
+      'pattern-$i/${randomValidPattern(random)}',
   ];
 }
 
@@ -123,7 +124,7 @@ void main() {
 
     for (int i = 0; i < propertyIterations; i += 1) {
       final Workspace created = await repository.createWorkspace(
-        name: 'created ${random.nextInt(1000)}',
+        name: 'created-${random.nextInt(1000)}',
       );
 
       expect(created.protectedFiles, galleryDefaultProtectedFiles);

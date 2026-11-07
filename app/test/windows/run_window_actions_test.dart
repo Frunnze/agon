@@ -211,7 +211,7 @@ void main() {
     expect(find.text('Ask the agent'), findsOneWidget);
   });
 
-  testWidgets('test_run_window_screen_property_retry_shows_the_new_run', (
+  testWidgets('test_run_window_screen_property_retry_reopens_the_same_run', (
     WidgetTester tester,
   ) async {
     final AppDependencies dependencies = removeApprovals(
@@ -227,12 +227,11 @@ void main() {
     await tester.tap(find.textContaining('Retry'));
     await pumpFrames(tester);
 
-    final AppRoute shown = navigation.currentRoute;
-    expect(shown, isA<TaskRunRoute>());
+    expect(navigation.currentRoute, TaskRunRoute(galleryFailedRun.id));
     final Run retried = dependencies.taskRepository.findRun(
-      (shown as TaskRunRoute).runId,
+      galleryFailedRun.id,
     );
-    expect(retried.id, isNot(galleryFailedRun.id));
+    expect(retried.number, galleryFailedRun.number);
     expect(isRunActive(retried), isTrue);
     expect(find.text('Cancel run'), findsOneWidget);
   });

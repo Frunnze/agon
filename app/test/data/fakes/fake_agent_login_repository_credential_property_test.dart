@@ -98,17 +98,14 @@ void main() {
     final Random random = seededRandom(63401);
 
     for (int i = 0; i < propertyIterations; i += 1) {
-      final AgentLoginStatus? status = randomAgentLoginStatus(random);
+      final AgentLoginStatus status = randomKnownAgentLoginStatus(random);
       final CountedRepository counted = buildCountedRepository(status);
 
       await counted.repository.saveApiKey(randomValidApiKey(random));
 
       final AgentLoginStatus? saved = counted.repository.findStatus();
       expect(saved?.containerCredential, AgentCredentialKind.apiKey);
-      expect(
-        saved?.claudeLogin,
-        status?.claudeLogin ?? ClaudeLogin.notLoggedIn,
-      );
+      expect(saved?.claudeLogin, status.claudeLogin);
       expect(counted.notifications.count, 1);
     }
   });

@@ -78,6 +78,7 @@ void main() {
         clock: const SystemClock(),
       );
       final NodeBackedTaskRepository tasks = NodeBackedTaskRepository(
+        clock: const SystemClock(),
         channel: host.channel,
         workspaceRepository: workspaces,
         livePollInterval: _pollInterval,

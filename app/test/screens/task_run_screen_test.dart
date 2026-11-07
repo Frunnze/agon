@@ -93,7 +93,7 @@ void main() {
     });
   }
 
-  testWidgets('retrying opens a new run on the same worktree', (
+  testWidgets('retrying reopens the same run on the same worktree', (
     WidgetTester tester,
   ) async {
     final AppDependencies dependencies = buildGalleryDependencies();
@@ -107,9 +107,11 @@ void main() {
     await tester.tap(find.text('Retry'));
     await pumpFrames(tester);
 
-    expect(find.text('release #43'), findsOneWidget);
+    expect(find.text('release #41'), findsOneWidget);
     expect(find.text('Cancel run'), findsOneWidget);
-    expect(navigation.routes.length, 1);
+    expect(navigation.routes, const <AppRoute>[
+      TaskRunRoute(GalleryRunIds.release41),
+    ]);
   });
 
   testWidgets('cancelling stops the run and chat opens the agent', (

@@ -4,14 +4,23 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:agent_orchestration/data/models/pairing.dart';
 import 'package:agent_orchestration/data/rules/pairing_invitation.dart';
+import 'package:agent_orchestration/data/rules/setup_input_rules.dart';
 
 import '../../support/random_inputs.dart';
 
 PairingInvitation randomInvitation(Random random) {
+  String serverAddress = _randomServerAddress(random);
+  while (describeServerAddressProblem(serverAddress) != null) {
+    serverAddress = _randomServerAddress(random);
+  }
   return PairingInvitation(
     code: randomText(random),
-    serverAddress: 'https://${randomWordPhrase(random)}${randomText(random)}',
+    serverAddress: serverAddress,
   );
+}
+
+String _randomServerAddress(Random random) {
+  return 'https://${randomWordPhrase(random)}${randomText(random)}';
 }
 
 String mutateText(Random random, String text) {

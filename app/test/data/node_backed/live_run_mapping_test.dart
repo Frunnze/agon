@@ -10,8 +10,10 @@ import 'package:agent_orchestration/bridge/codecs/run_progress_values.dart'
 import 'package:agent_orchestration/bridge/codecs/run_values.dart' as node;
 import 'package:agent_orchestration/data/models/run.dart';
 import 'package:agent_orchestration/data/node_backed/mapping.dart';
+import 'package:agent_orchestration/data/rules/run_step_progress.dart';
 
 import '../../bridge/support/random_live_json.dart';
+import '../../bridge/support/random_moments.dart';
 import '../../bridge/support/random_run_json.dart';
 import '../../support/random_inputs.dart';
 
@@ -35,6 +37,7 @@ void main() {
       final Run applied = applyLiveRunView(
         run: _randomRun(random),
         view: view,
+        at: randomPreciseMoment(random),
       );
 
       expect(applied.link.name, view.link.name);
@@ -47,7 +50,11 @@ void main() {
     for (int i = 0; i < propertyIterations; i += 1) {
       final Run run = _randomRun(random);
       final node.WatchView view = _randomWatchView(random);
-      final Run applied = applyLiveRunView(run: run, view: view);
+      final Run applied = applyLiveRunView(
+        run: run,
+        view: view,
+        at: randomPreciseMoment(random),
+      );
 
       expect(applied.log.sublist(0, run.log.length), run.log);
       expect(applied.chat.sublist(0, run.chat.length), run.chat);
@@ -72,8 +79,13 @@ void main() {
     final Random random = seededRandom(10073);
     for (int i = 0; i < propertyIterations; i += 1) {
       final node.WatchView view = _randomWatchView(random);
-      final Run once = applyLiveRunView(run: _randomRun(random), view: view);
-      final Run twice = applyLiveRunView(run: once, view: view);
+      final DateTime at = randomPreciseMoment(random);
+      final Run once = applyLiveRunView(
+        run: _randomRun(random),
+        view: view,
+        at: at,
+      );
+      final Run twice = applyLiveRunView(run: once, view: view, at: at);
 
       expect(twice.log.length, once.log.length);
       expect(twice.chat.length, once.chat.length);
@@ -98,9 +110,22 @@ void main() {
         ],
       );
 
-      final Run applied = applyLiveRunView(run: run, view: view);
-      for (final RunStep changed in applied.steps) {
-        if (changed.name == step.name) {
+      final Run applied = applyLiveRunView(
+        run: run,
+        view: view,
+        at: randomPreciseMoment(random),
+      );
+
+      final bool isAccepted = canChangeRunStep(run, step.name);
+      for (int index = 0; index < run.steps.length; index += 1) {
+        final RunStep before = run.steps[index];
+        final RunStep changed = applied.steps[index];
+        final bool isSkippedByFailure =
+            applied.status == RunStatus.failed &&
+            changed.status == StepStatus.skipped;
+        if (!isAccepted) {
+          expect(changed.status, before.status);
+        } else if (changed.name == step.name && !isSkippedByFailure) {
           expect(changed.status.name, status.name);
         }
       }

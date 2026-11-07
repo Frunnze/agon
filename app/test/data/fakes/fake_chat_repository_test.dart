@@ -11,25 +11,31 @@ import 'package:agent_orchestration/data/models/conversation.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 import 'package:agent_orchestration/data/models/run.dart';
 import 'package:agent_orchestration/data/models/runner.dart';
+import 'package:agent_orchestration/data/repository/record_not_found.dart';
 
 import '../../support/random_inputs.dart';
+import '../../support/task_repositories.dart';
 
 void main() {
-  test('test_find_conversation_property_unknown_runs_are_empty', () {
+  test('test_find_conversation_property_unknown_runs_are_not_found', () {
     final Random random = seededRandom(301);
     final FakeChatRepository repository = FakeChatRepository(
       conversations: <Conversation>[galleryConversationAwaitingApproval],
+      taskRepository: buildGalleryTaskRepository(),
       clock: FixedClock(galleryNow),
     );
 
     for (int i = 0; i < propertyIterations; i += 1) {
-      final RunId runId = RunId(randomText(random));
-      final Conversation conversation = repository.findConversation(runId);
+      final RunId runId = RunId('missing-${randomText(random)}');
 
-      expect(conversation.runId, runId);
-      if (runId != GalleryRunIds.release42) {
-        expect(conversation.messages, isEmpty);
-      }
+      expect(
+        () => repository.findConversation(runId),
+        throwsA(isA<RecordNotFound>()),
+      );
+      expect(
+        repository.findConversation(GalleryRunIds.release42).runId,
+        GalleryRunIds.release42,
+      );
     }
   });
 
@@ -43,6 +49,7 @@ void main() {
       ]);
       final FakeChatRepository repository = FakeChatRepository(
         conversations: <Conversation>[seed],
+        taskRepository: buildGalleryTaskRepository(),
         clock: FixedClock(galleryNow),
       );
       final String text = randomText(random);

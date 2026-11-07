@@ -43,6 +43,26 @@ bool _hasActiveRun(AppDependencies dependencies, Task task) {
   return dependencies.taskRepository.listRuns(task.id).any(isRunActive);
 }
 
+List<Task> _listProjectWork(
+  AppDependencies dependencies,
+  ProjectId projectId,
+) {
+  return <Task>[
+    for (final Task task in _listTasksAndJobs(dependencies))
+      if (task.projectId == projectId) task,
+  ];
+}
+
+Future<void> _cancelActiveRuns(AppDependencies dependencies) async {
+  for (final Task task in _listTasksAndJobs(dependencies)) {
+    for (final Run run in dependencies.taskRepository.listRuns(task.id)) {
+      if (isRunActive(run)) {
+        await dependencies.taskRepository.cancelRun(run.id);
+      }
+    }
+  }
+}
+
 void main() {
   test('test_delete_project_property_removes_exactly_that_project', () async {
     final Random random = seededRandom(7101);
@@ -51,9 +71,23 @@ void main() {
       final AppDependencies dependencies = buildGalleryDependencies();
       final List<ProjectId> before = _listEveryProjectId(dependencies);
       final ProjectId doomedId = pickOne(random, before);
+      final List<Task> projectWork = _listProjectWork(dependencies, doomedId);
+      final bool isRunning = projectWork.any(
+        (Task task) => _hasActiveRun(dependencies, task),
+      );
+
+      if (isRunning) {
+        await expectLater(
+          dependencies.projectRepository.deleteProject(doomedId),
+          throwsA(isA<StateError>()),
+        );
+        expect(_listEveryProjectId(dependencies), before);
+        continue;
+      }
 
       await dependencies.projectRepository.deleteProject(doomedId);
 
+      expect(_listProjectWork(dependencies, doomedId), isEmpty);
       final List<ProjectId> expected = <ProjectId>[
         for (final ProjectId projectId in before)
           if (projectId != doomedId) projectId,
@@ -136,6 +170,20 @@ void main() {
     for (int i = 0; i < _deletionIterations; i += 1) {
       final AppDependencies dependencies = buildGalleryDependencies();
       final Workflow doomed = pickOne(random, galleryWorkflows);
+      final bool isUsed = _listTasksAndJobs(dependencies)
+          .any((Task task) => task.doer == WorkflowDoer(doomed.id));
+
+      if (isUsed) {
+        await expectLater(
+          dependencies.workflowRepository.deleteWorkflow(doomed.id),
+          throwsA(isA<StateError>()),
+        );
+        expect(
+          dependencies.workflowRepository.listWorkflows().length,
+          galleryWorkflows.length,
+        );
+        continue;
+      }
 
       await dependencies.workflowRepository.deleteWorkflow(doomed.id);
 
@@ -154,6 +202,7 @@ void main() {
 
     for (int i = 0; i < _deletionIterations; i += 1) {
       final AppDependencies dependencies = buildGalleryDependencies();
+      await _cancelActiveRuns(dependencies);
       final List<Workspace> shuffled = <Workspace>[...galleryWorkspaces]
         ..shuffle(random);
 

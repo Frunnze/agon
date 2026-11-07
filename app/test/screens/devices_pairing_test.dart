@@ -57,6 +57,7 @@ void main() {
         clock: FixedClock(galleryNow),
         deviceRepository: base.deviceRepository as FakeDeviceRepository,
         joinOutcome: galleryPairingOutcome,
+        startedPairingRendezvousProblem: null,
       ),
     );
     final AppNavigation navigation = await _pumpDevices(
@@ -110,6 +111,7 @@ void main() {
           clock: FixedClock(galleryNow),
           deviceRepository: base.deviceRepository as FakeDeviceRepository,
           joinOutcome: galleryPairingOutcome,
+          startedPairingRendezvousProblem: null,
         ),
       ),
     );

@@ -11,6 +11,7 @@ import 'package:agent_orchestration/data/models/project.dart';
 import 'package:agent_orchestration/shell/app_route.dart';
 
 import '../../support/app_harness.dart';
+import '../../support/fake_task_work_links.dart';
 import '../../support/form_finders.dart';
 import '../../support/random_inputs.dart';
 import '../../support/sample_records.dart';
@@ -32,9 +33,13 @@ const List<String> _fieldTexts = <String>[
 ];
 
 Future<AppDependencies> _pumpNewProject(WidgetTester tester) async {
+  final AppDependencies galleryBase = buildGalleryDependencies();
   final AppDependencies dependencies = replaceRepositories(
-    buildGalleryDependencies(),
-    projectRepository: FakeProjectRepository(projects: const <Project>[]),
+    galleryBase,
+    projectRepository: buildProjectRepositoryOver(
+      galleryBase,
+      const <Project>[],
+    ),
   );
   await tester.pumpWidget(const SizedBox.shrink());
   await pumpApp(

@@ -11,12 +11,14 @@ import 'package:agent_orchestration/data/models/library.dart';
 import 'package:agent_orchestration/data/models/scope.dart';
 import 'package:agent_orchestration/data/repository/record_not_found.dart';
 
+import '../../support/fake_task_work_links.dart';
 import '../../support/random_inputs.dart';
 
 FakeRuleRepository _buildRuleRepository() {
   return FakeRuleRepository(
     rules: galleryRules,
     clock: FixedClock(galleryNow),
+    workspaceRepository: buildAcmeWorkspaceRepository(),
   );
 }
 

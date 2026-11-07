@@ -28,6 +28,7 @@ _Fixture _buildFixture() {
   final SimulatedWorkNode simulated = SimulatedWorkNode(thisDeviceId: 'me');
   final WorkspaceRepository workspaces = buildSingleWorkspaceRepository();
   final NodeBackedTaskRepository repository = NodeBackedTaskRepository(
+    clock: const SystemClock(),
     channel: buildSimulatedChannel(simulated.answer),
     workspaceRepository: workspaces,
     livePollInterval: Duration.zero,

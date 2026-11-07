@@ -17,6 +17,10 @@ const List<WorkspaceId> _workspaceIds = <WorkspaceId>[
   GalleryWorkspaceIds.acme,
   GalleryWorkspaceIds.personal,
 ];
+const List<AgentPlace> _placesInNodeOrder = <AgentPlace>[
+  AgentPlace.localProcess,
+  AgentPlace.container,
+];
 
 FakeDeviceRepository buildGalleryDeviceRepository() {
   return FakeDeviceRepository(
@@ -41,11 +45,15 @@ void main() {
     final FakeDeviceRepository repository = buildGalleryDeviceRepository();
 
     for (int i = 0; i < propertyIterations; i += 1) {
-      final Device device = pickOne(random, galleryDevices);
-      await repository.addDeviceToWorkspace(
-        device.id,
-        pickOne(random, _workspaceIds),
+      final Device device = repository.findDevice(
+        pickOne(random, galleryDevices).id,
       );
+      final WorkspaceId workspaceId = pickOne(random, _workspaceIds);
+      if (device.workspaces.contains(workspaceId)) {
+        await repository.removeDeviceFromWorkspace(device.id, workspaceId);
+      } else if (!device.revoked) {
+        await repository.addDeviceToWorkspace(device.id, workspaceId);
+      }
       expect(repository.listDevices().length, galleryDevices.length);
     }
   });
@@ -70,7 +78,9 @@ void main() {
 
     for (int i = 0; i < propertyIterations; i += 1) {
       final Device other = pickOne(random, galleryDevices.skip(1).toList());
-      await repository.revokeDevice(other.id);
+      if (!repository.findDevice(other.id).revoked) {
+        await repository.revokeDevice(other.id);
+      }
       expect(repository.currentDevice().name, 'air-laptop');
     }
   });
@@ -81,7 +91,10 @@ void main() {
 
     for (int i = 0; i < propertyIterations; i += 1) {
       final Device device = pickOne(random, galleryDevices);
-      if (device.id == GalleryDeviceIds.airLaptop) {
+      final bool isRefused =
+          device.id == GalleryDeviceIds.airLaptop ||
+          repository.findDevice(device.id).revoked;
+      if (isRefused) {
         await expectLater(
           repository.revokeDevice(device.id),
           throwsA(isA<StateError>()),
@@ -97,14 +110,26 @@ void main() {
     final FakeDeviceRepository repository = buildGalleryDeviceRepository();
 
     for (int i = 0; i < propertyIterations; i += 1) {
-      final Device device = pickOne(random, galleryDevices);
-      final WorkspaceId workspaceId = pickOne(random, _workspaceIds);
-      final Device after = await repository.addDeviceToWorkspace(
-        device.id,
-        workspaceId,
+      final Device device = repository.findDevice(
+        pickOne(random, galleryDevices).id,
       );
+      final WorkspaceId workspaceId = pickOne(random, _workspaceIds);
+      final bool isRefused =
+          device.revoked || device.workspaces.contains(workspaceId);
+      if (isRefused) {
+        await expectLater(
+          repository.addDeviceToWorkspace(device.id, workspaceId),
+          throwsStateError,
+        );
+      } else {
+        await repository.addDeviceToWorkspace(device.id, workspaceId);
+      }
 
-      expect(after.workspaces.where((w) => w == workspaceId).length, 1);
+      final Device after = repository.findDevice(device.id);
+      final int joinedCount = after.workspaces
+          .where((WorkspaceId joined) => joined == workspaceId)
+          .length;
+      expect(joinedCount, device.revoked ? lessThanOrEqualTo(1) : 1);
     }
   });
 
@@ -113,13 +138,20 @@ void main() {
     final FakeDeviceRepository repository = buildGalleryDeviceRepository();
 
     for (int i = 0; i < propertyIterations; i += 1) {
-      final Device device = pickOne(random, galleryDevices);
-      final WorkspaceId workspaceId = pickOne(random, _workspaceIds);
-      final Device after = await repository.removeDeviceFromWorkspace(
-        device.id,
-        workspaceId,
+      final Device device = repository.findDevice(
+        pickOne(random, galleryDevices).id,
       );
+      final WorkspaceId workspaceId = pickOne(random, _workspaceIds);
+      if (device.workspaces.contains(workspaceId)) {
+        await repository.removeDeviceFromWorkspace(device.id, workspaceId);
+      } else {
+        await expectLater(
+          repository.removeDeviceFromWorkspace(device.id, workspaceId),
+          throwsA(isA<RecordNotFound>()),
+        );
+      }
 
+      final Device after = repository.findDevice(device.id);
       expect(after.workspaces.contains(workspaceId), isFalse);
     }
   });
@@ -198,11 +230,12 @@ void main() {
         await repository.chooseAgentOffers(chosen);
 
         final List<PlaceOffer> expectedOffers = <PlaceOffer>[
-          for (final AgentPlace place in chosen)
-            PlaceOffer(
-              place: place,
-              problem: place == AgentPlace.container ? problem : null,
-            ),
+          for (final AgentPlace place in _placesInNodeOrder)
+            if (chosen.contains(place))
+              PlaceOffer(
+                place: place,
+                problem: place == AgentPlace.container ? problem : null,
+              ),
         ];
         expect(repository.findThisDeviceOffers(), expectedOffers);
         final String? expectedProblem =

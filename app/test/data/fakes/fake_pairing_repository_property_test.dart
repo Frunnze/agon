@@ -27,6 +27,7 @@ FakePairingRepository _buildRepository({
       gitlessFolderPaths: const <String>{},
     ),
     joinOutcome: galleryPairingOutcome,
+    startedPairingRendezvousProblem: null,
   );
 }
 

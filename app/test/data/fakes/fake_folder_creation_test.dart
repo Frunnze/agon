@@ -29,7 +29,8 @@ void main() {
     for (int i = 0; i < propertyIterations; i += 1) {
       final FakeDeviceRepository repository = _buildRepository();
       final String parent =
-          '${Directory.systemTemp.path}/${randomWordPhrase(random)}';
+          '${Directory.systemTemp.path}/parent ${randomWordPhrase(random)}'
+              .trimRight();
       final String name = pickOne(random, _folderNames);
 
       final CheckedFolder created = await repository.createLocalFolder(

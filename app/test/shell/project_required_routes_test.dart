@@ -15,6 +15,7 @@ import 'package:agent_orchestration/shell/app_section.dart';
 import 'package:agent_orchestration/shell/route_screens.dart';
 
 import '../support/app_harness.dart';
+import '../support/fake_task_work_links.dart';
 import '../support/random_inputs.dart';
 
 final List<AppRoute> _routesNeedingProject = <AppRoute>[
@@ -37,7 +38,10 @@ void main() {
   final AppDependencies withProjects = buildGalleryDependencies();
   final AppDependencies withoutProjects = replaceRepositories(
     withProjects,
-    projectRepository: FakeProjectRepository(projects: const <Project>[]),
+    projectRepository: buildProjectRepositoryOver(
+      withProjects,
+      const <Project>[],
+    ),
   );
 
   test('test_build_route_screen_property_new_work_without_projects_opens_'
@@ -69,10 +73,10 @@ void main() {
     final Random random = seededRandom(7302);
 
     for (int i = 0; i < propertyIterations; i += 1) {
-      final AppDependencies dependencies = pickOne(
-        random,
-        <AppDependencies>[withProjects, withoutProjects],
-      );
+      final AppDependencies dependencies = pickOne(random, <AppDependencies>[
+        withProjects,
+        withoutProjects,
+      ]);
 
       final Widget screen = buildRouteScreen(
         route: const NewProjectRoute(),

@@ -128,6 +128,7 @@ AppDependencies buildDependenciesWithConversation(Conversation conversation) {
     base,
     chatRepository: FakeChatRepository(
       conversations: <Conversation>[conversation],
+      taskRepository: base.taskRepository,
       clock: clock,
     ),
     approvalRepository: FakeApprovalRepository(
