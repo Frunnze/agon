@@ -38,11 +38,15 @@ pub(crate) fn list_fork_lanes(
 
 pub(crate) fn find_lane_of_each_step(
     lanes: &[ForkLane],
-    agent_count: usize,
+    layers: &[usize],
 ) -> Vec<Option<usize>> {
-    let mut step_lanes = Vec::new();
-    for step_index in 0..agent_count {
-        step_lanes.push(find_innermost_lane(step_index, lanes));
+    let mut top_rows_first: Vec<usize> = (0..layers.len()).collect();
+    top_rows_first.sort_by_key(|step_index| layers[*step_index]);
+
+    let mut step_lanes = vec![None; layers.len()];
+    for step_index in top_rows_first {
+        step_lanes[step_index] =
+            find_innermost_lane(step_index, lanes, &step_lanes);
     }
     step_lanes
 }
@@ -89,15 +93,40 @@ fn list_branch_heads(
 fn find_innermost_lane(
     step_index: usize,
     lanes: &[ForkLane],
+    step_lanes: &[Option<usize>],
 ) -> Option<usize> {
     let mut innermost: Option<usize> = None;
     for (lane_index, lane) in lanes.iter().enumerate() {
         let is_narrower = innermost.is_none_or(|current| {
             lane.members.len() < lanes[current].members.len()
         });
-        if is_narrower && lane.members.contains(&step_index) {
+        let can_hold = lane.members.contains(&step_index)
+            && is_inside_lanes_holding_fork(
+                step_index,
+                lane.fork_index,
+                lanes,
+                step_lanes,
+            );
+        if is_narrower && can_hold {
             innermost = Some(lane_index);
         }
     }
     innermost
+}
+
+fn is_inside_lanes_holding_fork(
+    step_index: usize,
+    fork_index: usize,
+    lanes: &[ForkLane],
+    step_lanes: &[Option<usize>],
+) -> bool {
+    let mut container = step_lanes[fork_index];
+    while let Some(lane_index) = container {
+        let lane = &lanes[lane_index];
+        if !lane.members.contains(&step_index) {
+            return false;
+        }
+        container = step_lanes[lane.fork_index];
+    }
+    true
 }

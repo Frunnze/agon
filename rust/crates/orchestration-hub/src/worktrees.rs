@@ -5,6 +5,7 @@ use std::process::Command;
 
 use thiserror::Error;
 
+use crate::cached_clones::record_clone_address;
 use crate::clone_locks::{CloneLocks, hold_lock};
 use crate::command_specification::CommandSpecification;
 use crate::workspace_mounts::{GIT_DIRECTORY_NAME, WorkspaceMounts};
@@ -140,6 +141,12 @@ fn prepare_repository_worktree(
         run_git(&repository.fetch_command)?;
     } else {
         run_git(&repository.clone_command)?;
+    }
+    let recording =
+        record_clone_address(&repository.cached_clone, &repository.address);
+    if let Err(source) = recording {
+        let path = repository.cached_clone.clone();
+        return Err(WorktreeError::ChangeFolder { path, source });
     }
     run_git(&repository.add_worktree_command)?;
     Ok(WorktreeOrigin::Created)

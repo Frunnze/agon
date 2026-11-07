@@ -1,0 +1,108 @@
+{
+  "weekdays": [
+    { "wire_name": "Mon", "iso_number": 1, "label": "Monday" },
+    { "wire_name": "Tue", "iso_number": 2, "label": "Tuesday" },
+    { "wire_name": "Wed", "iso_number": 3, "label": "Wednesday" },
+    { "wire_name": "Thu", "iso_number": 4, "label": "Thursday" },
+    { "wire_name": "Fri", "iso_number": 5, "label": "Friday" },
+    { "wire_name": "Sat", "iso_number": 6, "label": "Saturday" },
+    { "wire_name": "Sun", "iso_number": 7, "label": "Sunday" }
+  ],
+  "times_of_day": [
+    { "hour": 0, "minute": 0, "is_valid": true },
+    { "hour": 0, "minute": 59, "is_valid": true },
+    { "hour": 9, "minute": 5, "is_valid": true },
+    { "hour": 12, "minute": 30, "is_valid": true },
+    { "hour": 23, "minute": 0, "is_valid": true },
+    { "hour": 23, "minute": 59, "is_valid": true },
+    { "hour": 24, "minute": 0, "is_valid": false },
+    { "hour": 0, "minute": 60, "is_valid": false },
+    { "hour": 23, "minute": 60, "is_valid": false },
+    { "hour": 24, "minute": 60, "is_valid": false },
+    { "hour": 100, "minute": 0, "is_valid": false },
+    { "hour": 0, "minute": 1000, "is_valid": false },
+    { "hour": 4294967295, "minute": 0, "is_valid": false },
+    { "hour": 0, "minute": 4294967295, "is_valid": false }
+  ],
+  "hourly_minutes": [
+    { "minute": 0, "is_valid": true },
+    { "minute": 1, "is_valid": true },
+    { "minute": 30, "is_valid": true },
+    { "minute": 59, "is_valid": true },
+    { "minute": 60, "is_valid": false },
+    { "minute": 61, "is_valid": false },
+    { "minute": 1000, "is_valid": false },
+    { "minute": 4294967295, "is_valid": false }
+  ],
+  "agent_kinds": [
+    { "wire_name": "claude_code", "label": "Claude Code" },
+    { "wire_name": "codex", "label": "Codex" },
+    { "wire_name": "gemini_cli", "label": "Gemini CLI" }
+  ],
+  "schedule_descriptions": [
+    {
+      "schedule": { "every": "hour", "minute": 0 },
+      "description": "Every hour at :00"
+    },
+    {
+      "schedule": { "every": "hour", "minute": 5 },
+      "description": "Every hour at :05"
+    },
+    {
+      "schedule": { "every": "hour", "minute": 59 },
+      "description": "Every hour at :59"
+    },
+    {
+      "schedule": { "every": "day", "at": { "hour": 0, "minute": 0 } },
+      "description": "Every night at 00:00"
+    },
+    {
+      "schedule": { "every": "day", "at": { "hour": 2, "minute": 0 } },
+      "description": "Every night at 02:00"
+    },
+    {
+      "schedule": { "every": "day", "at": { "hour": 5, "minute": 59 } },
+      "description": "Every night at 05:59"
+    },
+    {
+      "schedule": { "every": "day", "at": { "hour": 6, "minute": 0 } },
+      "description": "Every day at 06:00"
+    },
+    {
+      "schedule": { "every": "day", "at": { "hour": 9, "minute": 5 } },
+      "description": "Every day at 09:05"
+    },
+    {
+      "schedule": { "every": "day", "at": { "hour": 18, "minute": 0 } },
+      "description": "Every day at 18:00"
+    },
+    {
+      "schedule": { "every": "day", "at": { "hour": 23, "minute": 59 } },
+      "description": "Every day at 23:59"
+    },
+    {
+      "schedule": {
+        "every": "week",
+        "on": "Mon",
+        "at": { "hour": 2, "minute": 0 }
+      },
+      "description": "Every Monday at 02:00"
+    },
+    {
+      "schedule": {
+        "every": "week",
+        "on": "Wed",
+        "at": { "hour": 6, "minute": 0 }
+      },
+      "description": "Every Wednesday at 06:00"
+    },
+    {
+      "schedule": {
+        "every": "week",
+        "on": "Sun",
+        "at": { "hour": 23, "minute": 59 }
+      },
+      "description": "Every Sunday at 23:59"
+    }
+  ]
+}

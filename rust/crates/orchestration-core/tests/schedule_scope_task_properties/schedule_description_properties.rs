@@ -7,11 +7,11 @@ use proptest::prelude::*;
 
 use crate::entity_strategies::{valid_schedule, valid_time_of_day, weekday};
 
-const DAILY_PREFIX: &str = "Every day at ";
 const WEEKLY_PREFIX: &str = "Every ";
 const TIME_SEPARATOR: char = ':';
 const PADDED_TIME_LENGTH: usize = 5;
 const DAY_WORD: &str = "day";
+const NIGHT_WORD: &str = "night";
 const ALL_WEEKDAYS: [Weekday; 7] = [
     Weekday::Mon,
     Weekday::Tue,
@@ -24,7 +24,7 @@ const ALL_WEEKDAYS: [Weekday; 7] = [
 
 fn described_time(at: TimeOfDay) -> String {
     let description = describe_schedule(&Schedule::Day { at });
-    let time = description.strip_prefix(DAILY_PREFIX).unwrap_or_default();
+    let time = description.rsplit(' ').next().unwrap_or_default();
     time.to_owned()
 }
 
@@ -128,6 +128,7 @@ proptest! {
 
         let name = weekday_name(on, at);
         let weekly_as_daily = weekly.replacen(&name, DAY_WORD, 1);
-        prop_assert_eq!(weekly_as_daily, daily);
+        let daily_as_day = daily.replacen(NIGHT_WORD, DAY_WORD, 1);
+        prop_assert_eq!(weekly_as_daily, daily_as_day);
     }
 }

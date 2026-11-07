@@ -1,0 +1,9 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc ef8ae219f0d2ce90a98f3b97ee6135b7d8b4792a56cfeef731c9be0e1f1a448e # shrinks to parts = ["A"], later_parts = Some(["a"])
+cc cf6b0791884af59ced0603a78f3dd9889761d88013015381ccd5693a76d1f871 # shrinks to session = "0aaa000a-0a00", parts = [","]
+cc 66649bbabd9c3a6c046ed833e711670230e6ac7f4cfbdb918302907c5afb86bc # shrinks to session = "0000a000-0a0a", parts = ["."]

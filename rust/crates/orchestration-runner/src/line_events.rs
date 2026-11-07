@@ -2,18 +2,18 @@ use chrono::{DateTime, Utc};
 use orchestration_api::work::RunEvent;
 use orchestration_core::run::{ChatAuthor, LogLine};
 use orchestration_hub::agent_event::AgentEvent;
-use orchestration_hub::agent_log::describe_agent_log_lines;
+use orchestration_hub::agent_log::AgentLogLine;
 
 use crate::run_events::chat_appended;
 
-pub(crate) fn describe_line_events(
+pub(crate) fn describe_relayed_events(
     step_name: &str,
-    line: &str,
+    agent_log_lines: Vec<AgentLogLine>,
     agent_events: &[AgentEvent],
     at: DateTime<Utc>,
 ) -> Vec<RunEvent> {
     let mut run_events = Vec::new();
-    for agent_log_line in describe_agent_log_lines(line, agent_events) {
+    for agent_log_line in agent_log_lines {
         let log_line = LogLine {
             at,
             step_name: step_name.to_string(),

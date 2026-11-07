@@ -9,6 +9,8 @@ use nix::unistd::Pid;
 use portable_pty::{Child, ChildKiller, ExitStatus};
 
 const HANG_UP_GRACE_PERIOD: Duration = Duration::from_millis(250);
+const NOT_A_GROUP_LEADER: &str =
+    "the process does not lead its own process group";
 
 #[derive(Debug)]
 pub struct ProcessGroupLeader {
@@ -24,6 +26,7 @@ struct ProcessGroupKiller {
 impl ProcessGroupLeader {
     pub fn new(process: StartedProcess) -> io::Result<Self> {
         let group = find_group(process.id())?;
+        ensure_group_exists(group)?;
         Ok(Self { process, group })
     }
 }
@@ -64,13 +67,22 @@ impl ChildKiller for ProcessGroupKiller {
     }
 }
 
-fn find_group(process_id: u32) -> io::Result<Pid> {
+pub(crate) fn find_group(process_id: u32) -> io::Result<Pid> {
     let raw_process_id = i32::try_from(process_id)
         .map_err(|problem| io::Error::other(problem.to_string()))?;
     Ok(Pid::from_raw(raw_process_id))
 }
 
-fn stop_process_group(group: Pid) -> io::Result<()> {
+fn ensure_group_exists(group: Pid) -> io::Result<()> {
+    let existence_check: Option<Signal> = None;
+    let has_no_group = killpg(group, existence_check) == Err(Errno::ESRCH);
+    if has_no_group {
+        return Err(io::Error::other(NOT_A_GROUP_LEADER));
+    }
+    Ok(())
+}
+
+pub(crate) fn stop_process_group(group: Pid) -> io::Result<()> {
     send_to_group(group, Signal::SIGHUP)?;
     thread::sleep(HANG_UP_GRACE_PERIOD);
     send_to_group(group, Signal::SIGKILL)

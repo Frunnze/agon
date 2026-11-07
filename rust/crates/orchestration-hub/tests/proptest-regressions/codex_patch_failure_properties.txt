@@ -1,0 +1,7 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 3508b65d1c9fe07dad9e719184150cfc1a9bcfda92050df8c2b676d4372f9bbb # shrinks to (relative_paths, changes) = (["0/a.a"], [("/workspace/0/a.a", "add")]), status = "failed"

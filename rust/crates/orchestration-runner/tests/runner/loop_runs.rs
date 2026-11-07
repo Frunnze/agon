@@ -17,7 +17,7 @@ use crate::workflows::{
 
 pub const DRAFT_INDEX: usize = 0;
 pub const GATE_INDEX: usize = 1;
-const SHIP_INDEX: usize = 2;
+pub const SHIP_INDEX: usize = 2;
 pub const STEP_COUNT: usize = 3;
 pub const LOOP_OUTCOME: &str = "changes";
 const FORWARD_OUTCOME: &str = "approved";

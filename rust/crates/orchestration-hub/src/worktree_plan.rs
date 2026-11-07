@@ -40,6 +40,7 @@ pub struct WorktreeRequest {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RepositoryWorktreePlan {
+    pub address: String,
     pub cached_clone: PathBuf,
     pub worktree: PathBuf,
     pub clone_command: CommandSpecification,
@@ -200,6 +201,7 @@ fn plan_repository(
             &worktree,
         ),
         delete_branch_command: delete_branch_command(&cached_clone, branch),
+        address: repository.address.clone(),
         cached_clone,
         worktree,
     }

@@ -5,6 +5,9 @@ use crate::text_shortening::{shorten_keeping_the_end, shorten_to_characters};
 const MAXIMUM_DETAIL_CHARACTERS: usize = 100;
 const UNNAMED_TOOL_DESCRIPTION: &str = "Used a tool";
 const PATH_SEPARATOR: char = '/';
+const LINE_BREAKS: [char; 7] = [
+    '\n', '\r', '\u{0B}', '\u{0C}', '\u{85}', '\u{2028}', '\u{2029}',
+];
 
 #[derive(Clone, Copy)]
 pub(crate) enum DetailKind {
@@ -65,13 +68,10 @@ pub(crate) fn describe_tool_action(
     given_detail: &str,
     task_folder: &str,
 ) -> String {
-    let detail = read_first_line(given_detail);
     let readable_detail = match action.detail_kind {
-        DetailKind::FilePath => {
-            let relative_path = relative_to_task_folder(detail, task_folder);
-            shorten_keeping_the_end(relative_path, MAXIMUM_DETAIL_CHARACTERS)
-        }
+        DetailKind::FilePath => describe_file_path(given_detail, task_folder),
         DetailKind::Text => {
+            let detail = read_first_line(given_detail);
             shorten_to_characters(detail, MAXIMUM_DETAIL_CHARACTERS)
         }
     };
@@ -80,6 +80,15 @@ pub(crate) fn describe_tool_action(
         return name_tool(action.tool_name);
     }
     format!("{} {readable_detail}", action.verb)
+}
+
+pub(crate) fn describe_file_path(
+    given_path: &str,
+    task_folder: &str,
+) -> String {
+    let path = read_first_line(given_path);
+    let relative_path = relative_to_task_folder(path, task_folder);
+    shorten_keeping_the_end(relative_path, MAXIMUM_DETAIL_CHARACTERS)
 }
 
 pub(crate) fn name_tool(tool_name: &str) -> String {
@@ -91,8 +100,8 @@ pub(crate) fn name_tool(tool_name: &str) -> String {
     format!("Used {name}")
 }
 
-fn read_first_line(text: &str) -> &str {
-    let first_line = text.trim().lines().next().unwrap_or_default();
+pub(crate) fn read_first_line(text: &str) -> &str {
+    let first_line = text.trim().split(LINE_BREAKS).next().unwrap_or_default();
     first_line.trim()
 }
 
@@ -103,6 +112,7 @@ fn relative_to_task_folder<'path>(
     let relative_path = path
         .strip_prefix(task_folder)
         .and_then(|rest| rest.strip_prefix(PATH_SEPARATOR))
+        .map(|rest| rest.trim_start_matches(PATH_SEPARATOR))
         .unwrap_or_default();
     if relative_path.is_empty() {
         return path;

@@ -5,3 +5,4 @@
 # It is recommended to check this file in to source control so that
 # everyone who runs the test benefits from these saved cases.
 cc 5fdd7242cb78891e1f766c36e458e984324da91b4c9ee9122d7b514dbdc4f7d4 # shrinks to round_limit = 1, chosen_index = 2, has_second_loop = false
+cc fb919616d8d73c646c2ec8f29c1bc9cf4e10fcc6fe58d94aea533c36a9212ccc # shrinks to round_limit = 1, chosen_index = 0, has_second_loop = true

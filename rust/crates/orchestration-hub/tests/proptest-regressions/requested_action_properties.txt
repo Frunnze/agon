@@ -1,0 +1,8 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 9cfa0cb4c070e18d53728e701632f2d3847eb9393d97413c3518b30a9d564cf1 # shrinks to task_folder = "/Users/air/Desktop/agents-orchestration/rust/target/tmp/a/task-0", first = "Aa", line_break = "\r", second = "a"
+cc 4bb17090dff78a97f3623a9d5077b0cd77123aa0184ad4d00ed82ba622d6dcfb # shrinks to task_folder = "/Users/air/Desktop/agents-orchestration/rust/target/tmp/a/task-0", (tool_name, field, _) = ("Edit", "file_path", "Edit"), detail = "", line_break = "\r", rest = "A"

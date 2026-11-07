@@ -36,6 +36,22 @@ pub(crate) fn validate_conditions(
     Ok(())
 }
 
+pub(crate) fn validate_distinct_step_pairs(
+    workflow: &Workflow,
+) -> Result<(), WorkflowProblem> {
+    let mut seen_pairs: BTreeSet<(WorkflowAgentId, WorkflowAgentId)> =
+        BTreeSet::new();
+    for connection in &workflow.connections {
+        if !seen_pairs.insert((connection.from, connection.to)) {
+            return Err(WorkflowProblem::RepeatedConnection {
+                from: name_agent(workflow, connection.from),
+                to: name_agent(workflow, connection.to),
+            });
+        }
+    }
+    Ok(())
+}
+
 pub(crate) fn validate_loops(
     workflow: &Workflow,
 ) -> Result<(), WorkflowProblem> {

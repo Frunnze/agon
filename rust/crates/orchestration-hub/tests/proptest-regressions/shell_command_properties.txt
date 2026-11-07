@@ -1,0 +1,9 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc aafb3c779563d7f4c292c61ca3f8a29e5755a5dc1e7d2ad3b7d737aa08fc2a8e # shrinks to shell = "bash", script = "😀"
+cc 0bf4a205d3b89f5aea9f5e92ae6232a3391b91127d24e16cd926a1e17cf57bb6 # shrinks to shell = "bash", script = "0\"a"
+cc bb693a0e2cd267159f56f7be11561dc9b93c8cd99dbec13923bc1125b0e840d7 # shrinks to shell = "bash", script = "é'a"

@@ -1,8 +1,13 @@
+use unicode_width::UnicodeWidthChar;
+
 use crate::terminal_sequences::{EraseScope, SequenceReader, TerminalAction};
 
 pub const MAXIMUM_KEPT_LINES: usize = 2000;
 const TAB_WIDTH: usize = 8;
-const BLANK: char = ' ';
+const BLANK: &str = " ";
+const UNKNOWN_CHARACTER_WIDTH: usize = 1;
+
+type ScreenLine = Vec<String>;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct TerminalSize {
@@ -12,9 +17,10 @@ pub struct TerminalSize {
 
 #[derive(Clone, Debug)]
 pub struct TerminalScreen {
-    lines: Vec<Vec<char>>,
+    lines: Vec<ScreenLine>,
     row: usize,
     column: usize,
+    is_wrap_pending: bool,
     columns: usize,
     rows: usize,
     reader: SequenceReader,
@@ -27,6 +33,7 @@ impl TerminalScreen {
             lines: Vec::new(),
             row: 0,
             column: 0,
+            is_wrap_pending: false,
             columns: usize::from(size.columns).max(1),
             rows: usize::from(size.rows).max(1),
             reader: SequenceReader::default(),
@@ -44,14 +51,10 @@ impl TerminalScreen {
 
     #[must_use]
     pub fn lines(&self) -> Vec<String> {
-        let mut shown: Vec<String> = self
-            .lines
-            .iter()
-            .map(|line| {
-                let text: String = line.iter().collect();
-                text.trim_end().to_owned()
-            })
-            .collect();
+        let mut shown = Vec::new();
+        for line in &self.lines {
+            shown.push(line.concat().trim_end().to_owned());
+        }
         while shown.last().is_some_and(String::is_empty) {
             shown.pop();
         }
@@ -59,6 +62,10 @@ impl TerminalScreen {
     }
 
     fn apply(&mut self, action: TerminalAction) {
+        let is_printing = matches!(action, TerminalAction::Print(_));
+        if !is_printing {
+            self.is_wrap_pending = false;
+        }
         match action {
             TerminalAction::Print(character) => self.print(character),
             TerminalAction::LineFeed => self.move_to_line_start(self.row + 1),
@@ -99,25 +106,54 @@ impl TerminalScreen {
             TerminalAction::EraseInDisplay(scope) => {
                 self.erase_in_display(scope);
             }
+            TerminalAction::EraseSavedLines => self.erase_saved_lines(),
         }
     }
 
     fn print(&mut self, character: char) {
-        if self.column >= self.columns {
+        let given_width = character.width().unwrap_or(UNKNOWN_CHARACTER_WIDTH);
+        let width = given_width.min(self.columns);
+        if width == 0 {
+            self.attach_mark(character);
+            return;
+        }
+        if self.is_wrap_pending || self.column + width > self.columns {
             self.move_to_line_start(self.row + 1);
         }
+
         let column = self.column;
+        let next_column = column + width;
         let line = self.line_under_cursor();
-        if line.len() <= column {
-            line.resize(column + 1, BLANK);
+        if line.len() < next_column {
+            line.resize(next_column, BLANK.to_owned());
         }
-        line[column] = character;
-        self.column += 1;
+        clear_broken_halves(line, column, next_column);
+        line[column] = character.to_string();
+        for continuation in &mut line[column + 1..next_column] {
+            continuation.clear();
+        }
+
+        self.is_wrap_pending = next_column == self.columns;
+        self.column = next_column.min(self.last_column());
+    }
+
+    fn attach_mark(&mut self, mark: char) {
+        let end = self.column + usize::from(self.is_wrap_pending);
+        let line = self.line_under_cursor();
+        if line.len() < end {
+            line.resize(end, BLANK.to_owned());
+        }
+        let base_cell =
+            line[..end].iter_mut().rev().find(|cell| !cell.is_empty());
+        if let Some(cell) = base_cell {
+            cell.push(mark);
+        }
     }
 
     fn move_to_line_start(&mut self, row: usize) {
         self.row = row;
         self.column = 0;
+        self.keep_cursor_line();
         self.forget_oldest_lines();
     }
 
@@ -134,13 +170,16 @@ impl TerminalScreen {
     fn erase_in_line(&mut self, scope: EraseScope) {
         let column = self.column;
         let line = self.line_under_cursor();
-        match scope {
-            EraseScope::ToEnd => line.truncate(column),
-            EraseScope::ToStart => {
-                let erased_end = (column + 1).min(line.len());
-                line[..erased_end].fill(BLANK);
-            }
-            EraseScope::All => line.clear(),
+        let (start, end) = match scope {
+            EraseScope::ToEnd => (column, line.len()),
+            EraseScope::ToStart => (0, column + 1),
+            EraseScope::All => (0, line.len()),
+        };
+        let end = end.min(line.len());
+        let start = start.min(end);
+        clear_broken_halves(line, start, end);
+        for cell in &mut line[start..end] {
+            BLANK.clone_into(cell);
         }
     }
 
@@ -160,11 +199,22 @@ impl TerminalScreen {
         }
     }
 
-    fn line_under_cursor(&mut self) -> &mut Vec<char> {
+    fn erase_saved_lines(&mut self) {
+        let saved_line_count = self.find_screen_top();
+        let kept_saved_lines = saved_line_count.min(self.lines.len());
+        self.lines.drain(..kept_saved_lines);
+        self.row -= saved_line_count;
+    }
+
+    fn line_under_cursor(&mut self) -> &mut ScreenLine {
+        self.keep_cursor_line();
+        &mut self.lines[self.row]
+    }
+
+    fn keep_cursor_line(&mut self) {
         if self.lines.len() <= self.row {
             self.lines.resize(self.row + 1, Vec::new());
         }
-        &mut self.lines[self.row]
     }
 
     fn find_screen_top(&self) -> usize {
@@ -185,5 +235,16 @@ impl TerminalScreen {
         let dropped = surplus.min(self.lines.len());
         self.lines.drain(..dropped);
         self.row = self.row.saturating_sub(surplus);
+    }
+}
+
+fn clear_broken_halves(line: &mut ScreenLine, start: usize, end: usize) {
+    let starts_inside_wide_character =
+        start > 0 && line.get(start).is_some_and(String::is_empty);
+    if starts_inside_wide_character {
+        BLANK.clone_into(&mut line[start - 1]);
+    }
+    if line.get(end).is_some_and(String::is_empty) {
+        BLANK.clone_into(&mut line[end]);
     }
 }

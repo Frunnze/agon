@@ -1,0 +1,1 @@
+mod shared_pattern_table_properties;

@@ -6,7 +6,8 @@ use crate::failure_texts::{
 };
 use crate::shell_commands::unwrap_shell_command;
 use crate::tool_description::{
-    DetailKind, ToolAction, describe_tool_action, name_tool,
+    DetailKind, ToolAction, describe_file_path, describe_tool_action,
+    name_tool,
 };
 
 const FAILED_STATUSES: [&str; 2] = ["failed", "declined"];
@@ -25,6 +26,8 @@ const CHANGE_FILE: ToolAction = ToolAction {
     verb: "Changed",
     detail_kind: DetailKind::FilePath,
 };
+const FAILED_PATCH_PREFIX: &str = "Could not change ";
+const CHANGED_PATH_SEPARATOR: &str = ", ";
 const FILE_CHANGE_VERBS: [(&str, &str); 3] = [
     ("add", "Wrote"),
     ("update", "Edited"),
@@ -93,7 +96,7 @@ pub(crate) fn describe_started_item(
         CodexItem::CommandExecution { command, .. } => {
             let script = unwrap_shell_command(command);
             let description =
-                describe_tool_action(RUN_COMMAND, script, task_folder);
+                describe_tool_action(RUN_COMMAND, &script, task_folder);
             vec![AgentEvent::UsedTool(description)]
         }
         CodexItem::McpToolCall { tool, .. } => {
@@ -158,6 +161,10 @@ fn describe_file_changes(
     status: &str,
     task_folder: &str,
 ) -> Vec<AgentEvent> {
+    if FAILED_STATUSES.contains(&status) {
+        return describe_failed_patch(changes, task_folder);
+    }
+
     let mut events = Vec::new();
     for change in changes {
         let action = choose_file_change_action(&change.kind);
@@ -165,8 +172,26 @@ fn describe_file_changes(
             describe_tool_action(action, &change.path, task_folder);
         events.push(AgentEvent::UsedTool(description));
     }
-    events.extend(describe_failure(status, ""));
     events
+}
+
+fn describe_failed_patch(
+    changes: &[CodexFileChange],
+    task_folder: &str,
+) -> Vec<AgentEvent> {
+    let mut changed_paths = Vec::new();
+    for change in changes {
+        let changed_path = describe_file_path(&change.path, task_folder);
+        if !changed_path.is_empty() {
+            changed_paths.push(changed_path);
+        }
+    }
+    if changed_paths.is_empty() {
+        return vec![AgentEvent::ToolFailed(UNKNOWN_TOOL_FAILURE.to_owned())];
+    }
+    let named_paths = changed_paths.join(CHANGED_PATH_SEPARATOR);
+    let failure = format!("{FAILED_PATCH_PREFIX}{named_paths}");
+    vec![AgentEvent::ToolFailed(failure)]
 }
 
 fn choose_file_change_action(kind: &str) -> ToolAction {

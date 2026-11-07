@@ -20,7 +20,7 @@ const WORKING_DIRECTORY_OPTION: &str = "--workdir";
 const ENVIRONMENT_OPTION: &str = "--env";
 const ALLOWED_HOSTS_VARIABLE: &str = "ORCHESTRATION_ALLOWED_HOSTS";
 const HOST_SEPARATOR: &str = ",";
-const MOUNT_BREAKING_CHARACTERS: [char; 2] = [',', '"'];
+const MOUNT_BREAKING_CHARACTERS: [char; 4] = [',', '"', '\n', '\r'];
 const OPTION_PREFIX: char = '-';
 const ENVIRONMENT_NAME_CONNECTOR: char = '_';
 
@@ -254,7 +254,8 @@ fn ensure_valid_environment_names(
     command: &CommandSpecification,
 ) -> Result<(), SandboxError> {
     for name in command.environment.keys() {
-        if !is_valid_environment_name(name) {
+        let replaces_allowed_hosts = name == ALLOWED_HOSTS_VARIABLE;
+        if replaces_allowed_hosts || !is_valid_environment_name(name) {
             return Err(SandboxError::InvalidEnvironmentName(name.clone()));
         }
     }

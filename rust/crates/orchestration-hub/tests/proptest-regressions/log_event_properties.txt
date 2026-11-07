@@ -1,0 +1,9 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 04736226fc3f26fddaf08fed0a5dae2387f0f8bec5b60d03626390d7cf13a9ed # shrinks to agent_events = [ToolFailed("")]
+cc e7ce5bac859b9f3287a94a897052da620842b4aabcff66f247ea6c5804598b85 # shrinks to reason = " a\u{85}0"
+cc 63f3c4b12b1b04dbcc2d42490c55d72045db8bb90e2797fa8bde57f7fff88fee # shrinks to error_text = " A\u{85}?"

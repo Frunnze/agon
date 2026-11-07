@@ -1,6 +1,7 @@
 use orchestration_core::connection_rules::{
     MAXIMUM_CONDITION_LENGTH, ROUND_LIMITS,
 };
+use orchestration_core::naming::NameProblem;
 use orchestration_core::workflow_graph::WorkflowProblem;
 use proptest::prelude::*;
 
@@ -21,8 +22,16 @@ fn list_problems(
         WorkflowProblem::DuplicateAgentName {
             name: name.to_owned(),
         },
+        WorkflowProblem::InvalidStepName {
+            name: name.to_owned(),
+            problem: NameProblem::Empty,
+        },
         WorkflowProblem::UnknownConnectionEnd { agent_id },
         WorkflowProblem::SelfConnection { agent_id },
+        WorkflowProblem::RepeatedConnection {
+            from: name.to_owned(),
+            to: condition.to_owned(),
+        },
         WorkflowProblem::Cycle,
         WorkflowProblem::InvalidCondition {
             condition: condition.to_owned(),
@@ -51,6 +60,9 @@ fn list_named_values(problem: &WorkflowProblem) -> Vec<String> {
             vec![agent_id.0.to_string()]
         }
         WorkflowProblem::DuplicateAgentName { name } => vec![name.clone()],
+        WorkflowProblem::InvalidStepName { name, problem } => {
+            vec![format!("{name:?}"), problem.to_string()]
+        }
         WorkflowProblem::InvalidCondition { condition } => {
             vec![format!("{condition:?}")]
         }
@@ -61,7 +73,8 @@ fn list_named_values(problem: &WorkflowProblem) -> Vec<String> {
         WorkflowProblem::InvalidRoundLimit { round_limit } => {
             vec![round_limit.to_string()]
         }
-        WorkflowProblem::LoopPointsForward { from, to } => {
+        WorkflowProblem::LoopPointsForward { from, to }
+        | WorkflowProblem::RepeatedConnection { from, to } => {
             vec![from.clone(), to.clone()]
         }
     }

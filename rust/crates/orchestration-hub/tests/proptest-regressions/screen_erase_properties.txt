@@ -1,0 +1,12 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 7a1c6be4a8927160038248d7da6898419cc8e64aa33160975c20cb6cb73fc0e8 # shrinks to size = TerminalSize { columns: 2, rows: 1 }, operations = [Print('中')], scope = 0
+cc 16b9fafd5541f2a12510705a4ccde23407ec8d163417d48ae302c8117cba32ad # shrinks to size = TerminalSize { columns: 2, rows: 1 }, operations = [Print('é'), Print('a')]
+cc d55fe755d9f0a8bed73561d63abd433491d50740aa9b42139842417ecc3a3a2c # shrinks to size = TerminalSize { columns: 2, rows: 1 }, operations = [Print('a'), Print('a'), Print('a')], text = "a"
+cc 47071565e23007028e7e0bddaed1cb6c70a05c7670ed813df2c25dc2a73efe47 # shrinks to size = TerminalSize { columns: 2, rows: 2 }, operations = [Print('a'), Print('中'), LineFeed, PreviousLine(0)]
+cc b93f0c1570a3e997b52a0de186146563e107314b3ff076adf7a5ea66acb496bb # shrinks to size = TerminalSize { columns: 2, rows: 2 }, operations = [Print('a'), Print('中'), LineFeed, LineFeed, Up(0), EraseDisplay(1)]
+cc ecf11dc306c4d776463cf0c016f88a007f32f681b5a628dc19f45ba0eb1c33a3 # shrinks to size = TerminalSize { columns: 2, rows: 2 }, operations = [Print('a'), Print('a'), Print('a'), LineFeed, Up(0), EraseDisplay(1)], text = "a"

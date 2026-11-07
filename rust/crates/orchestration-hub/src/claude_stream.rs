@@ -3,7 +3,8 @@ use serde_json::Value;
 
 use crate::agent_event::AgentEvent;
 use crate::claude_tool_results::describe_tool_failures;
-use crate::failure_texts::UNKNOWN_FAILURE_REASON;
+use crate::failure_texts::{UNKNOWN_FAILURE_REASON, choose_given_text};
+use crate::json_lines::describe_unread_line;
 use crate::known_tools::CLAUDE_TOOLS;
 use crate::tool_description::describe_tool_use;
 
@@ -58,7 +59,7 @@ pub(crate) fn parse_claude_line(
     task_folder: &str,
 ) -> Vec<AgentEvent> {
     let Ok(event) = serde_json::from_str::<ClaudeStreamEvent>(line) else {
-        return vec![AgentEvent::Said(line.to_string())];
+        return describe_unread_line(line);
     };
 
     match event {
@@ -126,14 +127,11 @@ fn describe_result(
         return AgentEvent::Finished;
     }
 
-    let given_reason = result
-        .map(|text| text.trim().to_string())
-        .filter(|text| !text.is_empty());
-    let subtype_reason = subtype
-        .filter(|name| !name.trim().is_empty() && *name != SUCCESS_SUBTYPE)
-        .map(ToString::to_string);
-    let reason = given_reason
-        .or(subtype_reason)
-        .unwrap_or_else(|| UNKNOWN_FAILURE_REASON.to_string());
+    let given_reason = result.unwrap_or_default();
+    let error_subtype = subtype
+        .filter(|name| name.trim() != SUCCESS_SUBTYPE)
+        .unwrap_or_default();
+    let given_reasons = [given_reason.as_str(), error_subtype];
+    let reason = choose_given_text(&given_reasons, UNKNOWN_FAILURE_REASON);
     AgentEvent::Failed(reason)
 }

@@ -1,7 +1,9 @@
 use std::fs;
+use std::thread;
+use std::time::Duration;
 
 use orchestration_node::server_address::ServerAddress;
-use serde_json::json;
+use serde_json::{Value, json};
 
 use crate::support::hosted_runner::{
     HostedRunner, PLAN_DETAILS, WORKTREES_FOLDER_NAME, join_and_approve,
@@ -13,12 +15,26 @@ use crate::support::rendezvous_lookup::look_up_code;
 use crate::support::test_device::{RELAY_DEFAULT, RELAY_DISABLED, read_text};
 
 const PLAN_PROMPT_RECORD: &str = "plan-prompt.txt";
+const RECORD_ATTEMPTS: u32 = 30;
+const RECORD_ATTEMPT_PAUSE: Duration = Duration::from_secs(1);
 
 fn start_or_panic(peer_relay: &str) -> HostedRunner {
     match start_runner_beside_host(peer_relay) {
         Ok(nodes) => nodes,
         Err(problem) => panic!("the host and the runner start: {problem}"),
     }
+}
+
+fn look_up_until_published(code: &str) -> Result<ServerAddress, String> {
+    let mut last_problem = String::new();
+    for _attempt in 0..RECORD_ATTEMPTS {
+        match look_up_code(code) {
+            Ok(address) => return Ok(address),
+            Err(problem) => last_problem = problem,
+        }
+        thread::sleep(RECORD_ATTEMPT_PAUSE);
+    }
+    Err(last_problem)
 }
 
 fn read_runner_server_address(nodes: &HostedRunner) -> Result<String, String> {
@@ -74,8 +90,10 @@ fn a_runner_with_only_the_published_record_works_over_the_peer_link() {
     let Ok(code) = read_text(&session, "/display_code") else {
         panic!("the session shows a code");
     };
+    let board_problem = session.get("rendezvous_problem");
+    assert_eq!(board_problem, Some(&Value::Null), "the public board");
 
-    let published = look_up_code(&code);
+    let published = look_up_until_published(&code);
     let Ok(ServerAddress::Peer(peer_address)) = published else {
         panic!("the record names a peer address: {published:?}");
     };

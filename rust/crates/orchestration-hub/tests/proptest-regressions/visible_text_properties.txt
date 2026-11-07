@@ -1,0 +1,7 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 8267b713e0f54b9d23ef554dc0d0711cdbd0e56f509d33e45c443d8eb59a2e1d # shrinks to text = "", placements = [(Index(0), "\u{1b}P中\u{1b}\\")]

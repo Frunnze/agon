@@ -49,7 +49,7 @@ fn test_describe_schedule_uses_the_design_wording() {
     });
     let hourly = describe_schedule(&Schedule::Hour { minute: 15 });
 
-    assert_eq!(daily, "Every day at 02:00");
+    assert_eq!(daily, "Every night at 02:00");
     assert_eq!(weekly, "Every Monday at 09:00");
     assert_eq!(hourly, "Every hour at :15");
 }

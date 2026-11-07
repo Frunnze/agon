@@ -1,0 +1,10 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 955fd5f39a04b5aacd957ad893d2db32718745ec7f90bb72321cff68d00c4991 # shrinks to size = TerminalSize { columns: 2, rows: 1 }, operations = [Print('a'), Print('a'), Print('a'), Print('a'), Print('a'), Print('a'), Print('a'), Print('a'), Up(0), Print('a')]
+cc 7edac6acad3597b252e15f75d326185fbe805554759e755145c770f4636651aa # shrinks to size = TerminalSize { columns: 2, rows: 1 }, operations = [Ignored("\u{1b}(B"), Print('a'), Print('a')]
+cc ca132849922a149a97d7b440f4276dd6c31b11def30c48061bc677448c09b0a9 # shrinks to size = TerminalSize { columns: 2, rows: 1 }, operations = [], ignored = "\u{1b}(B"
+cc f2da06a6c6a3b7336c8e35fa308074afcf084c53a43db27d66c19e7bfad6f9fc # shrinks to size = TerminalSize { columns: 2, rows: 2 }, operations = [Print('a'), Print('a'), Print('a'), LineFeed, PreviousLine(0), Up(0), Print('Z')]

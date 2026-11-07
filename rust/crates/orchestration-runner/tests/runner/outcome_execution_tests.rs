@@ -34,10 +34,10 @@ struct OutcomeRun {
 
 fn review_workflow(review_task: &str) -> Workflow {
     let shape = WorkflowShape {
-        agent_count: 2,
+        agent_count: 3,
         connections: Vec::new(),
-        positions: vec![(0, 0), (0, 1)],
-        failing_agents: vec![false, false],
+        positions: vec![(0, 0), (0, 1), (1, 1)],
+        failing_agents: vec![false, false, false],
     };
     let mut workflow = build_workflow(&shape);
     review_task.clone_into(&mut workflow.agents[0].task);
@@ -48,7 +48,7 @@ fn review_workflow(review_task: &str) -> Workflow {
         },
         AgentConnection {
             condition: Some(CHOICES[1].to_owned()),
-            ..AgentConnection::plain(agent_id(0), agent_id(1))
+            ..AgentConnection::plain(agent_id(0), agent_id(2))
         },
     ];
     workflow

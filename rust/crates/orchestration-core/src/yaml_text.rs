@@ -2,12 +2,27 @@ use std::ops::RangeInclusive;
 
 const RESERVED_PLAIN_WORDS: [&str; 9] =
     ["true", "false", "null", "yes", "no", "on", "off", "y", "n"];
-const INVISIBLE_CHARACTER_RANGES: [RangeInclusive<char>; 4] = [
+const INVISIBLE_CHARACTER_RANGES: [RangeInclusive<char>; 18] = [
+    '\u{AD}'..='\u{AD}',
+    '\u{34F}'..='\u{34F}',
+    '\u{61C}'..='\u{61C}',
+    '\u{115F}'..='\u{1160}',
+    '\u{17B4}'..='\u{17B5}',
+    '\u{180B}'..='\u{180F}',
     '\u{200B}'..='\u{200F}',
     '\u{2028}'..='\u{202E}',
-    '\u{2060}'..='\u{2069}',
+    '\u{2060}'..='\u{206F}',
+    '\u{3164}'..='\u{3164}',
+    '\u{FE00}'..='\u{FE0F}',
     '\u{FEFF}'..='\u{FEFF}',
+    '\u{FFA0}'..='\u{FFA0}',
+    '\u{FFF0}'..='\u{FFF8}',
+    '\u{FFFE}'..='\u{FFFF}',
+    '\u{1BCA0}'..='\u{1BCA3}',
+    '\u{1D173}'..='\u{1D17A}',
+    '\u{E0000}'..='\u{E0FFF}',
 ];
+const LARGEST_SHORT_ESCAPE: char = '\u{FFFF}';
 
 pub(crate) fn render_yaml_scalar(text: &str) -> String {
     if is_plain_scalar(text) {
@@ -45,15 +60,21 @@ fn quote_yaml_text(text: &str) -> String {
             '\n' => quoted.push_str("\\n"),
             '\t' => quoted.push_str("\\t"),
             _ if is_hidden_character(character) => {
-                let escape_sequence =
-                    format!("\\u{:04X}", u32::from(character));
-                quoted.push_str(&escape_sequence);
+                quoted.push_str(&escape_hidden_character(character));
             }
             _ => quoted.push(character),
         }
     }
     quoted.push('"');
     quoted
+}
+
+fn escape_hidden_character(character: char) -> String {
+    let code_point = u32::from(character);
+    if character <= LARGEST_SHORT_ESCAPE {
+        return format!("\\u{code_point:04X}");
+    }
+    format!("\\U{code_point:08X}")
 }
 
 fn is_hidden_character(character: char) -> bool {

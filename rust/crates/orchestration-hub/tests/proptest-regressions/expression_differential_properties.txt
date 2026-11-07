@@ -1,0 +1,12 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc ff9fc407fed0a743e868765129c9e497bb5a3d657ab0c77a8bf1aa281562f857 # shrinks to patterns = ["/**"], home = "/A", filling = PathFilling { names: [""], folders: [], inside: None }, plain_path = "/0", is_derived = false
+cc a507ff49e2687938f84c13dc2b3deb856d943702a93084b3525c7e4e0650416c # shrinks to pattern = "path", name = "a.md", home = "/A"
+cc b4beca46ebcfb644b652b4434693d0ffd74cfa7fd35f912e6fff725004c7cb43 # shrinks to patterns = ["~/0", "**"], home = "/A", filling = PathFilling { names: [""], folders: [], inside: None }, chosen = Index(0)
+cc 23535dede11c437fff421908cdfe7446196070893018a9d28717a14d94cc803d # shrinks to pattern = "~/a", home = "/A", filling = PathFilling { names: [""], folders: [], inside: None }, spelling = CurrentFolder, position = 0
+cc 91bcb90cf4969075bacb7a6395c94b2837f2cbcdd7c03bdfd94fe5578528796e # shrinks to pattern = "~/**", home = "/a", filling = PathFilling { names: [""], folders: [], inside: None }, spelling = DoubledSeparator, position = 0
+cc ca711a54c090b645d804ae5ec61b3b4009c400a1db57526fd84027a6bbd40694 # shrinks to pattern = "/**", home = "/a", filling = PathFilling { names: [""], folders: [], inside: None }, spelling = DoubledSeparator, position = 0

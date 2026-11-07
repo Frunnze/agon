@@ -1,0 +1,7 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 26feee7be7d225a28b57eb38b998d834f49d4393868ae9ac26624d79e7d54dc5 # shrinks to task_id = TaskId(00000000-0000-0000-0000-000000000000), (runner_device, folder_device) = ("000aa00a0a000a0a0aaa000a0a0a00a0", "00a0aa0aa00000aa000aaaa00aa00aaa"), path = "/ "

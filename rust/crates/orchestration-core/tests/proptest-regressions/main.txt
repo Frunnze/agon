@@ -1,0 +1,7 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 56172f15b8f048f779d416957561a3e9e7ebf7b87eb5caea385419a8417c45d1 # shrinks to at = TimeOfDay { hour: 0, minute: 0 }

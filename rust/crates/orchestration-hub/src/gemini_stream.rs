@@ -7,6 +7,7 @@ use crate::failure_texts::{
     choose_given_text,
 };
 use crate::json_lines::describe_unread_line;
+use crate::json_terminal_codes::strip_terminal_codes_in_json;
 use crate::known_tools::GEMINI_TOOLS;
 use crate::tool_description::describe_tool_use;
 
@@ -17,7 +18,7 @@ const ERROR_STATUS: &str = "error";
 pub(crate) enum GeminiLine {
     SpeechPart(String),
     EndsSpeech(Vec<AgentEvent>),
-    KeepsSpeech(Vec<AgentEvent>),
+    KeepsSpeech,
 }
 
 #[derive(Debug, Deserialize)]
@@ -70,16 +71,17 @@ struct GeminiError {
 }
 
 pub(crate) fn parse_gemini_line(line: &str, task_folder: &str) -> GeminiLine {
-    let Ok(event) = serde_json::from_str::<GeminiEvent>(line) else {
-        return GeminiLine::KeepsSpeech(describe_unread_line(line));
+    if let Some(speech_part) = read_speech_part(line) {
+        return GeminiLine::SpeechPart(speech_part);
+    }
+    let readable_line = strip_terminal_codes_in_json(line);
+    let Ok(event) = serde_json::from_str::<GeminiEvent>(&readable_line) else {
+        return read_unread_line(&readable_line);
     };
 
     match event {
         GeminiEvent::Init { session_id } => {
             GeminiLine::EndsSpeech(start_session(session_id))
-        }
-        GeminiEvent::Message { role, content } if role == ASSISTANT_ROLE => {
-            GeminiLine::SpeechPart(content)
         }
         GeminiEvent::ToolUse {
             tool_name,
@@ -108,9 +110,25 @@ pub(crate) fn parse_gemini_line(line: &str, task_folder: &str) -> GeminiLine {
             GeminiLine::EndsSpeech(vec![describe_result(&status, &error)])
         }
         GeminiEvent::Message { .. } | GeminiEvent::Other => {
-            GeminiLine::KeepsSpeech(Vec::new())
+            GeminiLine::KeepsSpeech
         }
     }
+}
+
+fn read_speech_part(line: &str) -> Option<String> {
+    let event = serde_json::from_str::<GeminiEvent>(line).ok()?;
+    let GeminiEvent::Message { role, content } = event else {
+        return None;
+    };
+    (role == ASSISTANT_ROLE).then_some(content)
+}
+
+fn read_unread_line(line: &str) -> GeminiLine {
+    let agent_events = describe_unread_line(line);
+    if agent_events.is_empty() {
+        return GeminiLine::KeepsSpeech;
+    }
+    GeminiLine::EndsSpeech(agent_events)
 }
 
 fn start_session(session_id: String) -> Vec<AgentEvent> {

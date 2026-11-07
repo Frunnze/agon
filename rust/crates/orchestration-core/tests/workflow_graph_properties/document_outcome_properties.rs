@@ -1,7 +1,7 @@
 use orchestration_core::workflow::{AgentConnection, StepKind, Workflow};
 use orchestration_core::workflow_document::render_workflow_document;
 use orchestration_core::workflow_graph::{
-    find_agent_by_id, validate_workflow,
+    WorkflowProblem, find_agent_by_id, validate_workflow,
 };
 use proptest::prelude::*;
 
@@ -140,13 +140,16 @@ proptest! {
         let mut looped =
             workflow_with_target_named(&posing_name, &outcome, rounds, 0);
         looped.agents[0].name = base_name;
-        prop_assume!(validate_workflow(&plain).is_ok());
-        prop_assume!(validate_workflow(&looped).is_ok());
 
         let plain_document = render_workflow_document(&plain);
         let looped_document = render_workflow_document(&looped);
 
         prop_assert_ne!(plain_document, looped_document);
+        let is_name_refused = matches!(
+            validate_workflow(&plain),
+            Err(WorkflowProblem::InvalidStepName { .. })
+        );
+        prop_assert!(is_name_refused);
     }
 
     #[test]

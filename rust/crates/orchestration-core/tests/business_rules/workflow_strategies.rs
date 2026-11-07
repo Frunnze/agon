@@ -1,3 +1,4 @@
+use std::collections::BTreeSet;
 use std::ops::RangeInclusive;
 
 use orchestration_core::approval::ApprovalPolicy;
@@ -90,8 +91,10 @@ pub fn acyclic_workflow_with_agent_counts(
                 agents.push(workflow_agent(id, name, position));
             }
             let mut connections = Vec::new();
+            let mut connected_pairs = BTreeSet::new();
             for (first, second) in index_pairs {
-                if first < second {
+                let is_new_pair = connected_pairs.insert((first, second));
+                if first < second && is_new_pair {
                     connections.push(AgentConnection::plain(
                         agents[first].id,
                         agents[second].id,
@@ -115,7 +118,10 @@ pub fn workflow_with_cycle() -> impl Strategy<Value = Workflow> {
         let first_id = workflow.agents[0].id;
         let last_id = workflow.agents[workflow.agents.len() - 1].id;
         let mut connections = workflow.connections.clone();
-        connections.push(AgentConnection::plain(first_id, last_id));
+        let way_forward = AgentConnection::plain(first_id, last_id);
+        if !connections.contains(&way_forward) {
+            connections.push(way_forward);
+        }
         connections.push(AgentConnection::plain(last_id, first_id));
         workflow_from_parts(workflow.agents.clone(), connections)
     })

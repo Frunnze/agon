@@ -1,0 +1,8 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 8bdcba9cf2ffe3ce5d22de00af58b3e7817de8f51651c9214cb9eba8869c906c # shrinks to address = "a.test/a/a", task_id = TaskId(039a3782-834c-ac33-cb23-a51db417d7a1), slug = "aa2t30p5"
+cc ab6d24f371ae09ac0dec4d4c13751a076e02f8f8b41bea2d18dadf1640e4f5b9 # shrinks to address = "a.test/a/a", task_id = TaskId(35b71ff9-8a81-1fac-ce55-b7d32747a026), slug = "wzn46"

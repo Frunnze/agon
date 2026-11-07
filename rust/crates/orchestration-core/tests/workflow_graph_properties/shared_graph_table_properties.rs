@@ -4,8 +4,7 @@ use orchestration_core::workflow::{
     AgentConnection, CanvasPosition, StepKind, Workflow, WorkflowAgent,
 };
 use orchestration_core::workflow_graph::{
-    agents_in_order, find_agent_by_id, forward_reachable_agents,
-    validate_workflow,
+    agents_in_order, forward_reachable_agents, validate_workflow,
 };
 use proptest::prelude::*;
 use serde::Deserialize;
@@ -23,6 +22,7 @@ struct SharedAgent {
     name: String,
     horizontal: f64,
     vertical: f64,
+    id_number: Option<u32>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -47,11 +47,17 @@ fn read_shared_cases() -> Result<Vec<SharedGraphCase>, serde_json::Error> {
     serde_json::from_str(SHARED_GRAPH_CASES)
 }
 
+fn identify_number(position: u128, agent: &SharedAgent) -> u128 {
+    agent.id_number.map_or(position, u128::from)
+}
+
 fn find_number(case: &SharedGraphCase, name: &str) -> u128 {
     (0_u128..)
         .zip(&case.agents)
         .find(|(_, agent)| agent.name == name)
-        .map_or(UNKNOWN_NUMBER, |(number, _)| number)
+        .map_or(UNKNOWN_NUMBER, |(position, agent)| {
+            identify_number(position, agent)
+        })
 }
 
 fn build_case_workflow(
@@ -59,7 +65,8 @@ fn build_case_workflow(
     storage_order: &[usize],
 ) -> Workflow {
     let mut numbered_agents = Vec::new();
-    for (number, agent) in (0_u128..).zip(&case.agents) {
+    for (position, agent) in (0_u128..).zip(&case.agents) {
+        let number = identify_number(position, agent);
         numbered_agents.push(WorkflowAgent {
             name: agent.name.clone(),
             position: CanvasPosition {
@@ -99,9 +106,10 @@ fn list_names_in_order(workflow: &Workflow) -> Vec<String> {
 
 fn list_reached_names(workflow: &Workflow) -> BTreeSet<String> {
     let first_id = agent_identifier(0);
+    let reached_ids = forward_reachable_agents(workflow, first_id);
     let mut names = BTreeSet::new();
-    for agent_id in forward_reachable_agents(workflow, first_id) {
-        if let Some(agent) = find_agent_by_id(workflow, agent_id) {
+    for agent in &workflow.agents {
+        if reached_ids.contains(&agent.id) {
             names.insert(agent.name.clone());
         }
     }

@@ -2,6 +2,7 @@ use orchestration_hub::terminal_screen::{
     MAXIMUM_KEPT_LINES, TerminalScreen, TerminalSize,
 };
 use proptest::prelude::*;
+use unicode_width::UnicodeWidthChar;
 
 const SCREEN_SIZE: TerminalSize = TerminalSize {
     columns: 80,
@@ -15,6 +16,15 @@ const TERMINAL_OUTPUT_PATTERN: &str = concat!(
     "(\\PC|\u{1b}\\[[0-9;?]{0,6}[A-Za-z]",
     "|\u{1b}\\][^\u{7}]{0,8}\u{7}|\r|\n){0,60}",
 );
+
+fn count_cells(line: &str, columns: usize) -> usize {
+    let mut cells = 0;
+    for character in line.chars() {
+        let width = character.width().unwrap_or(1);
+        cells += width.min(columns);
+    }
+    cells
+}
 
 fn plain_line() -> impl Strategy<Value = String> {
     "[a-zA-Z0-9.,:!?/=-]{0,40}"
@@ -171,8 +181,9 @@ proptest! {
 
         let lines = screen.lines();
         prop_assert!(lines.len() <= MAXIMUM_KEPT_LINES);
+        let columns = usize::from(columns);
         for line in lines {
-            prop_assert!(line.chars().count() <= usize::from(columns));
+            prop_assert!(count_cells(&line, columns) <= columns, "{line:?}");
         }
     }
 

@@ -1,0 +1,124 @@
+{
+  "white_space": "\t\n\u000b\f\r \u0085\u00a0\u1680\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u2028\u2029\u202f\u205f\u3000",
+  "cases": [
+    {
+      "title": "",
+      "details": "",
+      "is_blank": true,
+      "collapsed": "",
+      "markdown": ""
+    },
+    {
+      "title": "\u0085",
+      "details": "",
+      "is_blank": true,
+      "collapsed": "",
+      "markdown": ""
+    },
+    {
+      "title": "\t\n\u000b\f\r ",
+      "details": "",
+      "is_blank": true,
+      "collapsed": "",
+      "markdown": ""
+    },
+    {
+      "title": "\u0085\u00a0\u1680\u2000\u2005\u200a\u2028\u2029\u202f\u205f\u3000",
+      "details": "",
+      "is_blank": true,
+      "collapsed": "",
+      "markdown": ""
+    },
+    {
+      "title": "\ufeff",
+      "details": "",
+      "is_blank": false,
+      "collapsed": "\ufeff",
+      "markdown": "# Rules\n\n- \ufeff.\n"
+    },
+    {
+      "title": "\ufeffKeep commits small\ufeff",
+      "details": "",
+      "is_blank": false,
+      "collapsed": "\ufeffKeep commits small\ufeff",
+      "markdown": "# Rules\n\n- \ufeffKeep commits small\ufeff.\n"
+    },
+    {
+      "title": " \ufeff Keep \ufeff ",
+      "details": "",
+      "is_blank": false,
+      "collapsed": "\ufeff Keep \ufeff",
+      "markdown": "# Rules\n\n- \ufeff Keep \ufeff.\n"
+    },
+    {
+      "title": "Keep\u0085commits\u0085small",
+      "details": "",
+      "is_blank": false,
+      "collapsed": "Keep commits small",
+      "markdown": "# Rules\n\n- Keep commits small.\n"
+    },
+    {
+      "title": "\u0085Keep  commits\u3000small!\u2028",
+      "details": "",
+      "is_blank": false,
+      "collapsed": "Keep commits small!",
+      "markdown": "# Rules\n\n- Keep commits small!\n"
+    },
+    {
+      "title": "\u00a0Ship\u1680it\u202fnow\u205f?",
+      "details": "",
+      "is_blank": false,
+      "collapsed": "Ship it now ?",
+      "markdown": "# Rules\n\n- Ship it now ?\n"
+    },
+    {
+      "title": "\u200b",
+      "details": "",
+      "is_blank": false,
+      "collapsed": "\u200b",
+      "markdown": "# Rules\n\n- \u200b.\n"
+    },
+    {
+      "title": "\u180e",
+      "details": "",
+      "is_blank": false,
+      "collapsed": "\u180e",
+      "markdown": "# Rules\n\n- \u180e.\n"
+    },
+    {
+      "title": "\u2060",
+      "details": "",
+      "is_blank": false,
+      "collapsed": "\u2060",
+      "markdown": "# Rules\n\n- \u2060.\n"
+    },
+    {
+      "title": "\u001c\u001d\u001e\u001f",
+      "details": "",
+      "is_blank": false,
+      "collapsed": "\u001c\u001d\u001e\u001f",
+      "markdown": "# Rules\n\n- \u001c\u001d\u001e\u001f.\n"
+    },
+    {
+      "title": "a\u200bb\u180ec",
+      "details": "",
+      "is_blank": false,
+      "collapsed": "a\u200bb\u180ec",
+      "markdown": "# Rules\n\n- a\u200bb\u180ec.\n"
+    },
+    {
+      "title": "Use tabs",
+      "details": "\ufeffin Go\ufeff\n\u0085in Make\u0085",
+      "is_blank": false,
+      "collapsed": "Use tabs",
+      "markdown": "# Rules\n\n- Use tabs.\n  \ufeffin Go\ufeff\n  in Make\n"
+    },
+    {
+      "title": "Use tabs",
+      "details": "first\rsecond\r\nthird\u2028fourth\n\u3000\n",
+      "is_blank": false,
+      "collapsed": "Use tabs",
+      "markdown": "# Rules\n\n- Use tabs.\n  first\rsecond\n  third\u2028fourth\n"
+    }
+  ]
+}

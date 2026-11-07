@@ -7,7 +7,11 @@ const SIMPLE_IDENTIFIER_LENGTH: usize = 32;
 
 #[must_use]
 pub fn read_task_id(folder_name: &str) -> Option<TaskId> {
-    let task_part = strip_run_number(folder_name);
+    read_ending_task_id(folder_name)
+        .or_else(|| read_ending_task_id(strip_run_number(folder_name)))
+}
+
+fn read_ending_task_id(task_part: &str) -> Option<TaskId> {
     let (_readable_part, identifier_text) =
         task_part.rsplit_once(NAME_PART_SEPARATOR)?;
     if !is_simple_identifier(identifier_text) {

@@ -1,0 +1,9 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc d0ea16c1f1011ded5a429805cb5a1e47bf654758f514bc27c2f661f0aef870dd # shrinks to changes = [("/workspace/_/-.a", "add")], status = "failed"
+cc fa4a8127d502f542806abc19f3087460bff2b2e2e84c14546244db29ea5504e3 # shrinks to changes = [("/workspace/_/a.a", "add")], status = "failed"
+cc ac20b9f57c9e0ed745fb89fbbea960bb2b42c6f2b059f3b2922caa186f223d8b # shrinks to first_changes = [], second_changes = [("/workspace/-/0.a", "add")], status = "failed"

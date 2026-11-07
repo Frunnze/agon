@@ -29,6 +29,8 @@ mod file_source_order_properties;
 mod follow_up_flow_tests;
 mod forget_device_tests;
 mod host_detection_properties;
+mod hosted_server_late_request_tests;
+mod hosted_server_stopping_tests;
 mod hosting_tests;
 mod identity_forgetting_properties;
 mod identity_store_properties;

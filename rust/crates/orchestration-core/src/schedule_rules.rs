@@ -7,6 +7,7 @@ use thiserror::Error;
 use crate::task::{Schedule, TimeOfDay};
 
 const DAYS_PER_WEEK: u32 = 7;
+const NIGHT_ENDS_BEFORE_HOUR: u32 = 6;
 
 #[derive(Clone, Debug, PartialEq, Eq, Error)]
 pub enum ScheduleProblem {
@@ -33,9 +34,11 @@ pub fn next_run_after(
 pub fn describe_schedule(schedule: &Schedule) -> String {
     match *schedule {
         Schedule::Hour { minute } => format!("Every hour at :{minute:02}"),
-        Schedule::Day { at } => {
-            format!("Every day at {}", describe_time_of_day(at))
-        }
+        Schedule::Day { at } => format!(
+            "Every {} at {}",
+            name_part_of_day(at),
+            describe_time_of_day(at)
+        ),
         Schedule::Week { on, at } => format!(
             "Every {} at {}",
             name_weekday(on),
@@ -103,6 +106,13 @@ fn move_past(
     candidate
         .checked_add_signed(period)
         .ok_or(ScheduleProblem::OutOfRange)
+}
+
+fn name_part_of_day(at: TimeOfDay) -> &'static str {
+    if at.hour < NIGHT_ENDS_BEFORE_HOUR {
+        return "night";
+    }
+    "day"
 }
 
 fn describe_time_of_day(at: TimeOfDay) -> String {

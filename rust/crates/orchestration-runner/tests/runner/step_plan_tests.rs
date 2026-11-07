@@ -11,7 +11,7 @@ use crate::assignments::{
     any_agent_kind, assignment_for, claude_task, task_for,
 };
 use crate::loop_runs::{
-    DRAFT_INDEX, GATE_INDEX, STEP_COUNT, gate_loop_assignment,
+    DRAFT_INDEX, SHIP_INDEX, STEP_COUNT, gate_loop_assignment,
 };
 use crate::support::to_case_error;
 use crate::workflows::{
@@ -80,7 +80,7 @@ proptest! {
                 condition: Some(SECOND_LOOP_OUTCOME.to_owned()),
                 round_limit: Some(1),
                 ..AgentConnection::plain(
-                    agent_id(GATE_INDEX),
+                    agent_id(SHIP_INDEX),
                     agent_id(DRAFT_INDEX),
                 )
             });

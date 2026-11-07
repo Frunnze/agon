@@ -1,0 +1,9 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 67f2200fc29a40175c17bd16ff95efb955c5da03d10eee0500a34076555b3716 # shrinks to unreadable = [128]
+cc 8d32cfcbfb3131773716bb2c2a663a944b2f713dd0ba77b0314a407ab336aafa # shrinks to names = {}, unreadable = [128]
+cc d713973a0267caf5c9fe30d028762957042605855b4e1ee0e57a654a93b0ac7f # shrinks to names = {}, unreadable = [128], prefix = "refs/heads/"

@@ -1,3 +1,5 @@
+use std::collections::BTreeSet;
+
 use orchestration_core::workflow::{AgentConnection, StepKind, WorkflowAgent};
 use orchestration_core::workflow_graph::{WorkflowProblem, validate_workflow};
 use proptest::collection::vec;
@@ -20,7 +22,13 @@ fn drawn_edges(agent_count: u128) -> impl Strategy<Value = DrawnEdges> {
         0..=LARGEST_CONNECTION_COUNT,
     )
     .prop_map(|pairs| {
-        pairs.into_iter().filter(|(from, to)| from != to).collect()
+        let mut drawn_pairs = BTreeSet::new();
+        pairs
+            .into_iter()
+            .filter(|(from, to)| {
+                from != to && drawn_pairs.insert((*from, *to))
+            })
+            .collect()
     })
 }
 

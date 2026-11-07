@@ -1,31 +1,28 @@
-use std::cmp::{Ordering, Reverse};
-use std::collections::BTreeSet;
+use std::collections::BTreeMap;
 
+use crate::workflow_column_plan::{ColumnPlan, split_row_items};
 use crate::workflow_fork_lanes::{ForkLane, find_lane_of_each_step};
-use crate::workflow_layers::{ForwardLink, ONE_LAYER, count_rows};
+use crate::workflow_free_columns::{
+    TakenBand, list_free_columns, pick_nearest_free_columns,
+};
+use crate::workflow_layers::{ForwardLink, count_rows};
+use crate::workflow_row_order::{RowItem, RowOrder};
 
 const NO_COLUMNS: f64 = 0.0;
-const ONE_COLUMN: f64 = 1.0;
 const LEFT_EDGE: f64 = 0.0;
-const NO_UPSTREAM_COLUMN: f64 = 0.0;
-const NO_INPUTS: f64 = 0.0;
-const ONE_INPUT: f64 = 1.0;
 const SIDES_OF_A_ROW: f64 = 2.0;
 
 #[derive(Clone, Copy)]
-enum RowItem {
-    Step(usize),
-    Fork(usize),
+struct ClusterFrame {
+    left_column: f64,
+    width: f64,
+    next_group_column: f64,
 }
 
-struct ColumnPlan<'layout> {
-    layers: &'layout [usize],
-    links: &'layout [ForwardLink],
-    lanes: &'layout [ForkLane],
-    step_lanes: Vec<Option<usize>>,
-    fork_last_rows: Vec<Option<usize>>,
-    lane_widths: Vec<f64>,
-    canvas_width: f64,
+struct PlacedColumns {
+    step_columns: Vec<f64>,
+    group_columns: Vec<f64>,
+    cluster_frames: BTreeMap<Option<usize>, ClusterFrame>,
 }
 
 pub(crate) fn place_steps_in_columns(
@@ -33,11 +30,11 @@ pub(crate) fn place_steps_in_columns(
     links: &[ForwardLink],
     lanes: &[ForkLane],
 ) -> Vec<f64> {
-    let step_lanes = find_lane_of_each_step(lanes, layers.len());
+    let step_lanes = find_lane_of_each_step(lanes, layers);
     let fork_last_rows = list_fork_last_rows(layers, lanes, &step_lanes);
     let mut plan = ColumnPlan {
         layers,
-        links,
+        row_order: RowOrder { layers, links },
         lanes,
         step_lanes,
         fork_last_rows,
@@ -46,11 +43,15 @@ pub(crate) fn place_steps_in_columns(
     };
     plan.measure_widths();
 
-    let mut columns = vec![LEFT_EDGE; layers.len()];
+    let mut placed = PlacedColumns {
+        step_columns: vec![LEFT_EDGE; layers.len()],
+        group_columns: vec![LEFT_EDGE; layers.len()],
+        cluster_frames: BTreeMap::new(),
+    };
     for row in 0..count_rows(layers) {
-        plan.place_row(None, row, LEFT_EDGE, &mut columns);
+        plan.place_row(None, row, LEFT_EDGE, &mut placed);
     }
-    columns
+    placed.step_columns
 }
 
 fn list_fork_last_rows(
@@ -72,108 +73,147 @@ fn list_fork_last_rows(
 }
 
 impl ColumnPlan<'_> {
-    fn measure_widths(&mut self) {
-        let mut inner_lanes_first: Vec<usize> =
-            (0..self.lanes.len()).collect();
-        inner_lanes_first.sort_by_key(|lane_index| {
-            Reverse(self.layers[self.lanes[*lane_index].fork_index])
-        });
-        for lane_index in inner_lanes_first {
-            let lane_width = self.measure_widest_row(Some(lane_index));
-            self.lane_widths[lane_index] = lane_width;
-        }
-        self.canvas_width = self.measure_widest_row(None);
-    }
-
-    fn measure_widest_row(&self, container: Option<usize>) -> f64 {
-        let mut widest_row_width = NO_COLUMNS;
-        for row in 0..count_rows(self.layers) {
-            let items = self.list_row_items(container, row);
-            let row_width = self.measure_items_width(&items);
-            widest_row_width = widest_row_width.max(row_width);
-        }
-        widest_row_width
-    }
-
-    fn measure_items_width(&self, items: &[RowItem]) -> f64 {
-        let mut items_width = NO_COLUMNS;
-        for item in items {
-            items_width += self.measure_item_width(*item);
-        }
-        items_width
-    }
-
-    fn measure_item_width(&self, item: RowItem) -> f64 {
-        let RowItem::Fork(fork_index) = item else {
-            return ONE_COLUMN;
-        };
-        let mut fork_width = NO_COLUMNS;
-        for lane_index in self.list_lanes_of_fork(fork_index) {
-            fork_width += self.lane_widths[lane_index];
-        }
-        fork_width
-    }
-
-    fn list_lanes_of_fork(&self, fork_index: usize) -> Vec<usize> {
-        let mut fork_lanes = Vec::new();
-        for (lane_index, lane) in self.lanes.iter().enumerate() {
-            if lane.fork_index == fork_index {
-                fork_lanes.push(lane_index);
-            }
-        }
-        fork_lanes
-    }
-
-    fn list_row_items(
-        &self,
-        container: Option<usize>,
-        row: usize,
-    ) -> Vec<RowItem> {
-        let mut items = Vec::new();
-        for (agent_index, step_lane) in self.step_lanes.iter().enumerate() {
-            if *step_lane != container {
-                continue;
-            }
-            if self.layers[agent_index] == row {
-                items.push(RowItem::Step(agent_index));
-            }
-            let is_below_fork = self.layers[agent_index] < row;
-            let last_lane_row = self.fork_last_rows[agent_index];
-            let is_lane_row = last_lane_row.is_some_and(|last| row <= last);
-            if is_below_fork && is_lane_row {
-                items.push(RowItem::Fork(agent_index));
-            }
-        }
-        items
-    }
-
     fn place_row(
         &self,
         container: Option<usize>,
         row: usize,
         left_column: f64,
-        columns: &mut [f64],
+        placed: &mut PlacedColumns,
     ) {
-        let mut items = self.list_row_items(container, row);
-        items.sort_by(|first, second| {
-            self.compare_row_items(*first, *second, columns)
+        let items = self.list_row_items(container, row);
+        let (continuing_groups, mut new_items) =
+            self.split_continuing_groups(items, row);
+        new_items.sort_by(|first, second| {
+            self.row_order.compare_row_items(
+                *first,
+                *second,
+                &placed.step_columns,
+            )
         });
+        if !continuing_groups.is_empty() {
+            self.place_later_cluster_row(
+                container,
+                row,
+                &continuing_groups,
+                new_items,
+                placed,
+            );
+            return;
+        }
 
         let container_width = match container {
             Some(lane_index) => self.lane_widths[lane_index],
             None => self.canvas_width,
         };
-        let free_width = container_width - self.measure_items_width(&items);
-        let mut column = left_column + free_width / SIDES_OF_A_ROW;
+        let cluster_width = self.measure_cluster_width(container, row);
+        let free_width = container_width - cluster_width;
+        let cluster_left = left_column + free_width / SIDES_OF_A_ROW;
+        let next_group_column =
+            self.place_items(&new_items, row, cluster_left, placed);
+        let frame = ClusterFrame {
+            left_column: cluster_left,
+            width: cluster_width,
+            next_group_column,
+        };
+        placed.cluster_frames.insert(container, frame);
+    }
+
+    fn place_later_cluster_row(
+        &self,
+        container: Option<usize>,
+        row: usize,
+        continuing_groups: &[RowItem],
+        new_items: Vec<RowItem>,
+        placed: &mut PlacedColumns,
+    ) {
+        let frame = placed.cluster_frames[&container];
+
+        for group in continuing_groups {
+            if let RowItem::Fork(fork_index) = *group {
+                let group_column = placed.group_columns[fork_index];
+                self.place_fork_lanes(fork_index, row, group_column, placed);
+            }
+        }
+
+        let (new_forks, steps) = split_row_items(new_items);
+        let next_group_column =
+            self.place_items(&new_forks, row, frame.next_group_column, placed);
+        let moved_frame = ClusterFrame {
+            next_group_column,
+            ..frame
+        };
+        placed.cluster_frames.insert(container, moved_frame);
+
+        let mut open_groups = continuing_groups.to_vec();
+        open_groups.extend(new_forks);
+        self.place_steps_beside_groups(&steps, &open_groups, frame, placed);
+    }
+
+    fn place_steps_beside_groups(
+        &self,
+        steps: &[usize],
+        open_groups: &[RowItem],
+        frame: ClusterFrame,
+        placed: &mut PlacedColumns,
+    ) {
+        let taken_bands = self.list_group_bands(open_groups, placed);
+        let free_columns =
+            list_free_columns(frame.left_column, frame.width, &taken_bands);
+
+        let mut wanted_columns = Vec::new();
+        for step_index in steps {
+            let item = RowItem::Step(*step_index);
+            let wanted_column = self
+                .row_order
+                .find_upstream_column(item, &placed.step_columns);
+            wanted_columns.push(wanted_column);
+        }
+
+        let picked_columns =
+            pick_nearest_free_columns(&wanted_columns, &free_columns);
+        for (step_index, column) in steps.iter().zip(picked_columns) {
+            placed.step_columns[*step_index] = column;
+        }
+    }
+
+    fn list_group_bands(
+        &self,
+        groups: &[RowItem],
+        placed: &PlacedColumns,
+    ) -> Vec<TakenBand> {
+        let mut group_bands = Vec::new();
+        for group in groups {
+            if let RowItem::Fork(fork_index) = *group {
+                group_bands.push(TakenBand {
+                    left_column: placed.group_columns[fork_index],
+                    width: self.measure_item_width(*group),
+                });
+            }
+        }
+        group_bands
+    }
+
+    fn place_items(
+        &self,
+        items: &[RowItem],
+        row: usize,
+        left_column: f64,
+        placed: &mut PlacedColumns,
+    ) -> f64 {
+        let mut column = left_column;
         for item in items {
-            match item {
-                RowItem::Step(step_index) => columns[step_index] = column,
+            match *item {
+                RowItem::Step(step_index) => {
+                    placed.step_columns[step_index] = column;
+                }
                 RowItem::Fork(fork_index) => {
-                    self.place_fork_lanes(fork_index, row, column, columns);
+                    placed.group_columns[fork_index] = column;
+                    self.place_fork_lanes(fork_index, row, column, placed);
                 }
             }
-            column += self.measure_item_width(item);
+            column += self.measure_item_width(*item);
         }
+        column
     }
 
     fn place_fork_lanes(
@@ -181,67 +221,12 @@ impl ColumnPlan<'_> {
         fork_index: usize,
         row: usize,
         left_column: f64,
-        columns: &mut [f64],
+        placed: &mut PlacedColumns,
     ) {
         let mut lane_left_column = left_column;
         for lane_index in self.list_lanes_of_fork(fork_index) {
-            self.place_row(Some(lane_index), row, lane_left_column, columns);
+            self.place_row(Some(lane_index), row, lane_left_column, placed);
             lane_left_column += self.lane_widths[lane_index];
         }
-    }
-
-    fn compare_row_items(
-        &self,
-        first: RowItem,
-        second: RowItem,
-        columns: &[f64],
-    ) -> Ordering {
-        let first_column = self.find_upstream_column(first, columns);
-        let second_column = self.find_upstream_column(second, columns);
-        let column_order = first_column.total_cmp(&second_column);
-        column_order
-            .then(find_agent_index(first).cmp(&find_agent_index(second)))
-    }
-
-    fn find_upstream_column(&self, item: RowItem, columns: &[f64]) -> f64 {
-        match item {
-            RowItem::Step(step_index) => {
-                self.find_average_input_column(step_index, columns)
-            }
-            RowItem::Fork(fork_index) => columns[fork_index],
-        }
-    }
-
-    fn find_average_input_column(
-        &self,
-        step_index: usize,
-        columns: &[f64],
-    ) -> f64 {
-        let mut inputs_in_row_above = BTreeSet::new();
-        for link in self.links {
-            let upstream_row = self.layers[link.upstream_index];
-            let is_from_row_above =
-                upstream_row + ONE_LAYER == self.layers[step_index];
-            if link.downstream_index == step_index && is_from_row_above {
-                inputs_in_row_above.insert(link.upstream_index);
-            }
-        }
-        if inputs_in_row_above.is_empty() {
-            return NO_UPSTREAM_COLUMN;
-        }
-
-        let mut column_total = NO_COLUMNS;
-        let mut input_count = NO_INPUTS;
-        for input_index in inputs_in_row_above {
-            column_total += columns[input_index];
-            input_count += ONE_INPUT;
-        }
-        column_total / input_count
-    }
-}
-
-fn find_agent_index(item: RowItem) -> usize {
-    match item {
-        RowItem::Step(agent_index) | RowItem::Fork(agent_index) => agent_index,
     }
 }

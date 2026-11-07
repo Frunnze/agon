@@ -54,6 +54,12 @@ pub fn cover_protected_files(
     }
 
     let placeholders = prepare_placeholders(&mounts.task_folder)?;
+    let covers_a_folder = protected_entries
+        .iter()
+        .any(|entry| entry.kind == EntryKind::Folder);
+    if covers_a_folder {
+        ensure_folder_is_empty(&placeholders.empty_folder)?;
+    }
     let mut placeholder_mounts = mounts.placeholder_mounts.clone();
     for entry in protected_entries {
         let placeholder = match entry.kind {
@@ -131,4 +137,13 @@ fn prepare_placeholders(task_folder: &Path) -> io::Result<Placeholders> {
         empty_file,
         empty_folder,
     })
+}
+
+fn ensure_folder_is_empty(folder: &Path) -> io::Result<()> {
+    let has_entries = fs::read_dir(folder)?.next().is_some();
+    if has_entries {
+        let problem = format!("{} is not empty", folder.display());
+        return Err(io::Error::other(problem));
+    }
+    Ok(())
 }

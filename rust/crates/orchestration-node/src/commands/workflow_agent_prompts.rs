@@ -36,12 +36,14 @@ const WORKFLOW_FORMAT_CLOSING: &str = "An agent's position is in canvas \
 pixels from the top left, {\"horizontal\": <pixels>, \"vertical\": \
 <pixels>}: any position will do, the steps are laid out for you. Each \
 connection is {\"from\": \"<agent id>\", \"to\": \"<agent id>\", \
-\"condition\": null, \"round_limit\": null}. Keep the workflow id and \
-set signature to null.";
+\"condition\": null, \"round_limit\": null}. At most one connection goes \
+from one agent to another. Keep the workflow id and set signature to null.";
 
 fn render_workflow_format_instructions() -> String {
     format!(
-        "{WORKFLOW_FORMAT_OPENING} runs_on is {RUNS_ON_FORMS}. \
+        "{WORKFLOW_FORMAT_OPENING} Each agent's name is lowercase letters, \
+         digits and dashes, at most {MAXIMUM_NAME_LENGTH} characters, and no \
+         two agents share one. runs_on is {RUNS_ON_FORMS}. \
          approval_policy is {APPROVAL_POLICY_FORMS}. \
          {WORKFLOW_FORMAT_CLOSING} {WORKFLOW_BRANCHING_RULES}"
     )

@@ -1,11 +1,14 @@
 use chrono::Utc;
 use orchestration_core::identifiers::RunId;
 use orchestration_hub::agent_event::AgentEvent;
+use orchestration_hub::agent_log::{
+    describe_agent_event_log_lines, describe_agent_log_lines,
+};
 use orchestration_hub::agent_output::AgentOutputReader;
 use tokio::sync::mpsc::UnboundedReceiver;
 
 use crate::agent_transcript::AgentTranscript;
-use crate::line_events::describe_line_events;
+use crate::line_events::describe_relayed_events;
 use crate::run_events::{message_delivered, post_run_events};
 use crate::runner_server::{RunnerServer, ServerError};
 use crate::user_message_watch::NewUserMessages;
@@ -69,14 +72,20 @@ pub async fn relay_agent_output<S: RunnerServer>(
             biased;
             () = &mut cancellation => return Ok(RelayEnding::Cancelled),
             _ = &mut new_user_messages, if can_stop_for_new_messages => {
+                let transcript =
+                    relay_end_of_output(server, run_id, step_name, relayed)
+                        .await?;
                 let delivered = message_delivered(Utc::now());
                 post_run_events(server, run_id, vec![delivered]).await?;
-                return Ok(RelayEnding::NewUserMessages(relayed.transcript));
+                return Ok(RelayEnding::NewUserMessages(transcript));
             }
             next_line = output_lines.recv() => next_line,
         };
         let Some(line) = next_line else {
-            return Ok(RelayEnding::OutputEnded(relayed.transcript));
+            let transcript =
+                relay_end_of_output(server, run_id, step_name, relayed)
+                    .await?;
+            return Ok(RelayEnding::OutputEnded(transcript));
         };
 
         relayed =
@@ -92,8 +101,13 @@ pub(crate) async fn relay_line<S: RunnerServer>(
     line: &str,
 ) -> Result<RelayedOutput, ServerError> {
     let (reader, agent_events) = relayed.reader.read_line(line);
-    let run_events =
-        describe_line_events(step_name, line, &agent_events, Utc::now());
+    let agent_log_lines = describe_agent_log_lines(line, &agent_events);
+    let run_events = describe_relayed_events(
+        step_name,
+        agent_log_lines,
+        &agent_events,
+        Utc::now(),
+    );
     post_run_events(server, run_id, run_events).await?;
 
     let transcript = relayed.transcript.record(&agent_events);
@@ -104,6 +118,28 @@ pub(crate) async fn relay_line<S: RunnerServer>(
         transcript,
         has_ended_turn,
     })
+}
+
+async fn relay_end_of_output<S: RunnerServer>(
+    server: &S,
+    run_id: RunId,
+    step_name: &str,
+    relayed: RelayedOutput,
+) -> Result<AgentTranscript, ServerError> {
+    let agent_events = relayed.reader.read_end_of_output();
+    if agent_events.is_empty() {
+        return Ok(relayed.transcript);
+    }
+
+    let agent_log_lines = describe_agent_event_log_lines(&agent_events);
+    let run_events = describe_relayed_events(
+        step_name,
+        agent_log_lines,
+        &agent_events,
+        Utc::now(),
+    );
+    post_run_events(server, run_id, run_events).await?;
+    Ok(relayed.transcript.record(&agent_events))
 }
 
 fn reports_turn_end(agent_events: &[AgentEvent]) -> bool {

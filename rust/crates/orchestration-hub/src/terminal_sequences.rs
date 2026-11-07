@@ -5,12 +5,13 @@ const TAB: char = '\t';
 const LINE_FEED: char = '\n';
 const CARRIAGE_RETURN: char = '\r';
 const CONTROL_SEQUENCE_OPENER: char = '[';
-const OPERATING_SYSTEM_COMMAND_OPENER: char = ']';
-const STRING_TERMINATOR_FINAL: char = '\\';
+const CONTROL_STRING_OPENERS: [char; 5] = [']', 'P', 'X', '^', '_'];
 const PARAMETER_SEPARATOR: char = ';';
 const PRIVATE_MARKERS: [char; 4] = ['?', '<', '=', '>'];
 const FINAL_BYTES: std::ops::RangeInclusive<char> = '@'..='~';
+const INTERMEDIATE_BYTES: std::ops::RangeInclusive<char> = ' '..='/';
 const LONGEST_KEPT_PARAMETERS: usize = 32;
+const SAVED_LINES_SCOPE: usize = 3;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum EraseScope {
@@ -36,6 +37,7 @@ pub(crate) enum TerminalAction {
     MoveTo { row: usize, column: usize },
     EraseInLine(EraseScope),
     EraseInDisplay(EraseScope),
+    EraseSavedLines,
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -43,9 +45,9 @@ enum ReaderState {
     #[default]
     Text,
     Escape,
+    EscapeIntermediate,
     ControlSequence,
-    OperatingSystemCommand,
-    OperatingSystemEscape,
+    ControlString,
 }
 
 #[derive(Clone, Debug, Default)]
@@ -56,42 +58,29 @@ pub(crate) struct SequenceReader {
 
 impl SequenceReader {
     pub(crate) fn read(&mut self, character: char) -> Option<TerminalAction> {
+        if character == ESCAPE {
+            self.state = ReaderState::Escape;
+            return None;
+        }
         match self.state {
-            ReaderState::Text => self.read_text(character),
+            ReaderState::Text => read_text(character),
             ReaderState::Escape => {
                 self.read_escape(character);
+                None
+            }
+            ReaderState::EscapeIntermediate => {
+                if !INTERMEDIATE_BYTES.contains(&character) {
+                    self.state = ReaderState::Text;
+                }
                 None
             }
             ReaderState::ControlSequence => {
                 self.read_control_sequence(character)
             }
-            ReaderState::OperatingSystemCommand => {
-                self.read_operating_system_command(character);
+            ReaderState::ControlString => {
+                self.read_control_string(character);
                 None
             }
-            ReaderState::OperatingSystemEscape => {
-                self.state = if character == STRING_TERMINATOR_FINAL {
-                    ReaderState::Text
-                } else {
-                    ReaderState::OperatingSystemCommand
-                };
-                None
-            }
-        }
-    }
-
-    fn read_text(&mut self, character: char) -> Option<TerminalAction> {
-        match character {
-            ESCAPE => {
-                self.state = ReaderState::Escape;
-                None
-            }
-            LINE_FEED => Some(TerminalAction::LineFeed),
-            CARRIAGE_RETURN => Some(TerminalAction::CarriageReturn),
-            BACKSPACE => Some(TerminalAction::Backspace),
-            TAB => Some(TerminalAction::Tab),
-            _ if character.is_control() => None,
-            _ => Some(TerminalAction::Print(character)),
         }
     }
 
@@ -101,8 +90,11 @@ impl SequenceReader {
                 self.parameters.clear();
                 ReaderState::ControlSequence
             }
-            OPERATING_SYSTEM_COMMAND_OPENER => {
-                ReaderState::OperatingSystemCommand
+            _ if CONTROL_STRING_OPENERS.contains(&character) => {
+                ReaderState::ControlString
+            }
+            _ if INTERMEDIATE_BYTES.contains(&character) => {
+                ReaderState::EscapeIntermediate
             }
             _ => ReaderState::Text,
         };
@@ -122,12 +114,21 @@ impl SequenceReader {
         describe_control_sequence(&self.parameters, character)
     }
 
-    fn read_operating_system_command(&mut self, character: char) {
+    fn read_control_string(&mut self, character: char) {
         if character == BELL {
             self.state = ReaderState::Text;
-        } else if character == ESCAPE {
-            self.state = ReaderState::OperatingSystemEscape;
         }
+    }
+}
+
+fn read_text(character: char) -> Option<TerminalAction> {
+    match character {
+        LINE_FEED => Some(TerminalAction::LineFeed),
+        CARRIAGE_RETURN => Some(TerminalAction::CarriageReturn),
+        BACKSPACE => Some(TerminalAction::Backspace),
+        TAB => Some(TerminalAction::Tab),
+        _ if character.is_control() => None,
+        _ => Some(TerminalAction::Print(character)),
     }
 }
 
@@ -135,7 +136,10 @@ fn describe_control_sequence(
     parameters: &str,
     final_character: char,
 ) -> Option<TerminalAction> {
-    if parameters.starts_with(PRIVATE_MARKERS) {
+    let has_intermediates = parameters
+        .chars()
+        .any(|character| INTERMEDIATE_BYTES.contains(&character));
+    if parameters.starts_with(PRIVATE_MARKERS) || has_intermediates {
         return None;
     }
     let numbers: Vec<Option<usize>> = parameters
@@ -155,7 +159,7 @@ fn describe_control_sequence(
             row: count - 1,
             column: read_count(&numbers, 1) - 1,
         }),
-        'J' => read_scope(&numbers).map(TerminalAction::EraseInDisplay),
+        'J' => read_display_erase(&numbers),
         'K' => read_scope(&numbers).map(TerminalAction::EraseInLine),
         _ => None,
     }
@@ -166,11 +170,19 @@ fn read_count(numbers: &[Option<usize>], position: usize) -> usize {
     given.max(1)
 }
 
+fn read_display_erase(numbers: &[Option<usize>]) -> Option<TerminalAction> {
+    let scope_number = numbers.first().copied().flatten();
+    if scope_number == Some(SAVED_LINES_SCOPE) {
+        return Some(TerminalAction::EraseSavedLines);
+    }
+    read_scope(numbers).map(TerminalAction::EraseInDisplay)
+}
+
 fn read_scope(numbers: &[Option<usize>]) -> Option<EraseScope> {
     match numbers.first().copied().flatten().unwrap_or(0) {
         0 => Some(EraseScope::ToEnd),
         1 => Some(EraseScope::ToStart),
-        2 | 3 => Some(EraseScope::All),
+        2 => Some(EraseScope::All),
         _ => None,
     }
 }

@@ -1,4 +1,5 @@
 use std::io::{BufRead, BufReader, Read};
+use std::path::Path;
 use std::thread;
 
 use portable_pty::{
@@ -13,6 +14,7 @@ use crate::command_specification::CommandSpecification;
 
 const LINE_FEED: u8 = b'\n';
 const CARRIAGE_RETURN: char = '\r';
+const MISSING_FOLDER_REASON: &str = "the working folder does not exist";
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ProcessExit {
@@ -43,6 +45,7 @@ pub enum SupervisorError {
 pub struct RunningProcess {
     pub output_lines: UnboundedReceiver<String>,
     child: Box<dyn Child + Send + Sync>,
+    has_ended: bool,
 }
 
 pub fn start_process(
@@ -57,7 +60,7 @@ pub fn start_process(
         .map_err(|problem| SupervisorError::ReadOutput(problem.to_string()))?;
     let child = terminal
         .slave
-        .spawn_command(build_terminal_command(command))
+        .spawn_command(build_terminal_command(command)?)
         .map_err(|problem| SupervisorError::StartProcess {
             program: command.program.clone(),
             reason: problem.to_string(),
@@ -76,39 +79,53 @@ impl RunningProcess {
         Self {
             output_lines,
             child,
+            has_ended: false,
         }
     }
 
     pub fn stop(&mut self) -> Result<(), SupervisorError> {
-        let finished = self
-            .child
-            .try_wait()
-            .map_err(SupervisorError::WaitForProcess)?;
-        if finished.is_some() {
+        if self.has_ended {
             return Ok(());
         }
-        self.child.kill().map_err(SupervisorError::StopProcess)
+        self.child.kill().map_err(SupervisorError::StopProcess)?;
+        self.has_ended = true;
+        Ok(())
     }
 
     pub fn wait_for_exit(&mut self) -> Result<ProcessExit, SupervisorError> {
         let status =
             self.child.wait().map_err(SupervisorError::WaitForProcess)?;
+        self.has_ended = true;
         Ok(describe_exit_status(&status))
     }
 }
 
 pub(crate) fn build_terminal_command(
     command: &CommandSpecification,
-) -> CommandBuilder {
+) -> Result<CommandBuilder, SupervisorError> {
     let mut builder = CommandBuilder::new(&command.program);
     builder.args(&command.arguments);
     for (name, value) in &command.environment {
         builder.env(name, value);
     }
     if let Some(directory) = &command.working_directory {
+        ensure_working_folder_exists(&command.program, directory)?;
         builder.cwd(directory);
     }
-    builder
+    Ok(builder)
+}
+
+fn ensure_working_folder_exists(
+    program: &str,
+    directory: &Path,
+) -> Result<(), SupervisorError> {
+    if directory.is_dir() {
+        return Ok(());
+    }
+    Err(SupervisorError::StartProcess {
+        program: program.to_owned(),
+        reason: format!("{MISSING_FOLDER_REASON}: {}", directory.display()),
+    })
 }
 
 pub(crate) fn forward_output_lines(

@@ -11,7 +11,9 @@ use tokio::net::TcpListener;
 use tokio::task::JoinSet;
 
 use super::HostedServerAccess;
-use super::hosting_logging::log_web_serving_problem;
+use super::hosting_logging::{
+    log_web_serving_problem, log_write_stopping_problem,
+};
 use super::peer_serving::serve_over_peer_link;
 use crate::local_network::ServerAnnouncement;
 use crate::node_error::NodeError;
@@ -122,6 +124,9 @@ impl HostedAppServer {
     pub(super) async fn stop(mut self) {
         self.endpoint.close().await;
         self.tasks.shutdown().await;
+        if let Err(problem) = self.server.step_down() {
+            log_write_stopping_problem(&problem);
+        }
     }
 }
 

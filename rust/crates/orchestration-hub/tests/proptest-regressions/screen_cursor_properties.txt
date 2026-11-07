@@ -1,0 +1,8 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc c63ad79f4b139a8435c7df3f82231a7568a9b6d38a9093b33b8477195f2f0c4d # shrinks to size = TerminalSize { columns: 2, rows: 1 }, vertical = [Print('a'), Print('a')], horizontal = [Print('中')], row = 0
+cc 3ed4b5e3408e449923c893b8cc1b538c030d2267007f682cc5730cf085e338b6 # shrinks to size = TerminalSize { columns: 2, rows: 1 }, text = "aaa"

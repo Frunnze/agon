@@ -73,7 +73,7 @@ fn jobs_show_the_schedule_in_words() {
 
     let jobs = list_in_workspace(device, "list_jobs", &prepared.workspace_id);
 
-    assert_eq!(jobs[0]["schedule_description"], "Every day at 02:00");
+    assert_eq!(jobs[0]["schedule_description"], "Every night at 02:00");
     assert!(jobs[0]["next_run_at"].is_string());
 }
 

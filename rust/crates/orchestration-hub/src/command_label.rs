@@ -5,8 +5,11 @@ const RUN_THE_TESTS: &str = "Run the tests";
 const READ_FILES: &str = "Read files";
 const CHANGE_FILES: &str = "Change files";
 const DELETE_FILES: &str = "Delete files";
-const SEGMENT_SEPARATORS: [&str; 4] = ["&&", "||", ";", "|"];
-const TRAILING_SEPARATOR: char = ';';
+const SEGMENT_SEPARATORS: [&str; 3] = ["&", "|", ";"];
+const QUOTE_CHARACTERS: [char; 2] = ['"', '\''];
+const LITERAL_QUOTE: char = '\'';
+const ESCAPE_CHARACTER: char = '\\';
+const WORD_GAP: char = ' ';
 const ASSIGNMENT_SIGN: char = '=';
 const IDENTIFIER_JOINER: char = '_';
 const FLAG_PREFIX: char = '-';
@@ -18,6 +21,18 @@ const TEST_SUBCOMMANDS: [&str; 2] = ["test", "t"];
 const SCRIPT_SUBCOMMAND: &str = "run";
 const TEST_SCRIPT: &str = "test";
 const PACKAGE_SEPARATOR: &str = ", ";
+
+const FLAGS_WITH_VALUES: [(&str, &str); 9] = [
+    ("git", "-C"),
+    ("git", "-c"),
+    ("go", "-C"),
+    ("npm", "--prefix"),
+    ("pnpm", "-C"),
+    ("pnpm", "--dir"),
+    ("pnpm", "--filter"),
+    ("yarn", "--cwd"),
+    ("bun", "--cwd"),
+];
 
 const PROGRAM_LABELS: [(&str, &str); 16] = [
     ("pytest", RUN_THE_TESTS),
@@ -63,34 +78,79 @@ pub fn label_shell_command(command: &str) -> String {
     };
 
     let program = name_program(&program_words[0]);
-    let mut arguments: Vec<&str> = Vec::new();
-    for word in &program_words[1..] {
-        if !word.starts_with(FLAG_PREFIX) {
-            arguments.push(word);
-        }
-    }
+    let arguments = collect_arguments(program, &program_words[1..]);
     label_program(program, &arguments)
 }
 
-fn split_shell_words(line: &str) -> Vec<String> {
-    let quoted_words = match shell_words::split(line) {
-        Ok(words) => words,
-        Err(_unbalanced_quotes) => {
-            line.split_whitespace().map(str::to_owned).collect()
+fn collect_arguments<'words>(
+    program: &str,
+    words: &'words [String],
+) -> Vec<&'words str> {
+    let mut arguments = Vec::new();
+    let mut remaining_words = words.iter();
+    while let Some(word) = remaining_words.next() {
+        if FLAGS_WITH_VALUES.contains(&(program, word.as_str())) {
+            let _flag_value = remaining_words.next();
+            continue;
         }
-    };
-
-    let mut words = Vec::new();
-    for word in quoted_words {
-        match word.strip_suffix(TRAILING_SEPARATOR) {
-            Some(leading_word) if !leading_word.is_empty() => {
-                words.push(leading_word.to_owned());
-                words.push(TRAILING_SEPARATOR.to_string());
-            }
-            _ => words.push(word),
+        if !word.starts_with(FLAG_PREFIX) {
+            arguments.push(word.as_str());
         }
     }
-    words
+    arguments
+}
+
+fn split_shell_words(line: &str) -> Vec<String> {
+    let spaced_line = space_out_separators(line);
+    match shell_words::split(&spaced_line) {
+        Ok(words) => words,
+        Err(_unbalanced_quotes) => {
+            spaced_line.split_whitespace().map(str::to_owned).collect()
+        }
+    }
+}
+
+fn space_out_separators(line: &str) -> String {
+    let mut spaced_line = String::new();
+    let mut open_quote = None;
+    let mut is_escaped = false;
+    for character in line.chars() {
+        let character_text = character.to_string();
+        let is_plain_text = open_quote.is_none() && !is_escaped;
+        if is_plain_text
+            && SEGMENT_SEPARATORS.contains(&character_text.as_str())
+        {
+            spaced_line.push(WORD_GAP);
+            spaced_line.push(character);
+            spaced_line.push(WORD_GAP);
+        } else {
+            spaced_line.push(character);
+        }
+        (open_quote, is_escaped) =
+            follow_quoting(open_quote, is_escaped, character);
+    }
+    spaced_line
+}
+
+fn follow_quoting(
+    open_quote: Option<char>,
+    is_escaped: bool,
+    character: char,
+) -> (Option<char>, bool) {
+    if is_escaped {
+        return (open_quote, false);
+    }
+    let can_escape = open_quote != Some(LITERAL_QUOTE);
+    if character == ESCAPE_CHARACTER && can_escape {
+        return (open_quote, true);
+    }
+    match open_quote {
+        Some(quote) if quote == character => (None, false),
+        None if QUOTE_CHARACTERS.contains(&character) => {
+            (Some(character), false)
+        }
+        _ => (open_quote, false),
+    }
 }
 
 fn find_main_program(words: &[String]) -> Option<&[String]> {

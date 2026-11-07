@@ -6,6 +6,7 @@ const COMPONENT_SEPARATOR: char = '/';
 const HIDDEN_PREFIX: char = '.';
 const LOCK_SUFFIX: &str = ".lock";
 const OPTION_PREFIX: char = '-';
+const RESERVED_NAME: &str = "HEAD";
 
 #[must_use]
 pub fn is_valid_branch_name(name: &str) -> bool {
@@ -16,8 +17,9 @@ pub fn is_valid_branch_name(name: &str) -> bool {
         .iter()
         .any(|sequence| name.contains(sequence))
         || name.chars().any(is_forbidden_character);
+    let is_reserved = name == RESERVED_NAME;
 
-    if has_bad_ends || has_forbidden_text {
+    if has_bad_ends || has_forbidden_text || is_reserved {
         return false;
     }
     name.split(COMPONENT_SEPARATOR).all(is_valid_component)

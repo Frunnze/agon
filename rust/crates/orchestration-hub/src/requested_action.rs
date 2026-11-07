@@ -7,12 +7,13 @@ use crate::claude_control::ToolPermissionRequest;
 use crate::command_label::label_shell_command;
 use crate::known_tools::CLAUDE_TOOLS;
 use crate::text_shortening::shorten_to_characters;
-use crate::tool_description::DetailKind;
+use crate::tool_description::{DetailKind, read_first_line};
 
 const SHELL_TOOL_NAME: &str = "Bash";
 const DESCRIPTION_FIELD: &str = "description";
 const TASK_FOLDER_NAME: &str = "the task folder";
 const MAXIMUM_SUMMARY_CHARACTERS: usize = 80;
+const NAME_PUNCTUATION: [char; 8] = ['-', '_', '.', '~', '+', '@', '%', ','];
 
 const IMPERATIVE_VERBS: [(&str, &str); 9] = [
     ("Edit", "Edit"),
@@ -103,12 +104,28 @@ fn label_tool_use(
 }
 
 fn name_task_folder(text: &str, task_folder: &str) -> String {
-    text.replace(task_folder, TASK_FOLDER_NAME)
+    let mut named_text = String::new();
+    let mut copied_until = 0;
+    for (start, _) in text.match_indices(task_folder) {
+        let end = start + task_folder.len();
+        let next_character = text[end..].chars().next();
+        if next_character.is_some_and(continues_a_name) {
+            continue;
+        }
+        named_text.push_str(&text[copied_until..start]);
+        named_text.push_str(TASK_FOLDER_NAME);
+        copied_until = end;
+    }
+    named_text.push_str(&text[copied_until..]);
+    named_text
+}
+
+fn continues_a_name(character: char) -> bool {
+    character.is_alphanumeric() || NAME_PUNCTUATION.contains(&character)
 }
 
 fn fit_on_one_line(text: &str) -> String {
-    let first_line = text.trim().lines().next().unwrap_or_default();
-    shorten_to_characters(first_line.trim(), MAXIMUM_SUMMARY_CHARACTERS)
+    shorten_to_characters(read_first_line(text), MAXIMUM_SUMMARY_CHARACTERS)
 }
 
 fn find_telling_detail(

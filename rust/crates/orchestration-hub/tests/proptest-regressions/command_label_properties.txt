@@ -1,0 +1,7 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc 4e31f31def8ca4f16ad25c8953f22cafbe2ca67d83cd3f81f697990ca56ef02c # shrinks to prefix = "cd 0", separator = "&&", (command, label) = ("pytest", "Run the tests")

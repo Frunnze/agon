@@ -1,10 +1,10 @@
 use orchestration_core::protected_files::ProtectedFiles;
 use orchestration_core::protected_paths::{
-    ANY_FOLDERS_SEGMENT, PatternPlace, ProtectedPattern,
+    ANY_FOLDERS_SEGMENT, HOME_MARKER, PatternPlace, ProtectedPattern,
     read_protected_pattern,
 };
 
-const NAME_CHARACTERS: &str = "A-Za-z0-9._+@%~,-";
+pub(crate) const NAME_CHARACTERS: &str = "A-Za-z0-9._+@%~,-";
 const ANY_NAME_CHARACTERS: &str = r#"[^/"\\]*"#;
 const ONE_NAME_CHARACTER: &str = r#"[^/"\\]"#;
 const ANY_FOLDERS: &str = "(.*/)?";
@@ -19,7 +19,7 @@ const SPECIAL_CHARACTERS: &str = r".[]{}()*+?|^$\";
 #[must_use]
 pub(crate) fn describe_protected_expression(
     protected: &ProtectedFiles,
-) -> String {
+) -> Option<String> {
     let mut alternatives = Vec::new();
     for pattern in &protected.patterns {
         let read_pattern = read_protected_pattern(pattern);
@@ -27,12 +27,15 @@ pub(crate) fn describe_protected_expression(
             alternatives.push(describe_pattern_expression(&read_pattern));
         }
     }
+    if alternatives.is_empty() {
+        return None;
+    }
 
     let joined_alternatives = alternatives.join(ALTERNATIVE_SEPARATOR);
-    format!(
+    Some(format!(
         "(^|[^{NAME_CHARACTERS}])({joined_alternatives})\
          ([^{NAME_CHARACTERS}]|$)"
-    )
+    ))
 }
 
 fn describe_pattern_expression(pattern: &ProtectedPattern) -> String {
@@ -42,6 +45,9 @@ fn describe_pattern_expression(pattern: &ProtectedPattern) -> String {
         PatternPlace::AtAnyDepth => "",
     };
     let segments = trim_folder_wildcards(pattern);
+    if segments.is_empty() {
+        return describe_whole_place_expression(pattern.place);
+    }
 
     let mut expression = prefix.to_string();
     let mut follows_segment = false;
@@ -61,6 +67,15 @@ fn describe_pattern_expression(pattern: &ProtectedPattern) -> String {
         follows_segment = true;
     }
     expression
+}
+
+fn describe_whole_place_expression(place: PatternPlace) -> String {
+    match place {
+        PatternPlace::UnderHome => HOME_MARKER.to_string(),
+        PatternPlace::FromRoot | PatternPlace::AtAnyDepth => {
+            ANY_NAME_CHARACTERS.to_string()
+        }
+    }
 }
 
 fn trim_folder_wildcards(pattern: &ProtectedPattern) -> &[String] {

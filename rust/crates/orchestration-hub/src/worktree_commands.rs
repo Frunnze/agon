@@ -7,6 +7,7 @@ use crate::command_specification::CommandSpecification;
 const GIT_PROGRAM: &str = "git";
 const TERMINAL_PROMPT_VARIABLE: &str = "GIT_TERMINAL_PROMPT";
 const TERMINAL_PROMPT_DISABLED: &str = "0";
+const CEILING_VARIABLE: &str = "GIT_CEILING_DIRECTORIES";
 const REMOTE_NAME: &str = "origin";
 
 pub(crate) fn clone_command(
@@ -82,10 +83,15 @@ fn git_command(
     working_directory: Option<&Path>,
     arguments: &[&str],
 ) -> CommandSpecification {
-    let environment = BTreeMap::from([(
+    let mut environment = BTreeMap::from([(
         TERMINAL_PROMPT_VARIABLE.to_string(),
         TERMINAL_PROMPT_DISABLED.to_string(),
     )]);
+    let enclosing_folder = working_directory.and_then(Path::parent);
+    if let Some(enclosing_folder) = enclosing_folder {
+        let ceiling = enclosing_folder.display().to_string();
+        environment.insert(CEILING_VARIABLE.to_string(), ceiling);
+    }
     CommandSpecification {
         program: GIT_PROGRAM.to_string(),
         arguments: arguments.iter().map(ToString::to_string).collect(),

@@ -1,20 +1,25 @@
 use std::fmt;
 use std::io::{Read, Write};
 use std::thread;
+use std::time::Duration;
 
-use portable_pty::{Child, ChildKiller, PtySize, native_pty_system};
+use portable_pty::{PtySize, native_pty_system};
 use tokio::sync::mpsc::{
     UnboundedReceiver, UnboundedSender, unbounded_channel,
 };
 
 use crate::command_specification::CommandSpecification;
 use crate::process_supervisor::{
-    ProcessExit, SupervisorError, build_terminal_command, describe_exit_status,
+    ProcessExit, SupervisorError, build_terminal_command,
+};
+use crate::terminal_child::{
+    SharedTerminalChild, TerminalChild, lock_terminal_child,
 };
 use crate::terminal_screen::TerminalSize;
 use crate::utf8_chunks::drain_complete_text;
 
 const READ_BUFFER_LENGTH: usize = 4096;
+const EXIT_CHECK_PAUSE: Duration = Duration::from_millis(20);
 
 #[derive(Debug)]
 pub struct InteractiveTerminal {
@@ -29,11 +34,11 @@ pub struct TerminalKeyboard {
 }
 
 pub struct TerminalStopper {
-    killer: Box<dyn ChildKiller + Send + Sync>,
+    child: SharedTerminalChild,
 }
 
 pub struct TerminalProcess {
-    child: Box<dyn Child + Send + Sync>,
+    child: SharedTerminalChild,
 }
 
 pub fn start_interactive_terminal(
@@ -61,7 +66,7 @@ pub fn start_interactive_terminal(
     })?;
     let child = terminal
         .slave
-        .spawn_command(build_terminal_command(command))
+        .spawn_command(build_terminal_command(command)?)
         .map_err(|problem| SupervisorError::StartProcess {
             program: command.program.clone(),
             reason: problem.to_string(),
@@ -69,13 +74,16 @@ pub fn start_interactive_terminal(
 
     let (sender, output) = unbounded_channel();
     thread::spawn(move || forward_output_text(reader, &sender));
+    let shared_child = TerminalChild::share(child);
     Ok(InteractiveTerminal {
         output,
         keyboard: TerminalKeyboard { writer },
         stopper: TerminalStopper {
-            killer: child.clone_killer(),
+            child: SharedTerminalChild::clone(&shared_child),
         },
-        process: TerminalProcess { child },
+        process: TerminalProcess {
+            child: shared_child,
+        },
     })
 }
 
@@ -90,15 +98,22 @@ impl TerminalKeyboard {
 
 impl TerminalStopper {
     pub fn stop(&mut self) -> Result<(), SupervisorError> {
-        self.killer.kill().map_err(SupervisorError::StopProcess)
+        let mut child = lock_terminal_child(&self.child);
+        child.stop().map_err(SupervisorError::StopProcess)
     }
 }
 
 impl TerminalProcess {
     pub fn wait_for_exit(&mut self) -> Result<ProcessExit, SupervisorError> {
-        let status =
-            self.child.wait().map_err(SupervisorError::WaitForProcess)?;
-        Ok(describe_exit_status(&status))
+        loop {
+            let exit = lock_terminal_child(&self.child)
+                .check_exit()
+                .map_err(SupervisorError::WaitForProcess)?;
+            if let Some(exit) = exit {
+                return Ok(exit);
+            }
+            thread::sleep(EXIT_CHECK_PAUSE);
+        }
     }
 }
 
@@ -132,18 +147,18 @@ fn forward_output_text(
 ) {
     let mut buffer = [0_u8; READ_BUFFER_LENGTH];
     let mut pending = Vec::new();
-    loop {
-        let Ok(read_count) = reader.read(&mut buffer) else {
-            return;
-        };
-        if read_count == 0 {
-            return;
-        }
-
+    while let Ok(read_count) = reader.read(&mut buffer)
+        && read_count > 0
+    {
         pending.extend_from_slice(&buffer[..read_count]);
         let text = drain_complete_text(&mut pending);
         if !text.is_empty() && sender.send(text).is_err() {
             return;
         }
+    }
+
+    if !pending.is_empty() {
+        let cut_text = String::from_utf8_lossy(&pending).into_owned();
+        let _output_is_closed = sender.send(cut_text);
     }
 }

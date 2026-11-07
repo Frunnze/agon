@@ -381,5 +381,258 @@
     "order": ["a", "b", "c"],
     "is_valid": true,
     "reached_from_first": ["a", "c"]
+  },
+  {
+    "description": "a plain and an outcome connection between two steps are refused",
+    "agents": [
+      { "name": "start", "horizontal": 0.0, "vertical": 0.0 },
+      { "name": "build", "horizontal": 0.0, "vertical": 1.0 },
+      { "name": "check", "horizontal": 1.0, "vertical": 1.0 }
+    ],
+    "connections": [
+      { "from": "start", "to": "build", "condition": null, "round_limit": null },
+      { "from": "start", "to": "build", "condition": "ok", "round_limit": null },
+      { "from": "start", "to": "check", "condition": "fail", "round_limit": null }
+    ],
+    "order": ["start", "build", "check"],
+    "is_valid": false,
+    "reached_from_first": ["build", "check", "start"]
+  },
+  {
+    "description": "the same fork without the plain connection is allowed",
+    "agents": [
+      { "name": "start", "horizontal": 0.0, "vertical": 0.0 },
+      { "name": "build", "horizontal": 0.0, "vertical": 1.0 },
+      { "name": "check", "horizontal": 1.0, "vertical": 1.0 }
+    ],
+    "connections": [
+      { "from": "start", "to": "build", "condition": "ok", "round_limit": null },
+      { "from": "start", "to": "check", "condition": "fail", "round_limit": null }
+    ],
+    "order": ["start", "build", "check"],
+    "is_valid": true,
+    "reached_from_first": ["build", "check", "start"]
+  },
+  {
+    "description": "two outcomes into the same step are refused",
+    "agents": [
+      { "name": "start", "horizontal": 0.0, "vertical": 0.0 },
+      { "name": "build", "horizontal": 0.0, "vertical": 1.0 },
+      { "name": "check", "horizontal": 1.0, "vertical": 1.0 }
+    ],
+    "connections": [
+      { "from": "start", "to": "build", "condition": "ok", "round_limit": null },
+      { "from": "start", "to": "build", "condition": "fail", "round_limit": null }
+    ],
+    "order": ["start", "build", "check"],
+    "is_valid": false,
+    "reached_from_first": ["build", "start"]
+  },
+  {
+    "description": "the same plain connection twice is refused",
+    "agents": [
+      { "name": "start", "horizontal": 0.0, "vertical": 0.0 },
+      { "name": "build", "horizontal": 0.0, "vertical": 1.0 },
+      { "name": "check", "horizontal": 1.0, "vertical": 1.0 }
+    ],
+    "connections": [
+      { "from": "start", "to": "build", "condition": null, "round_limit": null },
+      { "from": "start", "to": "build", "condition": null, "round_limit": null }
+    ],
+    "order": ["start", "build", "check"],
+    "is_valid": false,
+    "reached_from_first": ["build", "start"]
+  },
+  {
+    "description": "a loop beside its forward connection is allowed",
+    "agents": [
+      { "name": "start", "horizontal": 0.0, "vertical": 0.0 },
+      { "name": "build", "horizontal": 0.0, "vertical": 1.0 },
+      { "name": "check", "horizontal": 1.0, "vertical": 1.0 }
+    ],
+    "connections": [
+      { "from": "start", "to": "build", "condition": null, "round_limit": null },
+      { "from": "build", "to": "start", "condition": "again", "round_limit": 2 },
+      { "from": "build", "to": "check", "condition": null, "round_limit": null }
+    ],
+    "order": ["start", "build", "check"],
+    "is_valid": true,
+    "reached_from_first": ["build", "check", "start"]
+  },
+  {
+    "description": "a step name with a capital letter is refused",
+    "agents": [
+      { "name": "Plan", "horizontal": 0.0, "vertical": 0.0 },
+      { "name": "test", "horizontal": 0.0, "vertical": 1.0 }
+    ],
+    "connections": [
+      { "from": "Plan", "to": "test", "condition": null, "round_limit": null }
+    ],
+    "order": ["Plan", "test"],
+    "is_valid": false,
+    "reached_from_first": ["Plan", "test"]
+  },
+  {
+    "description": "a step name with a space is refused",
+    "agents": [
+      { "name": "write code", "horizontal": 0.0, "vertical": 0.0 },
+      { "name": "test", "horizontal": 0.0, "vertical": 1.0 }
+    ],
+    "connections": [
+      { "from": "write code", "to": "test", "condition": null, "round_limit": null }
+    ],
+    "order": ["write code", "test"],
+    "is_valid": false,
+    "reached_from_first": ["test", "write code"]
+  },
+  {
+    "description": "an empty step name is refused",
+    "agents": [
+      { "name": "", "horizontal": 0.0, "vertical": 0.0 },
+      { "name": "test", "horizontal": 0.0, "vertical": 1.0 }
+    ],
+    "connections": [],
+    "order": ["", "test"],
+    "is_valid": false,
+    "reached_from_first": [""]
+  },
+  {
+    "description": "a step name with an accent is refused",
+    "agents": [
+      { "name": "café", "horizontal": 0.0, "vertical": 0.0 },
+      { "name": "test", "horizontal": 0.0, "vertical": 1.0 }
+    ],
+    "connections": [],
+    "order": ["café", "test"],
+    "is_valid": false,
+    "reached_from_first": ["café"]
+  },
+  {
+    "description": "a step name with an underscore is refused",
+    "agents": [
+      { "name": "run_tests", "horizontal": 0.0, "vertical": 0.0 }
+    ],
+    "connections": [],
+    "order": ["run_tests"],
+    "is_valid": false,
+    "reached_from_first": ["run_tests"]
+  },
+  {
+    "description": "a step name of forty one characters is refused",
+    "agents": [
+      { "name": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "horizontal": 0.0, "vertical": 0.0 }
+    ],
+    "connections": [],
+    "order": ["aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"],
+    "is_valid": false,
+    "reached_from_first": ["aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"]
+  },
+  {
+    "description": "a step name of forty characters is allowed",
+    "agents": [
+      { "name": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "horizontal": 0.0, "vertical": 0.0 }
+    ],
+    "connections": [],
+    "order": ["aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"],
+    "is_valid": true,
+    "reached_from_first": ["aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"]
+  },
+  {
+    "description": "step names may use digits and dashes",
+    "agents": [
+      { "name": "3d-render", "horizontal": 0.0, "vertical": 0.0 },
+      { "name": "step-2", "horizontal": 0.0, "vertical": 1.0 },
+      { "name": "-", "horizontal": 0.0, "vertical": 2.0 }
+    ],
+    "connections": [
+      { "from": "3d-render", "to": "step-2", "condition": null, "round_limit": null },
+      { "from": "step-2", "to": "-", "condition": null, "round_limit": null }
+    ],
+    "order": ["3d-render", "step-2", "-"],
+    "is_valid": true,
+    "reached_from_first": ["-", "3d-render", "step-2"]
+  },
+  {
+    "description": "a workflow without steps is refused",
+    "agents": [],
+    "connections": [],
+    "order": [],
+    "is_valid": false,
+    "reached_from_first": []
+  },
+  {
+    "description": "two steps with one id are refused",
+    "agents": [
+      { "name": "plan", "horizontal": 0.0, "vertical": 0.0, "id_number": 0 },
+      { "name": "build", "horizontal": 0.0, "vertical": 1.0, "id_number": 0 }
+    ],
+    "connections": [],
+    "order": ["plan", "build"],
+    "is_valid": false,
+    "reached_from_first": ["build", "plan"]
+  },
+  {
+    "description": "two steps with one name are refused",
+    "agents": [
+      { "name": "plan", "horizontal": 0.0, "vertical": 0.0 },
+      { "name": "plan", "horizontal": 0.0, "vertical": 1.0 }
+    ],
+    "connections": [],
+    "order": ["plan", "plan"],
+    "is_valid": false,
+    "reached_from_first": ["plan"]
+  },
+  {
+    "description": "a connection from an unknown step is refused",
+    "agents": [
+      { "name": "a", "horizontal": 0.0, "vertical": 1.0 },
+      { "name": "b", "horizontal": 0.0, "vertical": 0.0 }
+    ],
+    "connections": [
+      { "from": "ghost", "to": "b", "condition": null, "round_limit": null }
+    ],
+    "order": ["a", "b"],
+    "is_valid": false,
+    "reached_from_first": ["a"]
+  },
+  {
+    "description": "a connection to an unknown step is refused",
+    "agents": [
+      { "name": "a", "horizontal": 0.0, "vertical": 0.0 },
+      { "name": "b", "horizontal": 0.0, "vertical": 1.0 }
+    ],
+    "connections": [
+      { "from": "a", "to": "ghost", "condition": null, "round_limit": null }
+    ],
+    "order": ["a", "b"],
+    "is_valid": false,
+    "reached_from_first": ["a"]
+  },
+  {
+    "description": "a step connected to itself is refused",
+    "agents": [
+      { "name": "a", "horizontal": 0.0, "vertical": 0.0 },
+      { "name": "b", "horizontal": 0.0, "vertical": 1.0 }
+    ],
+    "connections": [
+      { "from": "a", "to": "a", "condition": null, "round_limit": null }
+    ],
+    "order": ["b", "a"],
+    "is_valid": false,
+    "reached_from_first": ["a"]
+  },
+  {
+    "description": "a loop from a step back to itself is refused",
+    "agents": [
+      { "name": "a", "horizontal": 0.0, "vertical": 0.0 },
+      { "name": "b", "horizontal": 0.0, "vertical": 1.0 }
+    ],
+    "connections": [
+      { "from": "a", "to": "b", "condition": null, "round_limit": null },
+      { "from": "b", "to": "b", "condition": "again", "round_limit": 3 }
+    ],
+    "order": ["a", "b"],
+    "is_valid": false,
+    "reached_from_first": ["a", "b"]
   }
 ]

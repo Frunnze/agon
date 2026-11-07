@@ -20,13 +20,18 @@ fn git_command(
     working_directory: Option<&Path>,
     arguments: &[&str],
 ) -> CommandSpecification {
+    let mut environment =
+        BTreeMap::from([("GIT_TERMINAL_PROMPT".to_string(), "0".to_string())]);
+    if let Some(enclosing_folder) = working_directory.and_then(Path::parent) {
+        environment.insert(
+            "GIT_CEILING_DIRECTORIES".to_string(),
+            enclosing_folder.display().to_string(),
+        );
+    }
     CommandSpecification {
         program: "git".to_string(),
         arguments: arguments.iter().map(ToString::to_string).collect(),
-        environment: BTreeMap::from([(
-            "GIT_TERMINAL_PROMPT".to_string(),
-            "0".to_string(),
-        )]),
+        environment,
         working_directory: working_directory.map(Path::to_path_buf),
     }
 }

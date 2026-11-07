@@ -27,15 +27,34 @@ pub fn describe_agent_log_lines(
         return Vec::new();
     }
     if !reads_as_json(&join_words(printed_text)) {
-        return vec![normal_line(printed_text.to_string())];
+        return describe_printed_line(printed_text, agent_events);
     }
+    describe_agent_event_log_lines(agent_events)
+}
 
+#[must_use]
+pub fn describe_agent_event_log_lines(
+    agent_events: &[AgentEvent],
+) -> Vec<AgentLogLine> {
     let mut log_lines = Vec::new();
     for agent_event in agent_events {
         if let Some(log_line) = describe_agent_event(agent_event) {
             log_lines.push(log_line);
         }
     }
+    log_lines
+}
+
+fn describe_printed_line(
+    printed_text: &str,
+    agent_events: &[AgentEvent],
+) -> Vec<AgentLogLine> {
+    let printed_speech = [AgentEvent::Said(printed_text.to_string())];
+    let speech_ended_by_the_line =
+        agent_events.strip_suffix(&printed_speech).unwrap_or(&[]);
+    let mut log_lines =
+        describe_agent_event_log_lines(speech_ended_by_the_line);
+    log_lines.push(normal_line(printed_text.to_string()));
     log_lines
 }
 
@@ -65,8 +84,9 @@ fn describe_agent_event(agent_event: &AgentEvent) -> Option<AgentLogLine> {
 }
 
 fn shorten_readable_text(text: &str) -> Option<String> {
-    let one_line = join_words(text);
-    if reads_as_json(&one_line) {
+    let visible_text = strip_terminal_control_sequences(text);
+    let one_line = join_words(&visible_text);
+    if one_line.is_empty() || reads_as_json(&one_line) {
         return None;
     }
     Some(shorten_to_characters(

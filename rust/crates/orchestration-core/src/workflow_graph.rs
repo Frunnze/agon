@@ -3,8 +3,11 @@ use std::collections::BTreeSet;
 
 use thiserror::Error;
 
-use crate::connection_rules::{validate_conditions, validate_loops};
+use crate::connection_rules::{
+    validate_conditions, validate_distinct_step_pairs, validate_loops,
+};
 use crate::identifiers::WorkflowAgentId;
+use crate::naming::{NameProblem, validate_name};
 use crate::workflow::{AgentConnection, Workflow, WorkflowAgent};
 
 const EARLIEST_REMAINING_INDEX: usize = 0;
@@ -17,10 +20,14 @@ pub enum WorkflowProblem {
     DuplicateAgentId { agent_id: WorkflowAgentId },
     #[error("two agents are named {name}")]
     DuplicateAgentName { name: String },
+    #[error("the step name {name:?} breaks the naming rule: {problem}")]
+    InvalidStepName { name: String, problem: NameProblem },
     #[error("a connection points to the unknown agent {}", .agent_id.0)]
     UnknownConnectionEnd { agent_id: WorkflowAgentId },
     #[error("agent {} is connected to itself", .agent_id.0)]
     SelfConnection { agent_id: WorkflowAgentId },
+    #[error("there are two connections from {from} to {to}; keep one")]
+    RepeatedConnection { from: String, to: String },
     #[error("the connections form a cycle")]
     Cycle,
     #[error(
@@ -48,6 +55,7 @@ pub fn validate_workflow(workflow: &Workflow) -> Result<(), WorkflowProblem> {
         return Err(WorkflowProblem::NoAgents);
     }
     validate_unique_agents(&workflow.agents)?;
+    validate_step_names(&workflow.agents)?;
     for connection in &workflow.connections {
         validate_connection(connection, &workflow.agents)?;
     }
@@ -55,7 +63,8 @@ pub fn validate_workflow(workflow: &Workflow) -> Result<(), WorkflowProblem> {
     if has_cycle(workflow) {
         return Err(WorkflowProblem::Cycle);
     }
-    validate_loops(workflow)
+    validate_loops(workflow)?;
+    validate_distinct_step_pairs(workflow)
 }
 
 #[must_use]
@@ -160,6 +169,20 @@ fn validate_unique_agents(
                 name: agent.name.clone(),
             });
         }
+    }
+    Ok(())
+}
+
+fn validate_step_names(
+    agents: &[WorkflowAgent],
+) -> Result<(), WorkflowProblem> {
+    for agent in agents {
+        validate_name(&agent.name).map_err(|problem| {
+            WorkflowProblem::InvalidStepName {
+                name: agent.name.clone(),
+                problem,
+            }
+        })?;
     }
     Ok(())
 }

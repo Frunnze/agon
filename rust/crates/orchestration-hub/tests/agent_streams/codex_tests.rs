@@ -156,15 +156,18 @@ proptest! {
     ) {
         let mut rendered = Vec::new();
         let mut expected = Vec::new();
+        let mut relative_paths = Vec::new();
         for (relative_path, (kind, verb)) in &changes {
             let path = format!("/workspace/{relative_path}");
             rendered.push((path, (*kind).to_string()));
             expected.push(used_tool(&format!("{verb} {relative_path}")));
+            relative_paths.push(relative_path.clone());
         }
         let status = if has_failed { "failed" } else { "completed" };
         if has_failed {
-            let failure = UNKNOWN_TOOL_FAILURE.to_string();
-            expected.push(AgentEvent::ToolFailed(failure));
+            let failure =
+                format!("Could not change {}", relative_paths.join(", "));
+            expected = vec![AgentEvent::ToolFailed(failure)];
         }
         let item = file_change_item(&rendered, status);
 

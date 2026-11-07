@@ -6,6 +6,7 @@ use crate::agent_event::AgentEvent;
 use crate::claude_stream::parse_claude_line;
 use crate::codex_events::parse_codex_line;
 use crate::gemini_stream::{GeminiLine, parse_gemini_line};
+use crate::json_terminal_codes::strip_terminal_codes_in_json;
 use crate::terminal_text::strip_terminal_control_sequences;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -33,17 +34,25 @@ impl AgentOutputReader {
             return (self, Vec::new());
         }
 
+        let readable_line = strip_terminal_codes_in_json(text);
         match self.agent {
             AgentKind::ClaudeCode => {
-                let agent_events = parse_claude_line(text, &self.task_folder);
+                let agent_events =
+                    parse_claude_line(&readable_line, &self.task_folder);
                 (self, agent_events)
             }
             AgentKind::Codex => {
-                let agent_events = parse_codex_line(text, &self.task_folder);
+                let agent_events =
+                    parse_codex_line(&readable_line, &self.task_folder);
                 (self, agent_events)
             }
             AgentKind::GeminiCli => self.read_gemini_line(text),
         }
+    }
+
+    #[must_use]
+    pub fn read_end_of_output(self) -> Vec<AgentEvent> {
+        describe_unfinished_speech(&self.unfinished_speech)
     }
 
     fn read_gemini_line(self, text: &str) -> (Self, Vec<AgentEvent>) {
@@ -57,7 +66,7 @@ impl AgentOutputReader {
                 };
                 (reader, Vec::new())
             }
-            GeminiLine::KeepsSpeech(agent_events) => (self, agent_events),
+            GeminiLine::KeepsSpeech => (self, Vec::new()),
             GeminiLine::EndsSpeech(agent_events) => {
                 self.finish_speech_before(agent_events)
             }
@@ -68,11 +77,8 @@ impl AgentOutputReader {
         self,
         later_events: Vec<AgentEvent>,
     ) -> (Self, Vec<AgentEvent>) {
-        let mut agent_events = Vec::new();
-        let speech = self.unfinished_speech.trim();
-        if !speech.is_empty() {
-            agent_events.push(AgentEvent::Said(speech.to_string()));
-        }
+        let mut agent_events =
+            describe_unfinished_speech(&self.unfinished_speech);
         agent_events.extend(later_events);
 
         let reader = Self {
@@ -81,4 +87,13 @@ impl AgentOutputReader {
         };
         (reader, agent_events)
     }
+}
+
+fn describe_unfinished_speech(unfinished_speech: &str) -> Vec<AgentEvent> {
+    let visible_speech = strip_terminal_control_sequences(unfinished_speech);
+    let speech = visible_speech.trim();
+    if speech.is_empty() {
+        return Vec::new();
+    }
+    vec![AgentEvent::Said(speech.to_string())]
 }

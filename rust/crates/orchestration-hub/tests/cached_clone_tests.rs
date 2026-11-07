@@ -10,6 +10,16 @@ use proptest::prelude::*;
 type TestResult<T> = Result<T, Box<dyn Error>>;
 
 const GIT_DIRECTORY_NAME: &str = ".git";
+const SHORTENED_NAME_SEPARATOR: char = '.';
+
+fn is_plain_name(name: &str) -> bool {
+    name.chars().all(|character| {
+        character.is_ascii_lowercase()
+            || character.is_ascii_digit()
+            || character == '-'
+            || character == '_'
+    })
+}
 
 proptest! {
     #[test]
@@ -18,7 +28,9 @@ proptest! {
     ) {
         let folder_name = encode_clone_folder_name(&address);
 
-        prop_assert_eq!(decode_clone_folder_name(&folder_name), Some(address));
+        let is_shortened = folder_name.contains(SHORTENED_NAME_SEPARATOR);
+        let expected = (!is_shortened).then_some(address);
+        prop_assert_eq!(decode_clone_folder_name(&folder_name), expected);
     }
 
     #[test]
@@ -27,14 +39,17 @@ proptest! {
     ) {
         let folder_name = encode_clone_folder_name(&address);
 
-        let is_plain = folder_name.chars().all(|character| {
-            character.is_ascii_lowercase()
-                || character.is_ascii_digit()
-                || character == '-'
-                || character == '_'
-        });
-
-        prop_assert!(is_plain);
+        let Some((start, hash)) =
+            folder_name.split_once(SHORTENED_NAME_SEPARATOR)
+        else {
+            prop_assert!(is_plain_name(&folder_name));
+            return Ok(());
+        };
+        prop_assert!(is_plain_name(start));
+        let is_hash = hash
+            .chars()
+            .all(|character| matches!(character, '0'..='9' | 'a'..='f'));
+        prop_assert!(is_hash, "{hash}");
     }
 
     #[test]

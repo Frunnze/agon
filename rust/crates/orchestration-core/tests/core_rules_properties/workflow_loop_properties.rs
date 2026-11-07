@@ -18,7 +18,7 @@ const AGENT_COUNT_SIZE: usize = 4;
 const LOOP_ROUNDS: u32 = 2;
 
 fn distinct_names() -> impl Strategy<Value = Vec<String>> {
-    btree_set(".{1,10}", AGENT_COUNT_SIZE)
+    btree_set("[a-z0-9-]{1,10}", AGENT_COUNT_SIZE)
         .prop_map(|names| names.into_iter().collect())
 }
 

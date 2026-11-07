@@ -1,0 +1,8 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc d69d5a2b7db64babc04c92e9ce3447dae985417ff19dd635edfae91ba9b424da # shrinks to home = "/A", name = "a"
+cc c7e12fac295120efe8b268f8539a39a1dbf4ce1f67dc47fad4503d7554948714 # shrinks to (home, spelled_home) = ("/a", "~"), folder = "a", ending = "*"

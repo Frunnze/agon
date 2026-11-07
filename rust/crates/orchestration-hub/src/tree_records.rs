@@ -8,6 +8,8 @@ const NAME_SEPARATOR: char = '\t';
 const TREE_TYPE: &str = "tree";
 const BLOB_TYPE: &str = "blob";
 const LINK_MODE: &str = "120000";
+const MISSING_OBJECT_SIZE: &str = "BAD";
+const MISSING_OBJECT_OUTPUT: &str = "git cannot find the object";
 
 #[derive(Debug)]
 pub(crate) struct TreeRecord {
@@ -17,6 +19,7 @@ pub(crate) struct TreeRecord {
 
 pub(crate) fn parse_tree_record(
     line: &str,
+    listing_arguments: &str,
 ) -> Result<Option<TreeRecord>, RepositoryReadError> {
     let unreadable = || RepositoryReadError::UnreadableAnswer(line.into());
     let (description, name) =
@@ -25,6 +28,12 @@ pub(crate) fn parse_tree_record(
     let [mode, object_type, object, size] = fields[..] else {
         return Err(unreadable());
     };
+    if size == MISSING_OBJECT_SIZE {
+        return Err(RepositoryReadError::GitFailed {
+            arguments: listing_arguments.to_owned(),
+            output: format!("{MISSING_OBJECT_OUTPUT} {object}"),
+        });
+    }
 
     let kind = match (object_type, mode) {
         (TREE_TYPE, _) => RepositoryEntryKind::Folder,

@@ -120,7 +120,7 @@ proptest! {
     }
 
     #[test]
-    fn test_read_line_property_gemini_printed_lines_leave_speech_waiting(
+    fn test_read_line_property_gemini_printed_lines_end_the_speech(
         parts in any_speech_parts(),
         printed in "[a-zA-Z][a-zA-Z0-9 .:]{0,30}[a-zA-Z0-9.]",
     ) {
@@ -129,8 +129,8 @@ proptest! {
 
         let events = read_gemini(&with_line(&interrupted, finished_line()));
 
-        let mut expected = vec![AgentEvent::Said(printed)];
-        expected.extend(expect_speech(&parts));
+        let mut expected = expect_speech(&parts);
+        expected.push(AgentEvent::Said(printed));
         expected.push(AgentEvent::Finished);
         prop_assert_eq!(events, expected);
     }
