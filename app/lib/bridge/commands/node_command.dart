@@ -13,8 +13,14 @@ abstract interface class NodeCommand<Result> {
 }
 
 JsonObject encodeNodeCommand(NodeCommand<Object?> command) {
-  return <String, Object?>{
-    commandNameField: command.name,
-    ...command.arguments,
-  };
+  final JsonObject arguments = command.arguments;
+  if (arguments.containsKey(commandNameField)) {
+    throw ArgumentError.value(
+      command.name,
+      'command',
+      'an argument may not be named $commandNameField',
+    );
+  }
+
+  return <String, Object?>{commandNameField: command.name, ...arguments};
 }

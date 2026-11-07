@@ -201,7 +201,7 @@ final class SignedDecision implements JsonEncodable {
       decision: readField(fields, 'decision', ApprovalDecision.decode),
       decidedBy: readField(fields, 'decided_by', decodeDeviceId),
       decidedAt: readField(fields, 'decided_at', decodeMoment),
-      signature: readListField(fields, 'signature', decodeInteger),
+      signature: readListField(fields, 'signature', decodeByte),
     );
   }
 

@@ -15,7 +15,7 @@ final class CurrentStep implements JsonEncodable {
   factory CurrentStep.fromJson(Object? json) {
     final JsonObject fields = decodeObject(json);
     return CurrentStep(
-      number: readField(fields, 'number', decodeInteger),
+      number: readField(fields, 'number', decodeCount),
       name: readField(fields, 'name', decodeText),
       runner: readOptionalField(fields, 'runner', decodeDeviceId),
       status: readField(fields, 'status', StepStatus.decode),
@@ -54,12 +54,12 @@ final class RunProgress implements JsonEncodable {
     final JsonObject fields = decodeObject(json);
     return RunProgress(
       runId: readField(fields, 'run_id', decodeRunId),
-      number: readField(fields, 'number', decodeInteger),
+      number: readField(fields, 'number', decodeCount),
       status: readField(fields, 'status', RunStatus.decode),
       link: readField(fields, 'link', RunnerLink.decode),
       startedAt: readField(fields, 'started_at', decodeMoment),
       finishedAt: readOptionalField(fields, 'finished_at', decodeMoment),
-      stepCount: readField(fields, 'step_count', decodeInteger),
+      stepCount: readField(fields, 'step_count', decodeCount),
       currentStep: readOptionalField(
         fields,
         'current_step',

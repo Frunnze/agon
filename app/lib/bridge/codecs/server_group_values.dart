@@ -38,7 +38,7 @@ final class BackupCopyView implements JsonEncodable {
   factory BackupCopyView.fromJson(Object? json) {
     final JsonObject fields = decodeObject(json);
     return BackupCopyView(
-      changesBehind: readField(fields, 'changes_behind', decodeInteger),
+      changesBehind: readField(fields, 'changes_behind', decodeCount),
       verifiedAt: readField(fields, 'verified_at', decodeMoment),
     );
   }

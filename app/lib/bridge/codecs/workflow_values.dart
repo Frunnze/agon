@@ -31,7 +31,14 @@ enum StepKind implements WireNamed {
 }
 
 final class CanvasPosition implements JsonEncodable {
-  const CanvasPosition({required this.horizontal, required this.vertical});
+  CanvasPosition({required this.horizontal, required this.vertical}) {
+    if (!horizontal.isFinite || !vertical.isFinite) {
+      throw ArgumentError(
+        'a canvas position needs finite coordinates, '
+        'found $horizontal and $vertical',
+      );
+    }
+  }
 
   factory CanvasPosition.fromJson(Object? json) {
     final JsonObject fields = decodeObject(json);
@@ -132,7 +139,7 @@ final class AgentConnection implements JsonEncodable {
       from: readField(fields, 'from', decodeWorkflowAgentId),
       to: readField(fields, 'to', decodeWorkflowAgentId),
       condition: readOptionalField(fields, 'condition', decodeText),
-      roundLimit: readOptionalField(fields, 'round_limit', decodeInteger),
+      roundLimit: readOptionalField(fields, 'round_limit', decodeCount),
     );
   }
 
@@ -163,7 +170,7 @@ final class WorkflowSignature implements JsonEncodable {
     final JsonObject fields = decodeObject(json);
     return WorkflowSignature(
       signedBy: readField(fields, 'signed_by', decodeDeviceId),
-      signature: readListField(fields, 'signature', decodeInteger),
+      signature: readListField(fields, 'signature', decodeByte),
       signedDocument: readField(fields, 'signed_document', decodeText),
     );
   }

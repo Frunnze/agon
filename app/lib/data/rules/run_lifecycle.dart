@@ -19,6 +19,12 @@ const Set<RunStatus> _retryableRunStatuses = <RunStatus>{
   RunStatus.cancelled,
 };
 
+const Set<StepStatus> _finishedStepStatuses = <StepStatus>{
+  StepStatus.done,
+  StepStatus.failed,
+  StepStatus.skipped,
+};
+
 bool isRunActive(Run run) => _activeRunStatuses.contains(run.status);
 
 DeviceId? _pinnedRunner(RunnerTarget target) {
@@ -156,6 +162,21 @@ Run createRun({
   );
 }
 
+RunStep _skipStep(RunStep step, DateTime at) {
+  return RunStep(
+    name: step.name,
+    agentId: step.agentId,
+    runner: step.runner,
+    status: StepStatus.skipped,
+    startedAt: step.startedAt,
+    finishedAt: at,
+    result: step.result,
+    outcome: step.outcome,
+    loopSource: step.loopSource,
+    earlierRounds: step.earlierRounds,
+  );
+}
+
 Run buildCancelledRun(Run run, DateTime at) {
   if (!isRunActive(run)) {
     throw StateError('Run ${run.number} is not active');
@@ -163,10 +184,10 @@ Run buildCancelledRun(Run run, DateTime at) {
 
   final List<RunStep> steps = <RunStep>[];
   for (final RunStep step in run.steps) {
-    if (step.status == StepStatus.done) {
+    if (_finishedStepStatuses.contains(step.status)) {
       steps.add(step);
     } else {
-      steps.add(step.withStatus(StepStatus.skipped));
+      steps.add(_skipStep(step, at));
     }
   }
 

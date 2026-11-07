@@ -6,6 +6,7 @@ final class JoiningDevice implements JsonEncodable {
   JoiningDevice({
     required this.name,
     required this.role,
+    required this.kind,
     required this.keyKind,
     required List<int> sealingPublicKey,
     required List<String> fingerprintWords,
@@ -17,11 +18,12 @@ final class JoiningDevice implements JsonEncodable {
     return JoiningDevice(
       name: readField(fields, 'name', decodeText),
       role: readField(fields, 'role', DeviceRole.decode),
+      kind: readField(fields, 'kind', DeviceKind.decode),
       keyKind: readField(fields, 'key_kind', HardwareKeyKind.decode),
       sealingPublicKey: readListField(
         fields,
         'sealing_public_key',
-        decodeInteger,
+        decodeByte,
       ),
       fingerprintWords: readListField(fields, 'fingerprint_words', decodeText),
     );
@@ -29,6 +31,7 @@ final class JoiningDevice implements JsonEncodable {
 
   final String name;
   final DeviceRole role;
+  final DeviceKind kind;
   final HardwareKeyKind keyKind;
   final List<int> sealingPublicKey;
   final List<String> fingerprintWords;
@@ -38,6 +41,7 @@ final class JoiningDevice implements JsonEncodable {
     return <String, Object?>{
       'name': name,
       'role': role.wireName,
+      'kind': kind.wireName,
       'key_kind': keyKind.wireName,
       'sealing_public_key': sealingPublicKey,
       'fingerprint_words': fingerprintWords,
@@ -81,6 +85,38 @@ final class PairingRequestScreen implements JsonEncodable {
       'started_at': encodeMoment(startedAt),
       'expires_at': encodeMoment(expiresAt),
       'joining': joining?.toJson(),
+    };
+  }
+}
+
+const String _rendezvousProblemField = 'rendezvous_problem';
+
+final class StartedPairing implements JsonEncodable {
+  const StartedPairing({
+    required this.screen,
+    required this.rendezvousProblem,
+  });
+
+  factory StartedPairing.fromJson(Object? json) {
+    final JsonObject fields = decodeObject(json);
+    return StartedPairing(
+      screen: PairingRequestScreen.fromJson(fields),
+      rendezvousProblem: readOptionalField(
+        fields,
+        _rendezvousProblemField,
+        decodeText,
+      ),
+    );
+  }
+
+  final PairingRequestScreen screen;
+  final String? rendezvousProblem;
+
+  @override
+  JsonObject toJson() {
+    return <String, Object?>{
+      ...screen.toJson(),
+      _rendezvousProblemField: rendezvousProblem,
     };
   }
 }

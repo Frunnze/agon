@@ -23,7 +23,8 @@ String renderAgentsMarkdown({
       workspaceId: workspaceId,
       projectId: projectId,
     );
-    if (rule.enabled && applies) {
+    final bool hasTitle = rule.title.trim().isNotEmpty;
+    if (rule.enabled && applies && hasTitle) {
       ruleSections.write(_renderRule(rule));
     }
   }

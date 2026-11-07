@@ -138,7 +138,7 @@ final Run galleryFailedRun = Run(
       runner: null,
       status: StepStatus.skipped,
       startedAt: null,
-      finishedAt: null,
+      finishedAt: galleryYesterday(18, 31, 14),
       result: null,
       outcome: null,
       loopSource: null,

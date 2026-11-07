@@ -5,7 +5,7 @@ import 'package:agent_orchestration/bridge/codecs/pairing_values.dart';
 import 'package:agent_orchestration/bridge/commands/node_command.dart';
 import 'package:agent_orchestration/data/models/identifiers.dart';
 
-final class StartPairingCommand implements NodeCommand<PairingRequestScreen> {
+final class StartPairingCommand implements NodeCommand<StartedPairing> {
   const StartPairingCommand();
 
   @override
@@ -15,8 +15,8 @@ final class StartPairingCommand implements NodeCommand<PairingRequestScreen> {
   JsonObject get arguments => noArguments;
 
   @override
-  PairingRequestScreen decodeReply(Object? okValue) {
-    return PairingRequestScreen.fromJson(okValue);
+  StartedPairing decodeReply(Object? okValue) {
+    return StartedPairing.fromJson(okValue);
   }
 }
 

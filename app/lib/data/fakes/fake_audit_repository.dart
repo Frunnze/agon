@@ -22,7 +22,9 @@ final class FakeAuditRepository extends ChangeNotifier
     for (int index = 1; index < _entries.length; index += 1) {
       final AuditEntry newer = _entries[index - 1];
       final AuditEntry older = _entries[index];
-      if (newer.previousHash != older.hash) {
+      final bool isLinked = newer.previousHash == older.hash;
+      final bool isNextIndex = newer.index == older.index + 1;
+      if (!isLinked || !isNextIndex) {
         throw StateError('Audit entry ${newer.index} breaks the chain');
       }
     }

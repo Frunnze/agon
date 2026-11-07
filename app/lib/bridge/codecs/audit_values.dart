@@ -16,7 +16,7 @@ final class AuditEntryView implements JsonEncodable {
   factory AuditEntryView.fromJson(Object? json) {
     final JsonObject fields = decodeObject(json);
     return AuditEntryView(
-      index: readField(fields, 'index', decodeInteger),
+      index: readField(fields, 'index', decodeCount),
       at: readField(fields, 'at', decodeMoment),
       deviceId: readField(fields, 'device_id', decodeDeviceId),
       event: readField(fields, 'event', decodeText),
@@ -60,7 +60,7 @@ final class AuditView implements JsonEncodable {
     final JsonObject fields = decodeObject(json);
     return AuditView(
       entries: readListField(fields, 'entries', AuditEntryView.fromJson),
-      entryCount: readField(fields, 'entry_count', decodeInteger),
+      entryCount: readField(fields, 'entry_count', decodeCount),
       headHash: readField(fields, 'head_hash', decodeText),
       intact: readField(fields, 'intact', decodeFlag),
     );

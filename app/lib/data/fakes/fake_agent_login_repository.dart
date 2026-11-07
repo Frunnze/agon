@@ -14,7 +14,14 @@ const String _brokenKeyProblem =
     'line breaks';
 const String _loginPrompt = 'Paste code here if prompted >';
 const String _enterKey = '\r';
-final RegExp _breakingCharacters = RegExp(r'[\s\x00-\x1f\x7f]');
+final RegExp _surroundingWhitespace = RegExp(
+  r'^\p{White_Space}+|\p{White_Space}+$',
+  unicode: true,
+);
+final RegExp _breakingCharacters = RegExp(
+  r'[\p{White_Space}\p{Cc}]',
+  unicode: true,
+);
 
 final class FakeAgentLoginRepository extends ChangeNotifier
     implements AgentLoginRepository {
@@ -77,7 +84,7 @@ final class FakeAgentLoginRepository extends ChangeNotifier
 
   @override
   Future<void> saveApiKey(String apiKey) async {
-    final String trimmed = apiKey.trim();
+    final String trimmed = apiKey.replaceAll(_surroundingWhitespace, '');
     if (trimmed.isEmpty) {
       throw StateError(_blankKeyProblem);
     }
@@ -95,7 +102,7 @@ final class FakeAgentLoginRepository extends ChangeNotifier
 
   void endTerminal({required String? problem}) {
     final LoginTerminal? terminal = _terminal;
-    if (terminal == null) {
+    if (terminal == null || terminal.state != LoginTerminalState.running) {
       throw StateError(_noLoginProblem);
     }
 

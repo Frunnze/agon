@@ -80,6 +80,19 @@ final class PendingJoin implements JsonEncodable {
   }
 }
 
+const int _endpointPublicKeyLength = 32;
+
+List<int> _decodeEndpointPublicKey(Object? json) {
+  final List<int> key = decodeList(json, decodeByte);
+  if (key.length != _endpointPublicKeyLength) {
+    throw FormatException(
+      'expected a $_endpointPublicKeyLength byte endpoint key, '
+      'found ${key.length} bytes',
+    );
+  }
+  return key;
+}
+
 final class PeerAddress implements JsonEncodable {
   PeerAddress({
     required List<int> endpointPublicKey,
@@ -91,10 +104,10 @@ final class PeerAddress implements JsonEncodable {
   factory PeerAddress.fromJson(Object? json) {
     final JsonObject fields = decodeObject(json);
     return PeerAddress(
-      endpointPublicKey: readListField(
+      endpointPublicKey: readField(
         fields,
         'endpoint_public_key',
-        decodeInteger,
+        _decodeEndpointPublicKey,
       ),
       directAddresses: readListField(fields, 'direct_addresses', decodeText),
       relayUrl: readOptionalField(fields, 'relay_url', decodeText),
@@ -154,6 +167,7 @@ final class StatusView implements JsonEncodable {
     required this.account,
     required this.pendingJoin,
     required this.peer,
+    required this.rendezvousProblem,
     required this.runnerSettings,
     required this.appServers,
   });
@@ -176,6 +190,11 @@ final class StatusView implements JsonEncodable {
         PendingJoin.fromJson,
       ),
       peer: readOptionalField(fields, 'peer', PeerAnnouncement.fromJson),
+      rendezvousProblem: readOptionalField(
+        fields,
+        'rendezvous_problem',
+        decodeText,
+      ),
       runnerSettings: readOptionalField(
         fields,
         'runner_settings',
@@ -192,6 +211,7 @@ final class StatusView implements JsonEncodable {
   final AccountSummary? account;
   final PendingJoin? pendingJoin;
   final PeerAnnouncement? peer;
+  final String? rendezvousProblem;
   final RunnerSettings? runnerSettings;
   final AppServersView appServers;
 
@@ -205,6 +225,7 @@ final class StatusView implements JsonEncodable {
       'account': account?.toJson(),
       'pending_join': pendingJoin?.toJson(),
       'peer': peer?.toJson(),
+      'rendezvous_problem': rendezvousProblem,
       'runner_settings': runnerSettings?.toJson(),
       'app_servers': appServers.toJson(),
     };

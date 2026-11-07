@@ -49,6 +49,7 @@ final class FakePairingRepository extends ChangeNotifier
       code: _freshPairingCode,
       createdAt: now,
       expiresAt: now.add(_pairingLifetime),
+      rendezvousProblem: null,
     );
 
     _session = session;

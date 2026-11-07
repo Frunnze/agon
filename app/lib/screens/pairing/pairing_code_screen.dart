@@ -58,6 +58,10 @@ class PairingCodeScreen extends StatelessWidget {
   }
 
   Widget _buildPage(BuildContext context, Widget? _) {
+    final String? rendezvousProblem = pairingRepository
+        .findActiveSession()
+        ?.rendezvousProblem;
+
     return AppPage(
       children: <Widget>[
         PageHeader(
@@ -78,6 +82,8 @@ class PairingCodeScreen extends StatelessWidget {
             ),
           ],
         ),
+        if (rendezvousProblem != null)
+          RendezvousProblemBanner(problem: rendezvousProblem),
         SplitLayout(
           start: _buildCodeCard(context),
           end: PageSection(

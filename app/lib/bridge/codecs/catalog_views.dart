@@ -54,8 +54,8 @@ final class WorkspaceView implements JsonEncodable {
     final JsonObject fields = decodeObject(json);
     return WorkspaceView(
       workspace: readField(fields, 'workspace', Workspace.fromJson),
-      projectCount: readField(fields, 'project_count', decodeInteger),
-      runnerCount: readField(fields, 'runner_count', decodeInteger),
+      projectCount: readField(fields, 'project_count', decodeCount),
+      runnerCount: readField(fields, 'runner_count', decodeCount),
     );
   }
 
@@ -84,8 +84,8 @@ final class ProjectView implements JsonEncodable {
     final JsonObject fields = decodeObject(json);
     return ProjectView(
       project: readField(fields, 'project', Project.fromJson),
-      taskCount: readField(fields, 'task_count', decodeInteger),
-      runningTaskCount: readField(fields, 'running_task_count', decodeInteger),
+      taskCount: readField(fields, 'task_count', decodeCount),
+      runningTaskCount: readField(fields, 'running_task_count', decodeCount),
     );
   }
 
@@ -113,9 +113,9 @@ final class RunnerSummary implements JsonEncodable {
   factory RunnerSummary.fromJson(Object? json) {
     final JsonObject fields = decodeObject(json);
     return RunnerSummary(
-      runnerCount: readField(fields, 'runner_count', decodeInteger),
-      onlineCount: readField(fields, 'online_count', decodeInteger),
-      freeSlotCount: readField(fields, 'free_slot_count', decodeInteger),
+      runnerCount: readField(fields, 'runner_count', decodeCount),
+      onlineCount: readField(fields, 'online_count', decodeCount),
+      freeSlotCount: readField(fields, 'free_slot_count', decodeCount),
     );
   }
 
@@ -146,7 +146,7 @@ final class RunnerView implements JsonEncodable {
     return RunnerView(
       runner: readField(fields, 'runner', Runner.fromJson),
       deviceName: readField(fields, 'device_name', decodeText),
-      freeSlots: readField(fields, 'free_slots', decodeInteger),
+      freeSlots: readField(fields, 'free_slots', decodeCount),
       peerAddressVerified: readField(
         fields,
         _peerAddressVerifiedField,

@@ -11,6 +11,7 @@ final PairingSession galleryPairingSession = PairingSession(
   code: _pairingCode,
   createdAt: galleryNow.subtract(_pairingAge),
   expiresAt: galleryNow.subtract(_pairingAge).add(_pairingLifetime),
+  rendezvousProblem: null,
 );
 
 final PairingRequest galleryPairingRequest = PairingRequest(

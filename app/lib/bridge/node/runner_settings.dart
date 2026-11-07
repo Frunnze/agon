@@ -103,17 +103,24 @@ final class RunnerSettings extends RunnerChoice {
     required this.slotCapacity,
     required this.sandbox,
     required this.cloneUrlTemplate,
-  }) : labels = List<String>.unmodifiable(labels);
+    required List<String> passedEnvironment,
+  }) : labels = List<String>.unmodifiable(labels),
+       passedEnvironment = List<String>.unmodifiable(passedEnvironment);
 
   factory RunnerSettings.fromJson(Object? json) {
     final JsonObject fields = decodeObject(json);
     return RunnerSettings(
       labels: readListField(fields, 'labels', decodeText),
-      slotCapacity: readField(fields, 'slot_capacity', decodeInteger),
+      slotCapacity: readField(fields, 'slot_capacity', decodeCount),
       sandbox: readField(fields, 'sandbox', SandboxSettings.fromJson),
       cloneUrlTemplate: readOptionalField(
         fields,
         'clone_url_template',
+        decodeText,
+      ),
+      passedEnvironment: readListFieldWhenPresent(
+        fields,
+        'passed_environment',
         decodeText,
       ),
     );
@@ -123,6 +130,7 @@ final class RunnerSettings extends RunnerChoice {
   final int slotCapacity;
   final SandboxSettings sandbox;
   final String? cloneUrlTemplate;
+  final List<String> passedEnvironment;
 
   @override
   JsonObject toJson() {
@@ -131,6 +139,7 @@ final class RunnerSettings extends RunnerChoice {
       'slot_capacity': slotCapacity,
       'sandbox': sandbox.toJson(),
       'clone_url_template': cloneUrlTemplate,
+      'passed_environment': passedEnvironment,
     };
   }
 }

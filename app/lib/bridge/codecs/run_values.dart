@@ -168,7 +168,7 @@ final class Run implements JsonEncodable {
     return Run(
       id: readField(fields, 'id', decodeRunId),
       taskId: readField(fields, 'task_id', decodeTaskId),
-      number: readField(fields, 'number', decodeInteger),
+      number: readField(fields, 'number', decodeCount),
       status: readField(fields, 'status', RunStatus.decode),
       steps: readListField(fields, 'steps', RunStep.fromJson),
       log: readListField(fields, 'log', LogLine.fromJson),

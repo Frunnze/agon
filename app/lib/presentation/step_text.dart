@@ -16,6 +16,19 @@ Duration _measureStep(RunStep step, DateTime until) {
   return until.difference(startedAt);
 }
 
+List<TextSegment> _describeSkippedStep({
+  required RunStep step,
+  required DateTime now,
+}) {
+  if (step.startedAt == null) {
+    return const <TextSegment>[TextSegment('Did not start')];
+  }
+
+  final DateTime stoppedAt = step.finishedAt ?? now;
+  final String ranFor = describeStepDuration(_measureStep(step, stoppedAt));
+  return <TextSegment>[TextSegment('Stopped after $ranFor')];
+}
+
 List<TextSegment> describePersonStepSubtitle({
   required RunStep step,
   required DateTime now,
@@ -24,7 +37,7 @@ List<TextSegment> describePersonStepSubtitle({
     case StepStatus.waiting:
       return const <TextSegment>[TextSegment('Will ask you')];
     case StepStatus.skipped:
-      return const <TextSegment>[TextSegment('Did not start')];
+      return _describeSkippedStep(step: step, now: now);
     case StepStatus.waitingForPerson:
     case StepStatus.running:
     case StepStatus.waitingForApproval:
@@ -53,7 +66,7 @@ List<TextSegment> describeStepSubtitle({
     case StepStatus.waiting:
       return describeRunnerTarget(target, deviceNames);
     case StepStatus.skipped:
-      return const <TextSegment>[TextSegment('Did not start')];
+      return _describeSkippedStep(step: step, now: now);
     case StepStatus.waitingForPerson:
       final String asked = describeWholeMinutes(_measureStep(step, now));
       return <TextSegment>[TextSegment('Asked you $asked ago')];

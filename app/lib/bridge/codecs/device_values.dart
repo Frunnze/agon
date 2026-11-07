@@ -87,12 +87,12 @@ final class Device implements JsonEncodable {
       signingPublicKey: readListField(
         fields,
         'signing_public_key',
-        decodeInteger,
+        decodeByte,
       ),
       sealingPublicKey: readListField(
         fields,
         'sealing_public_key',
-        decodeInteger,
+        decodeByte,
       ),
       workspaces: readListField(fields, 'workspaces', decodeWorkspaceId),
       pairedAt: readField(fields, 'paired_at', decodeMoment),
@@ -154,8 +154,8 @@ final class Runner implements JsonEncodable {
     return Runner(
       deviceId: readField(fields, 'device_id', decodeDeviceId),
       labels: readListField(fields, 'labels', decodeText),
-      slotsTotal: readField(fields, 'slots_total', decodeInteger),
-      slotsBusy: readField(fields, 'slots_busy', decodeInteger),
+      slotsTotal: readField(fields, 'slots_total', decodeCount),
+      slotsBusy: readField(fields, 'slots_busy', decodeCount),
       link: readField(fields, 'link', RunnerLink.decode),
       online: readField(fields, 'online', decodeFlag),
       acceptingNewRuns: readField(fields, 'accepting_new_runs', decodeFlag),

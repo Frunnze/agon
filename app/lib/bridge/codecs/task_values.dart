@@ -166,15 +166,15 @@ final class TaskSummary implements JsonEncodable {
   factory TaskSummary.fromJson(Object? json) {
     final JsonObject fields = decodeObject(json);
     return TaskSummary(
-      toDo: readField(fields, 'to_do', decodeInteger),
-      running: readField(fields, 'running', decodeInteger),
+      toDo: readField(fields, 'to_do', decodeCount),
+      running: readField(fields, 'running', decodeCount),
       waitingForApproval: readField(
         fields,
         'waiting_for_approval',
-        decodeInteger,
+        decodeCount,
       ),
-      failed: readField(fields, 'failed', decodeInteger),
-      done: readField(fields, 'done', decodeInteger),
+      failed: readField(fields, 'failed', decodeCount),
+      done: readField(fields, 'done', decodeCount),
     );
   }
 

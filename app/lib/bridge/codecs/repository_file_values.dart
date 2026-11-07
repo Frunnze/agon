@@ -143,7 +143,7 @@ final class RepositoryEntry implements JsonEncodable {
     return RepositoryEntry(
       name: readField(fields, _nameField, decodeText),
       kind: readField(fields, _kindField, RepositoryEntryKind.decode),
-      size: readOptionalField(fields, _sizeField, decodeInteger),
+      size: readOptionalField(fields, _sizeField, decodeCount),
     );
   }
 
@@ -189,8 +189,8 @@ sealed class FilePreview implements JsonEncodable {
         text: readField(fields, 'text', decodeText),
       ),
       ImagePreview.kind => ImagePreview(
-        width: readField(fields, 'width', decodeInteger),
-        height: readField(fields, 'height', decodeInteger),
+        width: readField(fields, 'width', decodeCount),
+        height: readField(fields, 'height', decodeCount),
         base64Content: readField(fields, 'base64_content', decodeText),
       ),
       TooLargePreview.kind => const TooLargePreview(),
@@ -274,7 +274,7 @@ final class RepositoryFileView implements JsonEncodable {
     final JsonObject fields = decodeObject(json);
     return RepositoryFileView(
       path: readField(fields, 'path', decodeText),
-      size: readField(fields, _sizeField, decodeInteger),
+      size: readField(fields, _sizeField, decodeCount),
       preview: readField(fields, 'preview', FilePreview.fromJson),
     );
   }

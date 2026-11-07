@@ -13,11 +13,15 @@ import 'package:agent_orchestration/data/repository/record_not_found.dart';
 
 const String _deviceKind = 'device';
 
-PairingSession mapPairingSessionFromNode(node.PairingRequestScreen screen) {
+PairingSession mapPairingSessionFromNode(
+  node.PairingRequestScreen screen, {
+  required String? rendezvousProblem,
+}) {
   return PairingSession(
     code: screen.displayCode,
     createdAt: screen.startedAt,
     expiresAt: screen.expiresAt,
+    rendezvousProblem: rendezvousProblem,
   );
 }
 

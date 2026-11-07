@@ -33,7 +33,7 @@ final class NodeSynchronization {
   Future<void> start() async {
     final node.EventsResponse latest = await executeNodeCommand(
       _channel,
-      const node.PollEventsCommand(after: _sequenceBeforeAnyChange),
+      node.PollEventsCommand(after: _sequenceBeforeAnyChange),
     );
     for (final NodeSynchronized repository in _repositories) {
       await repository.load();

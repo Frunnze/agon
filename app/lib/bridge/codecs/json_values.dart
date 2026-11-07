@@ -2,6 +2,8 @@ typedef JsonObject = Map<String, Object?>;
 
 typedef JsonValueDecoder<Value> = Value Function(Object? json);
 
+const int _largestByte = 255;
+
 final RegExp _rfc3339Moment = RegExp(
   r'^(?<year>\d{4})-(?<month>\d{2})-(?<day>\d{2})[Tt]'
   r'(?<hour>\d{2}):(?<minute>\d{2}):(?<second>\d{2})(?:\.\d+)?'
@@ -37,11 +39,27 @@ int decodeInteger(Object? json) {
   throw FormatException('expected a whole number, found $json');
 }
 
+int decodeCount(Object? json) {
+  final int wholeNumber = decodeInteger(json);
+  if (wholeNumber < 0) {
+    throw FormatException('expected a count of zero or more, found $json');
+  }
+  return wholeNumber;
+}
+
+int decodeByte(Object? json) {
+  final int wholeNumber = decodeInteger(json);
+  if (wholeNumber < 0 || wholeNumber > _largestByte) {
+    throw FormatException('expected a byte from 0 to 255, found $json');
+  }
+  return wholeNumber;
+}
+
 double decodeNumber(Object? json) {
-  if (json is num) {
+  if (json is num && json.isFinite) {
     return json.toDouble();
   }
-  throw FormatException('expected a number, found $json');
+  throw FormatException('expected a finite number, found $json');
 }
 
 bool decodeFlag(Object? json) {

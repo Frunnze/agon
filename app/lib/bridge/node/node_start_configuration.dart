@@ -2,6 +2,7 @@ import 'package:agent_orchestration/bridge/codecs/json_values.dart';
 import 'package:agent_orchestration/bridge/node/runner_settings.dart';
 
 const int identityKeyHexadecimalLength = 64;
+const int largestAppServerPort = 65535;
 final RegExp _identityKeyPattern = RegExp(
   '^[0-9a-f]{$identityKeyHexadecimalLength}\$',
 );
@@ -77,6 +78,15 @@ final class NodeStartConfiguration implements JsonEncodable {
         dataDirectory,
         'dataDirectory',
         'the node needs a data directory',
+      );
+    }
+
+    final int? port = appServerPort;
+    if (port != null && (port < 0 || port > largestAppServerPort)) {
+      throw ArgumentError.value(
+        port,
+        'appServerPort',
+        'a port is a whole number from 0 to $largestAppServerPort',
       );
     }
   }

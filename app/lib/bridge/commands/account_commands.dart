@@ -128,7 +128,11 @@ final class StopServerBackupCommand implements NodeCommand<AppServersView> {
 }
 
 final class PollEventsCommand implements NodeCommand<EventsResponse> {
-  const PollEventsCommand({required this.after});
+  PollEventsCommand({required this.after}) {
+    if (after < 0) {
+      throw ArgumentError.value(after, 'after', 'a sequence is zero or more');
+    }
+  }
 
   final int after;
 

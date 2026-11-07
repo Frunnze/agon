@@ -73,7 +73,7 @@ final class ApprovalsView implements JsonEncodable {
   factory ApprovalsView.fromJson(Object? json) {
     final JsonObject fields = decodeObject(json);
     return ApprovalsView(
-      waitingCount: readField(fields, 'waiting_count', decodeInteger),
+      waitingCount: readField(fields, 'waiting_count', decodeCount),
       approvals: readListField(fields, 'approvals', ApprovalView.fromJson),
     );
   }

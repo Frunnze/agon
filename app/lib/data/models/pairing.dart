@@ -6,11 +6,13 @@ final class PairingSession {
     required this.code,
     required this.createdAt,
     required this.expiresAt,
+    required this.rendezvousProblem,
   });
 
   final String code;
   final DateTime createdAt;
   final DateTime expiresAt;
+  final String? rendezvousProblem;
 }
 
 final class PairingRequest {

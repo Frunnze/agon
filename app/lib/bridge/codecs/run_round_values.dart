@@ -51,7 +51,7 @@ final class LoopRounds implements JsonEncodable {
     return LoopRounds(
       from: readField(fields, 'from', decodeText),
       to: readField(fields, 'to', decodeText),
-      rounds: readField(fields, 'rounds', decodeInteger),
+      rounds: readField(fields, 'rounds', decodeCount),
     );
   }
 

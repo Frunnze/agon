@@ -66,7 +66,7 @@ final class ChangeNotification implements JsonEncodable {
   factory ChangeNotification.fromJson(Object? json) {
     final JsonObject fields = decodeObject(json);
     return ChangeNotification(
-      sequence: readField(fields, 'sequence', decodeInteger),
+      sequence: readField(fields, 'sequence', decodeCount),
       topic: readField(fields, 'topic', ChangeTopic.fromJson),
     );
   }
@@ -94,7 +94,7 @@ final class EventsResponse implements JsonEncodable {
         'notifications',
         ChangeNotification.fromJson,
       ),
-      latestSequence: readField(fields, 'latest_sequence', decodeInteger),
+      latestSequence: readField(fields, 'latest_sequence', decodeCount),
     );
   }
 

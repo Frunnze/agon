@@ -59,15 +59,18 @@ final class NodeBackedPairingRepository extends ChangeNotifier
 
   @override
   Future<PairingSession> startPairing() async {
-    final node.PairingRequestScreen screen = await executeNodeCommand(
+    final node.StartedPairing started = await executeNodeCommand(
       _channel,
       const node.StartPairingCommand(),
     );
-    final PairingSession session = mapPairingSessionFromNode(screen);
+    final PairingSession session = mapPairingSessionFromNode(
+      started.screen,
+      rendezvousProblem: started.rendezvousProblem,
+    );
 
     _countdown?.cancel();
     _session = session;
-    _sessionCode = screen.code;
+    _sessionCode = started.screen.code;
     _joining = null;
     _request = null;
     _countdown = Timer.periodic(_pollInterval, _tickCountdown);

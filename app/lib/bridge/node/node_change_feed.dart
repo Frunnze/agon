@@ -19,6 +19,14 @@ final class NodeChangeFeed {
   final ChangeFeedRecovery onRecovered;
 
   Stream<ChangeNotification> watchChanges({required int afterSequence}) {
+    if (afterSequence < 0) {
+      throw ArgumentError.value(
+        afterSequence,
+        'afterSequence',
+        'a sequence is zero or more',
+      );
+    }
+
     final StreamController<ChangeNotification> notifications =
         StreamController<ChangeNotification>();
     notifications.onListen = () =>
@@ -43,7 +51,7 @@ final class NodeChangeFeed {
         isRecovering = true;
         await Future<void>.delayed(retryDelay);
         continue;
-      } on FormatException catch (problem, stackTrace) {
+      } on Object catch (problem, stackTrace) {
         notifications.addError(problem, stackTrace);
         break;
       }
